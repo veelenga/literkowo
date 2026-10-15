@@ -1,3 +1,4 @@
+import { arenaRecordOf, emptyArenaRecord } from '../arena/record';
 import {
   MAX_PRACTICE_DAYS,
   RECENT_WINDOW,
@@ -35,6 +36,7 @@ const SCORE_SCHEMA_VERSION = 2;
 const XP_SCHEMA_VERSION = 3;
 const KEY_STATS_SCHEMA_VERSION = 4;
 const INVENTORY_SCHEMA_VERSION = 5;
+const GRADUAL_COURSE_SCHEMA_VERSION = 6;
 const SCORE_PER_SEEDED_XP = 10;
 const KNOWN_PETS = PETS.map((pet) => pet.id);
 const KNOWN_HATS = HATS.map((hat) => hat.id);
@@ -57,6 +59,7 @@ const MIGRATIONS: Partial<Record<number, Migration>> = {
     ...raw,
     levelResults: gradualCourseResults(raw.levelResults),
   }),
+  [GRADUAL_COURSE_SCHEMA_VERSION]: (raw) => ({ ...raw, arena: emptyArenaRecord() }),
 };
 
 export function parseProfiles(json: string): ParsedProfiles {
@@ -88,6 +91,7 @@ export function normalizeProfile(value: unknown): Profile | undefined {
     keyStats: keyStatsOf(raw.keyStats),
     inventory,
     equipped: equippedOf(raw.equipped, inventory),
+    arena: arenaRecordOf(raw.arena),
   };
   return predatesShop(value) ? awardTrophies(profile) : profile;
 }
