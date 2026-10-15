@@ -37,7 +37,7 @@ interface ResultActions {
   readonly primary: ResultAction;
 }
 
-interface StatTile {
+export interface StatTile {
   element: HTMLElement;
   reveal: () => void;
   stop: () => void;
@@ -108,7 +108,7 @@ function starsRow(stars: number): HTMLElement {
   );
 }
 
-function statTile(label: string, value: number, unit?: string): StatTile {
+export function statTile(label: string, value: number, unit?: string): StatTile {
   const counter = new Counter(
     el('strong', { class: 'result-stat-value' }),
     undefined,
