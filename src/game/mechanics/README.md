@@ -18,7 +18,7 @@ All hooks are optional except `dispose`. Each mechanic gets them in the order it
 | `onSpawn(enemy)`         | After any enemy joins the board, including the boss and enemies added by mechanics.                                                                    |
 | `onHit()`                | After a correct key, once `stats` has the new combo.                                                                                                   |
 | `onMistake()`            | After the combo breaks: a wrong key or a lost life.                                                                                                    |
-| `onWordComplete(enemy)`  | After a word is typed, before the enemy leaves (or before the boss takes the hit).                                                                     |
+| `onWordComplete(enemy)`  | After a word is typed, before the enemy leaves (or before the boss takes the hit). Enemies with the same word complete on the same key, once each.     |
 | `onEnemyReached(enemy)`  | When an enemy reaches the hero, before the game handles it. Remove the enemy here to handle it yourself: then no life is lost.                         |
 | `onPhaseChange(phase)`   | When the level starts and when each next phase begins.                                                                                                 |
 | `dispose()`              | When the game is destroyed. Remove your meshes from the scene and free their resources.                                                                |

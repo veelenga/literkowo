@@ -8,7 +8,7 @@ export interface Typable {
 export type Keystroke<T> =
   | { readonly kind: 'miss' }
   | { readonly kind: 'hit' }
-  | { readonly kind: 'complete'; readonly item: T };
+  | { readonly kind: 'complete'; readonly items: readonly T[] };
 
 export type CandidateMarker<T> = (item: T, isCandidate: boolean) => void;
 
@@ -29,10 +29,10 @@ export class Targeting<T extends Typable> {
     if (!matching.length) return MISS;
     this.narrowTo(matching);
     matching.forEach((item) => item.advance());
-    const completed = matching.find((item) => item.isComplete);
-    if (!completed) return HIT;
+    const completed = matching.filter((item) => item.isComplete);
+    if (!completed.length) return HIT;
     this.complete(completed);
-    return { kind: 'complete', item: completed };
+    return { kind: 'complete', items: completed };
   }
 
   forget(item: T): void {
@@ -52,10 +52,10 @@ export class Targeting<T extends Typable> {
     this.current = next;
   }
 
-  private complete(item: T): void {
-    this.current.filter((other) => other !== item).forEach((other) => this.drop(other));
+  private complete(items: readonly T[]): void {
+    this.current.filter((item) => !items.includes(item)).forEach((item) => this.drop(item));
     this.current = [];
-    this.mark(item, false);
+    items.forEach((item) => this.mark(item, false));
   }
 
   private drop(item: T): void {

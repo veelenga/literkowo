@@ -456,7 +456,7 @@ export class Game {
     this.stats.recordHit();
     sfx.hit(this.stats.combo);
     this.mechanics.onHit();
-    if (keystroke.kind === 'complete') this.completeWord(keystroke.item);
+    if (keystroke.kind === 'complete') keystroke.items.forEach((enemy) => this.completeWord(enemy));
     this.events.onStats(this.stats, this.lives);
   }
 

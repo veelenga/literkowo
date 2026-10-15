@@ -48,7 +48,7 @@ describe('Targeting', () => {
     const [nearest, meant] = board;
     const keystrokes = type('jij');
     expect(misses(keystrokes)).toBe(0);
-    expect(keystrokes.at(-1)).toEqual({ kind: 'complete', item: meant });
+    expect(keystrokes.at(-1)).toEqual({ kind: 'complete', items: [meant] });
     expect(nearest.typed).toBe(0);
     expect(nearest.isCandidate).toBe(false);
     expect(targeting.candidates).toEqual([]);
@@ -59,7 +59,7 @@ describe('Targeting', () => {
     const [longer, other] = board;
     const keystrokes = type('jjkj');
     expect(misses(keystrokes)).toBe(0);
-    expect(keystrokes.at(-1)).toEqual({ kind: 'complete', item: longer });
+    expect(keystrokes.at(-1)).toEqual({ kind: 'complete', items: [longer] });
     expect(other.typed).toBe(0);
   });
 
@@ -115,7 +115,7 @@ describe('Targeting', () => {
     expect(targeting.candidates).toEqual([kept]);
     const keystrokes = type('ij');
     expect(misses(keystrokes)).toBe(0);
-    expect(keystrokes.at(-1)).toEqual({ kind: 'complete', item: kept });
+    expect(keystrokes.at(-1)).toEqual({ kind: 'complete', items: [kept] });
   });
 
   it('starts over when every candidate left the board', () => {
@@ -128,12 +128,21 @@ describe('Targeting', () => {
     expect(targeting.candidates).toEqual([other]);
   });
 
-  it('completes only the highest ranked of equal words', () => {
-    const { board, type } = setup('f', 'f');
-    const [nearest, other] = board;
-    expect(type('f')).toEqual([{ kind: 'complete', item: nearest }]);
+  it('completes every enemy that carries the typed word together', () => {
+    const { board, targeting, type } = setup('jjf', 'jjf', 'jf');
+    const [first, twin, other] = board;
+    const keystrokes = type('jjf');
+    expect(keystrokes.map((keystroke) => keystroke.kind)).toEqual(['hit', 'hit', 'complete']);
+    expect(keystrokes.at(-1)).toEqual({ kind: 'complete', items: [first, twin] });
     expect(other.typed).toBe(0);
-    expect(other.isCandidate).toBe(false);
+    expect(board.map((item) => item.isCandidate)).toEqual([false, false, false]);
+    expect(targeting.candidates).toEqual([]);
+  });
+
+  it('completes equal single letters together', () => {
+    const { board, type } = setup('f', 'f', 'j');
+    const [first, twin] = board;
+    expect(type('f')).toEqual([{ kind: 'complete', items: [first, twin] }]);
   });
 
   it('ignores enemies that left the board without being forgotten', () => {
