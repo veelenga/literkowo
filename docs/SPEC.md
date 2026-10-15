@@ -46,6 +46,8 @@ Rules during a level:
 
 - At most 6 enemies are on screen at once. The player has 3 lives. Losing the last life ends the level as lost.
 - The progress bar counts a spawn as done once every enemy it turned into has left the board, so a spawn that becomes twins or a special enemy still counts as one. Enemies that features add later, such as power words or bombers, do not change it (`src/game/SpawnGroups.ts`).
+
+- At most 6 enemies are on screen at once (`MAX_ENEMIES` in `src/game/arena.ts`). Splitter halves and chicks can join a full board. The player has 3 lives. Losing the last life ends the level as lost.
 - Typing follows every enemy whose word starts with the letters typed so far, a key that fits none of them is a mistake, and when a word is done every enemy with that same word is done too while the others go back to untyped (`src/game/Targeting.ts`).
 - Escape pauses and resumes. Pause also suspends audio. The pause card also has a resume button and the key heatmap, and touch screens get a pause button in the HUD.
 - Every correct letter fires a bolt from the hero to the nearest enemy being typed, and every finished word gets a lightning strike with a soft crack and a small camera punch, 30 ms apart when several words finish on one key (`src/game/mechanics/HeroStrikes.ts`). The strikes turn from the world's accent colour toward gold as the combo grows and are fully golden in fever, while a glow under the hero charges with the combo up to 15.
@@ -126,22 +128,49 @@ Announcements never overlap. Callouts stack downwards with the newest on top, an
 
 ## Enemy types
 
-Owners: `src/game/mechanics/EnemyTypes.ts`, `src/game/mechanics/enemyTypes/kinds.ts`, `src/game/mechanics/enemyTypes/factory.ts`.
+Owners: `src/game/mechanics/EnemyTypes.ts`, `src/game/mechanics/enemyTypes/kinds.ts`, `src/game/mechanics/enemyTypes/factory.ts`, one class per type in `src/game/mechanics/enemyTypes`.
 
 - During the words phase, a fresh normal spawn turns into a special enemy with a chance of 25% (`SPECIAL_SHARE`). The chance is split by weight between the unlocked types: jumper 3, the others 2 each (`KIND_WEIGHTS`).
 - The special enemy takes the place of the spawn, so the word count of the phase stays the same. A balloon that floats away counts as done.
 - The boss and every enemy that another feature has tagged, such as power words, merged enemies, minions, twins and bombers, are never replaced. Special enemies never merge.
 - At most 1 special enemy is on the board in Polana, and at most 3 in later regions.
-- The first time a type appears in a level, its name shows as a callout. Each type also has a short hint in `src/i18n/features/enemyTypes.ts`.
 
-| Type      | Name (pl / uk)       | From       | Word                        | Movement                                                     | Rule                                                                                                                                           |
-| --------- | -------------------- | ---------- | --------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `jumper`  | Skoczek / Стрибунець | `polana-3` | one new key, 4 to 7 times   | hops 1 unit at a time, at the normal word speed              | Each letter makes it hop in place and shrink.                                                                                                  |
-| `balloon` | Balonik / Кулька     | `polana-3` | 3 to 5 letters              | starts at distance 6, rises 0.42 per second, drifts sideways | Above height 7 it floats away, with no mistake and no lost life. Popped, it pays double word points.                                           |
-| `bat`     | Nietoperz / Кажан    | `las-1`    | 3 to 4 letters              | flies an arc at height 2.5, at 2.5 × the word speed          | At the far side it drops a bomb. When the bomb lands, the hero loses a life and the camera shakes. Typed before that, it tumbles and shatters. |
-| `swarm`   | Rój / Рій            | `gory-1`   | 5 to 7 letters, one per bug | walks at 1.25 × the word speed and jitters                   | Letters go in order and the next one glows. Each letter pops one bug.                                                                          |
+- During the words phase, a fresh normal spawn turns into a special enemy with a chance of 25% (`SPECIAL_SHARE`). The chance is split by weight between the unlocked types: jumper 3, nest 1, the others 2 each (`KIND_WEIGHTS`).
+- The special enemy takes the place of the spawn, so the word count of the phase stays the same. A balloon that floats away or a thief that escapes counts as done.
+- Only plain spawns without a tag are replaced. The boss, power words, merged enemies, minions, chicks, splitter halves and event pieces stay as they are. Special enemies never merge.
+- At most 1 special enemy is on the board in Polana, and at most 3 in later regions. Bull, nest and thief also come one at a time (`KIND_LIMITS`).
+- The first time a type appears in a level, its name shows as a callout. Each type also has a short hint in `src/i18n/features/enemyTypes.ts`.
+- A type unlocks at the first level in the table. When a profile's course skips that region, the type unlocks at its fallback level instead. English word profiles never see Wyspa Ogonków, so they meet the chameleon in `jaskinia-3` and the nest in `jaskinia-4`.
+
+| Type        | Name (pl / uk)          | From                            | Word                                     | Movement                                                                    | Rule                                                                                                                                                                   |
+| ----------- | ----------------------- | ------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `jumper`    | Skoczek / Стрибунець    | `polana-3`                      | one new key, 4 to 7 times                | hops 1 unit at a time, at the normal word speed                             | Each letter makes it hop in place and shrink.                                                                                                                          |
+| `balloon`   | Balonik / Кулька        | `polana-3`                      | 3 to 5 letters                           | starts at distance 6, rises 0.42 per second, drifts sideways                | Above height 7 it floats away, with no mistake and no lost life. Popped, it pays double word points.                                                                   |
+| `bat`       | Nietoperz / Кажан       | `las-1`                         | 3 to 4 letters                           | flies an arc at height 2.5, at 2.5 × the word speed                         | At the far side it drops a bomb. When the bomb lands, the hero loses a life and the camera shakes. Typed before that, it tumbles and shatters.                         |
+| `ghost`     | Duch / Привид           | `las-2`                         | 3 to 5 letters                           | walks at 0.9 × the word speed and drifts sideways                           | It fades out and back in on a 3 second cycle. Its label shows only while it is solid, but it can be typed at any time.                                                 |
+| `thief`     | Złodziej / Злодій       | `las-3`                         | 3 letters, then 6 letters on the way out | runs at 2.2 × the word speed, flees at half that                            | At the hero it steals 100 points, or what there is, and runs back out with a new word. Typed on the way out, it returns the points and 5 coins. It never costs a life. |
+| `swarm`     | Rój / Рій               | `gory-1`                        | 5 to 7 letters, one per bug              | walks at 1.25 × the word speed and jitters                                  | Letters go in order and the next one glows. Each letter pops one bug.                                                                                                  |
+| `splitter`  | Rozszczep / Розщеп      | `gory-2`                        | two short words joined, 6 to 8 letters   | walks at 0.8 × the word speed                                               | Typed, it splits at its place into two smaller halves, one per word, 1.35 × faster. Halves never split again.                                                          |
+| `shield`    | Tarczownik / Щитоносець | `jaskinia-1`                    | a 2 letter key, then 4 to 6 letters      | walks at 0.85 × the word speed                                              | The label shows the key on a shield and masks the word. Typing the key knocks the shield off with a clang and reveals the word.                                        |
+| `bull`      | Byk / Бик               | `jaskinia-2`                    | 4 to 5 letters                           | stamps at the spawn arc for 1.5 seconds, then charges at 3 × the word speed | Each correct letter knocks it back 1.2 units and stops it for 0.4 seconds.                                                                                             |
+| `chameleon` | Kameleon / Хамелеон     | `wyspa-1`, English `jaskinia-3` | 3 to 5 letters                           | walks at 0.9 × the word speed                                               | Every 2.5 seconds it swaps its word for another of the same length and changes colour. The first typed letter locks it.                                                |
+| `nest`      | Gniazdo / Гніздо        | `wyspa-2`, English `jaskinia-4` | 7 to 9 letters                           | sits still at distance 9.6                                                  | Every 4 seconds it hatches a chick with a 2 letter word that walks at 1.1 × the word speed, at most 3 alive. Typed, it pops all its chicks.                            |
 
 A type stays unlocked in every later region.
+
+## Mid-wave events
+
+Owners: `src/game/mechanics/WaveEvents.ts`, `src/game/mechanics/waveEvents/events.ts`.
+
+- Once per level, during the words phase, one event starts with a banner. It starts at a random moment between one third and two thirds of `count × spawnInterval` of the phase. Each event is equally likely.
+- Event pieces join the board only while fewer than 6 enemies are on it, so a full board delays them. They stop when the phase changes, and no event runs next to a boss.
+- Event pieces are never replaced by special enemies and never merge.
+
+| Event     | Banner (pl / uk)                    | Pieces                                                                                                                                                                                                                                                                             |
+| --------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rush`    | Fala! / Хвиля!                      | 6 words of one or two letters over 4 seconds, from the spawn arc at 1.15 × the word speed.                                                                                                                                                                                         |
+| `meteors` | Deszcz meteorów! / Метеоритний дощ! | 8 single letters from the level's keys, one every 0.35 seconds. Each falls from height 11 with a trail for 1.2 seconds and lands 4.5 to 9 units from the hero. They can be typed in any order. After 6 seconds on the ground a meteor burns out, with no mistake and no lost life. |
+| `chest`   | Skrzynia skarbów! / Скриня скарбів! | A chest with a 5 letter word walks across the arena at distance 5.5, 1.4 units per second, and leaves on the other side. Typed, it drops 15 coins with a "Skarb!" / "Скарб!" callout.                                                                                              |
 
 ## Progression
 
@@ -188,7 +217,7 @@ Ranks by level band, names in `src/i18n/features/progression.ts`:
 
 Coins are a separate counter for a future shop. Nothing is spent yet.
 
-- During a level each completed word gives 1 coin. Mechanics add more with `addCoins(amount)`, for example balloons or chests. The run total is `GameResult.coins`.
+- During a level each completed word gives 1 coin. Mechanics add more with `addCoins(amount)`: 15 for a treasure chest, 5 for a thief caught with its loot. Run coins never go down. The run total is `GameResult.coins`.
 - After the level: the run coins, plus 10 for a won level, plus 5 per star.
 
 The result card fills the XP bar from the old progress to the new one. When a level is crossed it shows a "Nowy poziom!" / "Новий рівень!" banner with the rank name, confetti and the level complete and sparkle sounds. The coins earned sit in a pill next to the XP. The map header and the profile cards show the level, the rank, a thin XP bar and the coins.
@@ -322,7 +351,6 @@ Not built yet. In this order:
 1. Power words
 2. Merging enemies
 3. Boss phases and attacks
-4. Mid-wave events
-5. Coins shop and pets
-6. Runner segments
-7. Sibling race and arena
+4. Coins shop and pets
+5. Runner segments
+6. Sibling race and arena
