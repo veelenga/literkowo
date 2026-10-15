@@ -421,6 +421,7 @@ Layout:
 - On tablets and phones the HUD shows score, combo, hearts and progress. On a phone in portrait it takes two rows.
 - The keyboard hint is hidden on phones and smaller on tablets in portrait.
 - On phones each profile card takes a full row. The map is the same vertical scene on every screen, scaled down on phones.
+- On screens up to 480 px tall the profile screen shows a smaller logo and no tagline, so the Play button stays in view.
 - Touch targets are at least 44 px on touch screens. Hover effects apply only on devices that can hover.
 - The app is `100dvh` tall. The HUD, the keyboard hint, the map header and overlays stay inside the safe area insets.
 - The camera keeps a horizontal field of view of at least 62 degrees, so the whole spawn arc stays in frame on narrow and portrait screens. The vertical field of view grows when needed and never drops below 42 degrees (`src/game/arena.ts`).
