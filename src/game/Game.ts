@@ -78,7 +78,7 @@ export class Game {
   private readonly scene = new THREE.Scene();
   private readonly camera = new THREE.PerspectiveCamera(CAMERA_FOV, 1, CAMERA_NEAR, CAMERA_FAR);
   private readonly cameraTarget = new THREE.Vector3().copy(CAMERA_TARGET);
-  private readonly clock = new THREE.Clock();
+  private readonly timer = new THREE.Timer();
   private readonly player: Player;
   private readonly particles = new Particles(this.scene);
   private readonly world: World;
@@ -128,6 +128,7 @@ export class Game {
     this.events.onStats(this.stats, this.lives);
     this.reportProgress();
     this.mechanics.onPhaseChange(this.phase);
+    this.timer.reset();
     this.syncFrames();
   }
 
@@ -223,7 +224,7 @@ export class Game {
   private syncFrames(): void {
     if (!this.isAnimating) return this.stopFrames();
     if (this.frame) return;
-    this.clock.getDelta();
+    this.timer.reset();
     this.frame = requestAnimationFrame(this.loop);
   }
 
@@ -235,7 +236,8 @@ export class Game {
   private readonly loop = (): void => {
     if (!this.running) return;
     this.frame = requestAnimationFrame(this.loop);
-    const delta = Math.min(this.clock.getDelta(), MAX_FRAME_DELTA);
+    this.timer.update();
+    const delta = Math.min(this.timer.getDelta(), MAX_FRAME_DELTA);
     this.tick(delta);
     this.labels.position(this.enemies, this.camera, renderHost.viewport);
     renderHost.render();
@@ -419,6 +421,7 @@ export class Game {
 
   private togglePause(): void {
     this.paused = !this.paused;
+    this.timer.reset();
     this.syncFrames();
     this.events.onPause(this.paused);
   }
