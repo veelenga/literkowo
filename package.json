@@ -22,7 +22,7 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.71.2",
     "vite": "^8.3.0",
-    "vitest": "^3.2.7"
+    "vitest": "^5.0.4"
   },
   "dependencies": {
     "three": "^0.180.0"
