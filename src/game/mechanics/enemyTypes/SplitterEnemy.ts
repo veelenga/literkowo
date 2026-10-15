@@ -16,7 +16,7 @@ export type SplitterPiece =
   | { readonly part: 'whole'; readonly halves: WordHalves }
   | { readonly part: 'half'; readonly color: number };
 
-const COLORS = [0x9ad1ff, 0x7ff0d8, 0xc3a6ff];
+const COLORS = [0x5b8bd6, 0x3fb5a3, 0x8a6fe0];
 const HALF_SPREAD = 0.9;
 const HALF_CLASS = 'is-half';
 const SIDES = [-1, 1] as const;
