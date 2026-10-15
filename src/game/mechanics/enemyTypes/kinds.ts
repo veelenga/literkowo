@@ -1,9 +1,33 @@
-import { REGIONS, type Level } from '../../../course/regions';
+import { REGIONS, regionsFor, type Level } from '../../../course/regions';
+import type { WordLanguage } from '../../../profiles/Profile';
 
-export type EnemyKind = 'jumper' | 'balloon' | 'bat' | 'swarm';
+export type EnemyKind =
+  | 'jumper'
+  | 'balloon'
+  | 'bat'
+  | 'swarm'
+  | 'splitter'
+  | 'shield'
+  | 'ghost'
+  | 'chameleon'
+  | 'bull'
+  | 'nest'
+  | 'thief';
 export type Random = () => number;
 
-const ENEMY_KINDS: readonly EnemyKind[] = ['jumper', 'balloon', 'bat', 'swarm'];
+const ENEMY_KINDS: readonly EnemyKind[] = [
+  'jumper',
+  'balloon',
+  'bat',
+  'swarm',
+  'splitter',
+  'shield',
+  'ghost',
+  'chameleon',
+  'bull',
+  'nest',
+  'thief',
+];
 export const ENEMY_TYPE_TAG = 'enemy-type';
 export const SPECIAL_SHARE = 0.25;
 export const KIND_WEIGHTS: Readonly<Record<EnemyKind, number>> = {
@@ -11,17 +35,37 @@ export const KIND_WEIGHTS: Readonly<Record<EnemyKind, number>> = {
   balloon: 2,
   bat: 2,
   swarm: 2,
+  splitter: 2,
+  shield: 2,
+  ghost: 2,
+  chameleon: 2,
+  bull: 2,
+  nest: 1,
+  thief: 2,
 };
 export const BONUS_WORDS: Readonly<Record<EnemyKind, number>> = {
   jumper: 0,
   balloon: 1,
   bat: 0,
   swarm: 0,
+  splitter: 0,
+  shield: 0,
+  ghost: 0,
+  chameleon: 0,
+  bull: 0,
+  nest: 0,
+  thief: 0,
+};
+export const KIND_LIMITS: Readonly<Partial<Record<EnemyKind, number>>> = {
+  bull: 1,
+  nest: 1,
+  thief: 1,
 };
 
 interface Unlock {
-  region: string;
-  level: number;
+  readonly region: string;
+  readonly level: number;
+  readonly fallback?: Unlock;
 }
 
 const UNLOCKS: Readonly<Record<EnemyKind, Unlock>> = {
@@ -29,12 +73,19 @@ const UNLOCKS: Readonly<Record<EnemyKind, Unlock>> = {
   balloon: { region: 'polana', level: 3 },
   bat: { region: 'las', level: 1 },
   swarm: { region: 'gory', level: 1 },
+  splitter: { region: 'gory', level: 2 },
+  shield: { region: 'jaskinia', level: 1 },
+  ghost: { region: 'las', level: 2 },
+  chameleon: { region: 'wyspa', level: 1, fallback: { region: 'jaskinia', level: 3 } },
+  bull: { region: 'jaskinia', level: 2 },
+  nest: { region: 'wyspa', level: 2, fallback: { region: 'jaskinia', level: 4 } },
+  thief: { region: 'las', level: 3 },
 };
 const FIRST_REGION_CAP = 1;
 const LATER_REGION_CAP = 3;
 
-export function unlockedKinds(level: Level): EnemyKind[] {
-  return ENEMY_KINDS.filter((kind) => isUnlocked(UNLOCKS[kind], level));
+export function unlockedKinds(level: Level, language: WordLanguage): EnemyKind[] {
+  return ENEMY_KINDS.filter((kind) => isUnlocked(reachableUnlock(UNLOCKS[kind], language), level));
 }
 
 export function boardCap(level: Level): number {
@@ -53,6 +104,10 @@ export function rollKind(kinds: readonly EnemyKind[], random: Random): EnemyKind
   return kinds[kinds.length - 1];
 }
 
+export function kindLimit(kind: EnemyKind): number {
+  return KIND_LIMITS[kind] ?? Number.POSITIVE_INFINITY;
+}
+
 export function randomInt(min: number, max: number, random: Random): number {
   return min + Math.floor(random() * (max - min + 1));
 }
@@ -61,6 +116,12 @@ function isUnlocked(unlock: Unlock, level: Level): boolean {
   const current = regionIndex(level.regionId);
   const required = regionIndex(unlock.region);
   return current > required || (current === required && level.index >= unlock.level);
+}
+
+function reachableUnlock(unlock: Unlock, language: WordLanguage): Unlock {
+  const visible = regionsFor(language).some((region) => region.id === unlock.region);
+  if (visible || !unlock.fallback) return unlock;
+  return reachableUnlock(unlock.fallback, language);
 }
 
 function regionIndex(regionId: string): number {

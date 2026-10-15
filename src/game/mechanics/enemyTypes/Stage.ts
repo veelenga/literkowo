@@ -3,7 +3,7 @@ import { disposeObject } from '../../disposal';
 import type { Enemy } from '../../Enemy';
 import { softGlowTexture } from '../../effects/glowAssets';
 import { PulsePool, type PulseSettings, type PulseVisual } from '../../effects/PulsePool';
-import type { MechanicContext } from '../Mechanic';
+import type { AnnounceStyle, MechanicContext } from '../Mechanic';
 import { SOUNDS, type SoundCue } from './sounds';
 import type { SpecialHost } from './SpecialEnemy';
 import { Tumbles, type Landing } from './Tumbles';
@@ -12,7 +12,18 @@ export const BOMB_SHAKE = { strength: 0.5, seconds: 0.8 };
 
 export type StageContext = Pick<
   MechanicContext,
-  'scene' | 'particles' | 'sfx' | 'shakeCamera' | 'loseLife' | 'removeEnemy'
+  | 'scene'
+  | 'particles'
+  | 'sfx'
+  | 'shakeCamera'
+  | 'loseLife'
+  | 'removeEnemy'
+  | 'addEnemy'
+  | 'createLabel'
+  | 'enemies'
+  | 'stats'
+  | 'addCoins'
+  | 'announce'
 >;
 
 const DUST_COLOR = new THREE.Color(0xe8dcc0);
@@ -77,6 +88,10 @@ export class Stage implements SpecialHost {
     this.sparks.play(position, color);
   }
 
+  shatter(position: THREE.Vector3, color: THREE.Color): void {
+    this.context.particles.burst(position, color);
+  }
+
   confetti(position: THREE.Vector3): void {
     for (const color of CONFETTI_COLORS) {
       this.scatter.randomDirection().multiplyScalar(CONFETTI_SPREAD).add(position);
@@ -100,8 +115,36 @@ export class Stage implements SpecialHost {
     this.context.removeEnemy(enemy);
   }
 
+  spawn(enemy: Enemy): void {
+    this.context.addEnemy(enemy);
+  }
+
+  isOnBoard(enemy: Enemy): boolean {
+    return this.context.enemies.includes(enemy);
+  }
+
+  createLabel(): HTMLElement {
+    return this.context.createLabel();
+  }
+
   play(cue: SoundCue): void {
     SOUNDS[cue](this.context.sfx);
+  }
+
+  announce(text: string, style: AnnounceStyle, accent: string): void {
+    this.context.announce(text, style, accent);
+  }
+
+  takeScore(points: number): number {
+    const { stats } = this.context;
+    const taken = Math.min(points, stats.score);
+    stats.score -= taken;
+    return taken;
+  }
+
+  reward(points: number, coins: number): void {
+    this.context.stats.score += points;
+    this.context.addCoins(coins);
   }
 
   dispose(): void {

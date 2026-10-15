@@ -1,0 +1,49 @@
+.word-label.is-rush {
+  font-size: 1.2rem;
+  padding: 5px 10px 6px;
+  border-color: rgba(125, 211, 255, 0.7);
+  box-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.35),
+    0 0 14px rgba(125, 211, 255, 0.45);
+}
+
+.word-label.is-meteor {
+  min-width: 1.6em;
+  padding: 6px 10px 7px;
+  text-align: center;
+  color: #fff3e0;
+  background: rgba(60, 16, 4, 0.9);
+  border: 2px solid #ff7a1a;
+  border-radius: 50%;
+  box-shadow:
+    0 0 14px rgba(255, 122, 26, 0.7),
+    0 0 30px rgba(255, 74, 42, 0.35);
+}
+
+.word-label.is-meteor.is-target {
+  border-color: var(--accent);
+}
+
+.word-label.is-chest {
+  font-size: 1.5rem;
+  letter-spacing: 0.08em;
+  color: #3a2400;
+  background: linear-gradient(180deg, #ffe58a 0%, #ffc63a 100%);
+  border: 3px solid #b8860b;
+  box-shadow:
+    0 4px 0 #7a5410,
+    0 0 26px rgba(255, 198, 58, 0.7);
+}
+
+.word-label.is-chest .done {
+  color: #2f7d12;
+  text-shadow: none;
+}
+
+.word-label.is-chest.is-target {
+  border-color: var(--accent);
+}
+
+.word-label.is-chest.is-target .rest {
+  color: #3a2400;
+}

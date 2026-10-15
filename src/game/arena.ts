@@ -6,6 +6,7 @@ export const SPAWN_RADIUS = 11;
 export const BOSS_SPAWN_RADIUS = 12;
 export const REACH_DISTANCE = 1.6;
 export const CLEARING_RADIUS = 7;
+export const MAX_ENEMIES = 6;
 
 export const CAMERA_FOV = 42;
 const MIN_HORIZONTAL_FOV = 62;

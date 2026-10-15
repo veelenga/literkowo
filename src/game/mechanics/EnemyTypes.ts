@@ -1,12 +1,12 @@
 import { i18n } from '../../i18n/i18n';
-import { Boss } from '../Boss';
-import type { Enemy } from '../Enemy';
+import { Enemy } from '../Enemy';
 import type { PhaseKind } from '../LevelPlan';
 import { createSpecial } from './enemyTypes/factory';
 import {
   BONUS_WORDS,
   ENEMY_TYPE_TAG,
   boardCap,
+  kindLimit,
   rollKind,
   unlockedKinds,
   type EnemyKind,
@@ -23,6 +23,13 @@ const ACCENTS: Readonly<Record<EnemyKind, string>> = {
   balloon: '#ff7ad9',
   bat: '#b98cff',
   swarm: '#ffd400',
+  splitter: '#9ad1ff',
+  shield: '#ffb347',
+  ghost: '#d8e8ff',
+  chameleon: '#5cf28a',
+  bull: '#ff6a3d',
+  nest: '#e0b45a',
+  thief: '#ffcf3f',
 };
 
 export class EnemyTypes implements Mechanic {
@@ -35,7 +42,7 @@ export class EnemyTypes implements Mechanic {
     private readonly context: MechanicContext,
     private readonly random: Random = Math.random,
   ) {
-    this.kinds = unlockedKinds(context.level);
+    this.kinds = unlockedKinds(context.level, context.language);
     this.cap = boardCap(context.level);
     this.stage = new Stage(context);
   }
@@ -46,8 +53,15 @@ export class EnemyTypes implements Mechanic {
 
   onSpawn(enemy: Enemy): void {
     if (!this.canReplace(enemy)) return;
-    const kind = rollKind(this.kinds, this.random);
+    const kind = rollKind(
+      this.kinds.filter((each) => this.hasRoomFor(each)),
+      this.random,
+    );
     if (kind) this.replace(enemy, kind);
+  }
+
+  onEnemyReached(enemy: Enemy): void {
+    if (enemy instanceof SpecialEnemy && enemy.isHarmless) this.context.removeEnemy(enemy);
   }
 
   onWordComplete(enemy: Enemy): void {
@@ -66,6 +80,13 @@ export class EnemyTypes implements Mechanic {
       isReplaceable(enemy) &&
       this.specialsOnBoard() < this.cap
     );
+  }
+
+  private hasRoomFor(kind: EnemyKind): boolean {
+    const onBoard = this.context.enemies.filter(
+      (enemy) => enemy instanceof SpecialEnemy && enemy.kind === kind,
+    );
+    return onBoard.length < kindLimit(kind);
   }
 
   private specialsOnBoard(): number {
@@ -94,5 +115,5 @@ export class EnemyTypes implements Mechanic {
 }
 
 function isReplaceable(enemy: Enemy): boolean {
-  return !(enemy instanceof Boss) && enemy.tags.size === 0;
+  return Object.getPrototypeOf(enemy) === Enemy.prototype && enemy.tags.size === 0;
 }

@@ -9,6 +9,7 @@ import { powerWords } from './powerWords';
 import { progression } from './progression';
 import { quality } from './quality';
 import { touch } from './touch';
+import { waveEvents } from './waveEvents';
 
 export function featureTexts(language: UiLanguage) {
   return {
@@ -24,5 +25,6 @@ export function featureTexts(language: UiLanguage) {
     touch: touch[language],
     progression: progression[language],
     mastery: mastery[language],
+    waveEvents: waveEvents[language],
   };
 }

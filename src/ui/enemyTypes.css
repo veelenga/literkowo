@@ -130,9 +130,220 @@
   scale: 1.8;
 }
 
+.word-label.is-splitter {
+  font-size: 1.7rem;
+  letter-spacing: 0.08em;
+  padding: 7px 16px 9px;
+  border-radius: 8px;
+  color: #eaf6ff;
+  background: rgba(12, 26, 44, 0.92);
+  border: 3px double #9ad1ff;
+  box-shadow:
+    0 4px 0 #3a6a96,
+    0 0 20px rgba(154, 209, 255, 0.4);
+}
+
+.word-label.is-splitter.is-half {
+  font-size: 1.2rem;
+  padding: 5px 10px 6px;
+  border-style: solid;
+  border-width: 2px;
+}
+
+.word-label.is-splitter.is-target {
+  border-color: var(--accent);
+  background: rgba(30, 30, 18, 0.94);
+}
+
+.word-label.is-shield {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 2px solid #ffb347;
+  background: rgba(40, 20, 6, 0.92);
+  box-shadow:
+    0 4px 0 #8a4a12,
+    0 0 18px rgba(255, 179, 71, 0.35);
+}
+
+.word-label.is-shield .shield-key {
+  padding: 4px 10px 8px;
+  border-radius: 6px 6px 50% 50%;
+  color: #14202c;
+  background: linear-gradient(180deg, #e8f2fc 0%, #9fb4c8 100%);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 12px rgba(184, 204, 224, 0.7);
+}
+
+.word-label.is-shield .shield-key .done {
+  color: #2f7d12;
+  text-shadow: none;
+}
+
+.word-label.is-shield .shield-mask {
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.12em;
+}
+
+.word-label.is-shield.is-broken {
+  animation: shield-crack 360ms ease;
+}
+
+.word-label.is-shield.is-target {
+  border-color: var(--accent);
+}
+
+@keyframes shield-crack {
+  0% {
+    scale: 1.25;
+  }
+  40% {
+    rotate: -4deg;
+  }
+  100% {
+    scale: 1;
+    rotate: 0deg;
+  }
+}
+
+.word-label.is-ghost {
+  color: #f2f6ff;
+  background: rgba(34, 40, 78, 0.78);
+  border: 2px dashed rgba(216, 232, 255, 0.75);
+  box-shadow: 0 0 22px rgba(184, 240, 255, 0.4);
+}
+
+.word-label.is-ghost.is-target {
+  border-color: var(--accent);
+  border-style: solid;
+}
+
+.word-label.is-chameleon {
+  border: 3px solid var(--chameleon-color, #5cf28a);
+  background: rgba(8, 26, 20, 0.9);
+  box-shadow:
+    0 4px 0 rgba(0, 0, 0, 0.35),
+    0 0 18px color-mix(in srgb, var(--chameleon-color, #5cf28a) 55%, transparent);
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.word-label.is-chameleon .rest {
+  color: color-mix(in srgb, var(--chameleon-color, #5cf28a) 35%, #ffffff);
+}
+
+.word-label.is-chameleon.is-locked {
+  border-style: double;
+  border-width: 4px;
+}
+
+.word-label.is-chameleon.is-target {
+  border-color: var(--accent);
+}
+
+.word-label.is-bull {
+  font-size: 1.55rem;
+  color: #fff1e8;
+  background: rgba(48, 12, 6, 0.92);
+  border: 3px solid #ff6a3d;
+  box-shadow:
+    0 4px 0 #8a2a12,
+    0 0 16px rgba(255, 106, 61, 0.35);
+}
+
+.word-label.is-bull.is-charging {
+  box-shadow:
+    0 4px 0 #8a2a12,
+    0 0 28px rgba(255, 106, 61, 0.8);
+}
+
+.word-label.is-bull.is-target {
+  border-color: var(--accent);
+}
+
+.word-label.is-nest {
+  font-size: 1.35rem;
+  letter-spacing: 0.06em;
+  color: #fff6dc;
+  background: rgba(46, 30, 10, 0.92);
+  border: 3px dotted #e0b45a;
+  box-shadow:
+    0 4px 0 #7a5418,
+    0 0 16px rgba(224, 180, 90, 0.35);
+}
+
+.word-label.is-nest.is-target {
+  border-color: var(--accent);
+  border-style: solid;
+}
+
+.word-label.is-hatchling {
+  font-size: 1.05rem;
+  padding: 4px 9px 5px;
+  border-radius: 999px;
+  color: #3a2a00;
+  background: #fff3b0;
+  border: 2px solid #ffd02a;
+}
+
+.word-label.is-hatchling .done {
+  color: #2f7d12;
+  text-shadow: none;
+}
+
+.word-label.is-hatchling.is-target {
+  border-color: var(--accent);
+  background: #ffe680;
+}
+
+.word-label.is-hatchling.is-target .rest {
+  color: #3a2a00;
+}
+
+.word-label.is-thief {
+  font-size: 1.3rem;
+  color: #e8f6ff;
+  background: rgba(20, 16, 40, 0.92);
+  border: 2px solid #7f6ad0;
+  box-shadow:
+    0 3px 0 #2f2160,
+    0 0 14px rgba(127, 106, 208, 0.4);
+}
+
+.word-label.is-thief.is-fleeing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff4c2;
+  background: rgba(46, 34, 6, 0.94);
+  border: 3px dashed #ffcf3f;
+  box-shadow:
+    0 4px 0 #8a6a12,
+    0 0 22px rgba(255, 207, 63, 0.55);
+}
+
+.word-label.is-thief.is-fleeing::before {
+  content: '';
+  width: 0.7em;
+  height: 0.7em;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff3a0 0%, #ffcf3f 55%, #b8860b 100%);
+  box-shadow: 0 0 8px rgba(255, 207, 63, 0.9);
+}
+
+.word-label.is-thief.is-target {
+  border-color: var(--accent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .word-label.is-swarm .swarm-glyph,
-  .word-label.is-balloon {
+  .word-label.is-balloon,
+  .word-label.is-chameleon {
     transition: none;
+  }
+
+  .word-label.is-shield.is-broken {
+    animation: none;
   }
 }
