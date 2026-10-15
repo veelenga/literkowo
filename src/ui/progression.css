@@ -82,3 +82,220 @@
     translate: 0 -56px;
   }
 }
+
+.coin-icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+
+.coin-edge {
+  fill: var(--coin-edge);
+}
+
+.coin-face {
+  fill: var(--coin);
+}
+
+.coin-ring {
+  fill: none;
+  stroke: var(--coin-edge);
+  stroke-width: 1.6;
+  opacity: 0.5;
+}
+
+.coin-shine {
+  fill: none;
+  stroke: var(--coin-shine);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.coin-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px 4px 6px;
+  border-radius: var(--radius-pill);
+  border: 2px solid rgba(255, 207, 63, 0.35);
+  background: rgba(255, 207, 63, 0.12);
+  color: var(--coin-shine);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.level-disc {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 3px solid var(--xp-edge);
+  background: radial-gradient(circle at 50% 30%, var(--xp-light), var(--xp));
+  box-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.35),
+    0 0 14px var(--xp-glow);
+  color: var(--xp-edge);
+  font-size: 1.05rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.level-disc.is-bumped {
+  animation: badge-pop 600ms var(--ease-spring);
+}
+
+.xp-bar {
+  display: block;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(3, 6, 20, 0.6);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.xp-bar-large {
+  height: 14px;
+}
+
+.xp-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--xp-strong), var(--xp), var(--xp-light));
+  box-shadow: 0 0 12px var(--xp-glow);
+  transition: width 800ms var(--ease-out);
+}
+
+.xp-bar-fill.is-instant {
+  transition: none;
+}
+
+.result-progress {
+  margin-top: 12px;
+  padding: 14px 16px 16px;
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--border);
+  background: rgba(3, 6, 20, 0.35);
+  text-align: left;
+}
+
+.result-progress-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.result-rank {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin-right: auto;
+  line-height: 1.15;
+}
+
+.result-rank small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.result-rank strong {
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.result-xp-gain {
+  color: var(--xp-light);
+  font-size: 1.1rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.level-up-banner {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 26px 8px;
+  border-radius: var(--radius-lg);
+  border: 3px solid var(--xp-edge);
+  background: linear-gradient(180deg, var(--xp) 0%, var(--xp-strong) 100%);
+  box-shadow:
+    0 5px 0 var(--xp-edge),
+    0 0 40px var(--xp-glow);
+  color: #ffffff;
+  line-height: 1.1;
+  white-space: nowrap;
+  translate: -50% -50%;
+  animation: level-up-in 700ms var(--ease-spring) both;
+}
+
+.level-up-banner strong {
+  font-size: 1.45rem;
+  font-weight: 900;
+  text-shadow: 0 2px 0 var(--xp-edge);
+}
+
+.level-up-banner span {
+  color: var(--xp-light);
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.confetti {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -12px;
+  left: var(--x);
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--color);
+  opacity: 0;
+  animation: confetti-fall var(--duration) cubic-bezier(0.25, 0.6, 0.45, 1) var(--delay) forwards;
+}
+
+@keyframes level-up-in {
+  0% {
+    opacity: 0;
+    scale: 0.4;
+  }
+  60% {
+    opacity: 1;
+    scale: 1.12;
+  }
+  100% {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes confetti-fall {
+  0% {
+    opacity: 1;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    translate: var(--drift) 560px;
+    rotate: var(--spin);
+  }
+}

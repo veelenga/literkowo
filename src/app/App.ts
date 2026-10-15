@@ -205,11 +205,16 @@ export class App {
     const leave = (then: (current: Profile) => void) =>
       this.dismissThen(() => this.afterLevel(updated, level, stars, then));
     this.overlays.open(
-      levelResult(result, stars, {
-        onNext: next ? leave((current) => this.openLevel(current, next)) : undefined,
-        onRetry: this.dismissThen(() => this.openLevel(updated, level)),
-        onMap: leave((current) => this.showMap(current)),
-      }),
+      levelResult(
+        result,
+        stars,
+        { xpBefore: profile.xp, xp: result.xp, coins },
+        {
+          onNext: next ? leave((current) => this.openLevel(current, next)) : undefined,
+          onRetry: this.dismissThen(() => this.openLevel(updated, level)),
+          onMap: leave((current) => this.showMap(current)),
+        },
+      ),
     );
   }
 
