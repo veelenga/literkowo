@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { GOLD } from '../arena/medals';
+import { emptyArenaRecord } from '../arena/record';
 import { createProfile, STARTER_SKINS, type Profile } from '../profiles/Profile';
 import {
   buy,
@@ -97,6 +99,26 @@ describe('itemState', () => {
     expect(itemState(owner, CAP)).toBe('owned');
     expect(itemState(accepted(equip(owner, CAP)), CAP)).toBe('equipped');
     expect(itemState(profileWith({ xp: xpForLevel(LEGEND_LEVEL) }), CROWN)).toBe('claimable');
+  });
+});
+
+describe('arena items', () => {
+  const LAUREL_LIKE: ShopItem = {
+    kind: 'hat',
+    id: 'cap',
+    unlock: { by: 'arena', goal: { kind: 'gold' } },
+  };
+  const best = { wave: 15, score: 1, accuracy: 0.97, medal: GOLD, date: '2026-10-15', runs: 1 };
+
+  it('stays locked until the arena goal is reached and then is claimed for free', () => {
+    const poor = profileWith({ coins: 5000 });
+    expect(itemState(poor, LAUREL_LIKE)).toBe('arenaLocked');
+    expect(buy(poor, LAUREL_LIKE)).toEqual({ ok: false, reason: 'arenaLocked' });
+
+    const arena = { ...emptyArenaRecord(), endless: { 'las/normal': best } };
+    const champion = profileWith({ arena });
+    expect(itemState(champion, LAUREL_LIKE)).toBe('claimable');
+    expect(accepted(buy(champion, LAUREL_LIKE)).coins).toBe(0);
   });
 });
 

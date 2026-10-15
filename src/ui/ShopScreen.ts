@@ -2,6 +2,7 @@ import { sfx } from '../audio/Sfx';
 import {
   buy,
   equip,
+  isLocked,
   itemState,
   unequip,
   type ItemState,
@@ -27,7 +28,14 @@ import { el, type Child } from './dom';
 import { itemPreview, releaseItemPreviews } from './ItemPreviews';
 import { coinIcon, coinPill } from './progression';
 import { ShopHero } from './ShopHero';
-import { itemDescription, itemName, itemPower, rankTitle, trophyCopy } from './shopCopy';
+import {
+  arenaGoalNote,
+  itemDescription,
+  itemName,
+  itemPower,
+  rankTitle,
+  trophyCopy,
+} from './shopCopy';
 import { lockBadge, shopIcon } from './shopParts';
 
 export type ShopTab = ItemKind | 'trophy';
@@ -142,7 +150,7 @@ export class ShopScreen {
         'div',
         { class: 'shop-item-art' },
         itemPreview(item),
-        state === 'rankLocked' ? lockBadge(item.unlock) : null,
+        isGated(state) ? lockBadge(item.unlock) : null,
       ),
       el('h3', { class: 'shop-item-name', text: itemName(item) }),
       power ? powerNote(power) : null,
@@ -170,6 +178,8 @@ export class ShopScreen {
         return [coinAmount(priceOf(item), 'shop-price'), missingNote(priceOf(item), this.profile)];
       case 'rankLocked':
         return [rankNote(item.unlock)];
+      case 'arenaLocked':
+        return [arenaNote(item.unlock)];
     }
   }
 
@@ -269,6 +279,15 @@ function rankNote(unlock: Unlock): HTMLElement | null {
   if (unlock.by !== 'rank') return null;
   const text = format(i18n.t.features.shop.rank, { rank: rankTitle(unlock.rank) });
   return el('span', { class: 'shop-note', text });
+}
+
+function arenaNote(unlock: Unlock): HTMLElement | null {
+  if (unlock.by !== 'arena') return null;
+  return el('span', { class: 'shop-note', text: arenaGoalNote(unlock.goal) });
+}
+
+function isGated(state: ItemState): boolean {
+  return isLocked(state) && state !== 'tooExpensive';
 }
 
 function trophyCard(

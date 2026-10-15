@@ -1,3 +1,4 @@
+import type { ArenaGoal } from '../arena/goals';
 import { availableItems } from '../course/inventory';
 import type { Unlock } from '../course/shop';
 import { rankStartLevel } from '../course/xp';
@@ -30,11 +31,24 @@ export function shopIcon(name: ShopIconName, className: string): SVGSVGElement {
 
 export function lockBadge(unlock: Unlock): HTMLElement | null {
   if (unlock.by === 'free') return null;
-  const value =
-    unlock.by === 'coins'
-      ? [coinIcon('lock-badge-coin'), String(unlock.price)]
-      : [el('span', { class: 'lock-badge-level', text: String(rankStartLevel(unlock.rank)) })];
-  return badge(`lock-badge is-${unlock.by}`, unlockHint(unlock), ...value);
+  return badge(`lock-badge is-${unlock.by}`, unlockHint(unlock), ...badgeValue(unlock));
+}
+
+function badgeValue(unlock: Exclude<Unlock, { by: 'free' }>): Child[] {
+  switch (unlock.by) {
+    case 'coins':
+      return [coinIcon('lock-badge-coin'), String(unlock.price)];
+    case 'rank':
+      return [el('span', { class: 'lock-badge-level', text: String(rankStartLevel(unlock.rank)) })];
+    case 'arena':
+      return [arenaGoalMark(unlock.goal)];
+  }
+}
+
+function arenaGoalMark(goal: ArenaGoal): HTMLElement {
+  if (goal.kind === 'gold')
+    return el('span', { class: 'lock-badge-arena' }, icon('star', 'lock-badge-star'));
+  return el('span', { class: 'lock-badge-arena', text: String(goal.wave) });
 }
 
 export function hintedLockBadge(hint: string): HTMLElement {

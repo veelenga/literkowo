@@ -66,6 +66,12 @@ describe('shop copy', () => {
     expect(unlockHint({ by: 'coins', price: 200 })).toBe('Odblokuj w sklepie. Cena: 200');
     expect(unlockHint({ by: 'rank', rank: 'apprentice' })).toBe('Odblokujesz z rangą Uczeń');
     expect(unlockHint({ by: 'free' })).toBeUndefined();
+    expect(unlockHint({ by: 'arena', goal: { kind: 'gold' } })).toBe(
+      'Zdobądź złoty medal na arenie',
+    );
+    expect(unlockHint({ by: 'arena', goal: { kind: 'wave', wave: 15 } })).toBe(
+      'Przetrwaj 15 fal na arenie',
+    );
   });
 
   it('says what every pet and hat does', () => {

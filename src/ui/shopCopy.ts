@@ -1,3 +1,4 @@
+import type { ArenaGoal } from '../arena/goals';
 import { REGIONS } from '../course/catalog';
 import { POWER_COMBOS, percentOf, type ItemPower, type PowerKind } from '../course/powers';
 import {
@@ -21,6 +22,11 @@ interface ItemCopy {
 interface TrophyCopy {
   readonly name: string;
   readonly hint: string;
+}
+
+interface ArenaGoalTexts {
+  readonly gold: string;
+  readonly wave: string;
 }
 
 const FIRST_NUMBER = 1;
@@ -83,9 +89,24 @@ export function rankTitle(rank: RankId): string {
 
 export function unlockHint(unlock: Unlock): string | undefined {
   const copy = i18n.t.features.shop;
-  if (unlock.by === 'coins') return format(copy.skinPriceHint, { price: unlock.price });
-  if (unlock.by === 'rank') return format(copy.skinRankHint, { rank: rankTitle(unlock.rank) });
-  return undefined;
+  switch (unlock.by) {
+    case 'free':
+      return undefined;
+    case 'coins':
+      return format(copy.skinPriceHint, { price: unlock.price });
+    case 'rank':
+      return format(copy.skinRankHint, { rank: rankTitle(unlock.rank) });
+    case 'arena':
+      return arenaGoalText(copy.arenaHints, unlock.goal);
+  }
+}
+
+export function arenaGoalNote(goal: ArenaGoal): string {
+  return arenaGoalText(i18n.t.features.shop.arenaGoals, goal);
+}
+
+function arenaGoalText(texts: ArenaGoalTexts, goal: ArenaGoal): string {
+  return goal.kind === 'gold' ? texts.gold : format(texts.wave, { wave: goal.wave });
 }
 
 function itemCopy(item: ShopItem): ItemCopy {

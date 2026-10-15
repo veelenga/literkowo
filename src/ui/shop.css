@@ -50,6 +50,24 @@
   font-size: 0.68rem;
 }
 
+.lock-badge-arena {
+  display: grid;
+  place-items: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, var(--accent-light), var(--accent));
+  color: var(--accent-ink);
+  font-size: 0.68rem;
+}
+
+.lock-badge-star {
+  width: 11px;
+  height: 11px;
+  fill: var(--accent-ink);
+}
+
 .avatar-option.is-locked {
   cursor: not-allowed;
   filter: saturate(0.35) brightness(0.8);
@@ -216,7 +234,8 @@
   filter: saturate(0.55) brightness(0.85);
 }
 
-.shop-item.is-rankLocked .shop-item-art .avatar {
+.shop-item.is-rankLocked .shop-item-art .avatar,
+.shop-item.is-arenaLocked .shop-item-art .avatar {
   filter: grayscale(1) brightness(0.6);
 }
 

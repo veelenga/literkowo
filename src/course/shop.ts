@@ -1,3 +1,4 @@
+import type { ArenaGoal } from '../arena/goals';
 import { AVATARS, STARTER_SKINS } from '../profiles/Profile';
 import { REGIONS, type ThemeId } from './catalog';
 import type { CounterId } from './counters';
@@ -11,7 +12,8 @@ export type ItemKind = (typeof ITEM_KINDS)[number];
 export type Unlock =
   | { readonly by: 'free' }
   | { readonly by: 'coins'; readonly price: number }
-  | { readonly by: 'rank'; readonly rank: RankId };
+  | { readonly by: 'rank'; readonly rank: RankId }
+  | { readonly by: 'arena'; readonly goal: ArenaGoal };
 
 export interface ShopItem {
   readonly kind: ItemKind;
