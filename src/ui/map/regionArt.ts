@@ -132,7 +132,7 @@ const MEADOW: ArtLayer[] = [
     name: 'sky',
     anchor: 'bottom',
     markup:
-      sun('meadow', [1180, 250, 62], 230) +
+      sun('meadow', [1180, 260, 62], 200) +
       clouds([
         [330, 190, 1],
         [960, 150, 0.8],
@@ -205,7 +205,7 @@ const FOREST: ArtLayer[] = [
     name: 'sky',
     anchor: 'bottom',
     markup:
-      sun('forest', [420, 190, 38], 150) +
+      sun('forest', [420, 220, 38], 130) +
       sparks([
         [260, 330, 4],
         [520, 260, 3],
@@ -272,7 +272,7 @@ const MOUNTAINS: ArtLayer[] = [
     name: 'sky',
     anchor: 'bottom',
     markup:
-      sun('mountains', [1120, 190, 44], 170) +
+      sun('mountains', [1120, 220, 44], 140) +
       clouds([
         [300, 260, 0.7],
         [1360, 330, 0.6],

@@ -346,15 +346,15 @@ svg.stat-icon {
 }
 
 .art-layer-sky {
-  --depth: 0.22;
+  --depth: 0.12;
 }
 
 .art-layer-far {
-  --depth: 0.14;
+  --depth: 0.08;
 }
 
 .art-layer-mid {
-  --depth: 0.07;
+  --depth: 0.04;
 }
 
 .has-ambient .art-layer {
