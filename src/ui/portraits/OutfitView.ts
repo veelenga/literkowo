@@ -27,7 +27,8 @@ const MAX_PIXEL_RATIO = 2;
 const MAX_STEP_SECONDS = 0.1;
 const MS_PER_SECOND = 1000;
 const FRAMING = { framedHeight: CHARACTER_HEIGHT * 1.55, focusHeight: CHARACTER_HEIGHT * 0.62 };
-const PET_SPOT = new THREE.Vector3(0.95, 1.2, 0.25);
+const HERO_SPOT = new THREE.Vector3(-0.17, 0, 0.1);
+const PET_SPOT = new THREE.Vector3(0.45, 1, -0.46);
 const PET_BOB = { speed: 2.3, height: 0.1 };
 const SWAY = { speed: 0.45, angle: 0.4 };
 const STILL_POSE_TIME = 0.4;
@@ -55,7 +56,8 @@ export class OutfitView {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO));
     this.renderer.domElement.classList.add(CANVAS_CLASS);
     this.petSpot.position.copy(PET_SPOT);
-    this.stage.turntable.add(this.petSpot);
+    this.stage.turntable.position.copy(HERO_SPOT);
+    this.stage.scene.add(this.petSpot);
   }
 
   show(host: HTMLElement, outfit: Outfit, onFirstFrame: () => void): void {
