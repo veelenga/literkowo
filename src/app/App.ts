@@ -189,6 +189,7 @@ export class App {
 
   private teardownGame(): void {
     this.levelToken += 1;
+    music.resume();
     this.game?.destroy();
     this.game = undefined;
   }

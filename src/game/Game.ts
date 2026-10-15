@@ -175,7 +175,8 @@ export class Game {
     if (!this.running) return;
     this.frame = requestAnimationFrame(this.loop);
     const delta = Math.min(this.clock.getDelta(), 0.1);
-    if (!this.paused) this.tick(delta);
+    if (this.paused) return;
+    this.tick(delta);
     this.positionLabels();
     this.composer.render();
   };
@@ -189,9 +190,11 @@ export class Game {
     if (this.finished) return;
     if (!this.inIntro) this.spawnIfDue(delta);
     for (const enemy of [...this.enemies]) {
+      if (this.finished) break;
       enemy.update(delta, this.elapsed);
       if (enemy.distanceToCenter < REACH_DISTANCE) this.enemyReached(enemy);
     }
+    this.stats.addActiveTime(delta);
     if (this.target) this.player.lookAt(this.target.object.position);
     this.events.onNextKey(this.nextExpectedChar());
   }
@@ -260,8 +263,15 @@ export class Game {
   private enemyReached(enemy: Enemy): void {
     if (this.phase.kind === 'warmup') return this.clearEnemy(enemy);
     if (enemy instanceof Boss) enemy.reset();
-    else this.remove(enemy);
+    else this.resolveEnemy(enemy);
     this.loseLife();
+  }
+
+  private resolveEnemy(enemy: Enemy): void {
+    this.remove(enemy);
+    this.cleared += 1;
+    this.reportProgress();
+    if (this.cleared >= this.phase.count) this.advancePhase();
   }
 
   private loseLife(): void {
@@ -297,7 +307,9 @@ export class Game {
   }
 
   private finish(won: boolean): void {
+    if (this.finished) return;
     this.finished = true;
+    this.stats.freeze();
     this.events.onNextKey(undefined);
     if (won) sfx.levelComplete();
     else sfx.levelFailed();
@@ -316,8 +328,7 @@ export class Game {
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (this.finished) return;
     if (event.key === 'Escape') return this.togglePause();
-    if (this.paused || this.inIntro || event.ctrlKey || event.metaKey || event.key.length !== 1)
-      return;
+    if (this.paused || this.inIntro || isShortcut(event) || event.key.length !== 1) return;
     event.preventDefault();
     this.handleChar(event.key.toLowerCase());
   };
@@ -408,6 +419,9 @@ export class Game {
   }
 }
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
+const clamp = THREE.MathUtils.clamp;
+
+function isShortcut(event: KeyboardEvent): boolean {
+  const altGraph = event.getModifierState('AltGraph') || (event.ctrlKey && event.altKey);
+  return event.metaKey || (event.ctrlKey && !altGraph);
 }

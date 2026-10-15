@@ -9,7 +9,8 @@ export class SessionStats {
   combo = 0;
   hits = 0;
   mistakes = 0;
-  private startedAt = performance.now();
+  private activeSeconds = 0;
+  private frozen = false;
 
   get accuracy(): number {
     const total = this.hits + this.mistakes;
@@ -21,8 +22,16 @@ export class SessionStats {
   }
 
   get wpm(): number {
-    const minutes = (performance.now() - this.startedAt) / 1000 / SECONDS_PER_MINUTE;
+    const minutes = this.activeSeconds / SECONDS_PER_MINUTE;
     return minutes <= 0 ? 0 : Math.round(this.hits / CHARS_PER_WORD / minutes);
+  }
+
+  addActiveTime(seconds: number): void {
+    if (!this.frozen) this.activeSeconds += seconds;
+  }
+
+  freeze(): void {
+    this.frozen = true;
   }
 
   recordHit(): void {
@@ -37,13 +46,5 @@ export class SessionStats {
 
   recordWord(word: string): void {
     this.score += word.length * BASE_POINTS_PER_CHAR * this.multiplier;
-  }
-
-  reset(): void {
-    this.score = 0;
-    this.combo = 0;
-    this.hits = 0;
-    this.mistakes = 0;
-    this.startedAt = performance.now();
   }
 }
