@@ -26,7 +26,7 @@ import { el, type Child } from './dom';
 import { itemPreview, releaseItemPreviews } from './ItemPreviews';
 import { coinIcon, coinPill } from './progression';
 import { ShopHero } from './ShopHero';
-import { itemDescription, itemName, rankTitle, trophyCopy } from './shopCopy';
+import { itemDescription, itemName, itemPower, rankTitle, trophyCopy } from './shopCopy';
 import { lockBadge, shopIcon } from './shopParts';
 
 export type ShopTab = ItemKind | 'trophy';
@@ -132,6 +132,7 @@ export class ShopScreen {
   private itemCard(item: ShopItem): HTMLElement {
     const state = itemState(this.profile, item);
     const description = itemDescription(item);
+    const power = itemPower(item);
     return el(
       'article',
       { class: `shop-item is-${state}`, 'data-item': itemKey(item) },
@@ -142,6 +143,7 @@ export class ShopScreen {
         state === 'rankLocked' ? lockBadge(item.unlock) : null,
       ),
       el('h3', { class: 'shop-item-name', text: itemName(item) }),
+      power ? powerNote(power) : null,
       description ? el('p', { class: 'shop-item-text', text: description }) : null,
       el('div', { class: 'shop-item-footer' }, ...this.itemFooter(item, state)),
     );
@@ -235,6 +237,15 @@ export class ShopScreen {
 
 function wearableKind(item: ShopItem): WearableKind | undefined {
   return item.kind === 'skin' ? undefined : item.kind;
+}
+
+function powerNote(power: string): HTMLElement {
+  return el(
+    'p',
+    { class: 'shop-item-power' },
+    shopIcon('bolt', 'shop-item-power-icon'),
+    el('span', { text: power }),
+  );
 }
 
 function coinAmount(amount: number, className: string): HTMLElement {

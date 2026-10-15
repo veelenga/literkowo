@@ -1,5 +1,13 @@
 import { REGIONS } from '../course/catalog';
-import { hatSpec, petSpec, type ShopItem, type Trophy, type Unlock } from '../course/shop';
+import { POWER_COMBOS, percentOf, type ItemPower, type PowerKind } from '../course/powers';
+import {
+  hatSpec,
+  petSpec,
+  wearableSpec,
+  type ShopItem,
+  type Trophy,
+  type Unlock,
+} from '../course/shop';
 import type { RankId } from '../course/xp';
 import { format } from '../i18n/format';
 import { i18n } from '../i18n/i18n';
@@ -23,6 +31,20 @@ export function itemName(item: ShopItem): string {
 
 export function itemDescription(item: ShopItem): string | undefined {
   return itemCopy(item).description;
+}
+
+export function itemPower(item: ShopItem): string | undefined {
+  const spec = wearableSpec(item);
+  return spec ? powerLine(spec.power) : undefined;
+}
+
+export function powerLine(power: ItemPower): string {
+  const copy = i18n.t.features.shop.powers;
+  return format(copy.lines[power.kind], {
+    times: copy.times.at(power.strength - FIRST_NUMBER) ?? String(power.strength),
+    percent: percentOf(power),
+    combo: comboFor(power.kind) ?? '',
+  });
 }
 
 export function trophyCopy({ rule }: Trophy): TrophyCopy {
@@ -61,6 +83,10 @@ function itemCopy(item: ShopItem): ItemCopy {
   const hat = item.kind === 'hat' ? hatSpec(item.id) : undefined;
   if (hat) return copy.hats[hat.id];
   return { name: format(copy.skinName, { number: AVATARS.indexOf(item.id) + FIRST_NUMBER }) };
+}
+
+function comboFor(kind: PowerKind): number | undefined {
+  return Object.entries(POWER_COMBOS).find(([comboKind]) => comboKind === kind)?.[1];
 }
 
 function filled(copy: TrophyCopy, values: Readonly<Record<string, string | number>>): TrophyCopy {
