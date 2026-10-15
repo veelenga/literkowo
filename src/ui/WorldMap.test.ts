@@ -72,6 +72,16 @@ describe('WorldMap', () => {
     expect(map.querySelectorAll('.journey-stop.is-open .journey-hero')).toHaveLength(0);
   });
 
+  it('tells on a locked stop what to win first', () => {
+    const profile = createProfile('Ola', 'a');
+    const titles = nodes(mapOf({ ...profile, levelResults: { 'polana-1': DONE } })).map(
+      (node) => node.title,
+    );
+    expect(titles[2]).toBe('Wygraj poziomy przed powtórką');
+    expect(titles[3]).toBe('Najpierw ukończ wcześniejsze poziomy');
+    expect(titles[18]).toBe('Wygraj powtórkę przed bossem');
+  });
+
   it('shows a dimmed arena gate and a locked header button before the Polana boss', () => {
     const onArena = vi.fn();
     const map = mapOf(createProfile('Ola', 'a'), onArena);

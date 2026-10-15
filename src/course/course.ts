@@ -3,11 +3,14 @@ import { regionsFor, type Level, type LevelKind, type Region } from './catalog';
 
 export type LevelResults = Readonly<Partial<Record<string, LevelResult>>>;
 
+export type LockReason = 'window' | 'review' | 'boss';
+
 export const OPEN_AHEAD = 3;
 
 const GATE_KINDS: ReadonlySet<LevelKind> = new Set(['review', 'boss']);
 const FIRST_POSITION = 0;
 const NOT_FOUND = -1;
+const WINDOW_LOCK = 'window';
 
 export interface Course {
   readonly regions: readonly Region[];
@@ -17,6 +20,7 @@ export interface Course {
   isFirst(level: Level): boolean;
   isUnlocked(level: Level, results: LevelResults): boolean;
   current(results: LevelResults): Level | undefined;
+  lockReason(level: Level, results: LevelResults): LockReason | undefined;
   allowedKeys(level: Level): string;
 }
 
@@ -59,6 +63,13 @@ class LanguageCourse implements Course {
       .filter((candidate) => candidate.order <= level.order)
       .map((candidate) => candidate.newKeys)
       .join('');
+  }
+
+  lockReason(level: Level, results: LevelResults): LockReason | undefined {
+    if (this.isUnlocked(level, results)) return undefined;
+    const isGate = level.kind === 'review' || level.kind === 'boss';
+    if (isGate && !this.isGateOpen(level, results)) return level.kind;
+    return WINDOW_LOCK;
   }
 
   private positionOf(level: Level): number {

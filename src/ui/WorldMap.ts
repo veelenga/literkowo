@@ -272,7 +272,8 @@ export class WorldMap {
 
   private node(level: Level, state: NodeState): HTMLElement {
     const classes = ['level-node', `is-${NODE_LOOKS[state]}`, `is-${level.kind}`];
-    const title = state === 'locked' ? i18n.t.locked : levelTitle(level);
+    const lock = this.course.lockReason(level, this.profile.levelResults);
+    const title = lock ? i18n.t.features.course.locks[lock] : levelTitle(level);
     return el(
       'button',
       {

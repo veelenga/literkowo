@@ -109,6 +109,14 @@ describe('courseFor', () => {
     expect(polish.current(skipped)?.id).toBe('polana-5');
   });
 
+  it('names why a level is locked', () => {
+    const results = won('polana-1');
+    expect(polish.lockReason(level('polana-2'), results)).toBeUndefined();
+    expect(polish.lockReason(level('polana-3'), results)).toBe('review');
+    expect(polish.lockReason(level('polana-4'), results)).toBe('window');
+    expect(polish.lockReason(level('polana-19'), won(...POLANA_WITHOUT_REVIEW))).toBe('boss');
+  });
+
   it('has no current level once the course is done', () => {
     const results = won(...english.levels.map(({ id }) => id));
     expect(english.current(results)).toBeUndefined();
