@@ -1,28 +1,29 @@
+import { hatSpec, petSpec } from '../course/shop';
 import { hasCoarsePointer } from '../game/deviceProbe';
+import type { Equipped } from '../profiles/Profile';
 import { prefersReducedMotion } from './dom';
+import type { Outfit, OutfitView } from './portraits/OutfitView';
 
 const LIVE_CLASS = 'is-live';
 const PREVIEW_UNAVAILABLE = 'Live character preview is unavailable, keeping the portrait';
+const NOTHING_EQUIPPED: Equipped = {};
 
-interface LiveView {
-  show(host: HTMLElement, character: string, onFirstFrame: () => void): void;
-  hide(): void;
-  dispose(): void;
+export function outfitOf(character: string, equipped = NOTHING_EQUIPPED): Outfit {
+  return { character, pet: petSpec(equipped.pet), hat: hatSpec(equipped.hat) };
 }
 
 class LivePreview {
-  private view: Promise<LiveView | undefined> | undefined;
+  private view: Promise<OutfitView | undefined> | undefined;
   private host: HTMLElement | undefined;
   private request = 0;
 
-  show(host: HTMLElement, character: string): void {
+  show(host: HTMLElement, outfit: Outfit): void {
     this.hide();
-    if (prefersReducedMotion() || hasCoarsePointer()) return;
     const request = this.request;
     this.host = host;
     void this.loadView().then((view) => {
       if (request !== this.request) return;
-      view?.show(host, character, () => host.classList.add(LIVE_CLASS));
+      view?.show(host, outfit, () => host.classList.add(LIVE_CLASS));
     });
   }
 
@@ -39,9 +40,10 @@ class LivePreview {
     this.view = undefined;
   }
 
-  private loadView(): Promise<LiveView | undefined> {
-    this.view ??= import('./portraits/LiveCharacterView')
-      .then(({ LiveCharacterView }) => new LiveCharacterView())
+  private loadView(): Promise<OutfitView | undefined> {
+    const animate = !prefersReducedMotion() && !hasCoarsePointer();
+    this.view ??= import('./portraits/OutfitView')
+      .then(({ OutfitView }) => new OutfitView({ animate }))
       .catch((error: unknown) => {
         console.warn(PREVIEW_UNAVAILABLE, error);
         return undefined;

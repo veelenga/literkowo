@@ -366,14 +366,14 @@ Each theme also sets enemy colours, sky, fog, light and a fixed random seed for 
 
 ## Menus
 
-Owners: `src/ui/ProfileScreen.ts`, `src/ui/landing/LandingBackdrop.ts`, `src/ui/landing/dockRow.ts`, `src/ui/WorldMap.ts`, `src/ui/map/journeyLayout.ts`, `src/ui/map/regionArt.ts`.
+Owners: `src/ui/ProfileScreen.ts`, `src/ui/LivePreview.ts`, `src/ui/landing/LandingBackdrop.ts`, `src/ui/landing/dockRow.ts`, `src/ui/WorldMap.ts`, `src/ui/map/journeyLayout.ts`, `src/ui/map/regionArt.ts`.
 
 Profile screen:
 
 - Layered hills drift slowly behind the logo, and glowing letters float and twinkle over them. On devices that can hover, the hills lean a little toward the pointer.
 - With reduced motion or the low quality preset the hills stand still and there are no letters (`src/ui/menuMotion.ts`).
 - Each profile is a card with the rendered portrait under a spotlight, the name, the level, the rank, a thin XP bar, and pills for stars and coins.
-- The selected card lifts, glows and shows the live 3D character. The play panel opens right under the row of the selected card, and cards from later rows move below it. The panel has a big Play button, then the word language chips and the delete button in a quieter row.
+- The selected card lifts, glows and shows the hero in 3D with the equipped hat and pet, swaying slowly. It uses the same outfit view as the shop (`src/ui/portraits/OutfitView.ts`). The play panel opens right under the row of the selected card, and cards from later rows move below it. The panel has a big Play button, then the word language chips and the delete button in a quieter row.
 - The dashed new profile card opens the create panel in its place: a large live preview of the chosen character that switches with every pick, the name field, the 18 characters and a Create button.
 - Long names and rank names end with an ellipsis on the cards.
 
@@ -438,7 +438,7 @@ Touch input:
 Performance:
 
 - In auto quality, touch screens get the low preset: pixel ratio at most 1, dynamic resolution down to 0.75, no MSAA, no bloom and a 512 px shadow map (`src/game/quality.ts`).
-- The live 3D portrait preview is off on touch screens. They show the static portrait (`src/ui/LivePreview.ts`).
+- On touch screens and with reduced motion, the 3D hero on the profile screen is a still frame (`src/ui/LivePreview.ts`). Until the model loads, the portrait shows.
 - In the low preset the profile screen backdrop and the map layers stand still (`src/ui/menuMotion.ts`).
 
 Install and offline:

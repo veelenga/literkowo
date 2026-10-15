@@ -15,7 +15,7 @@ import { releasePortraits } from './CharacterPortraits';
 import { el, icon, prefersReducedMotion, svg } from './dom';
 import { keepDockBelowRow, type StopDock } from './landing/dockRow';
 import { LandingBackdrop } from './landing/LandingBackdrop';
-import { livePreview } from './LivePreview';
+import { livePreview, outfitOf } from './LivePreview';
 import { hasAmbientMotion } from './menuMotion';
 import { coinPill, levelBadge } from './progression';
 import './profileScreen.css';
@@ -131,7 +131,7 @@ export class ProfileScreen {
     const t = i18n.t;
     const isSelected = this.isSelected(profile);
     const avatar = characterAvatar(profile.avatar);
-    if (isSelected) livePreview.show(avatar, profile.avatar);
+    if (isSelected) livePreview.show(avatar, outfitOf(profile.avatar, profile.equipped));
     const stars = totalStars(profile);
     return el(
       'button',
@@ -340,7 +340,7 @@ function stageLights(): HTMLElement[] {
 function showOnStage(stage: HTMLElement, character: string): void {
   const avatar = characterAvatar(character);
   stage.replaceChildren(...stageLights(), avatar);
-  livePreview.show(avatar, character);
+  livePreview.show(avatar, outfitOf(character));
 }
 
 function scrollBehavior(): ScrollBehavior {

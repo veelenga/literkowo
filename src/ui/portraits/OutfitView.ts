@@ -70,6 +70,17 @@ export class OutfitView {
     this.play();
   }
 
+  hide(): void {
+    this.renderer.setAnimationLoop(null);
+    cancelAnimationFrame(this.pendingFrame);
+    this.pendingFrame = 0;
+    this.resizer.disconnect();
+    this.renderer.domElement.remove();
+    this.hasSize = false;
+    this.lastFrameTime = undefined;
+    this.onFirstFrame = undefined;
+  }
+
   dispose(): void {
     this.disposed = true;
     this.renderer.setAnimationLoop(null);
