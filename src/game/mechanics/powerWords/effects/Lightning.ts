@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { softGlowTexture } from '../../../effects/glowAssets';
+import { traceJaggedPath } from '../../../effects/jaggedPath';
 import { withLuminance } from '../../../effects/luminance';
 
 type BoltLine = THREE.Line<THREE.BufferGeometry, THREE.LineBasicMaterial>;
@@ -73,11 +74,7 @@ export class Lightning {
       target.y + SKY_HEIGHT,
       target.z + THREE.MathUtils.randFloatSpread(SKY_DRIFT * 2),
     );
-    this.path.forEach((point, index) => {
-      const progress = index / SEGMENTS;
-      point.lerpVectors(top, target, progress);
-      jitter(point, JITTER * Math.sin(progress * Math.PI));
-    });
+    traceJaggedPath(this.path, top, target, JITTER);
   }
 
   private drawStrand(strand: BoltLine, spread: number): void {
@@ -123,11 +120,6 @@ export class Lightning {
     this.show(bolt, false);
     return bolt;
   }
-}
-
-function jitter(point: THREE.Vector3, amount: number): void {
-  point.x += THREE.MathUtils.randFloatSpread(amount * 2);
-  point.z += THREE.MathUtils.randFloatSpread(amount * 2);
 }
 
 function coreColor(color: THREE.Color): THREE.Color {
