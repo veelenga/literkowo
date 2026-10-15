@@ -180,9 +180,10 @@ export class ArenaScreen {
   private recordRow(difficulty: ArenaDifficulty): HTMLElement {
     const best = this.bestOf(difficulty);
     const medal = best?.medal ?? NO_MEDAL;
+    const active = difficulty.id === this.choice.difficulty.id;
     return el(
       'div',
-      { class: 'arena-record' },
+      { class: active ? 'arena-record is-active' : 'arena-record' },
       el('span', { class: 'arena-record-name', text: difficultyName(difficulty) }),
       el('strong', { class: 'arena-record-wave', text: waveLabel(best?.wave ?? 0) }),
       medalBadge(medal, 'medal medal-small'),

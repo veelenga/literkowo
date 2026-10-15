@@ -114,6 +114,10 @@
   font-size: 0.92rem;
 }
 
+.arena-record.is-active {
+  border-color: rgba(255, 207, 63, 0.42);
+}
+
 .arena-record-name {
   font-weight: 800;
 }
@@ -386,6 +390,10 @@
   .arena-record .medal-small {
     width: 18px;
     height: 18px;
+  }
+
+  .arena-record:not(.is-active) {
+    display: none;
   }
 
   .arena-setup {
