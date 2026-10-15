@@ -1,0 +1,15 @@
+.node-kind {
+  position: absolute;
+  top: calc(var(--node-size) * -0.08);
+  right: calc(var(--node-size) * -0.08);
+  display: grid;
+  place-items: center;
+  width: calc(var(--node-size) * 0.36);
+  height: calc(var(--node-size) * 0.36);
+  border-radius: 50%;
+  font-size: calc(var(--node-size) * 0.18);
+  line-height: 1;
+  background: rgba(3, 6, 20, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+}
