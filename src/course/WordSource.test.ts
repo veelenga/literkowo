@@ -1,10 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { requireLevel } from '../testing/levels';
 import { LEVELS, allowedKeysFor } from './regions';
-import { BOSS_MIN_LENGTH, SHORT_LENGTH, WordSource } from './WordSource';
+import { BOSS_MIN_LENGTH, SHORT_LENGTH, WordSource, type KeyWeights } from './WordSource';
 
 const SAMPLES = 200;
 const RARE_SAMPLES = 10;
+const WEIGHTED_SAMPLES = 3000;
+const WEAK_WEIGHT = 3;
+const CLEAR_PREFERENCE = 1.5;
+
+function weakKey(key: string): KeyWeights {
+  return { weightOf: (char) => (char === key ? WEAK_WEIGHT : 1) };
+}
+
+function share(items: readonly string[], matches: (item: string) => boolean): number {
+  return items.filter(matches).length / items.length;
+}
 
 describe('WordSource', () => {
   it('only uses keys unlocked so far', () => {
@@ -97,5 +108,30 @@ describe('WordSource', () => {
     expect(source.bossWord()).toBe('ser');
     expect(source.bossWord()).toBe('kura');
     expect(source.bossWord().length).toBeGreaterThanOrEqual(BOSS_MIN_LENGTH);
+  });
+
+  it('generates more letters of a weak key', () => {
+    const level = requireLevel('polana-2');
+    const letters = (weights?: KeyWeights) => {
+      const source = new WordSource(level, 'pl', weights);
+      return Array.from({ length: WEIGHTED_SAMPLES }, () => source.next()).flatMap((word) => [
+        ...word,
+      ]);
+    };
+    const even = share(letters(), (char) => char === 'f');
+    const weighted = share(letters(weakKey('f')), (char) => char === 'f');
+    expect(weighted).toBeGreaterThan(even * CLEAR_PREFERENCE);
+  });
+
+  it('picks more real words with a weak key', () => {
+    const level = requireLevel('jaskinia-5');
+    const words = (weights?: KeyWeights) => {
+      const source = new WordSource(level, 'en', weights);
+      return Array.from({ length: WEIGHTED_SAMPLES }, () => source.bossWord());
+    };
+    const even = share(words(), (word) => word.includes('w'));
+    const weighted = share(words(weakKey('w')), (word) => word.includes('w'));
+    expect(even).toBeGreaterThan(0);
+    expect(weighted).toBeGreaterThan(even * CLEAR_PREFERENCE);
   });
 });

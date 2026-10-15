@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { sfx } from '../audio/Sfx';
 import { practiceDay, type KeyStats } from '../course/keyStats';
+import { keyWeight } from '../course/mastery';
 import { allowedKeysFor, type Level } from '../course/regions';
 import { WordSource } from '../course/WordSource';
 import type { WordLanguage } from '../profiles/Profile';
@@ -133,7 +134,9 @@ export class Game {
       allowedKeysFor(config.level, config.language),
       practiceDay(new Date()),
     );
-    this.words = new WordSource(config.level, config.language);
+    this.words = new WordSource(config.level, config.language, {
+      weightOf: (key) => keyWeight(key, this.keys.statOf(key)),
+    });
     this.phases = planFor(config.level);
     const quality = currentQuality();
     this.world = new World(this.scene, config.theme, quality);
