@@ -22,7 +22,7 @@ import { ART_HEIGHT, ART_WIDTH, CEILING_HEIGHT, regionArt, type ArtLayer } from 
 import { keyLabel, levelTitle } from './levelKind';
 import { keyDots, masteryMeter } from './mastery';
 import { hasAmbientMotion } from './menuMotion';
-import { onShortcutKeys } from './overlay';
+import { onShortcutKeys, stepWithin } from './overlay';
 import './courseMap.css';
 import { outfitAvatar, releaseOutfitAvatars } from './OutfitAvatar';
 import { primaryHint } from './shortcutHint';
@@ -165,7 +165,7 @@ export class WorldMap {
     const target =
       index === NOT_FOUND
         ? this.focusStop()?.querySelector<HTMLButtonElement>(NODE_SELECTOR)
-        : nodes[Math.min(Math.max(index + direction, 0), nodes.length - 1)];
+        : nodes[stepWithin(index, direction, nodes.length)];
     target?.focus({ preventScroll: true });
     target?.scrollIntoView({ block: 'center', behavior: scrollBehavior() });
   }

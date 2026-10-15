@@ -62,6 +62,10 @@ export function onShortcutKeys(scope: HTMLElement, keys: ShortcutKeys): Cleanup 
   });
 }
 
+export function stepWithin(index: number, direction: number, length: number): number {
+  return Math.min(Math.max(index + direction, 0), length - 1);
+}
+
 function isShortcut(scope: HTMLElement, event: KeyboardEvent): boolean {
   if (scope.closest(INERT_SELECTOR) || hasModifier(event) || event.isComposing) return false;
   if (event.repeat && !REPEATABLE_KEYS.has(event.key)) return false;

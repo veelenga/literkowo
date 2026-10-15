@@ -15,9 +15,11 @@ import type { Profile } from '../../profiles/Profile';
 import { releasePortraits } from '../CharacterPortraits';
 import { el } from '../dom';
 import { keyLabel } from '../levelKind';
+import { onShortcutKeys, stepWithin } from '../overlay';
 import { coinPill } from '../progression';
 import { ShopHero } from '../ShopHero';
 import { shopLink } from '../shopLink';
+import { ESCAPE_LABEL, primaryHint, shortcutHint } from '../shortcutHint';
 import { hintedLockBadge, shopIcon } from '../shopParts';
 import { arenaIcon, difficultyName, medalBadge, waveLabel } from './arenaParts';
 
@@ -29,6 +31,8 @@ interface ArenaActions {
 
 const DEFAULT_DIFFICULTY_ID = 'normal';
 const ENTERING_CLASS = 'is-entering';
+const PREVIOUS = -1;
+const NEXT = 1;
 
 export class ArenaScreen {
   readonly element = el('div', { class: 'screen shop-screen arena-screen' });
@@ -36,6 +40,7 @@ export class ArenaScreen {
   private readonly records = el('div', { class: 'arena-records' });
   private readonly setup = el('section', { class: 'arena-setup' });
   private choice: ArenaChoice;
+  private readonly stopKeys: () => void;
 
   constructor(
     private readonly profile: Profile,
@@ -43,6 +48,14 @@ export class ArenaScreen {
     previous?: ArenaChoice,
   ) {
     this.choice = initialChoice(profile, previous);
+    this.stopKeys = onShortcutKeys(this.element, {
+      ArrowLeft: () => this.stepKeySet(PREVIOUS),
+      ArrowRight: () => this.stepKeySet(NEXT),
+      ArrowUp: () => this.stepDifficulty(NEXT),
+      ArrowDown: () => this.stepDifficulty(PREVIOUS),
+      Enter: () => this.actions.onPlay(this.profile, this.choice),
+      Escape: () => this.actions.onBack(this.profile),
+    });
     this.hero.element.append(this.records);
     this.element.append(
       this.header(),
@@ -53,6 +66,7 @@ export class ArenaScreen {
   }
 
   dispose(): void {
+    this.stopKeys();
     this.hero.dispose();
     releasePortraits();
   }
@@ -70,6 +84,7 @@ export class ArenaScreen {
         },
         shopIcon('back', 'shop-back-icon'),
         copy.back,
+        shortcutHint(ESCAPE_LABEL),
       ),
       el('h1', { class: 'logo logo-small shop-title', text: copy.title }),
       el(
@@ -85,6 +100,20 @@ export class ArenaScreen {
     this.setup.classList.toggle(ENTERING_CLASS, entering);
     this.records.replaceChildren(...this.recordRows());
     this.setup.replaceChildren(this.keySetField(), this.difficultyField(), this.modes());
+  }
+
+  private stepKeySet(direction: number): void {
+    const keySets = openKeySets(this.profile);
+    const index = keySets.findIndex((option) => option.id === this.choice.keySet.id);
+    const keySet = keySets[stepWithin(index, direction, keySets.length)];
+    if (keySet.id !== this.choice.keySet.id) this.choose({ keySet });
+  }
+
+  private stepDifficulty(direction: number): void {
+    const open = DIFFICULTIES.filter((difficulty) => isDifficultyOpen(difficulty, this.profile));
+    const index = open.findIndex((difficulty) => difficulty.id === this.choice.difficulty.id);
+    const difficulty = open[stepWithin(index, direction, open.length)];
+    if (difficulty.id !== this.choice.difficulty.id) this.choose({ difficulty });
   }
 
   private choose(choice: Partial<ArenaChoice>): void {
@@ -165,6 +194,7 @@ export class ArenaScreen {
           onClick: () => this.actions.onPlay(this.profile, this.choice),
         },
         i18n.t.play,
+        primaryHint(),
       ),
     );
   }
