@@ -979,11 +979,11 @@
 
   .play-panel {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     grid-template-areas:
-      'title play'
-      'label delete'
-      'languages delete';
+      'title shop play'
+      'label label delete'
+      'languages languages delete';
     align-items: center;
     gap: 2px 10px;
     width: 100%;
@@ -999,6 +999,11 @@
   .play-panel .panel-title {
     grid-area: title;
     font-size: 1.2rem;
+  }
+
+  .play-panel-main .shop-link {
+    grid-area: shop;
+    margin: 0 0 8px;
   }
 
   .play-button {
@@ -1142,10 +1147,14 @@
   }
 
   .play-panel {
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    grid-template-areas: 'title label play' 'delete languages play';
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    grid-template-areas: 'title label shop play' 'delete languages shop play';
     gap: 2px 14px;
     padding-block: 6px;
+  }
+
+  .play-panel-main .shop-link {
+    margin: 0;
   }
 
   .play-button {
