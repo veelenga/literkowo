@@ -8,6 +8,7 @@ import { handsDiagram } from './HandsDiagram';
 import { levelKindLabel } from './levelKind';
 import { keyStatus } from './mastery';
 import { createOverlay, KEY_READY_MS, onWindowKeyAfter, type Overlay } from './overlay';
+import { primaryHint } from './shortcutHint';
 
 const KEY_STAGGER_MS = 90;
 const ALT_LABEL = 'Alt';
@@ -43,7 +44,7 @@ export function learnCard(level: Level, keyStats: KeyStats, actions: LearnCardAc
           'button',
           { class: 'button button-primary button-large', onClick: onStart },
           t.letsGo,
-          el('kbd', { class: 'kbd kbd-on-primary', text: '⏎' }),
+          primaryHint(),
         ),
       ),
     ),

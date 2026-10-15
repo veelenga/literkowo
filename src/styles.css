@@ -210,6 +210,12 @@ h3 {
   box-shadow: 0 2px 0 rgba(43, 22, 0, 0.25);
 }
 
+@media (--touch-only) {
+  .kbd-hint {
+    display: none;
+  }
+}
+
 .panel {
   position: relative;
   background: linear-gradient(180deg, rgba(34, 47, 104, 0.94), rgba(16, 23, 56, 0.96));

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   claimEscapeKey,
   createOverlay,
+  onShortcutKeys,
   onWindowKey,
   onWindowKeyAfter,
   OverlaySlot,
@@ -136,5 +137,72 @@ describe('onWindowKeyAfter', () => {
     vi.advanceTimersByTime(DELAY_MS);
     pressEnter();
     expect(handler).not.toHaveBeenCalled();
+  });
+});
+
+describe('onShortcutKeys', () => {
+  function shortcuts() {
+    const scope = document.createElement('div');
+    const field = document.createElement('input');
+    const button = document.createElement('button');
+    scope.append(field, button);
+    document.body.append(scope);
+    const actions = { Enter: vi.fn(), Escape: vi.fn(), ArrowRight: vi.fn() };
+    const stop = onShortcutKeys(scope, actions);
+    const press = (key: string, target: EventTarget = window, init: KeyboardEventInit = {}) => {
+      const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init });
+      target.dispatchEvent(event);
+      return event;
+    };
+    return { scope, field, button, actions, stop, press };
+  }
+
+  afterEach(() => {
+    document.body.replaceChildren();
+  });
+
+  it('runs the action of a key and stops the default', () => {
+    const { actions, press, stop } = shortcuts();
+    expect(press('ArrowRight').defaultPrevented).toBe(true);
+    expect(actions.ArrowRight).toHaveBeenCalledOnce();
+    stop();
+    press('ArrowRight');
+    expect(actions.ArrowRight).toHaveBeenCalledOnce();
+  });
+
+  it('ignores keys while a field has focus, except Escape', () => {
+    const { field, actions, press } = shortcuts();
+    press('Enter', field);
+    press('ArrowRight', field);
+    press('Escape', field);
+    expect(actions.Enter).not.toHaveBeenCalled();
+    expect(actions.ArrowRight).not.toHaveBeenCalled();
+    expect(actions.Escape).toHaveBeenCalledOnce();
+  });
+
+  it('leaves Enter to a focused button', () => {
+    const { button, actions, press } = shortcuts();
+    expect(press('Enter', button).defaultPrevented).toBe(false);
+    press('ArrowRight', button);
+    expect(actions.Enter).not.toHaveBeenCalled();
+    expect(actions.ArrowRight).toHaveBeenCalledOnce();
+  });
+
+  it('ignores keys while an overlay makes the scope inert', () => {
+    const { scope, actions, press } = shortcuts();
+    scope.toggleAttribute('inert', true);
+    press('Enter');
+    press('Escape');
+    expect(actions.Enter).not.toHaveBeenCalled();
+    expect(actions.Escape).not.toHaveBeenCalled();
+  });
+
+  it('ignores shortcuts with modifiers and repeats of keys that should not repeat', () => {
+    const { actions, press } = shortcuts();
+    press('ArrowRight', window, { altKey: true });
+    press('Enter', window, { repeat: true });
+    press('ArrowRight', window, { repeat: true });
+    expect(actions.Enter).not.toHaveBeenCalled();
+    expect(actions.ArrowRight).toHaveBeenCalledOnce();
   });
 });
