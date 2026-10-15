@@ -29,6 +29,7 @@ const ACCENTS: Readonly<Record<EnemyKind, string>> = {
   chameleon: '#5cf28a',
   bull: '#ff6a3d',
   nest: '#e0b45a',
+  thief: '#ffcf3f',
 };
 
 export class EnemyTypes implements Mechanic {
@@ -57,6 +58,10 @@ export class EnemyTypes implements Mechanic {
       this.random,
     );
     if (kind) this.replace(enemy, kind);
+  }
+
+  onEnemyReached(enemy: Enemy): void {
+    if (enemy instanceof SpecialEnemy && enemy.isHarmless) this.context.removeEnemy(enemy);
   }
 
   onWordComplete(enemy: Enemy): void {

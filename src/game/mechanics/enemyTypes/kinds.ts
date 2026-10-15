@@ -11,7 +11,8 @@ export type EnemyKind =
   | 'ghost'
   | 'chameleon'
   | 'bull'
-  | 'nest';
+  | 'nest'
+  | 'thief';
 export type Random = () => number;
 
 const ENEMY_KINDS: readonly EnemyKind[] = [
@@ -25,6 +26,7 @@ const ENEMY_KINDS: readonly EnemyKind[] = [
   'chameleon',
   'bull',
   'nest',
+  'thief',
 ];
 export const ENEMY_TYPE_TAG = 'enemy-type';
 export const SPECIAL_SHARE = 0.25;
@@ -39,6 +41,7 @@ export const KIND_WEIGHTS: Readonly<Record<EnemyKind, number>> = {
   chameleon: 2,
   bull: 2,
   nest: 1,
+  thief: 2,
 };
 export const BONUS_WORDS: Readonly<Record<EnemyKind, number>> = {
   jumper: 0,
@@ -51,10 +54,12 @@ export const BONUS_WORDS: Readonly<Record<EnemyKind, number>> = {
   chameleon: 0,
   bull: 0,
   nest: 0,
+  thief: 0,
 };
 export const KIND_LIMITS: Readonly<Partial<Record<EnemyKind, number>>> = {
   bull: 1,
   nest: 1,
+  thief: 1,
 };
 
 interface Unlock {
@@ -74,6 +79,7 @@ const UNLOCKS: Readonly<Record<EnemyKind, Unlock>> = {
   chameleon: { region: 'wyspa', level: 1, fallback: { region: 'jaskinia', level: 3 } },
   bull: { region: 'jaskinia', level: 2 },
   nest: { region: 'wyspa', level: 2, fallback: { region: 'jaskinia', level: 4 } },
+  thief: { region: 'las', level: 3 },
 };
 const FIRST_REGION_CAP = 1;
 const LATER_REGION_CAP = 3;

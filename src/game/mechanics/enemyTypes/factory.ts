@@ -12,6 +12,7 @@ import type { SpecialEnemy, SpecialHost, SpecialSpec } from './SpecialEnemy';
 import { KEY_LENGTH, ShieldEnemy } from './ShieldEnemy';
 import { SplitterEnemy } from './SplitterEnemy';
 import { SwarmEnemy } from './SwarmEnemy';
+import { ThiefEnemy } from './ThiefEnemy';
 import { keyOf, lettersWithin, repeatedKey, sameLengthWord, wordPair, wordWithin } from './words';
 
 const JUMPER_LETTERS = { min: 4, max: 7 };
@@ -23,6 +24,8 @@ const CHAMELEON_LETTERS = { min: 3, max: 5 };
 const BULL_LETTERS = { min: 4, max: 5 };
 const NEST_LETTERS = { min: 7, max: 9 };
 const CHICK_LETTERS = { min: 2, max: 2 };
+const THIEF_LETTERS = { min: 3, max: 3 };
+const LOOT_LETTERS = { min: 6, max: 6 };
 const SPEED_SHARES = {
   jumper: 1,
   bat: 2.5,
@@ -33,6 +36,7 @@ const SPEED_SHARES = {
   chameleon: 0.9,
   bull: 3,
   nest: 1.1,
+  thief: 2.2,
 };
 
 const HALF = 0.5;
@@ -102,6 +106,14 @@ const RECIPES: Readonly<Record<EnemyKind, Recipe>> = {
     speedShare: SPEED_SHARES.nest,
     create: (spec, words) =>
       new NestEnemy(spec(wordWithin(words, NEST_LETTERS)), () => wordWithin(words, CHICK_LETTERS)),
+  },
+  thief: {
+    speedShare: SPEED_SHARES.thief,
+    create: (spec, words) =>
+      new ThiefEnemy(spec(wordWithin(words, THIEF_LETTERS)), {
+        mode: 'running',
+        lootWord: wordWithin(words, LOOT_LETTERS),
+      }),
   },
 };
 

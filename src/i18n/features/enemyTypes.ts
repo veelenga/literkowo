@@ -1,4 +1,8 @@
 const pl = {
+  thief: {
+    stolen: 'Złodziej zabrał punkty!',
+    recovered: 'Łup odzyskany!',
+  },
   names: {
     jumper: 'Skoczek',
     balloon: 'Balonik',
@@ -10,6 +14,7 @@ const pl = {
     chameleon: 'Kameleon',
     bull: 'Byk',
     nest: 'Gniazdo',
+    thief: 'Złodziej',
   },
   hints: {
     jumper: 'Wpisuj tę samą literę',
@@ -22,10 +27,15 @@ const pl = {
     chameleon: 'Zmienia słowo, dopóki nie wpiszesz pierwszej litery',
     bull: 'Każda litera odpycha go do tyłu',
     nest: 'Wykluwa pisklęta, dopóki go nie wpiszesz',
+    thief: 'Złap go, zanim ucieknie z twoimi punktami',
   },
 };
 
 const uk: typeof pl = {
+  thief: {
+    stolen: 'Злодій забрав очки!',
+    recovered: 'Здобич повернуто!',
+  },
   names: {
     jumper: 'Стрибунець',
     balloon: 'Кулька',
@@ -37,6 +47,7 @@ const uk: typeof pl = {
     chameleon: 'Хамелеон',
     bull: 'Бик',
     nest: 'Гніздо',
+    thief: 'Злодій',
   },
   hints: {
     jumper: 'Друкуй ту саму літеру',
@@ -49,6 +60,7 @@ const uk: typeof pl = {
     chameleon: 'Змінює слово, поки не надрукуєш першу літеру',
     bull: 'Кожна літера відштовхує його назад',
     nest: 'Висиджує пташенят, поки його не надрукуєш',
+    thief: 'Злови його, поки він не втік із твоїми очками',
   },
 };
 

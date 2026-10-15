@@ -24,7 +24,11 @@ export type SoundCue =
   | 'bullKnock'
   | 'bullDown'
   | 'nestHatch'
-  | 'nestPopped';
+  | 'nestPopped'
+  | 'thiefSteal'
+  | 'thiefCaught'
+  | 'thiefEscape'
+  | 'lootBack';
 
 const CHIME_SPACING = 0.07;
 const SHORT_DECAY = 0.35;
@@ -108,6 +112,17 @@ export const SOUNDS: Readonly<Record<SoundCue, (sfx: Sfx) => void>> = {
   nestHatch: (sfx) => sfx.chimes([84, 88], CHIME_SPACING, SHORT_DECAY),
   nestPopped: (sfx) => {
     sfx.chimes([67, 72, 76, 79, 84], CHIME_SPACING, LONG_DECAY);
+    sfx.sparkle();
+  },
+  thief: (sfx) => sfx.chimes([71, 74, 78], CHIME_SPACING / 2, SHORT_DECAY),
+  thiefSteal: (sfx) => {
+    sfx.sweep(79, 67, 0.35);
+    sfx.chimes([76, 72], CHIME_SPACING, SHORT_DECAY);
+  },
+  thiefCaught: (sfx) => sfx.chimes([67, 74, 79], CHIME_SPACING, SHORT_DECAY),
+  thiefEscape: (sfx) => sfx.sweep(72, 84, 0.5),
+  lootBack: (sfx) => {
+    sfx.chimes([72, 76, 79, 84, 88], CHIME_SPACING, LONG_DECAY);
     sfx.sparkle();
   },
   ghostPop: (sfx) => {

@@ -301,6 +301,41 @@
   color: #3a2a00;
 }
 
+.word-label.is-thief {
+  font-size: 1.3rem;
+  color: #e8f6ff;
+  background: rgba(20, 16, 40, 0.92);
+  border: 2px solid #7f6ad0;
+  box-shadow:
+    0 3px 0 #2f2160,
+    0 0 14px rgba(127, 106, 208, 0.4);
+}
+
+.word-label.is-thief.is-fleeing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff4c2;
+  background: rgba(46, 34, 6, 0.94);
+  border: 3px dashed #ffcf3f;
+  box-shadow:
+    0 4px 0 #8a6a12,
+    0 0 22px rgba(255, 207, 63, 0.55);
+}
+
+.word-label.is-thief.is-fleeing::before {
+  content: '';
+  width: 0.7em;
+  height: 0.7em;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff3a0 0%, #ffcf3f 55%, #b8860b 100%);
+  box-shadow: 0 0 8px rgba(255, 207, 63, 0.9);
+}
+
+.word-label.is-thief.is-target {
+  border-color: var(--accent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .word-label.is-swarm .swarm-glyph,
   .word-label.is-balloon,

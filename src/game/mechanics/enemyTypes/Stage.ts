@@ -3,7 +3,7 @@ import { disposeObject } from '../../disposal';
 import type { Enemy } from '../../Enemy';
 import { softGlowTexture } from '../../effects/glowAssets';
 import { PulsePool, type PulseSettings, type PulseVisual } from '../../effects/PulsePool';
-import type { MechanicContext } from '../Mechanic';
+import type { AnnounceStyle, MechanicContext } from '../Mechanic';
 import { SOUNDS, type SoundCue } from './sounds';
 import type { SpecialHost } from './SpecialEnemy';
 import { Tumbles, type Landing } from './Tumbles';
@@ -21,6 +21,9 @@ export type StageContext = Pick<
   | 'addEnemy'
   | 'createLabel'
   | 'enemies'
+  | 'stats'
+  | 'addCoins'
+  | 'announce'
 >;
 
 const DUST_COLOR = new THREE.Color(0xe8dcc0);
@@ -126,6 +129,22 @@ export class Stage implements SpecialHost {
 
   play(cue: SoundCue): void {
     SOUNDS[cue](this.context.sfx);
+  }
+
+  announce(text: string, style: AnnounceStyle, accent: string): void {
+    this.context.announce(text, style, accent);
+  }
+
+  takeScore(points: number): number {
+    const { stats } = this.context;
+    const taken = Math.min(points, stats.score);
+    stats.score -= taken;
+    return taken;
+  }
+
+  reward(points: number, coins: number): void {
+    this.context.stats.score += points;
+    this.context.addCoins(coins);
   }
 
   dispose(): void {

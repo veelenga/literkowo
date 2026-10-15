@@ -1,5 +1,6 @@
 import '../../../ui/enemyTypes.css';
 import type * as THREE from 'three';
+import type { AnnounceStyle } from '../Mechanic';
 import { Enemy, type EnemyBody, type EnemyLook } from '../../Enemy';
 import { ENEMY_TYPE_TAG, type EnemyKind } from './kinds';
 import type { SoundCue } from './sounds';
@@ -16,6 +17,9 @@ export interface SpecialHost {
   isOnBoard(enemy: Enemy): boolean;
   createLabel(): HTMLElement;
   play(cue: SoundCue): void;
+  announce(text: string, style: AnnounceStyle, accent: string): void;
+  takeScore(points: number): number;
+  reward(points: number, coins: number): void;
 }
 
 export interface SpecialSpec {
@@ -38,6 +42,10 @@ export abstract class SpecialEnemy extends Enemy {
     this.host = spec.host;
     this.tags.add(ENEMY_TYPE_TAG);
     this.label.classList.add(`${LABEL_CLASS_PREFIX}${spec.kind}`);
+  }
+
+  get isHarmless(): boolean {
+    return false;
   }
 
   arriveAt(spawn: THREE.Vector3): void {
