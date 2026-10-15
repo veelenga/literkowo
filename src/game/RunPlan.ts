@@ -7,12 +7,14 @@ export interface Phase {
   readonly count: number;
   readonly speed: number;
   readonly spawnInterval: number;
+  readonly wave?: number;
   readonly specialShare?: number;
   readonly events?: number;
 }
 
 export interface RunPhase extends Phase {
   readonly words: WordRules;
+  readonly calmSeconds?: number;
 }
 
 export interface RunPlan {
