@@ -122,6 +122,18 @@ describe('ShopScreen', () => {
     expect(shop.element.querySelectorAll('.shop-trophy.is-earned')).toHaveLength(1);
   });
 
+  it('shows how far a locked trophy is', () => {
+    const profile = profileWith({ counters: { ...profileWith().counters, wordsTyped: 312 } });
+    const { shop, openTab } = setup(profile);
+    openTab(3);
+    const cards = [...shop.element.querySelectorAll<HTMLElement>('.shop-trophy.is-locked')];
+    const words = cards.find((card) => card.textContent?.includes('Napisz razem 500 słów'));
+    expect(words?.querySelector('.trophy-progress .shop-note')?.textContent).toBe('312 z 500');
+    expect(words?.querySelector<HTMLElement>('.trophy-progress-fill')?.style.width).toBe('62%');
+    const boss = cards.find((card) => card.textContent?.includes('Pokonaj pierwszego bossa'));
+    expect(boss?.querySelector('.shop-note')?.textContent).toBe('Jeszcze przed tobą');
+  });
+
   it('goes back with the latest profile', () => {
     const { shop, card, onBack } = setup(profileWith({ coins: 200 }));
     card('pet:cube-cat').querySelector<HTMLButtonElement>('.shop-action')?.click();

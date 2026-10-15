@@ -17,6 +17,7 @@ import {
   type Trophy,
   type Unlock,
 } from '../course/shop';
+import { trophyProgress, type TrophyProgress } from '../course/trophies';
 import { format, formatParts } from '../i18n/format';
 import { i18n } from '../i18n/i18n';
 import type { Profile } from '../profiles/Profile';
@@ -38,6 +39,7 @@ const WEAR_CHIMES = { midis: [79, 84], spacing: 0.06, decay: 0.3 } as const;
 const FRESH_CLASS = 'is-fresh';
 const ENTERING_CLASS = 'is-entering';
 const CONFETTI_PIECES = 20;
+const PERCENT = 100;
 
 export interface ShopExit {
   readonly onBack: (profile: Profile) => void;
@@ -229,7 +231,9 @@ export class ShopScreen {
       el(
         'div',
         { class: 'shop-grid' },
-        ...TROPHIES.map((trophy) => trophyCard(trophy, owned.has(trophy.id))),
+        ...TROPHIES.map((trophy) =>
+          trophyCard(trophy, owned.has(trophy.id), trophyProgress(this.profile, trophy.rule)),
+        ),
       ),
     );
   }
@@ -267,7 +271,11 @@ function rankNote(unlock: Unlock): HTMLElement | null {
   return el('span', { class: 'shop-note', text });
 }
 
-function trophyCard(trophy: Trophy, earned: boolean): HTMLElement {
+function trophyCard(
+  trophy: Trophy,
+  earned: boolean,
+  progress: TrophyProgress | undefined,
+): HTMLElement {
   const { name, hint } = trophyCopy(trophy);
   return el(
     'article',
@@ -278,12 +286,29 @@ function trophyCard(trophy: Trophy, earned: boolean): HTMLElement {
     el('div', { class: 'shop-item-art' }, shopIcon('trophy', 'shop-trophy-icon')),
     el('h3', { class: 'shop-item-name', text: name }),
     el('p', { class: 'shop-item-text', text: hint }),
-    earned
-      ? null
-      : el(
-          'div',
-          { class: 'shop-item-footer' },
-          el('span', { class: 'shop-note', text: i18n.t.features.shop.trophyLocked }),
-        ),
+    earned ? null : el('div', { class: 'shop-item-footer' }, trophyGoal(progress)),
+  );
+}
+
+function trophyGoal(progress: TrophyProgress | undefined): HTMLElement {
+  const copy = i18n.t.features.shop;
+  if (!progress) return el('span', { class: 'shop-note', text: copy.trophyLocked });
+  const current = Math.min(progress.current, progress.goal);
+  const share = Math.round((current / progress.goal) * PERCENT);
+  const label = format(copy.trophyProgress, { current, goal: progress.goal });
+  return el(
+    'div',
+    { class: 'trophy-progress' },
+    el(
+      'span',
+      {
+        class: 'trophy-progress-bar',
+        role: 'progressbar',
+        'aria-label': label,
+        'aria-valuenow': String(share),
+      },
+      el('span', { class: 'trophy-progress-fill', style: `width: ${share}%` }),
+    ),
+    el('span', { class: 'shop-note', text: label }),
   );
 }

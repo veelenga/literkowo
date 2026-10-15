@@ -332,6 +332,31 @@
   filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.3)) drop-shadow(0 0 16px var(--trophy));
 }
 
+.trophy-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+}
+
+.trophy-progress-bar {
+  display: block;
+  width: 100%;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(0, 0, 0, 0.32);
+  overflow: hidden;
+}
+
+.trophy-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--trophy);
+  box-shadow: 0 0 8px var(--trophy);
+}
+
 .shop-trophy.is-locked .shop-trophy-icon {
   fill: var(--subtle);
   filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.3));
