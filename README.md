@@ -1,13 +1,18 @@
 # Literkowo
 
-Typing adventure for kids, in the spirit of Epistory: a low-poly 3D world where words float above crystals and you type them before they reach the fox.
+A typing adventure for kids. Learn to touch type in Polish or English by freeing letters from crystals in a blocky 3D world.
 
-- Course of 17 lessons from `f j` to Polish letters typed with right Alt
-- Finger hints on an on-screen keyboard
-- Polish and English word lists, Polish or Ukrainian interface
-- Multiple player profiles stored in the browser
+![Literkowo gameplay](docs/screenshot.jpg)
 
-## Run
+**Play:** https://veelenga.github.io/literkowo/
+
+- 17 levels from `f j` to the Polish letters typed with right Alt, with finger hints before each one
+- Five worlds, each ending with a boss, and a short story along the way
+- Polish or Ukrainian interface, Polish or English words
+- Several player profiles on one device, with stars and progress saved in the browser
+- Music and sound effects generated live, no files
+
+## Develop
 
 ```
 nvm use
@@ -15,11 +20,9 @@ npm install
 npm run dev
 ```
 
-`npm run lint` checks types, ESLint and Prettier formatting. `npm test` runs the unit tests.
-
-In development, `http://localhost:5173/?level=polana-1` starts a level directly (level ids are `<region>-<index>`, the last index of a region is its boss).
+`npm test` runs the unit tests, `npm run lint` checks types and formatting. In development, `?level=polana-1` on the dev URL starts a level directly.
 
 ## Credits
 
-- Characters: "Blocky Characters" by Kenney (kenney.nl), CC0.
-- Fonts: Nunito and JetBrains Mono, self-hosted via Fontsource, OFL.
+- Characters: "Blocky Characters" by Kenney (kenney.nl), CC0
+- Fonts: Nunito and JetBrains Mono via Fontsource, OFL
