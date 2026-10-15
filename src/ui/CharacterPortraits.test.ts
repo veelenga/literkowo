@@ -5,6 +5,11 @@ const MICROTASK_TICKS = 20;
 const IDLE_RELEASE_MS = 1000;
 const ROSTER_SIZE = 18;
 
+interface Look {
+  readonly character: string;
+  readonly hat?: string;
+}
+
 interface FakeRenderer extends PortraitRenderer {
   rendered: string[];
   disposed: boolean;
@@ -29,6 +34,20 @@ function fakeRenderer(): FakeRenderer {
   return renderer;
 }
 
+function lookKey({ character, hat }: Look): string {
+  return `${character}:${hat ?? ''}`;
+}
+
+function lookRenderer(rendered: Look[]): PortraitRenderer<Look> {
+  return {
+    render(look) {
+      rendered.push(look);
+      return Promise.resolve(`data:image/png;base64,${lookKey(look)}`);
+    },
+    dispose: () => undefined,
+  };
+}
+
 function setup(options: { failToStart?: boolean; rosterSize?: number } = {}) {
   const frames: Array<() => void> = [];
   const renderers: FakeRenderer[] = [];
@@ -40,6 +59,7 @@ function setup(options: { failToStart?: boolean; rosterSize?: number } = {}) {
   });
   const cache = new PortraitCache({
     createRenderer,
+    keyOf: (character) => character,
     scheduleFrame: (callback) => frames.push(callback),
     rosterSize: options.rosterSize ?? ROSTER_SIZE,
     idleReleaseMs: IDLE_RELEASE_MS,
@@ -88,6 +108,31 @@ describe('PortraitCache', () => {
     expect(cache.cached('d')).toBe('data:image/png;base64,d');
     await expect(cache.portraitFor('d')).resolves.toBe('data:image/png;base64,d');
     expect(renderers.flatMap((renderer) => renderer.rendered)).toEqual(['d']);
+  });
+
+  it('renders subjects that share a key once', async () => {
+    const frames: Array<() => void> = [];
+    const rendered: Look[] = [];
+    const cache = new PortraitCache<Look>({
+      createRenderer: () => Promise.resolve(lookRenderer(rendered)),
+      keyOf: lookKey,
+      scheduleFrame: (callback) => frames.push(callback),
+      rosterSize: ROSTER_SIZE,
+      idleReleaseMs: IDLE_RELEASE_MS,
+    });
+    const capped = cache.portraitFor({ character: 'a', hat: 'cap' });
+    expect(cache.portraitFor({ character: 'a', hat: 'cap' })).toBe(capped);
+    const bare = cache.portraitFor({ character: 'a' });
+
+    while (frames.length > 0) {
+      frames.shift()?.();
+      await settle();
+    }
+
+    await expect(capped).resolves.toBe('data:image/png;base64,a:cap');
+    await expect(bare).resolves.toBe('data:image/png;base64,a:');
+    expect(cache.cached({ character: 'a', hat: 'cap' })).toBe('data:image/png;base64,a:cap');
+    expect(rendered).toEqual([{ character: 'a', hat: 'cap' }, { character: 'a' }]);
   });
 
   it('keeps the renderer for the next request that comes soon after the queue empties', async () => {

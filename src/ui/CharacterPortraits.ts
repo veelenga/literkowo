@@ -1,15 +1,16 @@
 import { AVATARS } from '../profiles/Profile';
 
-export interface PortraitRenderer {
-  render(character: string): Promise<string>;
+export interface PortraitRenderer<Subject = string> {
+  render(subject: Subject): Promise<string>;
   dispose(): void;
 }
 
-export type PortraitRendererFactory = () => Promise<PortraitRenderer>;
+export type PortraitRendererFactory<Subject = string> = () => Promise<PortraitRenderer<Subject>>;
 export type FrameScheduler = (callback: () => void) => void;
 
-export interface PortraitCacheOptions {
-  createRenderer: PortraitRendererFactory;
+export interface PortraitCacheOptions<Subject = string> {
+  createRenderer: PortraitRendererFactory<Subject>;
+  keyOf: (subject: Subject) => string;
   scheduleFrame: FrameScheduler;
   rosterSize: number;
   idleReleaseMs: number;
@@ -20,12 +21,15 @@ const IDLE_RELEASE_MS = 4000;
 
 function ignore(): void {}
 
-class PortraitJob {
+class PortraitJob<Subject> {
   readonly promise: Promise<string>;
   resolve: (url: string) => void = ignore;
   reject: (reason: unknown) => void = ignore;
 
-  constructor(readonly character: string) {
+  constructor(
+    readonly subject: Subject,
+    readonly key: string,
+  ) {
     this.promise = new Promise((resolve, reject) => {
       this.resolve = resolve;
       this.reject = reject;
@@ -34,37 +38,38 @@ class PortraitJob {
   }
 }
 
-export class PortraitCache {
+export class PortraitCache<Subject = string> {
   private readonly portraits = new Map<string, string>();
-  private readonly jobs = new Map<string, PortraitJob>();
-  private readonly queue: PortraitJob[] = [];
-  private renderer: Promise<PortraitRenderer> | undefined;
+  private readonly jobs = new Map<string, PortraitJob<Subject>>();
+  private readonly queue: PortraitJob<Subject>[] = [];
+  private renderer: Promise<PortraitRenderer<Subject>> | undefined;
   private idleRelease: ReturnType<typeof setTimeout> | undefined;
   private draining = false;
 
-  constructor(private readonly options: PortraitCacheOptions) {}
+  constructor(private readonly options: PortraitCacheOptions<Subject>) {}
 
-  cached(character: string): string | undefined {
-    return this.portraits.get(character);
+  cached(subject: Subject): string | undefined {
+    return this.portraits.get(this.options.keyOf(subject));
   }
 
-  portraitFor(character: string): Promise<string> {
-    const cached = this.portraits.get(character);
+  portraitFor(subject: Subject): Promise<string> {
+    const key = this.options.keyOf(subject);
+    const cached = this.portraits.get(key);
     if (cached) return Promise.resolve(cached);
-    return (this.jobs.get(character) ?? this.enqueue(character)).promise;
+    return (this.jobs.get(key) ?? this.enqueue(subject, key)).promise;
   }
 
-  preload(characters: readonly string[]): void {
-    characters.forEach((character) => void this.portraitFor(character));
+  preload(subjects: readonly Subject[]): void {
+    subjects.forEach((subject) => void this.portraitFor(subject));
   }
 
   release(): void {
     this.abandonAll(new Error(CANCELLED_ERROR));
   }
 
-  private enqueue(character: string): PortraitJob {
-    const job = new PortraitJob(character);
-    this.jobs.set(character, job);
+  private enqueue(subject: Subject, key: string): PortraitJob<Subject> {
+    const job = new PortraitJob(subject, key);
+    this.jobs.set(key, job);
     this.queue.push(job);
     this.cancelIdleRelease();
     if (!this.draining) void this.drain();
@@ -86,36 +91,36 @@ export class PortraitCache {
     return new Promise((resolve) => this.options.scheduleFrame(resolve));
   }
 
-  private async run(job: PortraitJob): Promise<void> {
+  private async run(job: PortraitJob<Subject>): Promise<void> {
     const renderer = await this.acquireRenderer().catch((error: unknown) => {
       this.abandonAll(error);
     });
     if (!renderer) return;
     try {
-      this.complete(job, await renderer.render(job.character));
+      this.complete(job, await renderer.render(job.subject));
     } catch (error) {
       this.fail(job, error);
     }
   }
 
-  private complete(job: PortraitJob, url: string): void {
+  private complete(job: PortraitJob<Subject>, url: string): void {
     if (this.isCurrent(job)) {
-      this.portraits.set(job.character, url);
-      this.jobs.delete(job.character);
+      this.portraits.set(job.key, url);
+      this.jobs.delete(job.key);
     }
     job.resolve(url);
   }
 
-  private fail(job: PortraitJob, error: unknown): void {
-    if (this.isCurrent(job)) this.jobs.delete(job.character);
+  private fail(job: PortraitJob<Subject>, error: unknown): void {
+    if (this.isCurrent(job)) this.jobs.delete(job.key);
     job.reject(error);
   }
 
-  private isCurrent(job: PortraitJob): boolean {
-    return this.jobs.get(job.character) === job;
+  private isCurrent(job: PortraitJob<Subject>): boolean {
+    return this.jobs.get(job.key) === job;
   }
 
-  private acquireRenderer(): Promise<PortraitRenderer> {
+  private acquireRenderer(): Promise<PortraitRenderer<Subject>> {
     this.renderer ??= this.options.createRenderer();
     return this.renderer;
   }
@@ -156,6 +161,7 @@ function onNextAnimationFrame(callback: () => void): void {
 
 const portraits = new PortraitCache({
   createRenderer: loadStudio,
+  keyOf: (character) => character,
   scheduleFrame: onNextAnimationFrame,
   rosterSize: AVATARS.length,
   idleReleaseMs: IDLE_RELEASE_MS,
