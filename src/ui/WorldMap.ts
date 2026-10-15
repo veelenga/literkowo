@@ -3,7 +3,6 @@ import { courseFor, type Course } from '../course/course';
 import { MAX_STARS } from '../course/scoring';
 import { i18n } from '../i18n/i18n';
 import type { Profile } from '../profiles/Profile';
-import { characterAvatar } from './CharacterAvatar';
 import { el, icon, prefersReducedMotion, svg } from './dom';
 import {
   journeyLayout,
@@ -18,6 +17,7 @@ import { keyLabel, levelTitle } from './levelKind';
 import { keyDots, masteryMeter } from './mastery';
 import { hasAmbientMotion } from './menuMotion';
 import './courseMap.css';
+import { outfitAvatar, releaseOutfitAvatars } from './OutfitAvatar';
 import './worldMap.css';
 
 const STAR_BASE_DELAY_MS = 260;
@@ -57,6 +57,7 @@ export class WorldMap {
   dispose(): void {
     this.effects.forEach((stop) => stop());
     this.effects = [];
+    releaseOutfitAvatars();
   }
 
   private render(): void {
@@ -206,7 +207,7 @@ export class WorldMap {
     return el(
       'span',
       { class: 'journey-hero', 'aria-hidden': 'true' },
-      characterAvatar(this.profile.avatar),
+      outfitAvatar(this.profile.avatar, this.profile.equipped),
     );
   }
 

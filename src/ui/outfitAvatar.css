@@ -1,0 +1,12 @@
+.avatar-outfit {
+  opacity: 0;
+}
+
+.avatar.is-dressed .avatar-outfit {
+  opacity: 1;
+}
+
+.avatar.is-dressed .avatar-placeholder,
+.avatar.is-dressed .avatar-portrait {
+  opacity: 0;
+}

@@ -522,7 +522,7 @@ Each theme also sets enemy colours, sky, fog, light and a fixed random seed for 
 
 ## Menus
 
-Owners: `src/ui/ProfileScreen.ts`, `src/ui/LivePreview.ts`, `src/ui/landing/LandingBackdrop.ts`, `src/ui/landing/dockRow.ts`, `src/ui/WorldMap.ts`, `src/ui/map/journeyLayout.ts`, `src/ui/map/regionArt.ts`.
+Owners: `src/ui/ProfileScreen.ts`, `src/ui/LivePreview.ts`, `src/ui/landing/LandingBackdrop.ts`, `src/ui/landing/dockRow.ts`, `src/ui/WorldMap.ts`, `src/ui/OutfitAvatar.ts`, `src/ui/map/journeyLayout.ts`, `src/ui/map/regionArt.ts`.
 
 Profile screen:
 
@@ -539,6 +539,7 @@ Map:
 - One winding path runs through every level. The walked part, up to the first level without a star, is gold.
 - Each band starts with a sign: the chapter number, the region name, a short mood line (`src/i18n/features/worldMap.ts`), the stars earned out of the total and the mastery meter. Signs switch sides from band to band, and the path passes each sign on the other side.
 - Levels are round badges on the path with their focus keys. Learn levels carry a ✨ badge and review levels a 🔁 badge, and the title names the kind and the keys, for example "Trening D" / "Тренування D" (`src/ui/levelKind.ts`). Unlocked learn, practice and review levels show the key dots under the keys, see [Key mastery](#key-mastery). Bosses have a crown. Locked levels show a lock. Levels with stars glow in the region colour and show their stars. The current level pulses, has a Play tag, and the hero stands on it.
+- The hero on the current level wears the equipped hat and has the equipped pet next to it, posed like the still frame of the outfit view. It is a rendered image, not a live 3D view, so the map stays light on phones (`src/ui/OutfitAvatar.ts`, `src/ui/portraits/OutfitStudio.ts`). Until the image is ready, and when it cannot be rendered, the plain portrait shows. Each outfit is rendered once per session and kept in memory, so reopening the map shows it at once. With nothing equipped the hero is the plain portrait.
 - The header stays at the top: the avatar with the level number, the name, the rank and a thin XP bar, then stars, coins, the shop button and the sound toggle. A tap on the avatar goes back to the profiles. The shop button has the bag and the label "Sklep" / "Крамниця", only the bag on phones, and the green dot when something can be bought or claimed.
 - On open the map scrolls smoothly to the current level, or to the last open level when all levels have stars. Levels pop in as they scroll into view. With reduced motion the scroll is instant and nothing pops in.
 - The silhouettes of each band move at different speeds while scrolling, except in the low quality preset.
