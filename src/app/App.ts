@@ -1,10 +1,13 @@
+import { endlessPlan } from '../arena/endlessPlan';
 import { isArenaOpen } from '../arena/keySets';
+import { recordEndlessRun, type EndlessAttempt } from '../arena/progress';
 import { music } from '../audio/Music';
 import { sfx } from '../audio/Sfx';
 import { regionOf, type Level } from '../course/catalog';
 import { levelCoins } from '../course/coins';
 import { courseFor } from '../course/course';
 import { hasNewItems } from '../course/inventory';
+import { practiceDay } from '../course/keyStats';
 import {
   markStorySeen,
   recordResult,
@@ -24,6 +27,8 @@ import { i18n } from '../i18n/i18n';
 import type { Profile } from '../profiles/Profile';
 import { ProfileStore } from '../profiles/ProfileStore';
 import type { StoryScene } from '../story/story';
+import { arenaResult } from '../ui/arena/ArenaResult';
+import { ArenaScreen, type ArenaChoice } from '../ui/arena/ArenaScreen';
 import { el } from '../ui/dom';
 import { Callouts } from '../ui/Callouts';
 import { Hud } from '../ui/Hud';
@@ -107,9 +112,26 @@ export class App {
       onPlay: (level) => this.openLevel(profile, level),
       onSwitchPlayer: () => this.showProfiles(),
       onShop: () => this.showShop(profile),
+      onArena: () => this.showArena(profile),
     });
     this.showScreen(map.element);
     this.disposeScreen = () => map.dispose();
+  }
+
+  private showArena(profile: Profile, previous?: ArenaChoice): void {
+    this.leaveScreen();
+    music.stop();
+    prefetchGameModule();
+    const arena = new ArenaScreen(
+      profile,
+      {
+        onBack: (current) => this.showMap(current),
+        onPlay: (current, choice) => this.startArena(current, choice),
+      },
+      previous,
+    );
+    this.showScreen(arena.element);
+    this.disposeScreen = () => arena.dispose();
   }
 
   private showShop(profile: Profile): void {
@@ -147,6 +169,16 @@ export class App {
       rotateHint: courseFor(profile.wordLanguage).isFirst(level),
       onFinished: (result) => this.finishLevel(profile, level, result),
       restart: () => this.startLevel(profile, level),
+    });
+  }
+
+  private startArena(profile: Profile, choice: ArenaChoice): void {
+    this.startRun(profile, {
+      level: choice.keySet.bossLevel,
+      plan: endlessPlan(choice),
+      rotateHint: false,
+      onFinished: (result) => this.finishArena(profile, choice, result),
+      restart: () => this.startArena(profile, choice),
     });
   }
 
@@ -288,6 +320,40 @@ export class App {
     );
   }
 
+  private finishArena(profile: Profile, choice: ArenaChoice, result: GameResult): void {
+    const outcome = recordEndlessRun(profile, endlessAttemptOf(choice, result));
+    const updated = this.trySave(outcome.profile);
+    const treasures = {
+      trophies: freshTrophies(profile, updated),
+      newItems: hasNewItems(profile, updated),
+      arenaOpened: false,
+    };
+    this.overlays.open(
+      arenaResult(
+        {
+          result,
+          wavesCleared: result.phasesCleared,
+          medal: outcome.medal,
+          newRecord: outcome.newBestWave,
+          earned: { xpBefore: profile.xp, xp: result.xp, coins: outcome.payout.total, treasures },
+        },
+        {
+          onArena: this.dismissThen(() => this.showArena(updated, choice)),
+          onRetry: this.dismissThen(() => this.startArena(updated, choice)),
+        },
+      ),
+    );
+  }
+
+  private trySave(profile: Profile): Profile {
+    try {
+      this.store.update(profile);
+    } catch (error) {
+      reportError(error);
+    }
+    return profile;
+  }
+
   private recordAttempt(profile: Profile, level: Level, attempt: Attempt): Profile {
     let updated = profile;
     try {
@@ -357,6 +423,20 @@ function musicMood(kind: PhaseKind): MusicMood {
 function musicIntensity(stats: SessionStats): number {
   if (stats.fever) return FULL_INTENSITY;
   return Math.min(FULL_INTENSITY, stats.combo / COMBO_FOR_FULL_INTENSITY);
+}
+
+function endlessAttemptOf(choice: ArenaChoice, result: GameResult): EndlessAttempt {
+  return {
+    ...choice,
+    wavesCleared: result.phasesCleared,
+    score: result.score,
+    accuracy: result.accuracy,
+    lettersFreed: result.lettersFreed,
+    xp: result.xp,
+    runCoins: result.coins,
+    keyStats: result.keys.practised,
+    date: practiceDay(new Date()),
+  };
 }
 
 function attemptOf(result: GameResult, stars: number, coins: number): Attempt {

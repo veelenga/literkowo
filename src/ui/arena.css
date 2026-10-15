@@ -291,6 +291,19 @@
   white-space: nowrap;
 }
 
+.journey-gate.is-nudged .gate-node {
+  animation: gate-nudge 700ms var(--ease-spring);
+}
+
+@keyframes gate-nudge {
+  30% {
+    scale: 1.16;
+  }
+  60% {
+    scale: 0.96;
+  }
+}
+
 .journey-gate.is-locked .gate-node {
   border-color: rgba(255, 255, 255, 0.22);
   background:
