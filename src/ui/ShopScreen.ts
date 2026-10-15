@@ -18,7 +18,7 @@ import {
   type Trophy,
   type Unlock,
 } from '../course/shop';
-import { trophyProgress, type TrophyProgress } from '../course/trophies';
+import { awardTrophies, trophyProgress, type TrophyProgress } from '../course/trophies';
 import { format, formatParts } from '../i18n/format';
 import { i18n } from '../i18n/i18n';
 import type { Profile } from '../profiles/Profile';
@@ -201,7 +201,7 @@ export class ShopScreen {
     const bought = buy(this.profile, item);
     if (!bought.ok) return;
     const worn = equip(bought.profile, item);
-    this.commit(worn.ok ? worn.profile : bought.profile);
+    this.commit(awardTrophies(worn.ok ? worn.profile : bought.profile));
     sfx.chimes(BUY_CHIMES.midis, BUY_CHIMES.spacing, BUY_CHIMES.decay);
     sfx.sparkle();
     this.celebrate(item);

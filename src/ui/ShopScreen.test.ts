@@ -57,6 +57,7 @@ describe('ShopScreen', () => {
     expect(lastSaved()?.coins).toBe(40);
     expect(lastSaved()?.inventory.pets).toEqual(['cube-cat']);
     expect(lastSaved()?.equipped.pet).toBe('cube-cat');
+    expect(lastSaved()?.inventory.trophies).toEqual(['first-item']);
     expect(card('pet:cube-cat').classList.contains('is-equipped')).toBe(true);
     expect(card('pet:cube-cat').querySelector('.shop-tag')?.textContent).toBe('W użyciu');
   });
