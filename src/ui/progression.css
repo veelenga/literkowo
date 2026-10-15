@@ -250,25 +250,6 @@
   font-weight: 900;
 }
 
-.confetti {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.confetti-piece {
-  position: absolute;
-  top: -12px;
-  left: var(--x);
-  width: 9px;
-  height: 14px;
-  border-radius: 2px;
-  background: var(--color);
-  opacity: 0;
-  animation: confetti-fall var(--duration) cubic-bezier(0.25, 0.6, 0.45, 1) var(--delay) forwards;
-}
-
 @keyframes level-up-in {
   0% {
     opacity: 0;
@@ -281,22 +262,6 @@
   100% {
     opacity: 1;
     scale: 1;
-  }
-}
-
-@keyframes confetti-fall {
-  0% {
-    opacity: 1;
-    translate: 0 0;
-    rotate: 0deg;
-  }
-  85% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    translate: var(--drift) 560px;
-    rotate: var(--spin);
   }
 }
 
