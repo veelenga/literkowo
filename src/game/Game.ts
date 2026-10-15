@@ -32,7 +32,7 @@ import { Particles } from './Particles';
 import { Player } from './Player';
 import { currentQuality } from './quality';
 import { renderHost, type Viewport } from './RenderHost';
-import type { Phase, PhaseKind, RunPhase, RunPlan } from './RunPlan';
+import { tempoAt, type Phase, type PhaseKind, type RunPhase, type RunPlan } from './RunPlan';
 import type { RewardBoost } from '../course/powers';
 import { RunRewards, type Rewards } from './RunRewards';
 import { RunTally } from './RunTally';
@@ -122,6 +122,7 @@ export class Game {
     enemy.setTargeted(isCandidate),
   );
   private insets: StageInsets = NO_INSETS;
+  private plannedPhase: RunPhase;
   private phase: RunPhase;
   private phaseIndex = FIRST_PHASE;
   private spawned = 0;
@@ -152,7 +153,8 @@ export class Game {
       allowedKeysFor(config.level, config.language),
       practiceDay(new Date()),
     );
-    this.phase = firstPhase(config.plan);
+    this.plannedPhase = firstPhase(config.plan);
+    this.phase = this.plannedPhase;
     this.calm = this.phase.calmSeconds ?? NO_CALM;
     this.lives = config.plan.lives;
     this.rewards = new RunRewards(config.plan);
@@ -375,6 +377,11 @@ export class Game {
     const word = this.nextSpawnWord();
     this.spawned += 1;
     this.spawnGroups.spawn(() => this.spawnWord(word));
+    this.retime();
+  }
+
+  private retime(): void {
+    this.phase = { ...this.plannedPhase, ...tempoAt(this.plannedPhase, this.spawned) };
   }
 
   private restsInCalm(delta: number): boolean {
@@ -526,7 +533,8 @@ export class Game {
     this.sinceSpawn = Number.POSITIVE_INFINITY;
     const next = this.config.plan.phaseAt(this.phaseIndex);
     if (!next) return this.finish(true);
-    this.phase = next;
+    this.plannedPhase = next;
+    this.retime();
     this.calm = next.calmSeconds ?? NO_CALM;
     this.words.use(next.words);
     this.reportProgress();

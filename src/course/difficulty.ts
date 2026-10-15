@@ -10,10 +10,14 @@ export interface LetterRange {
   readonly max: number;
 }
 
-export interface Pace {
-  readonly count: number;
+export interface Tempo {
   readonly speed: number;
   readonly spawnInterval: number;
+}
+
+export interface Pace extends Tempo {
+  readonly count: number;
+  readonly rampTo?: Tempo;
 }
 
 export interface Difficulty {
