@@ -4,7 +4,7 @@ import { format } from '../i18n/format';
 import { i18n } from '../i18n/i18n';
 import { Counter, el, icon, prefersReducedMotion } from './dom';
 import { ResultKeys } from './mastery';
-import { createOverlay, type Overlay } from './overlay';
+import { createOverlay, onWindowKeyAfter, type Overlay } from './overlay';
 import { ResultProgress, type EarnedRewards } from './ResultProgress';
 import { treasuresNote, type Treasures } from './resultTreasures';
 
@@ -12,6 +12,10 @@ const STAR_INTRO_MS = 240;
 const STAR_STAGGER_MS = 220;
 const COUNTER_START_MS = STAR_INTRO_MS + MAX_STARS * STAR_STAGGER_MS;
 const COUNTER_DURATION_MS = 900;
+const PRIMARY_KEY = 'Enter';
+const PRIMARY_KEY_LABEL = '⏎';
+const PRIMARY_KEY_READY_MS = 600;
+const PRIMARY_BUTTON_CLASS = 'button button-primary button-large';
 
 export interface LevelRewards extends EarnedRewards {
   readonly treasures: Treasures;
@@ -21,6 +25,17 @@ interface Actions {
   onNext?: () => void;
   onRetry: () => void;
   onMap: () => void;
+}
+
+interface ResultAction {
+  readonly label: string;
+  readonly run: () => void;
+  readonly secondaryClass: string;
+}
+
+interface ResultActions {
+  readonly all: readonly ResultAction[];
+  readonly primary: ResultAction;
 }
 
 interface StatTile {
@@ -44,6 +59,7 @@ export function levelResult(
     statTile(t.speed, result.wpm, t.wpm),
     statTile(t.lettersFreed, result.lettersFreed),
   ];
+  const choices = resultActions(stars, actions);
   const revealDelay = prefersReducedMotion() ? 0 : COUNTER_START_MS;
   const revealTimer = window.setTimeout(() => {
     tiles.forEach((tile) => tile.reveal());
@@ -63,11 +79,12 @@ export function levelResult(
       progress.element,
       treasuresNote(earned.treasures),
       keys.element,
-      actionsRow(stars, actions),
+      actionsRow(choices),
     ),
   );
   return createOverlay(
     element,
+    runOnPrimaryKey(choices.primary),
     () => window.clearTimeout(revealTimer),
     () => progress.stop(),
     () => keys.stop(),
@@ -112,30 +129,42 @@ function statTile(label: string, value: number, unit?: string): StatTile {
   return { element, reveal: () => counter.set(value), stop: () => counter.stop() };
 }
 
-function actionsRow(stars: number, actions: Actions): HTMLElement {
+function resultActions(stars: number, actions: Actions): ResultActions {
   const t = i18n.t;
+  const map = { label: t.map, run: actions.onMap, secondaryClass: 'button button-ghost' };
+  const retry = { label: t.retry, run: actions.onRetry, secondaryClass: 'button' };
   const onNext = stars > 0 ? actions.onNext : undefined;
-  const retryIsPrimary = stars === 0;
-  const mapIsPrimary = !onNext && !retryIsPrimary;
+  if (!onNext) return { all: [map, retry], primary: stars === 0 ? retry : map };
+  const next = { label: t.next, run: onNext, secondaryClass: PRIMARY_BUTTON_CLASS };
+  return { all: [map, retry, next], primary: next };
+}
+
+function actionsRow(choices: ResultActions): HTMLElement {
   return el(
     'div',
     { class: 'actions result-actions' },
-    el('button', {
-      class: mapIsPrimary ? 'button button-primary button-large' : 'button button-ghost',
-      text: t.map,
-      onClick: actions.onMap,
-    }),
-    el('button', {
-      class: retryIsPrimary ? 'button button-primary button-large' : 'button',
-      text: t.retry,
-      onClick: actions.onRetry,
-    }),
-    onNext
-      ? el('button', {
-          class: 'button button-primary button-large',
-          text: t.next,
-          onClick: onNext,
-        })
-      : null,
+    ...choices.all.map((action) => actionButton(action, action === choices.primary)),
   );
+}
+
+function actionButton(action: ResultAction, isPrimary: boolean): HTMLElement {
+  if (!isPrimary) {
+    return el('button', { class: action.secondaryClass, text: action.label, onClick: action.run });
+  }
+  return el(
+    'button',
+    { class: PRIMARY_BUTTON_CLASS, onClick: action.run },
+    action.label,
+    el('kbd', { class: 'kbd kbd-on-primary', text: PRIMARY_KEY_LABEL }),
+  );
+}
+
+function runOnPrimaryKey(action: ResultAction): () => void {
+  const stopListening = onWindowKeyAfter(PRIMARY_KEY_READY_MS, (event) => {
+    if (event.key !== PRIMARY_KEY || event.repeat) return;
+    event.preventDefault();
+    stopListening();
+    action.run();
+  });
+  return stopListening;
 }
