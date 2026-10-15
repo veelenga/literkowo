@@ -38,6 +38,7 @@ import { OverlaySlot, type Overlay } from '../ui/overlay';
 import { pauseOverlay } from '../ui/PauseOverlay';
 import { ProfileScreen } from '../ui/ProfileScreen';
 import { rotateHint } from '../ui/RotateHint';
+import { SettingsScreen } from '../ui/SettingsScreen';
 import { ShopScreen } from '../ui/ShopScreen';
 import { watchStageInsets } from '../ui/stageInsets';
 import { storyCard } from '../ui/StoryCard';
@@ -109,6 +110,7 @@ export class App {
         sfx.unlock();
         this.showMap(profile);
       },
+      onSettings: () => this.showSettings(() => this.showProfiles()),
     });
     this.showScreen(screen.element);
     this.disposeScreen = () => screen.dispose();
@@ -122,6 +124,7 @@ export class App {
           onSwitchPlayer: () => this.showProfiles(),
           onShop: () => this.showShop(profile),
           onArena: () => this.arena.show(profile),
+          onSettings: () => this.showSettings(() => this.showMap(profile)),
         }),
     );
   }
@@ -133,6 +136,10 @@ export class App {
     const screen = create();
     this.showScreen(screen.element);
     this.disposeScreen = () => screen.dispose();
+  }
+
+  private showSettings(back: () => void): void {
+    this.showMenu(() => new SettingsScreen({ onBack: back }));
   }
 
   private showShop(profile: Profile): void {

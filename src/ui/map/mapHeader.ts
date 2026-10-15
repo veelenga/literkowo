@@ -5,6 +5,7 @@ import { arenaButton } from '../arena/arenaParts';
 import { characterAvatar } from '../CharacterAvatar';
 import { el, icon, svg } from '../dom';
 import { coinIcon, levelDisc, rankName, xpBar } from '../progression';
+import { settingsHeaderButton } from '../settingsParts';
 import { shopButton } from '../shopParts';
 import { soundToggle } from '../SoundToggle';
 
@@ -15,6 +16,7 @@ interface HeaderActions {
   onSwitchPlayer: () => void;
   onShop: () => void;
   onArena: () => void;
+  onSettings: () => void;
 }
 
 export function mapHeader(profile: Profile, actions: HeaderActions): HTMLElement {
@@ -31,6 +33,7 @@ export function mapHeader(profile: Profile, actions: HeaderActions): HTMLElement
       statPill(coinIcon('stat-icon coin-icon'), profile.coins, t.features.progression.coins),
       arenaButton(profile, actions.onArena),
       shopButton(profile, actions.onShop),
+      settingsHeaderButton(actions.onSettings),
       soundToggle(),
     ),
   );

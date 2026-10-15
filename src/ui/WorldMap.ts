@@ -44,6 +44,7 @@ interface Actions {
   onSwitchPlayer: () => void;
   onShop: () => void;
   onArena: () => void;
+  onSettings: () => void;
 }
 
 export class WorldMap {
@@ -69,9 +70,10 @@ export class WorldMap {
 
   private render(): void {
     const scene = this.scene();
-    const { onSwitchPlayer, onShop } = this.actions;
+    const { onSwitchPlayer, onShop, onSettings } = this.actions;
+    const onArena = () => this.openArena();
     this.element.replaceChildren(
-      mapHeader(this.profile, { onSwitchPlayer, onShop, onArena: () => this.openArena() }),
+      mapHeader(this.profile, { onSwitchPlayer, onShop, onArena, onSettings }),
       el('main', { class: 'map-journey' }, scene),
     );
     queueMicrotask(() => this.startMotion(scene));

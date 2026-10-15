@@ -18,6 +18,7 @@ import { LandingBackdrop } from './landing/LandingBackdrop';
 import { livePreview, outfitOf } from './LivePreview';
 import { hasAmbientMotion } from './menuMotion';
 import { coinPill, levelBadge } from './progression';
+import { settingsGearButton } from './settingsParts';
 import './profileScreen.css';
 
 const MAX_NAME_LENGTH = 16;
@@ -30,6 +31,7 @@ const PLAY_ICON_PATH =
 
 interface Actions {
   onPlay: (profile: Profile) => void;
+  onSettings: () => void;
 }
 
 export class ProfileScreen {
@@ -66,7 +68,12 @@ export class ProfileScreen {
     livePreview.hide();
     const grid = el('div', { class: 'profile-grid' }, ...this.gridItems());
     this.view.replaceChildren(
-      this.languageSwitch(),
+      el(
+        'div',
+        { class: 'profile-corner' },
+        this.languageSwitch(),
+        settingsGearButton(this.actions.onSettings),
+      ),
       el(
         'main',
         { class: 'landing' },
