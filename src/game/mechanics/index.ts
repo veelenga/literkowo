@@ -1,5 +1,6 @@
 import { Bombers } from './Bombers';
 import { BossPhases } from './BossPhases';
+import { Companion } from './Companion';
 import { EnemyTypes } from './EnemyTypes';
 import { Fever } from './Fever';
 import { HeroStrikes } from './HeroStrikes';
@@ -21,6 +22,7 @@ const MECHANICS: readonly MechanicType[] = [
   Twins,
   HeroStrikes,
   WaveEvents,
+  Companion,
 ];
 
 export function createMechanics(context: MechanicContext): Mechanic[] {
