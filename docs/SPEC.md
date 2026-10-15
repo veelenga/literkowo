@@ -128,7 +128,7 @@ Owners: `src/game/mechanics/EnemyTypes.ts`, `src/game/mechanics/enemyTypes/kinds
 
 - During the words phase, a fresh normal spawn turns into a special enemy with a chance of 25% (`SPECIAL_SHARE`). The chance is split by weight between the unlocked types: jumper 3, the others 2 each (`KIND_WEIGHTS`).
 - The special enemy takes the place of the spawn, so the word count of the phase stays the same. A balloon that floats away counts as done.
-- The boss, power words, merged enemies and minions are never replaced. Special enemies never merge.
+- The boss and every enemy that another feature has tagged, such as power words, merged enemies, minions, twins and bombers, are never replaced. Special enemies never merge.
 - At most 1 special enemy is on the board in Polana, and at most 3 in later regions.
 - The first time a type appears in a level, its name shows as a callout. Each type also has a short hint in `src/i18n/features/enemyTypes.ts`.
 

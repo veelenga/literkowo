@@ -7,6 +7,7 @@ import { SPAWN_RADIUS } from '../arena';
 import { Boss } from '../Boss';
 import { Enemy, type EnemyLook } from '../Enemy';
 import type { Phase } from '../LevelPlan';
+import { BomberEnemy } from './bombers/BomberEnemy';
 import { MINION_TAG } from './bossPhases/Minions';
 import { EnemyTypes } from './EnemyTypes';
 import { BalloonEnemy, ESCAPE_HEIGHT } from './enemyTypes/BalloonEnemy';
@@ -26,6 +27,7 @@ import type { MechanicContext } from './Mechanic';
 import { MergedEnemy } from './mergeEnemies/MergedEnemy';
 import { wordPoints } from './mergeEnemies/scoring';
 import { PowerEnemy } from './powerWords/PowerEnemy';
+import { TWIN_TAG } from './twins/TwinEnemy';
 
 const FRAME = 1 / 30;
 const VIEWER = { x: 0, y: 15, z: 15.5 };
@@ -144,6 +146,21 @@ describe('EnemyTypes', () => {
       new MergedEnemy('kotlas', label(), 1, LOOK),
       minion,
     ];
+    for (const enemy of kept) {
+      enemies.push(enemy);
+      expect(spawn(enemy)).toBe(enemy);
+    }
+    expect(enemies).toEqual(kept);
+  });
+
+  it('leaves enemies tagged by any other feature alone', () => {
+    const { spawn, enemies, context } = setup('gory-2', () => 0);
+    const label = () => context.createLabel();
+    const twin = new Enemy('kot', label(), 1, LOOK);
+    twin.tags.add(TWIN_TAG);
+    const unknown = new Enemy('las', label(), 1, LOOK);
+    unknown.tags.add('future-feature');
+    const kept: Enemy[] = [twin, unknown, new BomberEnemy('parasol', label(), 1, 'crystal')];
     for (const enemy of kept) {
       enemies.push(enemy);
       expect(spawn(enemy)).toBe(enemy);
