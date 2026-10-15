@@ -1,4 +1,4 @@
-import { MAX_STARS, starThresholdPercents } from '../course/scoring';
+import { MAX_STARS, accuracyPercent, starThresholdPercents } from '../course/scoring';
 import type { GameResult } from '../game/Game';
 import { format } from '../i18n/format';
 import { i18n } from '../i18n/i18n';
@@ -8,7 +8,6 @@ import { createOverlay, type Overlay } from './overlay';
 import { ResultProgress, type EarnedRewards } from './ResultProgress';
 import { treasuresNote, type Treasures } from './resultTreasures';
 
-const PERCENT = 100;
 const STAR_INTRO_MS = 240;
 const STAR_STAGGER_MS = 220;
 const COUNTER_START_MS = STAR_INTRO_MS + MAX_STARS * STAR_STAGGER_MS;
@@ -41,7 +40,7 @@ export function levelResult(
   const keys = new ResultKeys(result.keys);
   const tiles = [
     statTile(t.score, result.score),
-    statTile(t.accuracy, result.accuracy * PERCENT, '%'),
+    statTile(t.accuracy, accuracyPercent(result.accuracy), '%'),
     statTile(t.speed, result.wpm, t.wpm),
     statTile(t.lettersFreed, result.lettersFreed),
   ];
