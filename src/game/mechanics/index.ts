@@ -8,6 +8,7 @@ import { MergeEnemies } from './MergeEnemies';
 import { PowerWords } from './PowerWords';
 import { SpeedSurge } from './SpeedSurge';
 import { Twins } from './Twins';
+import { WaveEvents } from './WaveEvents';
 
 const MECHANICS: readonly MechanicType[] = [
   Fever,
@@ -19,6 +20,7 @@ const MECHANICS: readonly MechanicType[] = [
   Bombers,
   Twins,
   HeroStrikes,
+  WaveEvents,
 ];
 
 export function createMechanics(context: MechanicContext): Mechanic[] {
