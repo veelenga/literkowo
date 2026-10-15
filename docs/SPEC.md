@@ -127,6 +127,66 @@ A callout stays for 0.9 seconds and the fever banner for 1.4 seconds (`src/ui/Ca
 
 Announcements never overlap. Callouts stack downwards with the newest on top, and at most three of each style show at once: a fourth makes the oldest fade early. Banners take the centre slot and push callouts below them. Warnings sit above the banner slot.
 
+## Power words
+
+Owners: `src/game/mechanics/PowerWords.ts`, `src/game/mechanics/powerWords`, names in `src/i18n/features/powerWords.ts`.
+
+- In the words phase and in boss fights, a power word joins from the spawn arc every 18 to 28 seconds (`SUMMON_INTERVAL`). Only one is on the board at a time. The timer runs only while none is on the board, and a due power word waits until another enemy is on the board.
+- It is a gold enemy, 1.15 times bigger, with a pulsing halo and star sparks. It moves at 0.8 times the phase speed (`POWER_SPEED_SCALE`). Its label has the power's colour and the power's name as a tooltip.
+- The power is random and never the same twice in a row. Boss fights have no storm (`src/game/mechanics/powerWords/powers.ts`).
+- The word is a real word of the power in the profile's word language when one fits the allowed keys. Otherwise it is 4 to 6 letters from the allowed keys, and the label shows the power's icon (`src/game/mechanics/powerWords/choice.ts`).
+- Typing it casts the power: a banner with the word in the power's colour, with the icon in front for generated letters, and the power's sound.
+- It scores normal word points and 1 coin and gives XP with tag factor 2, see [Progression](#progression). Its letters count for accuracy like any word.
+- A power word that reaches the hero vanishes, with no lost life and no mistake.
+
+| Power    | Name (pl / uk)    | Icon | Polish words                        | English words        | Effect                                                                                                                                                                                  |
+| -------- | ----------------- | ---- | ----------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `freeze` | Mróz / Мороз      | ❄️   | lód, mróz, zima, szron              | ice, frost, snow     | Every enemy on the board, the boss included, freezes for 3 seconds (`FREEZE_SECONDS`).                                                                                                  |
+| `storm`  | Burza / Гроза     | ⚡   | burza, grom, piorun, błysk          | storm, bolt, spark   | Lightning strikes the 3 enemies nearest to the hero, 0.12 seconds apart, never the boss (`STRIKE_COUNT`). Each one shatters and scores its normal word points, with no XP and no coins. |
+| `quake`  | Wstrząs / Поштовх | 💥   | wstrząs, tąpnięcie, trzęsienie, huk | quake, rumble, shake | Every enemy on the board, the boss included, is pushed 3 units back (`KNOCKBACK`), and the camera shakes.                                                                               |
+| `shield` | Tarcza / Щит      | 🛡️   | tarcza, osłona, mur, zbroja         | shield, wall, guard  | A bubble around the hero takes the next lost life: no life is lost, no mistake counts and the combo stays. Shields stack until the end of the level.                                    |
+
+## Merging enemies
+
+Owners: `src/game/mechanics/MergeEnemies.ts`, `src/game/mechanics/mergeEnemies`, copy in `src/i18n/features/mergeEnemies.ts`.
+
+- Enemies merge only in the words phase, and only plain ones. Special enemies, twins, bombers, power words, event pieces and merged enemies never merge.
+- An enemy can merge while it is at least 4 units from the hero, not frozen and not being typed (`src/game/mechanics/mergeEnemies/rules.ts`).
+- Two enemies fit together when their words joined have at most 10 letters. Each one drifts toward the nearest enemy it fits with within 4 units, at 0.4 units per second (`src/game/mechanics/mergeEnemies/huddle.ts`).
+- When two that fit are within 1.3 units, they pull together for 0.35 seconds with a pulse. The fusion stops when one of them is typed, frozen or leaves the board.
+- The merged enemy stands at the midpoint. Its word is the first word followed by the second. It is 1.6 times bigger, has two cores and moves at 0.6 times the phase speed. It flashes white, bursts in the colours of both enemies, and the warning "Fuzja!" / "Злиття!" shows with an impact sound.
+- Typed, it scores its word points 3 times: the normal points plus 2 more (`MERGED_BONUS_WORDS`). It gives 1 coin and XP with tag factor 3. Its letters count for accuracy like any word.
+- A merged enemy that reaches the hero costs one life.
+
+## Boss phases
+
+Owners: `src/game/mechanics/BossPhases.ts`, `src/game/mechanics/bossPhases`, copy in `src/i18n/features/bossPhases.ts`, darkness styles in `src/ui/bossPhases.css`.
+
+The boss fight has three phases by the boss's health: the words left out of the words needed (`src/game/mechanics/bossPhases/phases.ts`). Each phase shows its banner the first time a hit lands in it.
+
+| Phase       | Health          | Banner (pl / uk)               | Rule                                                                                                                                                                                                                                                                                          |
+| ----------- | --------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `armour`    | above 66%       | Pancerz pęka! / Броня тріскає! | The boss fights as described in [Level flow](#level-flow).                                                                                                                                                                                                                                    |
+| `weakPoint` | 66% down to 33% | Słaby punkt! / Слабке місце!   | Each hit that lands here stuns the boss: for 2.5 seconds the world runs at 0.4 speed, the boss stands still and a rising sweep plays (`STUN_SECONDS`, `SLOW_MOTION`). After a hit that leaves the boss here, its next word has 3 to 4 letters (`SHORT_LENGTH` in `src/course/WordSource.ts`). |
+| `rage`      | below 33%       | Furia! / Лють!                 | The boss moves 1.3 times faster (`RAGE_SPEED`). A minion with a normal word joins at the boss phase speed as rage starts and then every 5 seconds, while fewer than 2 are alive (`MINION_INTERVAL`, `MAX_MINIONS`). Speed surges come twice as often, see [Action events](#action-events).    |
+
+Signature attacks (`src/game/mechanics/bossPhases/SignatureAttacks.ts`, `AttackSchedule.ts`):
+
+- The first strike comes 8 seconds after the fight starts, then one every 14 seconds, in every phase (`FIRST_STRIKE`, `STRIKE_INTERVAL`).
+- 1.5 seconds before each strike, the warning "Mrok szykuje atak" / "Морок готує атаку" shows with a falling sweep. The strike plays an impact sound.
+- The Polana boss has no attacks. Wyspa Ogonków takes its three attacks in turn.
+
+| Attack       | Regions                 | Effect                                                                                                                          |
+| ------------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `darkness`   | Las, Wyspa Ogonków      | For 8 seconds the screen edges go dark and the keyboard hint hides (`DARKNESS_SECONDS`).                                        |
+| `fog`        | Góry, Wyspa Ogonków     | For 8 seconds every label, also on new enemies, shows only the next letter of its word and dots for the rest (`FOG_SECONDS`).   |
+| `earthquake` | Jaskinia, Wyspa Ogonków | The camera shakes, and every enemy except the boss jumps to a random place at the same distance from the hero, with dust puffs. |
+
+Score, XP and accuracy:
+
+- Attacks never cost a life and never count as a mistake.
+- A boss hit gives XP with tag factor 3 and a minion with factor 1, see [Progression](#progression). Minions score and pay coins like any word, and cost a life when they reach the hero.
+
 ## Enemy types
 
 Owners: `src/game/mechanics/EnemyTypes.ts`, `src/game/mechanics/enemyTypes/kinds.ts`, `src/game/mechanics/enemyTypes/factory.ts`, one class per type in `src/game/mechanics/enemyTypes`.
