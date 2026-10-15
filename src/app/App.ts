@@ -28,6 +28,7 @@ import { loadErrorOverlay } from '../ui/LoadErrorOverlay';
 import { OverlaySlot, type Overlay } from '../ui/overlay';
 import { pauseOverlay } from '../ui/PauseOverlay';
 import { ProfileScreen } from '../ui/ProfileScreen';
+import { ShopScreen } from '../ui/ShopScreen';
 import { storyCard } from '../ui/StoryCard';
 import { TouchTyping } from '../ui/TouchTyping';
 import { WorldMap } from '../ui/WorldMap';
@@ -87,8 +88,19 @@ export class App {
     const map = new WorldMap(profile, {
       onPlay: (level) => this.openLevel(profile, level),
       onSwitchPlayer: () => this.showProfiles(),
+      onShop: () => this.showShop(profile),
     });
     this.showScreen(map.element);
+  }
+
+  private showShop(profile: Profile): void {
+    this.leaveScreen();
+    const shop = new ShopScreen(profile, {
+      onBack: (current) => this.showMap(current),
+      onChange: (current) => this.save(current),
+    });
+    this.showScreen(shop.element);
+    this.disposeScreen = () => shop.dispose();
   }
 
   private openLevel(profile: Profile, level: Level): void {

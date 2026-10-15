@@ -7,6 +7,7 @@ import { characterAvatar } from './CharacterAvatar';
 import { el, icon, svg } from './dom';
 import { keyDots, masteryMeter } from './mastery';
 import { coinIcon, levelBadge } from './progression';
+import { shopButton } from './shopParts';
 import { soundToggle } from './SoundToggle';
 
 const TRAIL_EDGE = 8;
@@ -29,6 +30,7 @@ interface Point {
 interface Actions {
   onPlay: (level: Level) => void;
   onSwitchPlayer: () => void;
+  onShop: () => void;
 }
 
 export class WorldMap {
@@ -94,6 +96,7 @@ export class WorldMap {
           this.profile.coins,
           t.features.progression.coins,
         ),
+        shopButton(this.profile, this.actions.onShop),
         soundToggle(),
       ),
     );
