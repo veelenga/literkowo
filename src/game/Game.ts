@@ -167,6 +167,8 @@ export class Game {
       theme: this.config.theme,
       sfx,
       words: this.words,
+      level: this.config.level,
+      language: this.config.language,
       get phase() {
         return phase();
       },
