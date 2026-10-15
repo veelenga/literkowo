@@ -21,7 +21,7 @@ import {
   type Profile,
 } from './Profile';
 import { gradualCourseResults } from './courseMigration';
-import { isRecord, type RawRecord } from './raw';
+import { countOf, isCount, isNonEmptyString, isRecord, stringsOf, type RawRecord } from './raw';
 
 type Migration = (raw: RawRecord) => RawRecord;
 
@@ -207,20 +207,4 @@ function wholeOf(value: unknown): number {
 
 function isSingleChar(value: string): boolean {
   return [...value].length === 1;
-}
-
-function stringsOf(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((item) => typeof item === 'string') : [];
-}
-
-function countOf(value: unknown): number {
-  return isCount(value) ? value : 0;
-}
-
-function isCount(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
-}
-
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === 'string' && value.length > 0;
 }
