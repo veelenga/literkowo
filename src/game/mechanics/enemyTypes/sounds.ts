@@ -18,7 +18,11 @@ export type SoundCue =
   | 'shieldDown'
   | 'ghostPop'
   | 'chameleonShift'
-  | 'chameleonPop';
+  | 'chameleonPop'
+  | 'bullStamp'
+  | 'bullCharge'
+  | 'bullKnock'
+  | 'bullDown';
 
 const CHIME_SPACING = 0.07;
 const SHORT_DECAY = 0.35;
@@ -31,6 +35,10 @@ const SPLIT_IMPACT = 0.6;
 const STEEL_IMPACT = 0.25;
 const CLANG_IMPACT = 0.8;
 const CLANG_SPACING = 0.03;
+const SNORT_IMPACT = 0.3;
+const STAMP_IMPACT = 0.15;
+const CHARGE_IMPACT = 0.4;
+const KNOCK_IMPACT = 0.35;
 
 export const SOUNDS: Readonly<Record<SoundCue, (sfx: Sfx) => void>> = {
   jumper: (sfx) => sfx.chimes([67, 74, 67, 79], CHIME_SPACING, SHORT_DECAY),
@@ -83,6 +91,17 @@ export const SOUNDS: Readonly<Record<SoundCue, (sfx: Sfx) => void>> = {
     sfx.chimes([72, 76, 79, 84], CHIME_SPACING, SHORT_DECAY);
     sfx.sparkle();
   },
+  bull: (sfx) => {
+    sfx.impact(SNORT_IMPACT);
+    sfx.sweep(48, 43, 0.5);
+  },
+  bullStamp: (sfx) => sfx.impact(STAMP_IMPACT),
+  bullCharge: (sfx) => {
+    sfx.impact(CHARGE_IMPACT);
+    sfx.sweep(43, 55, 0.6);
+  },
+  bullKnock: (sfx) => sfx.impact(KNOCK_IMPACT),
+  bullDown: (sfx) => sfx.chimes([55, 62, 67], CHIME_SPACING, LONG_DECAY),
   ghostPop: (sfx) => {
     sfx.chimes([79, 86, 91], CHIME_SPACING, LONG_DECAY);
     sfx.sparkle();

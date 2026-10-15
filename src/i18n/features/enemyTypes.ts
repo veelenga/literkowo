@@ -8,6 +8,7 @@ const pl = {
     shield: 'Tarczownik',
     ghost: 'Duch',
     chameleon: 'Kameleon',
+    bull: 'Byk',
   },
   hints: {
     jumper: 'Wpisuj tę samą literę',
@@ -18,6 +19,7 @@ const pl = {
     shield: 'Wpisz klucz z tarczy, a zobaczysz słowo',
     ghost: 'Znika i wraca, więc zapamiętaj jego słowo',
     chameleon: 'Zmienia słowo, dopóki nie wpiszesz pierwszej litery',
+    bull: 'Każda litera odpycha go do tyłu',
   },
 };
 
@@ -31,6 +33,7 @@ const uk: typeof pl = {
     shield: 'Щитоносець',
     ghost: 'Привид',
     chameleon: 'Хамелеон',
+    bull: 'Бик',
   },
   hints: {
     jumper: 'Друкуй ту саму літеру',
@@ -41,6 +44,7 @@ const uk: typeof pl = {
     shield: 'Надрукуй ключ зі щита, і побачиш слово',
     ghost: 'Зникає і повертається, тож запам’ятай його слово',
     chameleon: 'Змінює слово, поки не надрукуєш першу літеру',
+    bull: 'Кожна літера відштовхує його назад',
   },
 };
 

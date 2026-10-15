@@ -2,6 +2,7 @@ import type { WordSource } from '../../../course/WordSource';
 import type { Phase } from '../../LevelPlan';
 import { BalloonEnemy } from './BalloonEnemy';
 import { BatEnemy } from './BatEnemy';
+import { BullEnemy } from './BullEnemy';
 import { ChameleonEnemy } from './ChameleonEnemy';
 import { GhostEnemy } from './GhostEnemy';
 import { JumperEnemy } from './JumperEnemy';
@@ -18,6 +19,7 @@ const SWARM_LETTERS = { min: 5, max: 7 };
 const SHIELDED_LETTERS = { min: 4, max: 6 };
 const GHOST_LETTERS = { min: 3, max: 5 };
 const CHAMELEON_LETTERS = { min: 3, max: 5 };
+const BULL_LETTERS = { min: 4, max: 5 };
 const SPEED_SHARES = {
   jumper: 1,
   bat: 2.5,
@@ -26,6 +28,7 @@ const SPEED_SHARES = {
   shield: 0.85,
   ghost: 0.9,
   chameleon: 0.9,
+  bull: 3,
 };
 
 const HALF = 0.5;
@@ -86,6 +89,10 @@ const RECIPES: Readonly<Record<EnemyKind, Recipe>> = {
       new ChameleonEnemy(spec(wordWithin(words, CHAMELEON_LETTERS)), (current) =>
         sameLengthWord(words, current),
       ),
+  },
+  bull: {
+    speedShare: SPEED_SHARES.bull,
+    create: (spec, words) => new BullEnemy(spec(wordWithin(words, BULL_LETTERS))),
   },
 };
 

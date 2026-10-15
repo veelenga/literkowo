@@ -242,6 +242,26 @@
   border-color: var(--accent);
 }
 
+.word-label.is-bull {
+  font-size: 1.55rem;
+  color: #fff1e8;
+  background: rgba(48, 12, 6, 0.92);
+  border: 3px solid #ff6a3d;
+  box-shadow:
+    0 4px 0 #8a2a12,
+    0 0 16px rgba(255, 106, 61, 0.35);
+}
+
+.word-label.is-bull.is-charging {
+  box-shadow:
+    0 4px 0 #8a2a12,
+    0 0 28px rgba(255, 106, 61, 0.8);
+}
+
+.word-label.is-bull.is-target {
+  border-color: var(--accent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .word-label.is-swarm .swarm-glyph,
   .word-label.is-balloon,
