@@ -154,6 +154,7 @@ export class Game {
   togglePause(): void {
     if (this.finished) return;
     this.paused = !this.paused;
+    this.timer.reset();
     this.syncFrames();
     this.events.onPause(this.paused);
   }
