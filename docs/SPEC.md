@@ -201,7 +201,7 @@ The game keeps statistics for every key of the course, Polish letters included, 
 Recording, during a level (`src/game/KeyTracker.ts`):
 
 - Only keys allowed in the level count. Keys are the lower case characters the game sees.
-- A hit counts for the typed key. A mistake counts for the key the nearest followed enemy is waiting for, or for the typed key when no enemy is followed.
+- A hit counts for the typed key. A mistake counts for the hinted next key, the one the on screen keyboard highlights: the letter the nearest followed enemy is waiting for, or else the letter the nearest enemy is waiting for. Only with no enemy on the board does it count for the typed key.
 - A lost life is not a keystroke and does not count.
 - Speed is the time from the previous correct key to this hit. Gaps over 2 seconds are ignored. It is the plain average for the first samples and then a moving average over about 50 hits.
 - The statistics are added to the profile after every attempt, won or lost. The dev shortcut does not save them.

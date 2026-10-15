@@ -44,8 +44,8 @@ export class KeyTracker {
     this.record(key, 'hit', (stat) => recordHit(stat, interval));
   }
 
-  miss(key: string): void {
-    this.record(key, 'miss', recordMiss);
+  miss(typed: string, expected?: string): void {
+    this.record(expected ?? typed, 'miss', recordMiss);
   }
 
   report(): KeyReport {

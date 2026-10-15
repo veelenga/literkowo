@@ -515,7 +515,7 @@ export class Game {
   }
 
   private mistake(char: string): void {
-    this.keys.miss(this.focus?.expectedChar ?? char);
+    this.keys.miss(char, this.nextExpectedChar());
     this.recordMistake();
     this.targeting.candidates.forEach((enemy) => enemy.flashMistake());
     sfx.mistake();

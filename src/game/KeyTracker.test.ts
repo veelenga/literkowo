@@ -26,6 +26,15 @@ describe('KeyTracker', () => {
     expect(keys.statOf('q')).toBeUndefined();
   });
 
+  it('counts a miss against the expected key and falls back to the typed key', () => {
+    const keys = tracker();
+    keys.miss('f', 'j');
+    keys.miss('d');
+    expect(keys.statOf('j')).toMatchObject({ misses: 1 });
+    expect(keys.statOf('f')).toBeUndefined();
+    expect(keys.statOf('d')).toMatchObject({ misses: 1 });
+  });
+
   it('times a hit from the previous correct key', () => {
     const keys = tracker();
     keys.hit('f', 1000);
