@@ -1,18 +1,9 @@
 import { baseKey, fingerFor, needsRightAlt } from '../course/fingers';
 import { i18n } from '../i18n/i18n';
 import { el, fingerColor, restartAnimation, type Child } from './dom';
+import { KEY_ROWS, type KeyRow } from './keyboardLayout';
 import { RIGHT_ALT_KEY, RightAltLatch } from './rightAltLatch';
 
-interface KeyRow {
-  keys: string;
-  offset: number;
-}
-
-const ROWS: KeyRow[] = [
-  { keys: 'qwertyuiop', offset: 0 },
-  { keys: 'asdfghjkl;', offset: 0.3 },
-  { keys: 'zxcvbnm,.', offset: 0.8 },
-];
 const SPACE_ROW_OFFSET = 2.7;
 const HOME_BUMP_KEYS = new Set(['f', 'j']);
 const SPACE = ' ';
@@ -43,7 +34,7 @@ export class KeyboardHint {
       'div',
       { class: 'keyboard', onPointerdown: (event) => this.press(event) },
       this.hint,
-      ...ROWS.map((row) => this.row(row)),
+      ...KEY_ROWS.map((row) => this.row(row)),
       this.bottomRow(),
     );
   }

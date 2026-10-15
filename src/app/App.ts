@@ -178,7 +178,7 @@ export class App {
 
   private pauseLevel(): void {
     music.pause();
-    this.pause = pauseOverlay(() => this.game?.togglePause());
+    this.pause = pauseOverlay(() => this.game?.togglePause(), this.game?.keyStats ?? {});
     this.overlays.open(this.pause);
   }
 

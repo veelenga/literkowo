@@ -1,3 +1,4 @@
+import type { KeyStats } from '../course/keyStats';
 import {
   QUALITY_CHOICES,
   readQualityChoice,
@@ -7,13 +8,14 @@ import {
 import { formatParts } from '../i18n/format';
 import { i18n } from '../i18n/i18n';
 import { el, icon } from './dom';
+import { keyHeatmap } from './KeyHeatmap';
 import { createOverlay, type Overlay } from './overlay';
 import './quality.css';
 
 const ESCAPE_LABEL = 'Esc';
 const ACTIVE_CLASS = 'is-active';
 
-export function pauseOverlay(onResume: () => void): Overlay {
+export function pauseOverlay(onResume: () => void, keyStats: KeyStats): Overlay {
   const t = i18n.t;
   const escapeKey = el('kbd', { class: 'kbd', text: ESCAPE_LABEL });
   return createOverlay(
@@ -36,6 +38,7 @@ export function pauseOverlay(onResume: () => void): Overlay {
             onClick: onResume,
           }),
         ),
+        keyHeatmap(keyStats),
         qualityPicker(),
       ),
     ),
