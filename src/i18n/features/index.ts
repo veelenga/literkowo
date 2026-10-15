@@ -3,6 +3,7 @@ import { bossPhases } from './bossPhases';
 import { fever } from './fever';
 import { mergeEnemies } from './mergeEnemies';
 import { powerWords } from './powerWords';
+import { quality } from './quality';
 
 export function featureTexts(language: UiLanguage) {
   return {
@@ -10,5 +11,6 @@ export function featureTexts(language: UiLanguage) {
     powerWords: powerWords[language],
     mergeEnemies: mergeEnemies[language],
     bossPhases: bossPhases[language],
+    quality: quality[language],
   };
 }

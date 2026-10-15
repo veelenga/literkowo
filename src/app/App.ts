@@ -30,6 +30,7 @@ import { storyCard } from '../ui/StoryCard';
 import { WorldMap } from '../ui/WorldMap';
 import { devLevelFromUrl, devProfile, unlockAudioOnFirstInput } from './devShortcut';
 import { loadGameModule, prefetchGameModule, type GameModule } from './gameModule';
+import { PageAttention } from './PageAttention';
 
 const COMBO_FOR_FULL_INTENSITY = 20;
 const FULL_INTENSITY = 1;
@@ -38,6 +39,7 @@ export class App {
   private readonly store = new ProfileStore();
   private readonly screen = el('div', { class: 'app-screen' });
   private readonly overlays: OverlaySlot;
+  private readonly attention = new PageAttention((away) => this.onAttentionChange(away));
   private game: Game | undefined;
   private pause: Overlay | undefined;
   private levelToken = 0;
@@ -141,6 +143,18 @@ export class App {
       onFinished: (result) => this.finishLevel(profile, level, result),
     });
     this.game.start();
+    if (this.attention.away) this.game.suspend();
+  }
+
+  private onAttentionChange(away: boolean): void {
+    if (away) this.game?.suspend();
+    else this.game?.wake();
+    this.syncAudio();
+  }
+
+  private syncAudio(): void {
+    if (this.attention.away || this.pause) music.pause();
+    else music.resume();
   }
 
   private setPaused(paused: boolean): void {
@@ -238,10 +252,10 @@ export class App {
     this.disposeScreen?.();
     this.disposeScreen = undefined;
     this.levelToken += 1;
-    music.resume();
     this.game?.destroy();
     this.game = undefined;
     this.pause = undefined;
+    this.syncAudio();
   }
 }
 

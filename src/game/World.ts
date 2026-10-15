@@ -1,17 +1,27 @@
 import * as THREE from 'three';
-import { AmbientParticles, type AmbientSpec } from './AmbientParticles';
+import { AmbientParticles, scaleAmbient, type AmbientSpec } from './AmbientParticles';
 import { disposeObject } from './disposal';
 import { MaterialKit } from './environment/materials';
 import { Rng } from './environment/random';
 import { createSkyDome } from './environment/SkyDome';
 import { Terrain } from './environment/Terrain';
 import type { Animated } from './environment/types';
+import type { QualityPreset, SceneDetail, ShadowSetting } from './quality';
 import type { LightSpec, Theme } from './themes';
 
 const SUN_DISTANCE = 60;
 const SHADOW_TARGET = new THREE.Vector3(0, 0, -4);
-const SHADOW_EXTENT = 30;
-const SHADOW_MAP_SIZE = 2048;
+const SHADOW_FOCUS_HEIGHT = 7;
+const SHADOW_FOCUS_GROUND: ReadonlyArray<readonly [x: number, z: number]> = [
+  [-14, 10],
+  [14, 10],
+  [-30, -24],
+  [30, -24],
+];
+const SHADOW_FOCUS = [0, SHADOW_FOCUS_HEIGHT].flatMap((y) =>
+  SHADOW_FOCUS_GROUND.map(([x, z]) => new THREE.Vector3(x, y, z)),
+);
+const SHADOW_MARGIN = 1;
 const SHADOW_NEAR = 1;
 const SHADOW_FAR = 140;
 const SHADOW_BIAS = -0.0004;
@@ -22,17 +32,19 @@ export class World {
   private readonly animated: Animated[] = [];
   private readonly materials: MaterialKit;
 
-  constructor(scene: THREE.Scene, theme: Theme) {
+  constructor(scene: THREE.Scene, theme: Theme, quality: QualityPreset) {
     this.materials = new MaterialKit(theme.clouds);
     const sunDirection = new THREE.Vector3(...theme.light.sun.direction).normalize();
     scene.background = new THREE.Color(theme.fog.color);
     scene.fog = new THREE.Fog(theme.fog.color, theme.fog.near, theme.fog.far);
     scene.add(this.root);
     this.root.add(createSkyDome(theme.sky, sunDirection));
-    this.addLights(theme.light, sunDirection);
+    this.addLights(theme.light, sunDirection, quality.shadow);
     const rng = new Rng(theme.seed);
-    this.addLandscape(theme, rng, sunDirection);
-    theme.ambient.forEach((spec) => this.addAmbient(spec, rng.fork()));
+    this.addLandscape(theme, rng, sunDirection, quality.detail);
+    theme.ambient.forEach((spec) =>
+      this.addAmbient(scaleAmbient(spec, quality.detail.particles), rng.fork()),
+    );
   }
 
   update(delta: number, elapsed: number): void {
@@ -47,7 +59,12 @@ export class World {
     this.animated.length = 0;
   }
 
-  private addLandscape(theme: Theme, rng: Rng, sunDirection: THREE.Vector3): void {
+  private addLandscape(
+    theme: Theme,
+    rng: Rng,
+    sunDirection: THREE.Vector3,
+    detail: SceneDetail,
+  ): void {
     const landscape = theme.landscape(rng.fork());
     const terrain = new Terrain(landscape.terrain, this.materials);
     this.root.add(terrain.mesh);
@@ -56,12 +73,13 @@ export class World {
       terrain,
       materials: this.materials,
       sunDirection,
+      detail,
       add: (object) => this.root.add(object),
       animate: (item) => this.animated.push(item),
     });
   }
 
-  private addLights(light: LightSpec, sunDirection: THREE.Vector3): void {
+  private addLights(light: LightSpec, sunDirection: THREE.Vector3, shadow: ShadowSetting): void {
     const { hemisphere, sun } = light;
     this.root.add(
       new THREE.HemisphereLight(hemisphere.sky, hemisphere.ground, hemisphere.intensity),
@@ -70,7 +88,7 @@ export class World {
     directional.position.copy(sunDirection).multiplyScalar(SUN_DISTANCE).add(SHADOW_TARGET);
     directional.target.position.copy(SHADOW_TARGET);
     directional.castShadow = true;
-    configureSunShadow(directional.shadow);
+    configureSunShadow(directional, shadow);
     this.root.add(directional, directional.target);
   }
 
@@ -81,14 +99,29 @@ export class World {
   }
 }
 
-function configureSunShadow(shadow: THREE.DirectionalLightShadow): void {
-  shadow.mapSize.set(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
-  shadow.camera.left = -SHADOW_EXTENT;
-  shadow.camera.right = SHADOW_EXTENT;
-  shadow.camera.top = SHADOW_EXTENT;
-  shadow.camera.bottom = -SHADOW_EXTENT;
+function configureSunShadow(light: THREE.DirectionalLight, setting: ShadowSetting): void {
+  const { shadow } = light;
+  shadow.mapSize.set(setting.mapSize, setting.mapSize);
   shadow.camera.near = SHADOW_NEAR;
   shadow.camera.far = SHADOW_FAR;
   shadow.bias = SHADOW_BIAS;
   shadow.normalBias = SHADOW_NORMAL_BIAS;
+  fitShadowCamera(shadow.camera, light.position);
+}
+
+function fitShadowCamera(camera: THREE.OrthographicCamera, from: THREE.Vector3): void {
+  camera.position.copy(from);
+  camera.lookAt(SHADOW_TARGET);
+  camera.updateMatrixWorld();
+  const bounds = new THREE.Box3();
+  const point = new THREE.Vector3();
+  SHADOW_FOCUS.forEach((corner) =>
+    bounds.expandByPoint(point.copy(corner).applyMatrix4(camera.matrixWorldInverse)),
+  );
+  bounds.expandByScalar(SHADOW_MARGIN);
+  camera.left = bounds.min.x;
+  camera.right = bounds.max.x;
+  camera.bottom = bounds.min.y;
+  camera.top = bounds.max.y;
+  camera.updateProjectionMatrix();
 }

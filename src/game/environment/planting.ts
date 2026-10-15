@@ -75,6 +75,12 @@ function placementFor(context: BiomeContext, options: PlantOptions, spot: Spot):
   };
 }
 
+function thin<T>(items: T[], density: number): T[] {
+  return items.filter(
+    (_, index) => Math.floor((index + 1) * density) > Math.floor(index * density),
+  );
+}
+
 export function plant(context: BiomeContext, options: PlantOptions): Placement[] {
   const groups: Placement[][] = options.models.map(() => []);
   const all = options.spots.map((spot) => {
@@ -82,7 +88,8 @@ export function plant(context: BiomeContext, options: PlantOptions): Placement[]
     groups[context.rng.int(0, options.models.length - 1)].push(placement);
     return placement;
   });
-  groups.forEach((placements, index) => {
+  groups.forEach((group, index) => {
+    const placements = thin(group, context.detail.props);
     if (placements.length === 0) return;
     options.models[index].forEach((part) =>
       context.add(

@@ -3,12 +3,15 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { DynamicResolution } from './DynamicResolution';
+import type { QualityPreset } from './quality';
 
 const BLOOM = { strength: 0.5, radius: 0.7, threshold: 0.8 };
-const MSAA_SAMPLES = 4;
-const MAX_PIXEL_RATIO = 1.5;
 const EXPOSURE = 1.05;
 const INITIAL_SIZE = 1;
+const MIN_BLOOM_SIZE = 1;
+const MS_PER_SECOND = 1000;
+const VISIBLE: DocumentVisibilityState = 'visible';
 
 export interface Viewport {
   readonly width: number;
@@ -16,9 +19,9 @@ export interface Viewport {
 }
 
 interface Pipeline {
-  renderer: THREE.WebGLRenderer;
-  composer: EffectComposer;
-  scenePass: RenderPass;
+  readonly preset: QualityPreset;
+  readonly composer: EffectComposer;
+  readonly scenePass: RenderPass;
 }
 
 interface Stage {
@@ -26,83 +29,130 @@ interface Stage {
   camera: THREE.PerspectiveCamera;
 }
 
-function pixelRatio(): number {
-  return Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO);
+class ScaledBloomPass extends UnrealBloomPass {
+  constructor(private readonly scale: number) {
+    const resolution = new THREE.Vector2(INITIAL_SIZE, INITIAL_SIZE);
+    super(resolution, BLOOM.strength, BLOOM.radius, BLOOM.threshold);
+  }
+
+  override setSize(width: number, height: number): void {
+    super.setSize(this.scaled(width), this.scaled(height));
+  }
+
+  private scaled(size: number): number {
+    return Math.max(MIN_BLOOM_SIZE, Math.round(size * this.scale));
+  }
 }
 
 function createRenderer(): THREE.WebGLRenderer {
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  const renderer = new THREE.WebGLRenderer({ antialias: false });
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = EXPOSURE;
-  renderer.setPixelRatio(pixelRatio());
   return renderer;
 }
 
-function createPipeline(scene: THREE.Scene, camera: THREE.Camera): Pipeline {
-  const renderer = createRenderer();
+function createPipeline(
+  renderer: THREE.WebGLRenderer,
+  preset: QualityPreset,
+  scene: THREE.Scene,
+  camera: THREE.Camera,
+): Pipeline {
   const target = new THREE.WebGLRenderTarget(INITIAL_SIZE, INITIAL_SIZE, {
-    samples: MSAA_SAMPLES,
+    samples: preset.msaaSamples,
     type: THREE.HalfFloatType,
   });
   const composer = new EffectComposer(renderer, target);
   const scenePass = new RenderPass(scene, camera);
-  const bloomResolution = new THREE.Vector2(INITIAL_SIZE, INITIAL_SIZE);
   composer.addPass(scenePass);
-  composer.addPass(
-    new UnrealBloomPass(bloomResolution, BLOOM.strength, BLOOM.radius, BLOOM.threshold),
-  );
+  if (preset.bloom.enabled) composer.addPass(new ScaledBloomPass(preset.bloom.scale));
   composer.addPass(new OutputPass());
-  return { renderer, composer, scenePass };
+  return { preset, composer, scenePass };
+}
+
+function disposePipeline({ composer }: Pipeline): void {
+  composer.passes.forEach((pass) => pass.dispose());
+  composer.dispose();
+}
+
+function pixelRatioCap(preset: QualityPreset): number {
+  return Math.min(window.devicePixelRatio, preset.maxPixelRatio);
 }
 
 class RenderHost {
+  private renderer: THREE.WebGLRenderer | undefined;
   private pipeline: Pipeline | undefined;
   private stage: Stage | undefined;
+  private resolution: DynamicResolution | undefined;
   private size: Viewport = { width: INITIAL_SIZE, height: INITIAL_SIZE };
 
   get viewport(): Viewport {
     return this.size;
   }
 
-  attach(container: HTMLElement, scene: THREE.Scene, camera: THREE.PerspectiveCamera): void {
-    this.pipeline ??= createPipeline(scene, camera);
-    this.pipeline.scenePass.scene = scene;
-    this.pipeline.scenePass.camera = camera;
+  attach(
+    container: HTMLElement,
+    scene: THREE.Scene,
+    camera: THREE.PerspectiveCamera,
+    preset: QualityPreset,
+  ): void {
+    const renderer = (this.renderer ??= createRenderer());
+    this.usePreset(renderer, preset, scene, camera);
     this.stage = { container, camera };
-    container.append(this.pipeline.renderer.domElement);
+    this.resolution = new DynamicResolution(pixelRatioCap(preset));
+    container.append(renderer.domElement);
     window.addEventListener('resize', this.resize);
     this.resize();
   }
 
   detach(): void {
     window.removeEventListener('resize', this.resize);
-    this.pipeline?.renderer.domElement.remove();
+    this.renderer?.domElement.remove();
     this.stage = undefined;
+    this.resolution = undefined;
   }
 
   render(): void {
     if (this.stage) this.pipeline?.composer.render();
   }
 
+  recordFrame(seconds: number): void {
+    if (this.resolution?.record(seconds * MS_PER_SECOND)) this.applyPixelRatio();
+  }
+
+  private usePreset(
+    renderer: THREE.WebGLRenderer,
+    preset: QualityPreset,
+    scene: THREE.Scene,
+    camera: THREE.Camera,
+  ): void {
+    if (this.pipeline?.preset !== preset) {
+      if (this.pipeline) disposePipeline(this.pipeline);
+      this.pipeline = createPipeline(renderer, preset, scene, camera);
+    }
+    renderer.shadowMap.type = preset.shadow.soft ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
+    this.pipeline.scenePass.scene = scene;
+    this.pipeline.scenePass.camera = camera;
+  }
+
   private readonly resize = (): void => {
-    if (!this.pipeline || !this.stage) return;
+    if (!this.renderer || !this.pipeline || !this.stage) return;
     const { container, camera } = this.stage;
-    const { renderer, composer } = this.pipeline;
     this.size = { width: container.clientWidth, height: container.clientHeight };
-    camera.aspect = this.size.width / this.size.height;
+    const { width, height } = this.size;
+    camera.aspect = width / height;
     camera.updateProjectionMatrix();
     this.applyPixelRatio();
-    renderer.setSize(this.size.width, this.size.height);
-    composer.setSize(this.size.width, this.size.height);
+    this.renderer.setSize(width, height);
+    this.pipeline.composer.setSize(width, height);
+    if (document.visibilityState === VISIBLE) this.pipeline.composer.render();
   };
 
   private applyPixelRatio(): void {
-    if (!this.pipeline) return;
-    const ratio = pixelRatio();
-    if (this.pipeline.renderer.getPixelRatio() === ratio) return;
-    this.pipeline.renderer.setPixelRatio(ratio);
+    if (!this.renderer || !this.pipeline || !this.resolution) return;
+    const ratio = Math.min(this.resolution.pixelRatio, pixelRatioCap(this.pipeline.preset));
+    if (this.renderer.getPixelRatio() === ratio) return;
+    this.renderer.setPixelRatio(ratio);
     this.pipeline.composer.setPixelRatio(ratio);
   }
 }
