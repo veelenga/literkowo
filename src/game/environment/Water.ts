@@ -15,6 +15,7 @@ export interface WaterSpec {
   lightDirection: THREE.Vector3;
   region: { minX: number; maxX: number; minZ: number; maxZ: number };
   cell: number;
+  detailed: boolean;
 }
 
 export type DepthSampler = (x: number, z: number) => number;
@@ -70,13 +71,17 @@ void main() {
   color *= 0.72 + 0.4 * max(dot(normal, uLightDirection), 0.0);
   float fresnel = pow(1.0 - max(dot(normal, view), 0.0), 4.0);
   color = mix(color, uRim, clamp(fresnel * 1.2, 0.0, 0.35));
+  float lap = 0.16 + 0.07 * sin(uTime * 1.6 + vWorld.x * 0.7 + vWorld.z * 0.5);
+  float edge = 1.0 - smoothstep(0.0, lap, vDepth);
+#ifdef WATER_DETAIL
   vec3 halfway = normalize(uGlintDirection + view);
   float glint = pow(max(dot(normal, halfway), 0.0), 220.0);
   color += uGlint * glint * 4.0;
-  float lap = 0.16 + 0.07 * sin(uTime * 1.6 + vWorld.x * 0.7 + vWorld.z * 0.5);
-  float edge = 1.0 - smoothstep(0.0, lap, vDepth);
   float froth = kitNoise(vWorld.xz * 2.4 + vec2(uTime * 0.35, -uTime * 0.25));
   float foam = edge * step(0.3, froth + edge * 0.45);
+#else
+  float foam = step(0.55, edge);
+#endif
   color = mix(color, uFoam, foam * 0.9);
   gl_FragColor = vec4(color, 1.0);
   #include <fog_fragment>
@@ -91,6 +96,7 @@ export class Water implements Animated {
     const material = new THREE.ShaderMaterial({
       vertexShader: VERTEX,
       fragmentShader: FRAGMENT,
+      defines: spec.detailed ? { WATER_DETAIL: '' } : {},
       fog: true,
       uniforms: THREE.UniformsUtils.merge([
         THREE.UniformsLib.fog,

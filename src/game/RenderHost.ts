@@ -3,14 +3,12 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import type { QualityPreset } from './quality';
 
 const BLOOM = { strength: 0.5, radius: 0.7, threshold: 0.8 };
-const BLOOM_SCALE = 0.5;
-const MIN_BLOOM_SIZE = 1;
-const MSAA_SAMPLES = 4;
-const MAX_PIXEL_RATIO = 1.5;
 const EXPOSURE = 1.05;
 const INITIAL_SIZE = 1;
+const MIN_BLOOM_SIZE = 1;
 const VISIBLE: DocumentVisibilityState = 'visible';
 
 export interface Viewport {
@@ -19,9 +17,9 @@ export interface Viewport {
 }
 
 interface Pipeline {
-  renderer: THREE.WebGLRenderer;
-  composer: EffectComposer;
-  scenePass: RenderPass;
+  readonly preset: QualityPreset;
+  readonly composer: EffectComposer;
+  readonly scenePass: RenderPass;
 }
 
 interface Stage {
@@ -44,35 +42,43 @@ class ScaledBloomPass extends UnrealBloomPass {
   }
 }
 
-function pixelRatio(): number {
-  return Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO);
-}
-
 function createRenderer(): THREE.WebGLRenderer {
   const renderer = new THREE.WebGLRenderer({ antialias: false });
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = EXPOSURE;
-  renderer.setPixelRatio(pixelRatio());
   return renderer;
 }
 
-function createPipeline(scene: THREE.Scene, camera: THREE.Camera): Pipeline {
-  const renderer = createRenderer();
+function createPipeline(
+  renderer: THREE.WebGLRenderer,
+  preset: QualityPreset,
+  scene: THREE.Scene,
+  camera: THREE.Camera,
+): Pipeline {
   const target = new THREE.WebGLRenderTarget(INITIAL_SIZE, INITIAL_SIZE, {
-    samples: MSAA_SAMPLES,
+    samples: preset.msaaSamples,
     type: THREE.HalfFloatType,
   });
   const composer = new EffectComposer(renderer, target);
   const scenePass = new RenderPass(scene, camera);
   composer.addPass(scenePass);
-  composer.addPass(new ScaledBloomPass(BLOOM_SCALE));
+  if (preset.bloom.enabled) composer.addPass(new ScaledBloomPass(preset.bloom.scale));
   composer.addPass(new OutputPass());
-  return { renderer, composer, scenePass };
+  return { preset, composer, scenePass };
+}
+
+function disposePipeline({ composer }: Pipeline): void {
+  composer.passes.forEach((pass) => pass.dispose());
+  composer.dispose();
+}
+
+function pixelRatioCap(preset: QualityPreset): number {
+  return Math.min(window.devicePixelRatio, preset.maxPixelRatio);
 }
 
 class RenderHost {
+  private renderer: THREE.WebGLRenderer | undefined;
   private pipeline: Pipeline | undefined;
   private stage: Stage | undefined;
   private size: Viewport = { width: INITIAL_SIZE, height: INITIAL_SIZE };
@@ -81,19 +87,23 @@ class RenderHost {
     return this.size;
   }
 
-  attach(container: HTMLElement, scene: THREE.Scene, camera: THREE.PerspectiveCamera): void {
-    this.pipeline ??= createPipeline(scene, camera);
-    this.pipeline.scenePass.scene = scene;
-    this.pipeline.scenePass.camera = camera;
+  attach(
+    container: HTMLElement,
+    scene: THREE.Scene,
+    camera: THREE.PerspectiveCamera,
+    preset: QualityPreset,
+  ): void {
+    const renderer = (this.renderer ??= createRenderer());
+    this.usePreset(renderer, preset, scene, camera);
     this.stage = { container, camera };
-    container.append(this.pipeline.renderer.domElement);
+    container.append(renderer.domElement);
     window.addEventListener('resize', this.resize);
     this.resize();
   }
 
   detach(): void {
     window.removeEventListener('resize', this.resize);
-    this.pipeline?.renderer.domElement.remove();
+    this.renderer?.domElement.remove();
     this.stage = undefined;
   }
 
@@ -101,24 +111,39 @@ class RenderHost {
     if (this.stage) this.pipeline?.composer.render();
   }
 
+  private usePreset(
+    renderer: THREE.WebGLRenderer,
+    preset: QualityPreset,
+    scene: THREE.Scene,
+    camera: THREE.Camera,
+  ): void {
+    if (this.pipeline?.preset !== preset) {
+      if (this.pipeline) disposePipeline(this.pipeline);
+      this.pipeline = createPipeline(renderer, preset, scene, camera);
+    }
+    renderer.shadowMap.type = preset.shadow.soft ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
+    this.pipeline.scenePass.scene = scene;
+    this.pipeline.scenePass.camera = camera;
+  }
+
   private readonly resize = (): void => {
-    if (!this.pipeline || !this.stage) return;
+    if (!this.renderer || !this.pipeline || !this.stage) return;
     const { container, camera } = this.stage;
-    const { renderer, composer } = this.pipeline;
     this.size = { width: container.clientWidth, height: container.clientHeight };
-    camera.aspect = this.size.width / this.size.height;
+    const { width, height } = this.size;
+    camera.aspect = width / height;
     camera.updateProjectionMatrix();
     this.applyPixelRatio();
-    renderer.setSize(this.size.width, this.size.height);
-    composer.setSize(this.size.width, this.size.height);
-    if (document.visibilityState === VISIBLE) composer.render();
+    this.renderer.setSize(width, height);
+    this.pipeline.composer.setSize(width, height);
+    if (document.visibilityState === VISIBLE) this.pipeline.composer.render();
   };
 
   private applyPixelRatio(): void {
-    if (!this.pipeline) return;
-    const ratio = pixelRatio();
-    if (this.pipeline.renderer.getPixelRatio() === ratio) return;
-    this.pipeline.renderer.setPixelRatio(ratio);
+    if (!this.renderer || !this.pipeline) return;
+    const ratio = pixelRatioCap(this.pipeline.preset);
+    if (this.renderer.getPixelRatio() === ratio) return;
+    this.renderer.setPixelRatio(ratio);
     this.pipeline.composer.setPixelRatio(ratio);
   }
 }

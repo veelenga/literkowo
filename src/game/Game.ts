@@ -20,6 +20,7 @@ import type { AnnounceStyle, MechanicContext } from './mechanics/Mechanic';
 import { MechanicGroup } from './mechanics/MechanicGroup';
 import { Particles } from './Particles';
 import { Player } from './Player';
+import { currentQuality } from './quality';
 import { renderHost } from './RenderHost';
 import { SessionStats } from './SessionStats';
 import type { Theme } from './themes';
@@ -112,10 +113,11 @@ export class Game {
     this.player = new Player(config.character);
     this.words = new WordSource(config.level, config.language);
     this.phases = planFor(config.level);
-    this.world = new World(this.scene, config.theme);
+    const quality = currentQuality();
+    this.world = new World(this.scene, config.theme, quality);
     this.scene.add(this.player.object);
     this.placeCameraForIntro();
-    renderHost.attach(container, this.scene, this.camera);
+    renderHost.attach(container, this.scene, this.camera, quality);
     this.labels = new LabelLayer(container);
     this.mechanics.register(createMechanics(this.createMechanicContext()));
   }

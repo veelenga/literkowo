@@ -162,8 +162,10 @@ function decorate(context: BiomeContext, land: Forest): void {
   addUndergrowth(context);
   addDeadwood(context, occupancy);
   addBoulders(context, occupancy);
-  addShafts(context, land.shafts);
-  addMist(context);
+  if (context.detail.extras) {
+    addShafts(context, land.shafts);
+    addMist(context);
+  }
 }
 
 function addPines(context: BiomeContext, land: Forest, occupancy: Occupancy): void {

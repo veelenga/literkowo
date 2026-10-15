@@ -14,6 +14,8 @@ import { addParticles, arenaRise, SWAY, tints, towardCenter, weightIf, within } 
 const CELL = 1.2;
 const STEP = 0.4;
 const WATER_LEVEL = -0.22;
+const WATER_CELL = 0.9;
+const COARSE_WATER_CELL = 1.8;
 const SHORE_BASE = 15.2;
 const SHORE_SWING = 2;
 const SEABED_DEPTH = 3.4;
@@ -308,7 +310,8 @@ function addWater(context: BiomeContext): void {
       amplitude: 0.16,
       lightDirection: context.sunDirection,
       region: TERRAIN_EXTENT,
-      cell: 0.9,
+      cell: context.detail.extras ? WATER_CELL : COARSE_WATER_CELL,
+      detailed: context.detail.extras,
     },
     (x, z) => WATER_LEVEL - terrain.heightAt(x, z),
   );

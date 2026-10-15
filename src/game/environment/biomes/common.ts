@@ -1,5 +1,10 @@
 import * as THREE from 'three';
-import { AmbientParticles, type AmbientSpec, type SpawnSurface } from '../../AmbientParticles';
+import {
+  AmbientParticles,
+  scaleAmbient,
+  type AmbientSpec,
+  type SpawnSurface,
+} from '../../AmbientParticles';
 import * as props from '../../props';
 import { ARENA, distance, NEAR_STAGE } from '../layout';
 import { plant, shapes } from '../planting';
@@ -110,7 +115,8 @@ export function addParticles(
   spec: AmbientSpec,
   surface?: SpawnSurface,
 ): void {
-  const particles = new AmbientParticles(spec, context.rng.fork(), surface);
+  const scaled = scaleAmbient(spec, context.detail.particles);
+  const particles = new AmbientParticles(scaled, context.rng.fork(), surface);
   context.add(particles.points);
   context.animate(particles);
 }

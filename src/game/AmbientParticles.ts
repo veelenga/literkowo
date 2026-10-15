@@ -20,6 +20,10 @@ export interface AmbientSpec {
 
 export type SpawnSurface = (x: number, z: number) => number | undefined;
 
+export function scaleAmbient(spec: AmbientSpec, factor: number): AmbientSpec {
+  return { ...spec, count: Math.round(spec.count * factor) };
+}
+
 const DEFAULT_REGION: Region = { minX: -25, maxX: 25, minZ: -21, maxZ: 12 };
 const MAX_SPAWN_TRIES = 30;
 const HALF = 0.5;

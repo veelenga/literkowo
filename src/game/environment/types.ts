@@ -1,4 +1,5 @@
 import type * as THREE from 'three';
+import type { SceneDetail } from '../quality';
 import type { MaterialKit } from './materials';
 import type { Rng } from './random';
 import type { Terrain, TerrainSpec } from './Terrain';
@@ -12,6 +13,7 @@ export interface BiomeContext {
   terrain: Terrain;
   materials: MaterialKit;
   sunDirection: THREE.Vector3;
+  detail: SceneDetail;
   add(object: THREE.Object3D): void;
   animate(item: Animated): void;
 }
