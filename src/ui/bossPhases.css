@@ -1,12 +1,20 @@
-.keyboard {
+.keyboard-full {
   transition:
     opacity 600ms ease,
     visibility 600ms;
 }
 
-body.is-darkness .keyboard {
+body.is-darkness .keyboard-full {
   opacity: 0;
   visibility: hidden;
+}
+
+body.is-darkness .keyboard-compact .key:not(.is-latched) {
+  color: var(--muted);
+  background: var(--surface-raised);
+  border-color: var(--border-strong);
+  box-shadow: 0 3px 0 var(--surface-edge);
+  transform: none;
 }
 
 body.is-darkness::after {
@@ -34,7 +42,7 @@ body.is-darkness::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .keyboard {
+  .keyboard-full {
     transition: none;
   }
 
