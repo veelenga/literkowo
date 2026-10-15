@@ -1,0 +1,35 @@
+.treasure-chip.is-link {
+  position: relative;
+  min-height: 32px;
+  color: var(--text);
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) ease;
+}
+
+@media (hover: hover) {
+  .treasure-chip.is-link:hover {
+    transform: translateY(-2px);
+    background: color-mix(in srgb, var(--trophy) 28%, transparent);
+  }
+}
+
+.treasure-chip.is-link:active {
+  transform: translateY(1px);
+}
+
+.treasure-go {
+  margin-left: 2px;
+  color: var(--trophy);
+  font-size: 1.1em;
+  font-weight: 900;
+  line-height: 1;
+}
+
+@media (pointer: coarse) {
+  .treasure-chip.is-link::after {
+    content: '';
+    position: absolute;
+    inset: -6px 0;
+  }
+}

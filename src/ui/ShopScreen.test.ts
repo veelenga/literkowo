@@ -125,4 +125,21 @@ describe('ShopScreen', () => {
     shop.element.querySelector<HTMLButtonElement>('.shop-back')?.click();
     expect(onBack.mock.lastCall?.[0].coins).toBe(40);
   });
+
+  it('names the map on the back button unless it was opened from elsewhere', () => {
+    const backOf = (backLabel?: string) =>
+      new ShopScreen(profileWith(), {
+        onChange: vi.fn(),
+        onBack: vi.fn(),
+        backLabel,
+      }).element.querySelector('.shop-back')?.textContent;
+    expect(backOf()).toBe('Mapa');
+    expect(backOf('Arena')).toBe('Arena');
+  });
+
+  it('can open straight on the trophies', () => {
+    const shop = new ShopScreen(profileWith(), { onChange: vi.fn(), onBack: vi.fn() }, 'trophy');
+    expect(shop.element.querySelector('.shop-tabs .chip.is-active')?.textContent).toBe('Trofea');
+    expect(shop.element.querySelector('.shop-trophy-count')).not.toBeNull();
+  });
 });

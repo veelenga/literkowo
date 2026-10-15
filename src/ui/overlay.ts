@@ -6,6 +6,7 @@ export interface Overlay {
 type Cleanup = () => void;
 
 export const KEY_READY_MS = 600;
+const ESCAPE_KEY = 'Escape';
 
 export function createOverlay(element: HTMLElement, ...cleanups: Cleanup[]): Overlay {
   let disposed = false;
@@ -25,6 +26,17 @@ type KeyHandler = (event: KeyboardEvent) => void;
 export function onWindowKey(handler: KeyHandler): Cleanup {
   window.addEventListener('keydown', handler);
   return () => window.removeEventListener('keydown', handler);
+}
+
+export function claimEscapeKey(handler: () => void): Cleanup {
+  const listener = (event: KeyboardEvent): void => {
+    if (event.key !== ESCAPE_KEY) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    handler();
+  };
+  window.addEventListener('keydown', listener, true);
+  return () => window.removeEventListener('keydown', listener, true);
 }
 
 export function onWindowKeyAfter(delayMs: number, handler: KeyHandler): Cleanup {

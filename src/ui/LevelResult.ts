@@ -6,7 +6,7 @@ import { Counter, el, icon, prefersReducedMotion } from './dom';
 import { ResultKeys } from './mastery';
 import { createOverlay, KEY_READY_MS, onWindowKeyAfter, type Overlay } from './overlay';
 import { ResultProgress, type EarnedRewards } from './ResultProgress';
-import { treasuresNote, type Treasures } from './resultTreasures';
+import { treasuresNote, type OpenShop, type Treasures } from './resultTreasures';
 
 const STAR_INTRO_MS = 240;
 const STAR_STAGGER_MS = 220;
@@ -24,6 +24,7 @@ interface Actions {
   onNext?: () => void;
   onRetry: () => void;
   onMap: () => void;
+  onShop: OpenShop;
 }
 
 interface ResultAction {
@@ -76,7 +77,7 @@ export function levelResult(
       el('p', { class: 'result-hint', text: result.won ? starsHint() : t.retryHint }),
       el('div', { class: 'result-stats' }, ...tiles.map((tile) => tile.element)),
       progress.element,
-      treasuresNote(earned.treasures),
+      treasuresNote(earned.treasures, actions.onShop),
       keys.element,
       actionsRow(choices),
     ),

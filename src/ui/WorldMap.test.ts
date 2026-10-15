@@ -5,10 +5,14 @@ import { WorldMap } from './WorldMap';
 
 const DONE = { stars: 2, score: 1, accuracy: 1, wpm: 1 };
 
-function mapOf(profile: Profile, onArena: () => void = () => undefined): HTMLElement {
+function mapOf(
+  profile: Profile,
+  onArena: () => void = () => undefined,
+  onSettings: () => void = () => undefined,
+): HTMLElement {
   const noop = () => undefined;
-  return new WorldMap(profile, { onPlay: noop, onSwitchPlayer: noop, onShop: noop, onArena })
-    .element;
+  const actions = { onPlay: noop, onSwitchPlayer: noop, onShop: noop, onArena, onSettings };
+  return new WorldMap(profile, actions).element;
 }
 
 function polanaDone(): Profile {
@@ -73,5 +77,15 @@ describe('WorldMap', () => {
     map.querySelector<HTMLButtonElement>('.arena-button')?.click();
     expect(onArena).toHaveBeenCalledTimes(2);
     expect(map.querySelector('.arena-button')?.classList).not.toContain('is-locked');
+  });
+
+  it('opens the settings from the gear next to the sound toggle', () => {
+    const onSettings = vi.fn();
+    const map = mapOf(createProfile('Ola', 'a'), undefined, onSettings);
+    const gear = map.querySelector<HTMLButtonElement>('.settings-button');
+    expect(gear?.nextElementSibling?.classList).toContain('sound-toggle');
+    expect(gear?.getAttribute('aria-label')).toBe('Ustawienia');
+    gear?.click();
+    expect(onSettings).toHaveBeenCalledOnce();
   });
 });

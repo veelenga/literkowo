@@ -1,0 +1,34 @@
+.shop-link {
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px 0 10px;
+  font-size: 0.95rem;
+  color: var(--accent-light);
+}
+
+.shop-link-icon {
+  width: 20px;
+  height: 20px;
+  fill: var(--accent);
+}
+
+.shop-coins > .shop-link {
+  margin-right: 6px;
+}
+
+@media (max-width: 600px) {
+  .shop-link.is-icon-on-phone {
+    width: var(--touch-target);
+    padding: 0;
+  }
+
+  .shop-link.is-icon-on-phone .shop-link-label {
+    display: none;
+  }
+}
+
+@media (pointer: coarse) {
+  .shop-link {
+    min-height: var(--touch-target);
+  }
+}

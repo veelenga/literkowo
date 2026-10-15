@@ -2,6 +2,7 @@ const pl = {
   title: 'Sklep',
   open: 'Sklep',
   back: 'Mapa',
+  backToProfiles: 'Gracze',
   hero: 'Twój bohater',
   newInShop: 'Nowość w sklepie',
   tabs: {
@@ -78,6 +79,7 @@ const uk: typeof pl = {
   title: 'Крамниця',
   open: 'Крамниця',
   back: 'Мапа',
+  backToProfiles: 'Гравці',
   hero: 'Твій герой',
   newInShop: 'Новинка в крамниці',
   tabs: {

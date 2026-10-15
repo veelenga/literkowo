@@ -39,9 +39,13 @@ const FRESH_CLASS = 'is-fresh';
 const ENTERING_CLASS = 'is-entering';
 const CONFETTI_PIECES = 20;
 
-interface ShopActions {
-  onBack: (profile: Profile) => void;
-  onChange: (profile: Profile) => void;
+export interface ShopExit {
+  readonly onBack: (profile: Profile) => void;
+  readonly backLabel?: string;
+}
+
+interface ShopActions extends ShopExit {
+  readonly onChange: (profile: Profile) => void;
 }
 
 export class ShopScreen {
@@ -49,11 +53,11 @@ export class ShopScreen {
   private readonly hero = new ShopHero();
   private readonly coins = el('div', { class: 'shop-coins' });
   private readonly catalogue = el('section', { class: 'shop-catalogue' });
-  private tab: ShopTab = SHOP_TABS[0];
 
   constructor(
     private profile: Profile,
     private readonly actions: ShopActions,
+    private tab: ShopTab = SHOP_TABS[0],
   ) {
     this.element.append(
       this.header(),
@@ -80,7 +84,7 @@ export class ShopScreen {
           onClick: () => this.actions.onBack(this.profile),
         },
         shopIcon('back', 'shop-back-icon'),
-        copy.back,
+        this.actions.backLabel ?? copy.back,
       ),
       el('h1', { class: 'logo logo-small shop-title', text: copy.title }),
       this.coins,

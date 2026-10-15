@@ -8,6 +8,7 @@ const pl = {
     practice: 'Ćwiczymy w krótkich słowach. Najpierw dokładnie, potem szybko!',
     review: 'Powtarzamy wszystkie poznane klawisze. Dasz radę!',
   },
+  backToMap: 'Wróć do mapy',
 };
 
 const uk: typeof pl = {
@@ -20,6 +21,7 @@ const uk: typeof pl = {
     practice: 'Тренуємося на коротких словах. Спершу точно, потім швидко!',
     review: 'Повторюємо всі вивчені клавіші. Ти впораєшся!',
   },
+  backToMap: 'Повернутися до мапи',
 };
 
 export const course = { pl, uk };

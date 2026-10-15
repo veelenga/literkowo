@@ -1,61 +1,31 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { readQualityChoice, saveQualityChoice } from '../game/quality';
+import { describe, expect, it, vi } from 'vitest';
 import { pauseOverlay } from './PauseOverlay';
 
-const STORAGE_KEY = 'literkowo.quality';
-
-function chips(): HTMLButtonElement[] {
-  return [
-    ...pauseOverlay(() => undefined, {}).element.querySelectorAll<HTMLButtonElement>(
-      '.quality-options .chip',
-    ),
-  ];
+function open() {
+  const actions = { onResume: vi.fn(), onSettings: vi.fn() };
+  const overlay = pauseOverlay(actions.onResume, {}, actions.onSettings);
+  return { ...actions, element: overlay.element };
 }
 
-function activeLabels(buttons: HTMLButtonElement[]): string[] {
-  return buttons
-    .filter((chip) => chip.classList.contains('is-active'))
-    .map((chip) => chip.textContent ?? '');
-}
-
-describe('pauseOverlay quality picker', () => {
-  afterEach(() => {
-    localStorage.removeItem(STORAGE_KEY);
-  });
-
-  it('offers auto and the three presets with auto active by default', () => {
-    const buttons = chips();
-    expect(buttons.map((chip) => chip.textContent)).toEqual(['Auto', 'Wysoka', 'Średnia', 'Niska']);
-    expect(activeLabels(buttons)).toEqual(['Auto']);
-  });
-
-  it('marks the stored choice', () => {
-    saveQualityChoice('medium');
-    expect(activeLabels(chips())).toEqual(['Średnia']);
-  });
-
-  it('saves the picked choice and moves the highlight', () => {
-    const buttons = chips();
-    buttons[3].click();
-    expect(readQualityChoice()).toBe('low');
-    expect(activeLabels(buttons)).toEqual(['Niska']);
-    expect(buttons[3].getAttribute('aria-pressed')).toBe('true');
-    expect(buttons[0].getAttribute('aria-pressed')).toBe('false');
-  });
-});
-
-describe('pauseOverlay resume button', () => {
+describe('pauseOverlay', () => {
   it('resumes the level when tapped', () => {
-    const onResume = vi.fn();
-    const overlay = pauseOverlay(onResume, {});
-    overlay.element.querySelector<HTMLButtonElement>('.button-primary')?.click();
+    const { element, onResume } = open();
+    element.querySelector<HTMLButtonElement>('.button-primary')?.click();
     expect(onResume).toHaveBeenCalledOnce();
   });
-});
 
-describe('pauseOverlay key heatmap', () => {
+  it('opens the settings and no longer picks the quality itself', () => {
+    const { element, onSettings, onResume } = open();
+    const settings = element.querySelector<HTMLButtonElement>('.settings-text-button');
+    expect(settings?.textContent).toBe('Ustawienia');
+    settings?.click();
+    expect(onSettings).toHaveBeenCalledOnce();
+    expect(onResume).not.toHaveBeenCalled();
+    expect(element.querySelector('.quality-picker')).toBeNull();
+  });
+
   it('shows the accuracy of each key', () => {
-    const overlay = pauseOverlay(() => undefined, {});
-    expect(overlay.element.querySelector('.heatmap-title')?.textContent).toBe('Celność klawiszy');
+    const { element } = open();
+    expect(element.querySelector('.heatmap-title')?.textContent).toBe('Celność klawiszy');
   });
 });

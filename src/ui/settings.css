@@ -1,0 +1,180 @@
+.settings-layer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  background:
+    radial-gradient(1100px 700px at 12% -10%, var(--bg-glow-blue), transparent 60%),
+    radial-gradient(900px 640px at 100% 110%, var(--bg-glow-violet), transparent 60%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+}
+
+.settings-screen {
+  padding-bottom: calc(48px + var(--safe-bottom));
+}
+
+.shop-header.settings-header {
+  grid-template-columns: 1fr auto 1fr;
+}
+
+.settings-title {
+  margin: 0;
+}
+
+.settings-layout {
+  width: min(720px, calc(100% - 48px));
+  margin: 28px auto 0;
+}
+
+.settings-panel {
+  padding: 6px 28px;
+  animation: rise-in var(--duration-slow) var(--ease-out) backwards;
+}
+
+.settings-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px 24px;
+  padding: 20px 0;
+}
+
+.settings-row + .settings-row {
+  border-top: 1px solid var(--border);
+}
+
+.settings-label {
+  margin: 0;
+  font-size: 1.12rem;
+  font-weight: 900;
+}
+
+.settings-hint {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.settings-chips .chip {
+  padding: 9px 14px;
+  white-space: nowrap;
+}
+
+.switch {
+  position: relative;
+  flex: none;
+  width: 76px;
+  height: var(--touch-target);
+  padding: 0;
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--border);
+  background: var(--surface-sunken);
+  transition:
+    background var(--duration-fast) ease,
+    border-color var(--duration-fast) ease;
+}
+
+.switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--muted);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+  transition:
+    translate var(--duration) var(--ease-spring),
+    background var(--duration-fast) ease;
+}
+
+.switch.is-on {
+  border-color: rgba(255, 240, 200, 0.55);
+  background: linear-gradient(180deg, var(--accent-light), var(--accent));
+}
+
+.switch.is-on .switch-knob {
+  translate: 32px 0;
+  background: #ffffff;
+}
+
+.settings-gear {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: rgba(6, 10, 30, 0.6);
+  backdrop-filter: blur(8px);
+  color: var(--muted);
+  transition:
+    color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    rotate var(--duration-slow) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .settings-gear:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+    rotate: 45deg;
+  }
+}
+
+.settings-gear-icon,
+.settings-text-icon {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+
+@media (max-width: 1100px) {
+  .settings-button {
+    justify-content: center;
+    width: 42px;
+    padding: 0;
+  }
+
+  .settings-button .header-button-label {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .settings-row:not(.is-inline) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 600px), (max-height: 480px) {
+  .settings-layout {
+    width: calc(100% - 24px);
+    margin-top: 14px;
+  }
+
+  .settings-panel {
+    padding: 2px 16px;
+    border-radius: var(--radius-lg);
+  }
+
+  .settings-row {
+    padding: 14px 0;
+  }
+
+  .settings-label {
+    font-size: 1.02rem;
+  }
+
+  .settings-chips .chip {
+    padding: 9px 6px;
+    font-size: 0.92rem;
+  }
+}
+
+@media (pointer: coarse) {
+  .settings-gear {
+    width: var(--touch-target);
+    height: var(--touch-target);
+  }
+}

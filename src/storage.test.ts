@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { readStorage, removeStorage, writeStorage } from './storage';
+import { readChoice, readStorage, removeStorage, writeStorage } from './storage';
 import { FailingStorage, MemoryStorage } from './testing/memoryStorage';
 
 const KEY = 'literkowo.test';
@@ -22,6 +22,15 @@ describe('storage', () => {
       writeStorage(KEY, 'value');
       expect(storage.getItem(KEY)).toBe('value');
       expect(readStorage(KEY)).toBe('value');
+    });
+
+    it('reads a stored choice and falls back for anything unknown', () => {
+      const choices = ['auto', 'always', 'never'] as const;
+      expect(readChoice(KEY, choices, 'auto')).toBe('auto');
+      writeStorage(KEY, 'never');
+      expect(readChoice(KEY, choices, 'auto')).toBe('never');
+      writeStorage(KEY, 'sometimes');
+      expect(readChoice(KEY, choices, 'auto')).toBe('auto');
     });
 
     it('removes values', () => {

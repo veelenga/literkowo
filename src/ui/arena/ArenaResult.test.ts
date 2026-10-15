@@ -36,7 +36,7 @@ function summary(overrides: Partial<ArenaRunSummary> = {}): ArenaRunSummary {
 function setup(overrides: Partial<ArenaRunSummary> = {}) {
   const onArena = vi.fn();
   const onRetry = vi.fn();
-  const overlay = arenaResult(summary(overrides), { onArena, onRetry });
+  const overlay = arenaResult(summary(overrides), { onArena, onRetry, onShop: vi.fn() });
   document.body.append(overlay.element);
   const text = (selector: string) => overlay.element.querySelector(selector)?.textContent;
   return { overlay, onArena, onRetry, text };

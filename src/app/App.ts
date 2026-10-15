@@ -38,7 +38,8 @@ import { OverlaySlot, type Overlay } from '../ui/overlay';
 import { pauseOverlay } from '../ui/PauseOverlay';
 import { ProfileScreen } from '../ui/ProfileScreen';
 import { rotateHint } from '../ui/RotateHint';
-import { ShopScreen } from '../ui/ShopScreen';
+import { SettingsScreen, settingsOverlay } from '../ui/SettingsScreen';
+import { ShopScreen, type ShopExit, type ShopTab } from '../ui/ShopScreen';
 import { watchStageInsets } from '../ui/stageInsets';
 import { storyCard } from '../ui/StoryCard';
 import { TouchTyping } from '../ui/TouchTyping';
@@ -65,6 +66,7 @@ export class App {
   private readonly arena = new ArenaFlow({
     showMenu: (create) => this.showMenu(create),
     showMap: (profile) => this.showMap(profile),
+    showShop: (profile, exit, tab) => this.showShop(profile, exit, tab),
     startRun: (profile, run) => this.startRun(profile, run),
     openOverlay: (overlay) => this.overlays.open(overlay),
     dismissThen: (next) => this.dismissThen(next),
@@ -72,7 +74,7 @@ export class App {
   });
   private game: Game | undefined;
   private touch: TouchTyping | undefined;
-  private pause: Overlay | undefined;
+  private pauseLayer: Overlay | undefined;
   private levelToken = 0;
   private disposeScreen: (() => void) | undefined;
 
@@ -109,6 +111,14 @@ export class App {
         sfx.unlock();
         this.showMap(profile);
       },
+      onSettings: () => this.showSettings(() => this.showProfiles()),
+      onShop: (profile) => {
+        sfx.unlock();
+        this.showShop(profile, {
+          onBack: () => this.showProfiles(),
+          backLabel: i18n.t.features.shop.backToProfiles,
+        });
+      },
     });
     this.showScreen(screen.element);
     this.disposeScreen = () => screen.dispose();
@@ -120,8 +130,9 @@ export class App {
         new WorldMap(profile, {
           onPlay: (level) => this.openLevel(profile, level),
           onSwitchPlayer: () => this.showProfiles(),
-          onShop: () => this.showShop(profile),
+          onShop: () => this.showShop(profile, this.backToMap()),
           onArena: () => this.arena.show(profile),
+          onSettings: () => this.showSettings(() => this.showMap(profile)),
         }),
     );
   }
@@ -135,14 +146,23 @@ export class App {
     this.disposeScreen = () => screen.dispose();
   }
 
-  private showShop(profile: Profile): void {
+  private showSettings(back: () => void): void {
+    this.showMenu(() => new SettingsScreen({ onBack: back }));
+  }
+
+  private showShop(profile: Profile, exit: ShopExit, tab?: ShopTab): void {
     this.leaveScreen();
-    const shop = new ShopScreen(profile, {
-      onBack: (current) => this.showMap(current),
-      onChange: (current) => this.save(current),
-    });
+    const shop = new ShopScreen(
+      profile,
+      { ...exit, onChange: (current) => this.save(current) },
+      tab,
+    );
     this.showScreen(shop.element);
     this.disposeScreen = () => shop.dispose();
+  }
+
+  private backToMap(): ShopExit {
+    return { onBack: (current) => this.showMap(current) };
   }
 
   private openLevel(profile: Profile, level: Level): void {
@@ -155,11 +175,10 @@ export class App {
   private showLearnCard(profile: Profile, level: Level): void {
     if (level.isBoss) return this.startLevel(profile, level);
     this.overlays.open(
-      learnCard(
-        level,
-        profile.keyStats,
-        this.dismissThen(() => this.startLevel(profile, level)),
-      ),
+      learnCard(level, profile.keyStats, {
+        onStart: this.dismissThen(() => this.startLevel(profile, level)),
+        onClose: this.dismissThen(() => this.showMap(profile)),
+      }),
     );
   }
 
@@ -197,7 +216,8 @@ export class App {
       },
       run.plan.lives,
     );
-    const layout = usesBuiltInKeyboard() ? KEYBOARD_LAYOUTS.compact : KEYBOARD_LAYOUTS.full;
+    const builtInKeyboard = usesBuiltInKeyboard();
+    const layout = builtInKeyboard ? KEYBOARD_LAYOUTS.compact : KEYBOARD_LAYOUTS.full;
     const keyboard = new KeyboardHint(type, layout);
     const callouts = new Callouts();
     const hint = run.rotateHint ? rotateHint() : undefined;
@@ -212,7 +232,7 @@ export class App {
         hint,
       ),
     );
-    if (hasCoarsePointer()) this.touch = new TouchTyping(stage, type);
+    if (hasCoarsePointer()) this.touch = new TouchTyping(stage, type, () => builtInKeyboard);
 
     const config = {
       character: profile.avatar,
@@ -253,7 +273,7 @@ export class App {
   }
 
   private syncAudio(): void {
-    if (this.attention.away || this.pause) music.pause();
+    if (this.attention.away || this.pauseLayer) music.pause();
     else music.resume();
   }
 
@@ -264,14 +284,28 @@ export class App {
 
   private pauseLevel(): void {
     music.pause();
-    this.pause = pauseOverlay(() => this.game?.togglePause(), this.game?.keyStats ?? {});
-    this.overlays.open(this.pause);
+    this.showPause();
+  }
+
+  private showPause(): void {
+    this.openPauseLayer(
+      pauseOverlay(
+        () => this.game?.togglePause(),
+        this.game?.keyStats ?? {},
+        () => this.openPauseLayer(settingsOverlay({ onBack: () => this.showPause() })),
+      ),
+    );
+  }
+
+  private openPauseLayer(layer: Overlay): void {
+    this.pauseLayer = layer;
+    this.overlays.open(layer);
   }
 
   private resumeLevel(): void {
     music.resume();
-    if (this.pause) this.overlays.release(this.pause);
-    this.pause = undefined;
+    if (this.pauseLayer) this.overlays.release(this.pauseLayer);
+    this.pauseLayer = undefined;
     this.touch?.refocus();
   }
 
@@ -306,6 +340,7 @@ export class App {
           onNext: next ? leave((current) => this.openLevel(current, next)) : undefined,
           onRetry: this.dismissThen(() => this.openLevel(updated, level)),
           onMap: leave((current) => this.showMap(current)),
+          onShop: (tab) => leave((current) => this.showShop(current, this.backToMap(), tab))(),
         },
       ),
     );
@@ -368,7 +403,7 @@ export class App {
     this.game = undefined;
     this.touch?.dispose();
     this.touch = undefined;
-    this.pause = undefined;
+    this.pauseLayer = undefined;
     this.syncAudio();
   }
 }

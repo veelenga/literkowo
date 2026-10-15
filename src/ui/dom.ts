@@ -1,7 +1,10 @@
+import { prefersReducedMotion } from './motionPreference';
+
+export { prefersReducedMotion };
+
 export type Child = Node | string | null | undefined | false;
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 const COUNT_DURATION_MS = 450;
 
 export function present(...items: Child[]): Array<Node | string> {
@@ -77,10 +80,6 @@ export function svg<K extends keyof SVGElementTagNameMap>(
 
 export function releaseFocus(event: Event): void {
   if (event.currentTarget instanceof HTMLElement) event.currentTarget.blur();
-}
-
-export function prefersReducedMotion(): boolean {
-  return window.matchMedia(REDUCED_MOTION_QUERY).matches;
 }
 
 export function restartAnimation(element: Element, className: string): void {

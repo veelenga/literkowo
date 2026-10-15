@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createOverlay, onWindowKey, onWindowKeyAfter, OverlaySlot } from './overlay';
+import {
+  claimEscapeKey,
+  createOverlay,
+  onWindowKey,
+  onWindowKeyAfter,
+  OverlaySlot,
+} from './overlay';
 
 const DELAY_MS = 600;
 
@@ -79,6 +85,30 @@ describe('onWindowKey', () => {
     stop();
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     expect(handler).toHaveBeenCalledOnce();
+  });
+});
+
+describe('claimEscapeKey', () => {
+  it('handles Escape before other window listeners see it', () => {
+    const later = vi.fn<(event: KeyboardEvent) => void>();
+    const stopLater = onWindowKey(later);
+    const handler = vi.fn();
+    const stop = claimEscapeKey(handler);
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    pressEnter();
+    stop();
+    stopLater();
+    expect(handler).toHaveBeenCalledOnce();
+    expect(later.mock.calls.map(([event]) => event.key)).toEqual(['Enter']);
+  });
+
+  it('lets Escape through once released', () => {
+    const later = vi.fn();
+    const stopLater = onWindowKey(later);
+    claimEscapeKey(() => undefined)();
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    stopLater();
+    expect(later).toHaveBeenCalledOnce();
   });
 });
 
