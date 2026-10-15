@@ -4,8 +4,10 @@ import { requireLevel } from '../testing/levels';
 import { learnCard } from './LearnCard';
 import { KEY_READY_MS, type Overlay } from './overlay';
 
+const NO_ACTIONS = { onStart: () => undefined, onClose: () => undefined };
+
 function card(levelId: string): HTMLElement {
-  const overlay = learnCard(requireLevel(levelId), {}, () => undefined);
+  const overlay = learnCard(requireLevel(levelId), {}, NO_ACTIONS);
   overlay.dispose();
   return overlay.element;
 }
@@ -48,7 +50,7 @@ describe('learnCard', () => {
   });
 });
 
-describe('learnCard Enter', () => {
+describe('learnCard keys and buttons', () => {
   let overlay: Overlay | undefined;
 
   beforeEach(() => {
@@ -61,30 +63,53 @@ describe('learnCard Enter', () => {
     vi.useRealTimers();
   });
 
-  function pressEnter(): void {
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+  function press(key: string): void {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key }));
   }
 
-  it('ignores Enter right after the card opens', () => {
-    const onStart = vi.fn();
-    overlay = learnCard(requireLevel('polana-2'), {}, onStart);
+  function open() {
+    const actions = { onStart: vi.fn(), onClose: vi.fn() };
+    overlay = learnCard(requireLevel('polana-2'), {}, actions);
+    return { ...actions, element: overlay.element };
+  }
+
+  it('ignores Enter and Escape right after the card opens', () => {
+    const { onStart, onClose } = open();
     vi.advanceTimersByTime(KEY_READY_MS - 1);
-    pressEnter();
+    press('Enter');
+    press('Escape');
     expect(onStart).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it('starts the level on Enter once the card is ready', () => {
-    const onStart = vi.fn();
-    overlay = learnCard(requireLevel('polana-2'), {}, onStart);
+    const { onStart, onClose } = open();
     vi.advanceTimersByTime(KEY_READY_MS);
-    pressEnter();
+    press('Enter');
     expect(onStart).toHaveBeenCalledOnce();
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it('starts the level on click right away', () => {
-    const onStart = vi.fn();
-    overlay = learnCard(requireLevel('polana-2'), {}, onStart);
-    overlay.element.querySelector('button')?.click();
+    const { onStart, element } = open();
+    element.querySelector<HTMLButtonElement>('.button-primary')?.click();
     expect(onStart).toHaveBeenCalledOnce();
+  });
+
+  it('closes without starting on Escape once the card is ready', () => {
+    const { onStart, onClose } = open();
+    vi.advanceTimersByTime(KEY_READY_MS);
+    press('Escape');
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(onStart).not.toHaveBeenCalled();
+  });
+
+  it('closes without starting from the close button', () => {
+    const { onStart, onClose, element } = open();
+    const close = element.querySelector<HTMLButtonElement>('.close-button');
+    expect(close?.getAttribute('aria-label')).toBe('Wróć do mapy');
+    close?.click();
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(onStart).not.toHaveBeenCalled();
   });
 });

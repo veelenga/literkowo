@@ -155,11 +155,10 @@ export class App {
   private showLearnCard(profile: Profile, level: Level): void {
     if (level.isBoss) return this.startLevel(profile, level);
     this.overlays.open(
-      learnCard(
-        level,
-        profile.keyStats,
-        this.dismissThen(() => this.startLevel(profile, level)),
-      ),
+      learnCard(level, profile.keyStats, {
+        onStart: this.dismissThen(() => this.startLevel(profile, level)),
+        onClose: this.dismissThen(() => this.showMap(profile)),
+      }),
     );
   }
 

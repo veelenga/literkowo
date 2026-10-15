@@ -2,6 +2,7 @@ import { fingerFor, needsRightAlt } from '../course/fingers';
 import type { KeyStat, KeyStats } from '../course/keyStats';
 import type { Level } from '../course/regions';
 import { i18n } from '../i18n/i18n';
+import { closeButton } from './closeButton';
 import { el, fingerColor } from './dom';
 import { handsDiagram } from './HandsDiagram';
 import { levelKindLabel } from './levelKind';
@@ -11,15 +12,23 @@ import { createOverlay, KEY_READY_MS, onWindowKeyAfter, type Overlay } from './o
 const KEY_STAGGER_MS = 90;
 const ALT_LABEL = 'Alt';
 const START_KEY = 'Enter';
+const CLOSE_KEY = 'Escape';
 
-export function learnCard(level: Level, keyStats: KeyStats, onStart: () => void): Overlay {
+export interface LearnCardActions {
+  readonly onStart: () => void;
+  readonly onClose: () => void;
+}
+
+export function learnCard(level: Level, keyStats: KeyStats, actions: LearnCardActions): Overlay {
   const t = i18n.t;
+  const { onStart, onClose } = actions;
   const element = el(
     'div',
     { class: 'overlay' },
     el(
       'div',
       { class: 'panel panel-center learn-panel' },
+      closeButton(t.features.course.backToMap, onClose),
       el('span', { class: 'eyebrow', text: levelKindLabel(level) }),
       el(
         'div',
@@ -39,10 +48,15 @@ export function learnCard(level: Level, keyStats: KeyStats, onStart: () => void)
       ),
     ),
   );
+  const keyActions = new Map([
+    [START_KEY, onStart],
+    [CLOSE_KEY, onClose],
+  ]);
   const stopListening = onWindowKeyAfter(KEY_READY_MS, (event) => {
-    if (event.key !== START_KEY) return;
+    const action = keyActions.get(event.key);
+    if (!action) return;
     event.preventDefault();
-    onStart();
+    action();
   });
   return createOverlay(element, stopListening);
 }
