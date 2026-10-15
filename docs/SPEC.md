@@ -81,7 +81,9 @@ All levels:
 
 ## Level flow
 
-Owners: `src/app/App.ts`, `src/course/progress.ts`, `src/game/LevelPlan.ts`, `src/game/Game.ts`. The game runs a run plan (`src/game/RunPlan.ts`): its phases by index, its lives and the word rules of each phase. `src/game/LevelPlan.ts` builds the plan of a course level.
+Owners: `src/app/App.ts`, `src/course/progress.ts`, `src/game/RunPlan.ts`, `src/game/LevelPlan.ts`, `src/game/Game.ts`.
+
+The game runs a run plan: its phases by index, its lives, its XP factor, and the keys and word lengths of each phase (`src/course/wordRules.ts`). `src/game/LevelPlan.ts` builds the plan of a course level.
 
 1. Story card. The intro plays before the first level. A boss scene plays before each boss. An after scene plays when a boss is beaten with at least one star. The finale replaces the after scene for the last boss of the course. Each scene plays once per profile. Speakers are Sowa Klara, Felek and Mrok (`src/story/story.ts`).
 2. Learn card, for every level except bosses (`src/ui/LearnCard.ts`). Enter starts the level.
