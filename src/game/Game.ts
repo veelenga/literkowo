@@ -16,6 +16,8 @@ import { SessionStats } from './SessionStats';
 import type { Theme } from './themes';
 import { World } from './World';
 
+export { themeFor } from './themes';
+
 const CAMERA_FOV = 42;
 const CAMERA_POSITION = new THREE.Vector3(0, 15, 15.5);
 const CAMERA_TARGET = new THREE.Vector3(0, 0.8, 0);

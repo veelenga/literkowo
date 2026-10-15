@@ -2,8 +2,7 @@ import { music } from '../audio/Music';
 import { sfx } from '../audio/Sfx';
 import { levelById, nextLevel, regionOf, regionsFor, type Level } from '../course/regions';
 import { starsFor } from '../course/scoring';
-import { Game, type GameResult } from '../game/Game';
-import { themeFor } from '../game/themes';
+import type { Game, GameResult } from '../game/Game';
 import { i18n } from '../i18n/i18n';
 import { createProfile, type Profile } from '../profiles/Profile';
 import { ProfileStore } from '../profiles/ProfileStore';
@@ -20,16 +19,22 @@ import { WorldMap } from '../ui/WorldMap';
 
 const COMBO_FOR_FULL_INTENSITY = 20;
 
+const loadGameModule = (() => {
+  let pending: Promise<typeof import('../game/Game')> | undefined;
+  return () => (pending ??= import('../game/Game'));
+})();
+
 export class App {
   private readonly store = new ProfileStore();
   private game: Game | undefined;
+  private levelToken = 0;
 
   constructor(private readonly root: HTMLElement) {}
 
   start(): void {
     document.documentElement.lang = i18n.current;
     const devLevel = levelById(new URLSearchParams(location.search).get('level') ?? '');
-    if (devLevel) return this.startLevel(this.devProfile(), devLevel);
+    if (devLevel) return void this.startLevel(this.devProfile(), devLevel);
     this.showProfiles();
   }
 
@@ -55,6 +60,7 @@ export class App {
   private showMap(profile: Profile): void {
     this.teardownGame();
     music.stop();
+    void loadGameModule();
     const map = new WorldMap(profile, {
       onPlay: (level) => this.openLevel(profile, level),
       onSwitchPlayer: () => this.showProfiles(),
@@ -71,12 +77,15 @@ export class App {
   }
 
   private showLearnCard(profile: Profile, level: Level): void {
-    if (level.isBoss) return this.startLevel(profile, level);
-    this.root.append(learnCard(level, () => this.startLevel(profile, level)));
+    if (level.isBoss) return void this.startLevel(profile, level);
+    this.root.append(learnCard(level, () => void this.startLevel(profile, level)));
   }
 
-  private startLevel(profile: Profile, level: Level): void {
+  private async startLevel(profile: Profile, level: Level): Promise<void> {
     this.teardownGame();
+    const token = ++this.levelToken;
+    const { Game, themeFor } = await loadGameModule();
+    if (token !== this.levelToken) return;
     const stage = el('div', { class: 'stage' });
     const hud = new Hud(profile, () => this.showMap(profile));
     const keyboard = new KeyboardHint();
@@ -179,6 +188,7 @@ export class App {
   }
 
   private teardownGame(): void {
+    this.levelToken += 1;
     this.game?.destroy();
     this.game = undefined;
   }
