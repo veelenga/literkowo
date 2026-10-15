@@ -4,7 +4,8 @@ import { SILVER, type Medal } from '../../arena/medals';
 import { arenaKey, withEndlessRun } from '../../arena/record';
 import { LEVELS } from '../../course/catalog';
 import { createProfile, type Profile } from '../../profiles/Profile';
-import { ArenaScreen, type ArenaChoice } from './ArenaScreen';
+import type { ArenaChoice } from '../../arena/endlessPlan';
+import { ArenaScreen } from './ArenaScreen';
 
 vi.mock('../ShopHero', () => ({
   ShopHero: class {

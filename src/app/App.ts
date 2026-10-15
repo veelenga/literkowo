@@ -1,4 +1,4 @@
-import { endlessPlan } from '../arena/endlessPlan';
+import { endlessPlan, type ArenaChoice } from '../arena/endlessPlan';
 import { isArenaOpen } from '../arena/keySets';
 import { recordEndlessRun, type EndlessAttempt } from '../arena/progress';
 import { music } from '../audio/Music';
@@ -28,7 +28,7 @@ import type { Profile } from '../profiles/Profile';
 import { ProfileStore } from '../profiles/ProfileStore';
 import type { StoryScene } from '../story/story';
 import { arenaResult } from '../ui/arena/ArenaResult';
-import { ArenaScreen, type ArenaChoice } from '../ui/arena/ArenaScreen';
+import { ArenaScreen } from '../ui/arena/ArenaScreen';
 import { el } from '../ui/dom';
 import { Callouts } from '../ui/Callouts';
 import { Hud } from '../ui/Hud';

@@ -28,18 +28,18 @@ export interface EndlessPlan extends RunPlan {
   phaseAt(index: number): RunPhase;
 }
 
-export interface EndlessSetup {
+export interface ArenaChoice {
   readonly keySet: KeySet;
   readonly difficulty: ArenaDifficulty;
 }
 
-interface WaveContext extends EndlessSetup {
+interface WaveContext extends ArenaChoice {
   readonly start: Pace;
   readonly boss: Pace;
   readonly rules: (wave: number) => WordRules;
 }
 
-export function endlessPlan(setup: EndlessSetup): EndlessPlan {
+export function endlessPlan(setup: ArenaChoice): EndlessPlan {
   const { keySet, difficulty } = setup;
   const context: WaveContext = {
     ...setup,

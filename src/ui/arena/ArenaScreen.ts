@@ -5,7 +5,8 @@ import {
   unlockingDifficulty,
   type ArenaDifficulty,
 } from '../../arena/difficulty';
-import { defaultKeySet, keySetsFor, openKeySets, type KeySet } from '../../arena/keySets';
+import type { ArenaChoice } from '../../arena/endlessPlan';
+import { defaultKeySet, keySetsFor, openKeySets } from '../../arena/keySets';
 import { NO_MEDAL } from '../../arena/medals';
 import { arenaKey, endlessBest, type EndlessBest } from '../../arena/record';
 import { format } from '../../i18n/format';
@@ -18,11 +19,6 @@ import { coinPill } from '../progression';
 import { ShopHero } from '../ShopHero';
 import { hintedLockBadge, shopIcon } from '../shopParts';
 import { arenaIcon, difficultyName, medalBadge, waveLabel } from './arenaParts';
-
-export interface ArenaChoice {
-  readonly keySet: KeySet;
-  readonly difficulty: ArenaDifficulty;
-}
 
 interface ArenaActions {
   onBack: (profile: Profile) => void;
