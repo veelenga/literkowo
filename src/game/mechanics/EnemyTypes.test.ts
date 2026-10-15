@@ -40,7 +40,14 @@ describe('EnemyTypes unlocks', () => {
     expect(kindsAt('las-1')).toEqual(['jumper', 'balloon', 'bat']);
     expect(kindsAt('gory-1')).toEqual(['jumper', 'balloon', 'bat', 'swarm']);
     expect(kindsAt('gory-2')).toEqual(['jumper', 'balloon', 'bat', 'swarm', 'splitter']);
-    expect(kindsAt('jaskinia-2')).toEqual(['jumper', 'balloon', 'bat', 'swarm', 'splitter']);
+    expect(kindsAt('jaskinia-1')).toEqual([
+      'jumper',
+      'balloon',
+      'bat',
+      'swarm',
+      'splitter',
+      'shield',
+    ]);
   });
 
   it('turns about one spawn in four into a special enemy', () => {

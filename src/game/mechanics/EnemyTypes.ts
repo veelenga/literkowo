@@ -23,6 +23,7 @@ const ACCENTS: Readonly<Record<EnemyKind, string>> = {
   bat: '#b98cff',
   swarm: '#ffd400',
   splitter: '#9ad1ff',
+  shield: '#ffb347',
 };
 
 export class EnemyTypes implements Mechanic {

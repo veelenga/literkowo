@@ -1,9 +1,16 @@
 import { REGIONS, type Level } from '../../../course/regions';
 
-export type EnemyKind = 'jumper' | 'balloon' | 'bat' | 'swarm' | 'splitter';
+export type EnemyKind = 'jumper' | 'balloon' | 'bat' | 'swarm' | 'splitter' | 'shield';
 export type Random = () => number;
 
-const ENEMY_KINDS: readonly EnemyKind[] = ['jumper', 'balloon', 'bat', 'swarm', 'splitter'];
+const ENEMY_KINDS: readonly EnemyKind[] = [
+  'jumper',
+  'balloon',
+  'bat',
+  'swarm',
+  'splitter',
+  'shield',
+];
 export const ENEMY_TYPE_TAG = 'enemy-type';
 export const SPECIAL_SHARE = 0.25;
 export const KIND_WEIGHTS: Readonly<Record<EnemyKind, number>> = {
@@ -12,6 +19,7 @@ export const KIND_WEIGHTS: Readonly<Record<EnemyKind, number>> = {
   bat: 2,
   swarm: 2,
   splitter: 2,
+  shield: 2,
 };
 export const BONUS_WORDS: Readonly<Record<EnemyKind, number>> = {
   jumper: 0,
@@ -19,6 +27,7 @@ export const BONUS_WORDS: Readonly<Record<EnemyKind, number>> = {
   bat: 0,
   swarm: 0,
   splitter: 0,
+  shield: 0,
 };
 
 interface Unlock {
@@ -32,6 +41,7 @@ const UNLOCKS: Readonly<Record<EnemyKind, Unlock>> = {
   bat: { region: 'las', level: 1 },
   swarm: { region: 'gory', level: 1 },
   splitter: { region: 'gory', level: 2 },
+  shield: { region: 'jaskinia', level: 1 },
 };
 const FIRST_REGION_CAP = 1;
 const LATER_REGION_CAP = 3;

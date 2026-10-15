@@ -13,7 +13,9 @@ export type SoundCue =
   | 'batTumble'
   | 'batCrash'
   | 'splitterSplit'
-  | 'halfPop';
+  | 'halfPop'
+  | 'shieldBreak'
+  | 'shieldDown';
 
 const CHIME_SPACING = 0.07;
 const SHORT_DECAY = 0.35;
@@ -23,6 +25,9 @@ const CRASH_IMPACT = 0.45;
 const BLAST_RUMBLE = { from: 45, to: 30, seconds: 0.6 };
 const ROCK_IMPACT = 0.3;
 const SPLIT_IMPACT = 0.6;
+const STEEL_IMPACT = 0.25;
+const CLANG_IMPACT = 0.8;
+const CLANG_SPACING = 0.03;
 
 export const SOUNDS: Readonly<Record<SoundCue, (sfx: Sfx) => void>> = {
   jumper: (sfx) => sfx.chimes([67, 74, 67, 79], CHIME_SPACING, SHORT_DECAY),
@@ -56,4 +61,13 @@ export const SOUNDS: Readonly<Record<SoundCue, (sfx: Sfx) => void>> = {
     sfx.chimes([64, 71, 76], CHIME_SPACING, SHORT_DECAY);
   },
   halfPop: (sfx) => sfx.chimes([76, 83], CHIME_SPACING, SHORT_DECAY),
+  shield: (sfx) => {
+    sfx.impact(STEEL_IMPACT);
+    sfx.chimes([60, 67], CHIME_SPACING, SHORT_DECAY);
+  },
+  shieldBreak: (sfx) => {
+    sfx.impact(CLANG_IMPACT);
+    sfx.chimes([84, 91, 96], CLANG_SPACING, SHORT_DECAY);
+  },
+  shieldDown: (sfx) => sfx.chimes([67, 72, 79], CHIME_SPACING, SHORT_DECAY),
 };

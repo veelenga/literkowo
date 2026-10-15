@@ -5,14 +5,16 @@ import { BatEnemy } from './BatEnemy';
 import { JumperEnemy } from './JumperEnemy';
 import type { EnemyKind, Random } from './kinds';
 import type { SpecialEnemy, SpecialHost, SpecialSpec } from './SpecialEnemy';
+import { KEY_LENGTH, ShieldEnemy } from './ShieldEnemy';
 import { SplitterEnemy } from './SplitterEnemy';
 import { SwarmEnemy } from './SwarmEnemy';
-import { lettersWithin, repeatedKey, wordPair, wordWithin } from './words';
+import { keyOf, lettersWithin, repeatedKey, wordPair, wordWithin } from './words';
 
 const JUMPER_LETTERS = { min: 4, max: 7 };
 const BALLOON_LETTERS = { min: 3, max: 5 };
 const SWARM_LETTERS = { min: 5, max: 7 };
-const SPEED_SHARES = { jumper: 1, bat: 2.5, swarm: 1.25, splitter: 0.8 };
+const SHIELDED_LETTERS = { min: 4, max: 6 };
+const SPEED_SHARES = { jumper: 1, bat: 2.5, swarm: 1.25, splitter: 0.8, shield: 0.85 };
 
 const HALF = 0.5;
 
@@ -55,6 +57,11 @@ const RECIPES: Readonly<Record<EnemyKind, Recipe>> = {
       const halves = wordPair(words);
       return new SplitterEnemy(spec(halves.join('')), { part: 'whole', halves });
     },
+  },
+  shield: {
+    speedShare: SPEED_SHARES.shield,
+    create: (spec, words) =>
+      new ShieldEnemy(spec(keyOf(words, KEY_LENGTH) + wordWithin(words, SHIELDED_LETTERS))),
   },
 };
 

@@ -11,9 +11,14 @@ const WORD_ATTEMPTS = 8;
 export function wordWithin(words: WordSource, range: LetterRange): string {
   for (let attempt = 0; attempt < WORD_ATTEMPTS; attempt += 1) {
     const word = words.next();
-    if (word.length >= range.min && word.length <= range.max) return word;
+    if (fits(word, range)) return word;
   }
-  return words.shortWord();
+  const short = words.shortWord();
+  return fits(short, range) ? short : letters(words, range.min);
+}
+
+export function keyOf(words: WordSource, length: number): string {
+  return Array.from({ length }, () => words.singleLetter()).join('');
 }
 
 export function repeatedKey(words: WordSource, range: LetterRange, random: Random): string {
@@ -37,4 +42,8 @@ export function wordPair(words: WordSource): readonly [string, string] {
     second = words.shortWord();
   }
   return [first, second];
+}
+
+function fits(word: string, range: LetterRange): boolean {
+  return word.length >= range.min && word.length <= range.max;
 }

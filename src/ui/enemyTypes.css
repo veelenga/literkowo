@@ -130,13 +130,6 @@
   scale: 1.8;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .word-label.is-swarm .swarm-glyph,
-  .word-label.is-balloon {
-    transition: none;
-  }
-}
-
 .word-label.is-splitter {
   font-size: 1.7rem;
   letter-spacing: 0.08em;
@@ -160,4 +153,66 @@
 .word-label.is-splitter.is-target {
   border-color: var(--accent);
   background: rgba(30, 30, 18, 0.94);
+}
+
+.word-label.is-shield {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 2px solid #ffb347;
+  background: rgba(40, 20, 6, 0.92);
+  box-shadow:
+    0 4px 0 #8a4a12,
+    0 0 18px rgba(255, 179, 71, 0.35);
+}
+
+.word-label.is-shield .shield-key {
+  padding: 4px 10px 8px;
+  border-radius: 6px 6px 50% 50%;
+  color: #14202c;
+  background: linear-gradient(180deg, #e8f2fc 0%, #9fb4c8 100%);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 12px rgba(184, 204, 224, 0.7);
+}
+
+.word-label.is-shield .shield-key .done {
+  color: #2f7d12;
+  text-shadow: none;
+}
+
+.word-label.is-shield .shield-mask {
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.12em;
+}
+
+.word-label.is-shield.is-broken {
+  animation: shield-crack 360ms ease;
+}
+
+.word-label.is-shield.is-target {
+  border-color: var(--accent);
+}
+
+@keyframes shield-crack {
+  0% {
+    scale: 1.25;
+  }
+  40% {
+    rotate: -4deg;
+  }
+  100% {
+    scale: 1;
+    rotate: 0deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word-label.is-swarm .swarm-glyph,
+  .word-label.is-balloon {
+    transition: none;
+  }
+
+  .word-label.is-shield.is-broken {
+    animation: none;
+  }
 }
