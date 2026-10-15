@@ -1,4 +1,5 @@
 import { accuracyPercent } from '../course/scoring';
+import { format } from '../i18n/format';
 import { i18n } from '../i18n/i18n';
 import type { Progress } from '../game/Game';
 import type { Rewards } from '../game/RunRewards';
@@ -9,7 +10,6 @@ import { Counter, el, icon, releaseFocus, restartAnimation } from './dom';
 import { playerLevelOf, playerLevelTitle, xpGainText } from './progression';
 import { soundToggle } from './SoundToggle';
 
-const MAX_LIVES = 3;
 const PERCENT = 100;
 const BASE_MULTIPLIER = 1;
 
@@ -28,22 +28,26 @@ export class Hud {
   private readonly multiplier = el('span', { class: 'multiplier' });
   private readonly wpm = el('strong', { class: 'hud-value' });
   private readonly accuracy = el('strong', { class: 'hud-value' });
-  private readonly hearts = Array.from({ length: MAX_LIVES }, () =>
-    el('span', { class: 'heart' }, icon('heart', 'heart-icon')),
-  );
-  private readonly heartRow = el('div', { class: 'hearts' }, ...this.hearts);
+  private readonly hearts: HTMLElement[];
+  private readonly heartRow: HTMLElement;
   private readonly progressLabel = el('span', { class: 'progress-label' });
   private readonly progressCount = el('span', { class: 'progress-count' });
   private readonly progressFill = el('div', { class: 'progress-fill' });
-  private lives = MAX_LIVES;
+  private lives: number;
   private lastMultiplier = BASE_MULTIPLIER;
   private playerLevel: number;
 
   constructor(
     private readonly profile: Profile,
     actions: HudActions,
+    lives: number,
   ) {
     const t = i18n.t;
+    this.lives = lives;
+    this.hearts = Array.from({ length: lives }, () =>
+      el('span', { class: 'heart' }, icon('heart', 'heart-icon')),
+    );
+    this.heartRow = el('div', { class: 'hearts' }, ...this.hearts);
     this.playerLevel = playerLevelOf(profile.xp);
     this.showPlayerLevel();
     this.element = el(
@@ -105,10 +109,8 @@ export class Hud {
     restartAnimation(this.levelBadge, 'is-bumped');
   }
 
-  progress({ kind, done, total }: Progress): void {
-    const t = i18n.t;
-    const labels = { warmup: t.warmup, learn: t.words, words: t.words, boss: t.bossHealth };
-    this.progressLabel.textContent = labels[kind];
+  progress({ kind, done, total, wave }: Progress): void {
+    this.progressLabel.textContent = progressLabel(kind, wave);
     this.progressCount.textContent = `${done}/${total}`;
     this.progressFill.style.width = `${(done / total) * PERCENT}%`;
     this.progressFill.classList.toggle('is-boss', kind === 'boss');
@@ -150,6 +152,13 @@ export class Hud {
       ),
     );
   }
+}
+
+function progressLabel(kind: Progress['kind'], wave: number | undefined): string {
+  const t = i18n.t;
+  if (wave !== undefined) return format(t.features.arena.wave, { wave });
+  const labels = { warmup: t.warmup, learn: t.words, words: t.words, boss: t.bossHealth };
+  return labels[kind];
 }
 
 function keyboardButton(onKeyboard: () => void): HTMLElement {
