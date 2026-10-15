@@ -1,11 +1,10 @@
+import { HALF, SEMITONES_PER_OCTAVE, midiToFrequency } from '../../synthesis';
+import { degreesInOctaves } from '../harmony';
 import type { PadSpec } from '../specs';
-import { midiToFrequency } from '../../synthesis';
 import type { LayerContext, StepInfo } from './Layer';
 import { SustainedLayer } from './SustainedLayer';
 
 const TONIC_DEGREE = 0;
-const DEGREES_PER_OCTAVE = 7;
-const SEMITONES_PER_OCTAVE = 12;
 const CENTER_OFFSET_SEMITONES = 7;
 const OPEN_VOICING_STEPS = [0, 4, 7] as const;
 const VOICE_COUNT = OPEN_VOICING_STEPS.length;
@@ -16,7 +15,6 @@ const CHORUS_DELAY_SECONDS = 0.014;
 const CHORUS_DEPTH_SECONDS = 0.004;
 const CHORUS_RATE = 0.27;
 const CHORUS_MIX = 0.7;
-const HALF = 0.5;
 
 export class PadLayer extends SustainedLayer {
   private readonly oscillators: OscillatorNode[][] = [];
@@ -31,7 +29,7 @@ export class PadLayer extends SustainedLayer {
   }
 
   protected build(time: number): void {
-    const filter = this.createFilter();
+    const filter = this.buildFilter();
     const tremolo = this.createTremolo();
     const amp = this.gain(0);
     amp.gain.setValueAtTime(0, time);
@@ -74,7 +72,7 @@ export class PadLayer extends SustainedLayer {
 
   private chordMidis(root: number): number[] {
     const { harmony } = this.layer;
-    const octaveDegrees = this.spec.octave * DEGREES_PER_OCTAVE;
+    const octaveDegrees = degreesInOctaves(this.spec.octave);
     if (this.spec.voicing === 'open') {
       return OPEN_VOICING_STEPS.map((step) => harmony.midi(root + step + octaveDegrees));
     }
@@ -86,10 +84,8 @@ export class PadLayer extends SustainedLayer {
       .sort((low, high) => low - high);
   }
 
-  private createFilter(): BiquadFilterNode {
-    const filter = this.track(this.layer.context.createBiquadFilter());
-    filter.frequency.value = this.spec.cutoff;
-    filter.Q.value = FILTER_RESONANCE_DB;
+  private buildFilter(): BiquadFilterNode {
+    const filter = this.filter('lowpass', this.spec.cutoff, FILTER_RESONANCE_DB);
     this.lfo({ rate: this.spec.sweepRate, depth: this.spec.sweepDepth, target: filter.frequency });
     return filter;
   }

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
+import { disposeObject } from './disposal';
 
 const MODEL_LOAD_ERROR = 'Could not load the character model, keeping the placeholder';
 const MISSING_CLIP_ERROR = 'Character model has no animation clip named';
@@ -39,6 +40,7 @@ export class Player {
   private animator: CharacterAnimator | null = null;
   private now = 0;
   private targetYaw = 0;
+  private disposed = false;
 
   constructor(character: string) {
     this.object.add(this.placeholder, createContactShadow());
@@ -64,6 +66,13 @@ export class Player {
     this.targetYaw = Math.atan2(target.x - position.x, target.z - position.z);
   }
 
+  dispose(): void {
+    this.disposed = true;
+    this.animator?.stop();
+    this.animator = null;
+    disposeObject(this.object);
+  }
+
   private loadModel(url: string): void {
     new GLTFLoader().load(
       url,
@@ -75,6 +84,7 @@ export class Player {
 
   private attachModel(gltf: GLTF): void {
     const model = gltf.scene;
+    if (this.disposed) return disposeObject(model);
     fitToCharacterHeight(model);
     prepareMeshes(model);
     this.animator = new CharacterAnimator(model, gltf.animations);
@@ -125,6 +135,11 @@ class CharacterAnimator {
     if (this.gesture && now >= this.gestureEndsAt) this.gesture = null;
     this.blendWeights(delta);
     this.mixer.update(delta);
+  }
+
+  stop(): void {
+    this.mixer.stopAllAction();
+    this.mixer.uncacheRoot(this.mixer.getRoot());
   }
 
   private createGesturePair(clip: THREE.AnimationClip): ActionPair {
@@ -184,7 +199,9 @@ function prepareMeshes(model: THREE.Object3D): void {
     if (!(child instanceof THREE.Mesh)) return;
     child.castShadow = true;
     child.receiveShadow = true;
-    child.material = litMaterial(child.material as THREE.Material);
+    child.material = Array.isArray(child.material)
+      ? child.material.map(litMaterial)
+      : litMaterial(child.material);
   });
 }
 

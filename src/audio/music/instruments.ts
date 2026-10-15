@@ -1,69 +1,65 @@
 import {
-  BUTTERWORTH_Q_DB,
-  STOP_MARGIN_SECONDS,
   applyEnvelope,
+  createFilter,
+  createGain,
   disconnectWhenEnded,
-  getNoiseBuffer,
+  playNoise,
+  playTone,
   playUntil,
   routeVoice,
   type Envelope,
+  type FilterSettings,
+  type VoiceTarget,
 } from '../synthesis';
 
 const MAX_FILTER_HZ = 12000;
 const PLUCK_FILTER_TAIL_RATIO = 1.5;
+const PLUCK_RESONANCE_DB = 1;
 const FM_INDEX_FLOOR = 0.05;
 
-export interface Strike {
-  context: BaseAudioContext;
-  destination: AudioNode;
-  time: number;
+export interface Strike extends VoiceTarget {
   velocity: number;
 }
 
 export type Instrument = (strike: Strike, frequency: number) => number;
 export type Drum = (strike: Strike) => number;
 
-interface PluckRecipe {
-  wave: OscillatorType;
+interface Loudness {
   attack: number;
   decay: number;
   gain: number;
+}
+
+interface PluckRecipe extends Loudness {
+  wave: OscillatorType;
   brightness: number;
 }
 
-interface MalletRecipe {
-  attack: number;
-  decay: number;
-  gain: number;
+interface MalletRecipe extends Loudness {
   overtoneRatio: number;
   overtoneLevel: number;
   overtoneDecay: number;
 }
 
-interface BellRecipe {
-  attack: number;
-  decay: number;
-  gain: number;
+interface BellRecipe extends Loudness {
   ratio: number;
   index: number;
   indexDecay: number;
 }
 
-interface BassRecipe {
-  attack: number;
-  decay: number;
-  gain: number;
+interface BassRecipe extends Loudness {
   cutoff: number;
   punch: number;
   punchTime: number;
   harmonicLevel: number;
 }
 
-interface GlideRecipe {
-  attack: number;
-  decay: number;
-  gain: number;
+interface GlideRecipe extends Loudness {
   glideTime: number;
+}
+
+interface DripRecipe extends GlideRecipe {
+  rise: number;
 }
 
 interface PitchedDrumRecipe extends GlideRecipe {
@@ -71,50 +67,30 @@ interface PitchedDrumRecipe extends GlideRecipe {
   endFrequency: number;
 }
 
-interface NoiseRecipe {
-  filter: BiquadFilterType;
-  frequency: number;
-  q: number;
-  attack: number;
-  decay: number;
-  gain: number;
+interface NoiseRecipe extends Loudness {
+  filter: FilterSettings;
 }
 
-function envelopeOf(
-  recipe: { attack: number; decay: number; gain: number },
-  velocity: number,
-): Envelope {
+function envelopeOf(recipe: Loudness, velocity: number): Envelope {
   return { peak: recipe.gain * velocity, attack: recipe.attack, decay: recipe.decay };
 }
 
 function pluck(recipe: PluckRecipe): Instrument {
-  return ({ context, destination, time, velocity }, frequency) => {
-    const oscillator = context.createOscillator();
-    oscillator.type = recipe.wave;
-    oscillator.frequency.value = frequency;
-    const filter = context.createBiquadFilter();
-    filter.frequency.setValueAtTime(Math.min(frequency * recipe.brightness, MAX_FILTER_HZ), time);
+  return (strike, frequency) => {
+    const brightCutoff = Math.min(frequency * recipe.brightness, MAX_FILTER_HZ);
+    const filter = createFilter(strike.context, 'lowpass', brightCutoff, PLUCK_RESONANCE_DB);
+    filter.frequency.setValueAtTime(brightCutoff, strike.time);
     filter.frequency.exponentialRampToValueAtTime(
       frequency * PLUCK_FILTER_TAIL_RATIO,
-      time + recipe.decay,
+      strike.time + recipe.decay,
     );
-    const gain = context.createGain();
-    const end = applyEnvelope(gain.gain, time, envelopeOf(recipe, velocity));
-    routeVoice(oscillator, [filter, gain], destination);
-    playUntil([oscillator], time, end);
-    return end;
+    return playTone(strike, {
+      frequency,
+      wave: recipe.wave,
+      envelope: envelopeOf(recipe, strike.velocity),
+      chain: [filter],
+    });
   };
-}
-
-function sinePartial(strike: Strike, frequency: number, envelope: Envelope): number {
-  const { context, destination, time } = strike;
-  const oscillator = context.createOscillator();
-  oscillator.frequency.value = frequency;
-  const gain = context.createGain();
-  const end = applyEnvelope(gain.gain, time, envelope);
-  routeVoice(oscillator, [gain], destination);
-  playUntil([oscillator], time, end);
-  return end;
 }
 
 function mallet(recipe: MalletRecipe): Instrument {
@@ -125,8 +101,8 @@ function mallet(recipe: MalletRecipe): Instrument {
       attack: recipe.attack,
       decay: recipe.overtoneDecay,
     };
-    sinePartial(strike, frequency * recipe.overtoneRatio, overtone);
-    return sinePartial(strike, frequency, body);
+    playTone(strike, { frequency: frequency * recipe.overtoneRatio, envelope: overtone });
+    return playTone(strike, { frequency, envelope: body });
   };
 }
 
@@ -136,8 +112,8 @@ function fmBell(recipe: BellRecipe): Instrument {
     carrier.frequency.value = frequency;
     const modulator = context.createOscillator();
     modulator.frequency.value = frequency * recipe.ratio;
-    const depth = context.createGain();
     const peakDepth = frequency * recipe.index;
+    const depth = context.createGain();
     depth.gain.setValueAtTime(peakDepth, time);
     depth.gain.exponentialRampToValueAtTime(peakDepth * FM_INDEX_FLOOR, time + recipe.indexDecay);
     modulator.connect(depth).connect(carrier.frequency);
@@ -151,40 +127,33 @@ function fmBell(recipe: BellRecipe): Instrument {
 }
 
 function bass(recipe: BassRecipe): Instrument {
-  return ({ context, destination, time, velocity }, frequency) => {
-    const fundamental = context.createOscillator();
-    fundamental.frequency.setValueAtTime(frequency * recipe.punch, time);
-    fundamental.frequency.exponentialRampToValueAtTime(frequency, time + recipe.punchTime);
+  return (strike, frequency) => {
+    const { context, time } = strike;
+    const filter = createFilter(context, 'lowpass', recipe.cutoff);
+    const end = playTone(strike, {
+      frequency: frequency * recipe.punch,
+      glide: { to: frequency, seconds: recipe.punchTime },
+      envelope: envelopeOf(recipe, strike.velocity),
+      chain: [filter],
+    });
     const harmonic = context.createOscillator();
     harmonic.type = 'triangle';
     harmonic.frequency.value = frequency;
-    const harmonicGain = context.createGain();
-    harmonicGain.gain.value = recipe.harmonicLevel;
-    const filter = context.createBiquadFilter();
-    filter.frequency.value = recipe.cutoff;
-    filter.Q.value = BUTTERWORTH_Q_DB;
-    const gain = context.createGain();
-    const end = applyEnvelope(gain.gain, time, envelopeOf(recipe, velocity));
-    routeVoice(harmonic, [harmonicGain], filter);
-    routeVoice(fundamental, [filter, gain], destination);
-    playUntil([fundamental, harmonic], time, end);
+    routeVoice(harmonic, [createGain(context, recipe.harmonicLevel)], filter);
+    playUntil([harmonic], time, end);
     return end;
   };
 }
 
 function glide(strike: Strike, from: number, to: number, recipe: GlideRecipe): number {
-  const { context, destination, time, velocity } = strike;
-  const oscillator = context.createOscillator();
-  oscillator.frequency.setValueAtTime(from, time);
-  oscillator.frequency.exponentialRampToValueAtTime(to, time + recipe.glideTime);
-  const gain = context.createGain();
-  const end = applyEnvelope(gain.gain, time, envelopeOf(recipe, velocity));
-  routeVoice(oscillator, [gain], destination);
-  playUntil([oscillator], time, end);
-  return end;
+  return playTone(strike, {
+    frequency: from,
+    glide: { to, seconds: recipe.glideTime },
+    envelope: envelopeOf(recipe, strike.velocity),
+  });
 }
 
-function drip(recipe: GlideRecipe & { rise: number }): Instrument {
+function drip(recipe: DripRecipe): Instrument {
   return (strike, frequency) => glide(strike, frequency, frequency * recipe.rise, recipe);
 }
 
@@ -193,20 +162,8 @@ function pitchedDrum(recipe: PitchedDrumRecipe): Drum {
 }
 
 function noiseHit(recipe: NoiseRecipe): Drum {
-  return ({ context, destination, time, velocity }) => {
-    const source = context.createBufferSource();
-    source.buffer = getNoiseBuffer(context);
-    const filter = context.createBiquadFilter();
-    filter.type = recipe.filter;
-    filter.frequency.value = recipe.frequency;
-    filter.Q.value = recipe.q;
-    const gain = context.createGain();
-    const end = applyEnvelope(gain.gain, time, envelopeOf(recipe, velocity));
-    routeVoice(source, [filter, gain], destination);
-    source.start(time, Math.random() * (source.buffer.duration - (end - time)));
-    source.stop(end + STOP_MARGIN_SECONDS);
-    return end;
-  };
+  return (strike) =>
+    playNoise(strike, { filter: recipe.filter, envelope: envelopeOf(recipe, strike.velocity) });
 }
 
 export const INSTRUMENTS = {
@@ -264,17 +221,13 @@ export const DRUMS = {
     endFrequency: 95,
   }),
   brush: noiseHit({
-    filter: 'bandpass',
-    frequency: 5200,
-    q: 0.7,
+    filter: { type: 'bandpass', frequency: 5200, q: 0.7 },
     attack: 0.012,
     decay: 0.09,
     gain: 0.35,
   }),
   shaker: noiseHit({
-    filter: 'highpass',
-    frequency: 6500,
-    q: BUTTERWORTH_Q_DB,
+    filter: { type: 'highpass', frequency: 6500 },
     attack: 0.018,
     decay: 0.055,
     gain: 0.3,

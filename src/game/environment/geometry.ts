@@ -83,13 +83,6 @@ export function merge(parts: THREE.BufferGeometry[]): THREE.BufferGeometry {
   return merged;
 }
 
-export function gradient(bottom: THREE.Color, top: THREE.Color, from: number, to: number) {
-  return (y: number): THREE.Color => {
-    const t = THREE.MathUtils.clamp((y - from) / (to - from), 0, 1);
-    return bottom.clone().lerp(top, t);
-  };
-}
-
 export function vary(color: THREE.Color, amount: number, random: number): THREE.Color {
   return color.clone().multiplyScalar(1 + (random - 0.5) * 2 * amount);
 }

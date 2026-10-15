@@ -1,4 +1,4 @@
-import { BUTTERWORTH_Q_DB } from '../synthesis';
+import { NodeGroup, createFilter, createGain } from '../synthesis';
 
 const STEREO_CHANNELS = 2;
 const LEFT = 0;
@@ -9,7 +9,11 @@ const REVERB_LINE_SECONDS = [
 const REVERB_OUTPUT_GAIN = 0.35;
 const RT60_EXPONENT = -3;
 const HOUSEHOLDER_SCALE = -2 / REVERB_LINE_SECONDS.length;
+const DEFAULT_MAX_DELAY_SECONDS = 1;
 const MAX_ECHO_SECONDS = 3;
+const MIN_ECHO_FEEDBACK = 0;
+
+export const MAX_ECHO_FEEDBACK = 0.89;
 
 export interface ReverbSettings {
   decaySeconds: number;
@@ -22,39 +26,43 @@ export interface EchoSettings {
   tone: number;
 }
 
+export function clampEchoFeedback(feedback: number): number {
+  return Math.min(MAX_ECHO_FEEDBACK, Math.max(MIN_ECHO_FEEDBACK, feedback));
+}
+
+export function assertReverbSettings(settings: ReverbSettings): void {
+  if (!(settings.decaySeconds > 0)) {
+    throw new Error(`Reverb decaySeconds must be greater than 0, got ${settings.decaySeconds}`);
+  }
+}
+
 abstract class Effect {
   readonly input: GainNode;
   readonly output: GainNode;
-  private readonly nodes: AudioNode[] = [];
+  private readonly nodes = new NodeGroup();
 
   constructor(protected readonly context: BaseAudioContext) {
-    this.input = this.track(context.createGain());
-    this.output = this.track(context.createGain());
+    this.input = this.gain(1);
+    this.output = this.gain(1);
   }
 
   dispose(): void {
-    this.nodes.forEach((node) => node.disconnect());
+    this.nodes.dispose();
   }
 
   protected track<T extends AudioNode>(node: T): T {
-    this.nodes.push(node);
-    return node;
+    return this.nodes.track(node);
   }
 
   protected lowpass(frequency: number): BiquadFilterNode {
-    const filter = this.track(this.context.createBiquadFilter());
-    filter.frequency.value = frequency;
-    filter.Q.value = BUTTERWORTH_Q_DB;
-    return filter;
+    return this.track(createFilter(this.context, 'lowpass', frequency));
   }
 
   protected gain(value: number): GainNode {
-    const node = this.track(this.context.createGain());
-    node.gain.value = value;
-    return node;
+    return this.track(createGain(this.context, value));
   }
 
-  protected delay(seconds: number, maxSeconds = 1): DelayNode {
+  protected delay(seconds: number, maxSeconds = DEFAULT_MAX_DELAY_SECONDS): DelayNode {
     const node = this.track(this.context.createDelay(maxSeconds));
     node.delayTime.value = seconds;
     return node;
@@ -70,6 +78,7 @@ export class FdnReverb extends Effect {
     private readonly settings: ReverbSettings,
   ) {
     super(context);
+    assertReverbSettings(settings);
     this.output.gain.value = REVERB_OUTPUT_GAIN;
     this.mixing = this.gain(HOUSEHOLDER_SCALE);
     this.merger = this.track(context.createChannelMerger(STEREO_CHANNELS));
@@ -93,11 +102,12 @@ export class FdnReverb extends Effect {
 export class PingPongDelay extends Effect {
   constructor(context: BaseAudioContext, settings: EchoSettings) {
     super(context);
+    const feedback = clampEchoFeedback(settings.feedback);
     const tone = this.lowpass(settings.tone);
     const left = this.delay(settings.seconds, MAX_ECHO_SECONDS);
     const right = this.delay(settings.seconds, MAX_ECHO_SECONDS);
-    const toRight = this.gain(settings.feedback);
-    const toLeft = this.gain(settings.feedback);
+    const toRight = this.gain(feedback);
+    const toLeft = this.gain(feedback);
     const merger = this.track(context.createChannelMerger(STEREO_CHANNELS));
     this.input.connect(tone).connect(left);
     left.connect(merger, 0, LEFT);

@@ -1,3 +1,4 @@
+import { NodeGroup, createFilter, createGain } from '../../synthesis';
 import type { Layer, LayerContext, StepInfo } from './Layer';
 
 interface LfoSettings {
@@ -7,7 +8,7 @@ interface LfoSettings {
 }
 
 export abstract class SustainedLayer implements Layer {
-  private readonly nodes: AudioNode[] = [];
+  private readonly nodes = new NodeGroup();
   private readonly sources: AudioScheduledSourceNode[] = [];
   private state: 'idle' | 'sounding' | 'released' = 'idle';
 
@@ -27,7 +28,7 @@ export abstract class SustainedLayer implements Layer {
 
   dispose(): void {
     this.release(this.layer.context.currentTime);
-    this.nodes.forEach((node) => node.disconnect());
+    this.nodes.dispose();
   }
 
   protected abstract build(time: number): void;
@@ -35,8 +36,7 @@ export abstract class SustainedLayer implements Layer {
   protected update?(step: StepInfo): void;
 
   protected track<T extends AudioNode>(node: T): T {
-    this.nodes.push(node);
-    return node;
+    return this.nodes.track(node);
   }
 
   protected source<T extends AudioScheduledSourceNode>(node: T): T {
@@ -45,9 +45,11 @@ export abstract class SustainedLayer implements Layer {
   }
 
   protected gain(value: number): GainNode {
-    const node = this.track(this.layer.context.createGain());
-    node.gain.value = value;
-    return node;
+    return this.track(createGain(this.layer.context, value));
+  }
+
+  protected filter(type: BiquadFilterType, frequency: number, q?: number): BiquadFilterNode {
+    return this.track(createFilter(this.layer.context, type, frequency, q));
   }
 
   protected lfo({ rate, depth, target }: LfoSettings): void {

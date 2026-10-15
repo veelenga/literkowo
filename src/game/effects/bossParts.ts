@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { createAssetCache } from './assetCache';
+import { createAssetCache } from '../assetCache';
 import { chunkyBlock, mergeParts, placed } from './chunkyGeometry';
 import type { FaceSpec } from './GlowingFace';
 
@@ -8,7 +8,7 @@ const BROW = { width: 0.92, height: 0.14, depth: 0.2, lift: 0.25, reach: 0.4 };
 const HORN = { radius: 0.13, height: 0.42, sides: 4, spread: 0.38, lift: 0.6, tilt: 0.35 };
 const HEART_SIZE = 0.42;
 const SIDES = [-1, 1] as const;
-const QUARTER_TURN = Math.PI / 4;
+const EIGHTH_TURN = Math.PI / 4;
 
 export const BOSS_FACE: FaceSpec = {
   color: 0xffe066,
@@ -24,13 +24,13 @@ export const BOSS_FACE: FaceSpec = {
 const geometries = createAssetCache<THREE.BufferGeometry>();
 
 export function bossBodyGeometry(): THREE.BufferGeometry {
-  return geometries('boss-body', () =>
+  return geometries.get('boss-body', () =>
     mergeParts([chunkyBlock(TORSO.width, TORSO.height, TORSO.depth), brow(), ...SIDES.map(horn)]),
   );
 }
 
 export function bossCoreGeometry(): THREE.BufferGeometry {
-  return geometries('boss-core', () => chunkyBlock(HEART_SIZE, HEART_SIZE, HEART_SIZE));
+  return geometries.get('boss-core', () => chunkyBlock(HEART_SIZE, HEART_SIZE, HEART_SIZE));
 }
 
 function brow(): THREE.BufferGeometry {
@@ -40,7 +40,7 @@ function brow(): THREE.BufferGeometry {
 }
 
 function horn(side: number): THREE.BufferGeometry {
-  const spike = new THREE.ConeGeometry(HORN.radius, HORN.height, HORN.sides).rotateY(QUARTER_TURN);
+  const spike = new THREE.ConeGeometry(HORN.radius, HORN.height, HORN.sides).rotateY(EIGHTH_TURN);
   return placed(spike, {
     position: [side * HORN.spread, HORN.lift, 0],
     rotation: [0, 0, -side * HORN.tilt],

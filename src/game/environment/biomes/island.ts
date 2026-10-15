@@ -6,6 +6,7 @@ import { fbm, smoothstep, type Noise2D } from '../noise';
 import { facingAway, plant, shapes } from '../planting';
 import type { Rng } from '../random';
 import { Occupancy, scatter, type Spot } from '../scatter';
+import { TERRAIN_EXTENT } from '../Terrain';
 import type { BiomeContext, Landscape } from '../types';
 import { Water } from '../Water';
 import { addParticles, arenaRise, SWAY, tints, towardCenter, weightIf, within } from './common';
@@ -306,7 +307,7 @@ function addWater(context: BiomeContext): void {
       depthRange: 2.6,
       amplitude: 0.16,
       lightDirection: context.sunDirection,
-      region: { minX: -54, maxX: 54, minZ: -42, maxZ: 22 },
+      region: TERRAIN_EXTENT,
       cell: 0.9,
     },
     (x, z) => WATER_LEVEL - terrain.heightAt(x, z),

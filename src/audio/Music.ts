@@ -1,12 +1,11 @@
 import type { ThemeId } from '../course/regions';
-import { onAudioUnlocked, peekAudioContext } from './audioContext';
+import { StoredToggle } from './StoredToggle';
+import { onAudioUnlocked, peekAudioOutput, setAudioPaused, type AudioOutput } from './audioContext';
 import { MusicBus } from './music/MusicBus';
 import { MusicSession } from './music/MusicSession';
 import type { MusicMood } from './music/specs';
 import { arrangementFor } from './music/themes';
 import { VoiceBudget } from './music/VoiceBudget';
-
-export type { MusicMood } from './music/specs';
 
 const STORAGE_KEY = 'literkowo.music';
 const MAX_VOICES = 8;
@@ -26,7 +25,7 @@ interface Playback {
 }
 
 export class Music {
-  enabled = localStorage.getItem(STORAGE_KEY) !== 'off';
+  private readonly toggle = new StoredToggle(STORAGE_KEY);
   private readonly budget = new VoiceBudget(MAX_VOICES);
   private bus: MusicBus | undefined;
   private requested: Track | undefined;
@@ -37,9 +36,12 @@ export class Music {
     onAudioUnlocked(() => this.playRequested());
   }
 
+  get enabled(): boolean {
+    return this.toggle.enabled;
+  }
+
   setEnabled(enabled: boolean): void {
-    this.enabled = enabled;
-    localStorage.setItem(STORAGE_KEY, enabled ? 'on' : 'off');
+    this.toggle.set(enabled);
     if (enabled) this.playRequested();
     else this.fadeOutPlayback(MUTE_FADE_SECONDS);
   }
@@ -55,11 +57,11 @@ export class Music {
   }
 
   pause(): void {
-    void peekAudioContext()?.suspend();
+    setAudioPaused(true);
   }
 
   resume(): void {
-    void peekAudioContext()?.resume();
+    setAudioPaused(false);
   }
 
   setIntensity(value: number): void {
@@ -72,10 +74,16 @@ export class Music {
 
   private playRequested(): void {
     const track = this.requested;
-    const context = peekAudioContext();
-    if (!track || !context || !this.enabled || this.isPlaying(track)) return;
+    const output = peekAudioOutput();
+    if (!track || !output || !this.enabled || this.isPlaying(track)) return;
     this.fadeOutPlayback(CROSSFADE_SECONDS);
-    this.bus ??= new MusicBus(context);
+    const session = this.createSession(track, output);
+    session.start(CROSSFADE_SECONDS);
+    this.playback = { track, session };
+  }
+
+  private createSession(track: Track, { context, music }: AudioOutput): MusicSession {
+    this.bus ??= new MusicBus(context, music);
     this.bus.setBrightness(this.intensity);
     const session = new MusicSession({
       context,
@@ -84,8 +92,7 @@ export class Music {
       budget: this.budget,
     });
     session.setIntensity(this.intensity);
-    session.start(CROSSFADE_SECONDS);
-    this.playback = { track, session };
+    return session;
   }
 
   private isPlaying(track: Track): boolean {

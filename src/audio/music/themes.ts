@@ -1,10 +1,10 @@
 import type { ThemeId } from '../../course/regions';
+import { BUTTERWORTH_Q_DB } from '../synthesis';
 import { hashSeed } from './random';
 import type { Arrangement, LayerSpec, MotifSpec, MusicMood, ThemeSpec } from './specs';
 
 const BOSS_TEMPO_FACTOR = 1.15;
 const MAJOR_PENTATONIC_DEGREES = [0, 1, 2, 4, 5] as const;
-const LOWPASS_FLAT_Q_DB = 0;
 const INTENSITY_LAYER_PRIORITY = 5;
 const KIND_PRIORITY: Record<LayerSpec['kind'], number> = {
   bass: 0,
@@ -378,7 +378,7 @@ const THEMES: Record<ThemeId, ThemeSpec> = {
         kind: 'bed',
         filter: 'lowpass',
         frequency: 600,
-        q: LOWPASS_FLAT_Q_DB,
+        q: BUTTERWORTH_Q_DB,
         sweepDepth: 250,
         sweepRate: 0.09,
         swellDepth: 0.9,

@@ -1,6 +1,8 @@
 import * as THREE from 'three';
+import { CAMERA_POSITION } from '../arena';
 import type { MaterialKit } from './materials';
 import { hash2 } from './noise';
+import type { Region } from './scatter';
 
 export interface TileSurface {
   top: THREE.Color;
@@ -24,7 +26,13 @@ interface Neighbour {
   dj: number;
 }
 
-const EXTENT = { minX: -54, maxX: 54, minZ: -42, maxZ: 22 };
+const BEHIND_CAMERA = 6.5;
+export const TERRAIN_EXTENT: Readonly<Region> = {
+  minX: -54,
+  maxX: 54,
+  minZ: -42,
+  maxZ: CAMERA_POSITION.z + BEHIND_CAMERA,
+};
 const NEIGHBOURS: Neighbour[] = [
   { di: 1, dj: 0 },
   { di: -1, dj: 0 },
@@ -82,10 +90,10 @@ export class Terrain {
     materials: MaterialKit,
   ) {
     this.cell = spec.cell;
-    this.iMin = Math.floor(EXTENT.minX / spec.cell);
-    this.jMin = Math.floor(EXTENT.minZ / spec.cell);
-    this.cols = Math.ceil(EXTENT.maxX / spec.cell) - this.iMin;
-    this.rows = Math.ceil(EXTENT.maxZ / spec.cell) - this.jMin;
+    this.iMin = Math.floor(TERRAIN_EXTENT.minX / spec.cell);
+    this.jMin = Math.floor(TERRAIN_EXTENT.minZ / spec.cell);
+    this.cols = Math.ceil(TERRAIN_EXTENT.maxX / spec.cell) - this.iMin;
+    this.rows = Math.ceil(TERRAIN_EXTENT.maxZ / spec.cell) - this.jMin;
     this.heights = new Float32Array(this.cols * this.rows);
     this.sample();
     this.mesh = new THREE.Mesh(

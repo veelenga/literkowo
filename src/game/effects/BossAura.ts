@@ -63,11 +63,6 @@ export class BossAura {
     this.colors.needsUpdate = true;
   }
 
-  dispose(): void {
-    this.points.geometry.dispose();
-    this.points.material.dispose();
-  }
-
   private advanceMote(index: number, delta: number): void {
     const mote = this.motes[index];
     mote.angle += SWIRL_SPEED * delta;

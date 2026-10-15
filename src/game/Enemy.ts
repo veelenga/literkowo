@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import type { EnemyShape } from './themes';
+import { REACH_DISTANCE, SPAWN_RADIUS } from './arena';
+import { disposeObject } from './disposal';
 import { Envelope } from './effects/Envelope';
 import { GlowingFace, type FaceSpec } from './effects/GlowingFace';
 import { GroundGlow } from './effects/GroundGlow';
@@ -9,17 +10,16 @@ import {
   SHAPE_STYLES,
   bobOffset,
   coreGeometry,
-  createShellGeometry,
   shellGeometry,
   type BobMotion,
   type ShapeStyle,
 } from './effects/enemyStyles';
 import { setEmissiveLuminance } from './effects/luminance';
+import type { EnemyShape } from './themes';
 
 const HOVER_HEIGHT = 1.1;
 const LABEL_GAP = 1.0;
-const REACH_DISTANCE = 1.6;
-const THREAT_START_DISTANCE = 11;
+const THREAT_SPAN = SPAWN_RADIUS - REACH_DISTANCE;
 const GLOW_DIAMETER = 1.8;
 const CORE_IDLE_GLOW = 1.6;
 const CORE_FOCUS_GLOW = 3.6;
@@ -39,7 +39,6 @@ const FOCUS_RATE = 12;
 const CORE_SPIN = 1.4;
 const CORE_TUMBLE = 0.6;
 const SPARK_FOCUS_BOOST = 0.8;
-const VIEWER_GROUND_Z = 15.5;
 const SWAY_SPEED = 1.3;
 const SWAY_ANGLE = 0.25;
 const SHELL_ROUGHNESS = 0.2;
@@ -59,10 +58,31 @@ export interface EnemyMotion {
   facesViewer: boolean;
 }
 
+export interface EnemyBody {
+  shell: THREE.BufferGeometry;
+  core: THREE.BufferGeometry;
+  shellShade: number;
+  shellOpacity: number;
+  motion: EnemyMotion;
+  sparkCount: number;
+  hasTrail: boolean;
+  face?: FaceSpec;
+}
+
 type GlowingMesh = THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
 
-export function enemyGeometry(shape: EnemyShape): THREE.BufferGeometry {
-  return createShellGeometry(shape);
+export function themedBody(shape: EnemyShape): EnemyBody {
+  const style = SHAPE_STYLES[shape];
+  return {
+    shell: shellGeometry(shape),
+    core: coreGeometry(shape),
+    shellShade: style.shellShade,
+    shellOpacity: style.shellOpacity,
+    motion: { hoverHeight: HOVER_HEIGHT, bob: style.bob, facesViewer: style.face !== undefined },
+    sparkCount: style.sparkCount,
+    hasTrail: style.hasTrail,
+    face: style.face,
+  };
 }
 
 function pickRandom(values: number[]): number {
@@ -72,54 +92,57 @@ function pickRandom(values: number[]): number {
 export class Enemy {
   readonly object = new THREE.Group();
   readonly color: THREE.Color;
-  typed = 0;
   protected readonly rig = new THREE.Group();
-  protected readonly body: GlowingMesh;
   protected readonly outward = new THREE.Vector3();
-  protected motion: EnemyMotion;
-  protected face: GlowingFace | undefined;
+  protected readonly face: GlowingFace | undefined;
+  private readonly motion: EnemyMotion;
   private readonly style: ShapeStyle;
+  private readonly body: GlowingMesh;
   private readonly core: GlowingMesh;
   private readonly sparks: OrbitingSparks;
   private readonly glow: GroundGlow;
   private readonly trail: WispTrail | undefined;
   private readonly bodyScale: number;
+  private readonly shellGlowScale: number;
   private readonly phase = Math.random() * FULL_TURN;
   private readonly pulse = new Envelope();
   private readonly flash = new Envelope();
   private readonly shake = new Envelope();
   private readonly flashColor = new THREE.Color();
-  private shellGlowScale: number;
+  private currentWord: string;
+  private typed = 0;
   private isTargeted = false;
   private focus = 0;
   private readonly heightAt = (time: number): number =>
     this.motion.hoverHeight + bobOffset(this.motion.bob, time + this.phase);
 
   constructor(
-    readonly word: string,
+    word: string,
     readonly label: HTMLElement,
     protected speed: number,
     look: EnemyLook,
+    body: EnemyBody = themedBody(look.shape),
   ) {
+    this.currentWord = word;
     this.style = SHAPE_STYLES[look.shape];
     this.color = new THREE.Color(pickRandom(look.colors));
     this.bodyScale = look.scale ?? 1;
-    this.shellGlowScale = this.style.shellShade;
-    this.motion = {
-      hoverHeight: HOVER_HEIGHT,
-      bob: this.style.bob,
-      facesViewer: this.style.face !== undefined,
-    };
-    this.body = this.createBody(look.shape);
-    this.core = this.createCore(look.shape);
-    this.sparks = new OrbitingSparks(this.style.sparkCount, this.color);
+    this.motion = body.motion;
+    this.shellGlowScale = body.shellShade;
+    this.body = this.createBody(body);
+    this.core = this.createCore(body.core);
+    this.sparks = new OrbitingSparks(body.sparkCount, this.color);
     this.glow = new GroundGlow(this.color, GLOW_DIAMETER * this.bodyScale);
-    this.trail = this.style.hasTrail
+    this.trail = body.hasTrail
       ? new WispTrail(this.color, this.bodyScale, this.heightAt)
       : undefined;
-    if (this.style.face) this.setFace(this.style.face);
+    this.face = body.face ? new GlowingFace(body.face) : undefined;
     this.assemble();
     this.renderLabel();
+  }
+
+  get word(): string {
+    return this.currentWord;
   }
 
   get isComplete(): boolean {
@@ -138,10 +161,10 @@ export class Enemy {
     return HOVER_HEIGHT + LABEL_GAP;
   }
 
-  update(delta: number, elapsed: number): void {
+  update(delta: number, elapsed: number, viewer: THREE.Vector3Like): void {
     this.approachCenter(delta);
     this.advanceTimers(delta);
-    this.animateBody(delta, elapsed);
+    this.animateBody(delta, elapsed, viewer);
     this.animateSurroundings(delta, elapsed);
   }
 
@@ -166,9 +189,13 @@ export class Enemy {
 
   dispose(): void {
     this.label.remove();
-    this.body.material.dispose();
-    this.core.material.dispose();
-    this.glow.dispose();
+    disposeObject(this.object);
+  }
+
+  protected setWord(word: string): void {
+    this.currentWord = word;
+    this.typed = 0;
+    this.renderLabel();
   }
 
   protected renderLabel(): void {
@@ -182,30 +209,12 @@ export class Enemy {
     this.flash.trigger(duration);
   }
 
-  protected reshape(bodyShape: THREE.BufferGeometry, coreShape: THREE.BufferGeometry): void {
-    this.body.geometry = bodyShape;
-    this.core.geometry = coreShape;
-  }
-
-  protected darkenShell(shade: number, opacity: number): void {
-    this.body.material.color.multiplyScalar(shade);
-    this.body.material.opacity = opacity;
-    this.shellGlowScale *= shade;
-  }
-
-  protected setFace(spec: FaceSpec): void {
-    if (this.face) this.body.remove(this.face.group);
-    this.face = new GlowingFace(spec);
-    this.body.add(this.face.group);
-  }
-
   protected refreshOutward(): void {
     this.outward.set(this.object.position.x, 0, this.object.position.z).normalize();
   }
 
   private get threat(): number {
-    const span = THREAT_START_DISTANCE - REACH_DISTANCE;
-    return 1 - THREE.MathUtils.clamp((this.distanceToCenter - REACH_DISTANCE) / span, 0, 1);
+    return 1 - THREE.MathUtils.clamp((this.distanceToCenter - REACH_DISTANCE) / THREAT_SPAN, 0, 1);
   }
 
   private approachCenter(delta: number): void {
@@ -220,25 +229,25 @@ export class Enemy {
     this.focus = THREE.MathUtils.damp(this.focus, this.isTargeted ? 1 : 0, FOCUS_RATE, delta);
   }
 
-  private animateBody(delta: number, elapsed: number): void {
+  private animateBody(delta: number, elapsed: number, viewer: THREE.Vector3Like): void {
     const shake = Math.sin(elapsed * SHAKE_FREQUENCY) * SHAKE_AMPLITUDE * this.shake.level;
     this.rig.position.set(shake, this.heightAt(elapsed), 0);
     const pulse = Math.sin(Math.PI * this.pulse.level) * PULSE_SCALE_BOOST;
     this.rig.scale.setScalar(this.bodyScale * (1 + this.focus * FOCUS_SCALE_BOOST + pulse));
-    this.turnBody(delta, elapsed);
+    this.turnBody(delta, elapsed, viewer);
     this.applyGlow();
   }
 
-  private turnBody(delta: number, elapsed: number): void {
-    if (this.motion.facesViewer) this.faceTheViewer(elapsed);
+  private turnBody(delta: number, elapsed: number, viewer: THREE.Vector3Like): void {
+    if (this.motion.facesViewer) this.faceTheViewer(elapsed, viewer);
     else this.spinBody(delta);
     this.core.rotation.y -= CORE_SPIN * delta;
     this.core.rotation.x += CORE_SPIN * CORE_TUMBLE * delta;
   }
 
-  private faceTheViewer(elapsed: number): void {
+  private faceTheViewer(elapsed: number, viewer: THREE.Vector3Like): void {
     const { x, z } = this.object.position;
-    const facing = Math.atan2(-x, VIEWER_GROUND_Z - z);
+    const facing = Math.atan2(viewer.x - x, viewer.z - z);
     this.body.rotation.y = facing + Math.sin((elapsed + this.phase) * SWAY_SPEED) * SWAY_ANGLE;
   }
 
@@ -272,35 +281,36 @@ export class Enemy {
     this.face?.update(delta);
   }
 
-  private createBody(shape: EnemyShape): GlowingMesh {
+  private createBody(body: EnemyBody): GlowingMesh {
     const material = new THREE.MeshStandardMaterial({
-      color: this.color.clone().multiplyScalar(this.style.shellShade),
+      color: this.color.clone().multiplyScalar(body.shellShade),
       emissive: this.color,
       transparent: true,
-      opacity: this.style.shellOpacity,
+      opacity: body.shellOpacity,
       roughness: SHELL_ROUGHNESS,
       metalness: SHELL_METALNESS,
       flatShading: true,
     });
-    const mesh = new THREE.Mesh(shellGeometry(shape), material);
+    const mesh = new THREE.Mesh(body.shell, material);
     mesh.castShadow = true;
     return mesh;
   }
 
-  private createCore(shape: EnemyShape): GlowingMesh {
+  private createCore(geometry: THREE.BufferGeometry): GlowingMesh {
     const material = new THREE.MeshStandardMaterial({
       color: this.color,
       emissive: this.color,
       roughness: CORE_ROUGHNESS,
       flatShading: true,
     });
-    return new THREE.Mesh(coreGeometry(shape), material);
+    return new THREE.Mesh(geometry, material);
   }
 
   private assemble(): void {
     this.rig.position.y = this.motion.hoverHeight;
     this.rig.scale.setScalar(this.bodyScale);
     this.rig.add(this.body, this.core, this.sparks.group);
+    if (this.face) this.body.add(this.face.group);
     this.object.add(this.rig, this.glow.mesh);
     if (this.trail) this.object.add(this.trail.group);
   }

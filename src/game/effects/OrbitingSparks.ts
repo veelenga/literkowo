@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { createAssetCache } from './assetCache';
+import { createAssetCache } from '../assetCache';
 import { withLuminance } from './luminance';
 
 const SPARK_SIZE = 0.09;
@@ -28,11 +28,11 @@ const geometries = createAssetCache<THREE.BufferGeometry>();
 const materials = createAssetCache<THREE.MeshBasicMaterial>();
 
 function sparkGeometry(): THREE.BufferGeometry {
-  return geometries('spark', () => new THREE.BoxGeometry(SPARK_SIZE, SPARK_SIZE, SPARK_SIZE));
+  return geometries.get('spark', () => new THREE.BoxGeometry(SPARK_SIZE, SPARK_SIZE, SPARK_SIZE));
 }
 
 function sparkMaterial(color: THREE.Color): THREE.MeshBasicMaterial {
-  return materials(color.getHexString(), () => {
+  return materials.get(color.getHexString(), () => {
     const glow = withLuminance(color.clone().lerp(WHITE, SPARK_WHITENESS), SPARK_LUMINANCE);
     return new THREE.MeshBasicMaterial({ color: glow });
   });

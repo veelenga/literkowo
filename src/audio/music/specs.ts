@@ -7,6 +7,9 @@ export type MusicMood = 'calm' | 'boss';
 interface LayerBase {
   channel: ChannelSpec;
   mood?: MusicMood;
+}
+
+interface SteppedLayerBase extends LayerBase {
   sections?: readonly number[];
 }
 
@@ -39,7 +42,7 @@ export interface BedSpec extends LayerBase {
 
 export type MotifNotes = 'arpeggio' | 'melody' | 'ostinato';
 
-export interface MotifSpec extends LayerBase {
+export interface MotifSpec extends SteppedLayerBase {
   kind: 'motif';
   instrument: InstrumentId;
   notes: MotifNotes;
@@ -54,7 +57,7 @@ export interface MotifSpec extends LayerBase {
   followsIntensity?: boolean;
 }
 
-export interface BassSpec extends LayerBase {
+export interface BassSpec extends SteppedLayerBase {
   kind: 'bass';
   instrument: InstrumentId;
   octave: number;
@@ -63,14 +66,14 @@ export interface BassSpec extends LayerBase {
   restChance: number;
 }
 
-export interface DrumSpec extends LayerBase {
+export interface DrumSpec extends SteppedLayerBase {
   kind: 'drum';
   instrument: DrumId;
   pattern: string;
   velocity: number;
 }
 
-export interface SporadicSpec extends LayerBase {
+export interface SporadicSpec extends SteppedLayerBase {
   kind: 'sporadic';
   instrument: InstrumentId;
   octave: number;

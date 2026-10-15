@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createAssetCache } from '../assetCache';
 import { noiseTexture } from './noiseTexture';
 import { NOISE_GLSL } from './shaders';
 
@@ -22,6 +23,7 @@ export interface GlowOptions {
 }
 
 type Uniform<T> = { value: T };
+type SurfaceMaterial = THREE.MeshLambertMaterial | THREE.MeshStandardMaterial;
 
 const DEFAULT_ROUGHNESS = 0.82;
 const GLOSSY_LIMIT = 0.5;
@@ -109,7 +111,8 @@ export class MaterialKit {
   private readonly cloudStrength: Uniform<number>;
   private readonly cloudScale: Uniform<number>;
   private readonly cloudWind: Uniform<THREE.Vector2>;
-  private readonly cache = new Map<string, THREE.Material>();
+  private readonly surfaces = createAssetCache<SurfaceMaterial>();
+  private readonly glows = createAssetCache<THREE.MeshBasicMaterial>();
 
   constructor(clouds?: CloudShadowSpec) {
     this.cloudStrength = { value: clouds?.strength ?? 0 };
@@ -119,31 +122,26 @@ export class MaterialKit {
     };
   }
 
-  surface(options: SurfaceOptions = {}): THREE.MeshLambertMaterial | THREE.MeshStandardMaterial {
-    const key = `surface:${options.sway}:${options.roughness}:${options.metalness}:${options.doubleSided}`;
-    return this.cached(key, () => this.createSurface(options));
+  surface(options: SurfaceOptions = {}): SurfaceMaterial {
+    const key = `${options.sway}:${options.roughness}:${options.metalness}:${options.doubleSided}`;
+    return this.surfaces.get(key, () => this.createSurface(options));
   }
 
   glow(options: GlowOptions): THREE.MeshBasicMaterial {
-    const key = `glow:${options.intensity}:${options.pulse}:${options.speed}`;
-    return this.cached(key, () => this.createGlow(options));
+    const key = `${options.intensity}:${options.pulse}:${options.speed}`;
+    return this.glows.get(key, () => this.createGlow(options));
   }
 
   update(elapsed: number): void {
     this.time.value = elapsed;
   }
 
-  private cached<T extends THREE.Material>(key: string, create: () => T): T {
-    const existing = this.cache.get(key);
-    if (existing) return existing as T;
-    const material = create();
-    this.cache.set(key, material);
-    return material;
+  dispose(): void {
+    this.surfaces.dispose();
+    this.glows.dispose();
   }
 
-  private createSurface(
-    options: SurfaceOptions,
-  ): THREE.MeshLambertMaterial | THREE.MeshStandardMaterial {
+  private createSurface(options: SurfaceOptions): SurfaceMaterial {
     const roughness = options.roughness ?? DEFAULT_ROUGHNESS;
     const base = {
       vertexColors: true,

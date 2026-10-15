@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createAssetCache } from '../assetCache';
 import { valueNoise } from './noise';
 
 const TEXTURE_SIZE = 128;
@@ -10,8 +11,9 @@ const OCTAVES = [
 ];
 const NOISE_SEED = 911;
 const BYTE = 255;
+const RGBA_CHANNELS = 4;
 
-let texture: THREE.DataTexture | undefined;
+const textures = createAssetCache<THREE.DataTexture>();
 
 function periodic(
   sample: (x: number, y: number) => number,
@@ -32,8 +34,11 @@ function periodic(
 }
 
 export function noiseTexture(): THREE.DataTexture {
-  if (texture) return texture;
-  const data = new Uint8Array(TEXTURE_SIZE * TEXTURE_SIZE * 4);
+  return textures.get('noise', createNoiseTexture);
+}
+
+function createNoiseTexture(): THREE.DataTexture {
+  const data = new Uint8Array(TEXTURE_SIZE * TEXTURE_SIZE * RGBA_CHANNELS);
   const layers = OCTAVES.map((octave, index) => ({
     ...octave,
     noise: valueNoise(NOISE_SEED + index),
@@ -54,14 +59,11 @@ export function noiseTexture(): THREE.DataTexture {
             ),
         0,
       );
-      data.fill(
-        Math.round(value * BYTE),
-        (j * TEXTURE_SIZE + i) * 4,
-        (j * TEXTURE_SIZE + i) * 4 + 4,
-      );
+      const offset = (j * TEXTURE_SIZE + i) * RGBA_CHANNELS;
+      data.fill(Math.round(value * BYTE), offset, offset + RGBA_CHANNELS);
     }
   }
-  texture = new THREE.DataTexture(data, TEXTURE_SIZE, TEXTURE_SIZE);
+  const texture = new THREE.DataTexture(data, TEXTURE_SIZE, TEXTURE_SIZE);
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
   texture.magFilter = THREE.LinearFilter;

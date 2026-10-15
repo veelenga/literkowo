@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { EnemyShape } from '../themes';
-import { createAssetCache } from './assetCache';
+import { createAssetCache } from '../assetCache';
 import { blockAssembly, chunkyBlock, chunkyGem, type Block } from './chunkyGeometry';
 import type { FaceSpec } from './GlowingFace';
 
@@ -137,16 +137,12 @@ export const SHAPE_STYLES: Record<EnemyShape, ShapeStyle> = {
 
 const geometries = createAssetCache<THREE.BufferGeometry>();
 
-export function createShellGeometry(shape: EnemyShape): THREE.BufferGeometry {
-  return SHELL_BUILDERS[shape]();
-}
-
 export function shellGeometry(shape: EnemyShape): THREE.BufferGeometry {
-  return geometries(`shell:${shape}`, SHELL_BUILDERS[shape]);
+  return geometries.get(`shell:${shape}`, SHELL_BUILDERS[shape]);
 }
 
 export function coreGeometry(shape: EnemyShape): THREE.BufferGeometry {
-  return geometries(`core:${shape}`, CORE_BUILDERS[shape]);
+  return geometries.get(`core:${shape}`, CORE_BUILDERS[shape]);
 }
 
 export function bobOffset(bob: BobMotion, time: number): number {

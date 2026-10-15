@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { createAssetCache } from './assetCache';
+import { createAssetCache } from '../assetCache';
 import type { Triple } from './chunkyGeometry';
 import { Envelope } from './Envelope';
 import { withLuminance } from './luminance';
@@ -35,11 +35,11 @@ const geometries = createAssetCache<THREE.BufferGeometry>();
 const materials = createAssetCache<THREE.MeshBasicMaterial>();
 
 function featureGeometry(): THREE.BufferGeometry {
-  return geometries('face-feature', () => new THREE.BoxGeometry(1, 1, 1));
+  return geometries.get('face-feature', () => new THREE.BoxGeometry(1, 1, 1));
 }
 
 function featureMaterial(color: number): THREE.MeshBasicMaterial {
-  return materials(
+  return materials.get(
     color.toString(16),
     () =>
       new THREE.MeshBasicMaterial({

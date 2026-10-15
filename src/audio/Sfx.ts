@@ -1,22 +1,30 @@
-import { getAudioContext, unlockAudio } from './audioContext';
+import { StoredToggle } from './StoredToggle';
+import { isAudioRunning, peekAudioOutput, unlockAudio, type AudioOutput } from './audioContext';
 import {
-  BUTTERWORTH_Q_DB,
-  STOP_MARGIN_SECONDS,
-  applyEnvelope,
-  getNoiseBuffer,
+  SEMITONES_PER_OCTAVE,
+  createCompressor,
+  createFilter,
   midiToFrequency,
-  playUntil,
-  routeVoice,
+  playNoise,
+  playTone,
+  type CompressorSettings,
+  type Envelope,
+  type FilterSettings,
+  type Glide,
+  type VoiceTarget,
 } from './synthesis';
 
 const STORAGE_KEY = 'literkowo.sound';
-const MASTER_GAIN = 0.3;
 const DEFAULT_ATTACK = 0.004;
-const BANDPASS_Q = 1;
-const SEMITONES_PER_OCTAVE = 12;
 const MAJOR_PENTATONIC = [0, 2, 4, 7, 9] as const;
 
-const LIMITER = { threshold: -10, knee: 6, ratio: 8, attack: 0.003, release: 0.15 } as const;
+const BUS_COMPRESSOR: CompressorSettings = {
+  threshold: -10,
+  knee: 6,
+  ratio: 8,
+  attack: 0.003,
+  release: 0.15,
+};
 
 const HIT_BASE_MIDI = 67;
 const HIT_MAX_STEP = 12;
@@ -33,38 +41,33 @@ const FAILED_CADENCE = [
   { notes: [57, 60, 64], delay: 0.5, decay: 1.2 },
 ] as const;
 
-interface ToneSpec {
-  frequency: number;
-  wave: OscillatorType;
+interface Loudness {
   volume: number;
   decay: number;
   attack?: number;
   delay?: number;
-  glideTo?: number;
-  glideTime?: number;
+}
+
+interface ToneSpec extends Loudness {
+  frequency: number;
+  wave: OscillatorType;
+  glide?: Glide;
   cutoff?: number;
 }
 
-interface NoiseSpec {
-  filter: BiquadFilterType;
-  frequency: number;
-  volume: number;
-  decay: number;
-  attack?: number;
-  delay?: number;
-  q?: number;
+interface NoiseSpec extends Loudness {
+  filter: FilterSettings;
 }
 
 type Voice = Omit<ToneSpec, 'frequency'>;
 
 interface SfxBus {
-  context: AudioContext;
+  context: BaseAudioContext;
   input: AudioNode;
 }
 
 const HIT_CLICK: NoiseSpec = {
-  filter: 'highpass',
-  frequency: 4200,
+  filter: { type: 'highpass', frequency: 4200 },
   volume: 0.22,
   attack: 0.001,
   decay: 0.012,
@@ -84,15 +87,13 @@ const CHIME_OVERTONE_RATIO = 3;
 
 const MISTAKE_THUD: ToneSpec = {
   frequency: 150,
-  glideTo: 70,
-  glideTime: 0.1,
+  glide: { to: 70, seconds: 0.1 },
   wave: 'sine',
   volume: 0.55,
   decay: 0.16,
 };
 const MISTAKE_MUFFLE: NoiseSpec = {
-  filter: 'lowpass',
-  frequency: 500,
+  filter: { type: 'lowpass', frequency: 500 },
   volume: 0.18,
   attack: 0.002,
   decay: 0.05,
@@ -102,8 +103,7 @@ const LIFE_LOST_NOTE: Voice = { wave: 'triangle', volume: 0.32, decay: 0.26, cut
 const LIFE_LOST_LAST_DECAY = 0.5;
 const LIFE_LOST_THUD: ToneSpec = {
   frequency: 110,
-  glideTo: 55,
-  glideTime: 0.2,
+  glide: { to: 55, seconds: 0.2 },
   wave: 'sine',
   volume: 0.4,
   decay: 0.3,
@@ -111,8 +111,7 @@ const LIFE_LOST_THUD: ToneSpec = {
 
 const BOSS_IMPACT: ToneSpec = {
   frequency: 160,
-  glideTo: 42,
-  glideTime: 0.25,
+  glide: { to: 42, seconds: 0.25 },
   wave: 'sine',
   volume: 0.85,
   attack: 0.002,
@@ -120,22 +119,20 @@ const BOSS_IMPACT: ToneSpec = {
 };
 const BOSS_BODY: ToneSpec = {
   frequency: 110,
-  glideTo: 60,
+  glide: { to: 60, seconds: 0.2 },
   wave: 'triangle',
   volume: 0.28,
   decay: 0.2,
   cutoff: 900,
 };
 const BOSS_BURST: NoiseSpec = {
-  filter: 'lowpass',
-  frequency: 1800,
+  filter: { type: 'lowpass', frequency: 1800 },
   volume: 0.45,
   attack: 0.001,
   decay: 0.22,
 };
 const BOSS_CRACK: NoiseSpec = {
-  filter: 'highpass',
-  frequency: 5000,
+  filter: { type: 'highpass', frequency: 5000 },
   volume: 0.16,
   attack: 0.001,
   decay: 0.035,
@@ -158,17 +155,19 @@ const CADENCE_VOICE: Omit<Voice, 'decay'> = {
 };
 
 export class Sfx {
+  private readonly toggle = new StoredToggle(STORAGE_KEY);
   private bus: SfxBus | undefined;
-  enabled = localStorage.getItem(STORAGE_KEY) !== 'off';
+
+  get enabled(): boolean {
+    return this.toggle.enabled;
+  }
 
   setEnabled(enabled: boolean): void {
-    this.enabled = enabled;
-    localStorage.setItem(STORAGE_KEY, enabled ? 'on' : 'off');
+    this.toggle.set(enabled);
   }
 
   unlock(): void {
     unlockAudio();
-    this.bus ??= createBus(getAudioContext());
   }
 
   hit(combo: number): void {
@@ -236,76 +235,46 @@ export class Sfx {
   }
 
   private tone(spec: ToneSpec): void {
-    const bus = this.activeBus();
-    if (!bus) return;
-    const { context } = bus;
-    const start = context.currentTime + (spec.delay ?? 0);
-    const oscillator = context.createOscillator();
-    oscillator.type = spec.wave;
-    oscillator.frequency.setValueAtTime(spec.frequency, start);
-    if (spec.glideTo) {
-      const glideEnd = start + (spec.glideTime ?? spec.decay);
-      oscillator.frequency.exponentialRampToValueAtTime(spec.glideTo, glideEnd);
-    }
-    const gain = context.createGain();
-    const end = applyEnvelope(gain.gain, start, {
-      peak: spec.volume,
-      attack: spec.attack ?? DEFAULT_ATTACK,
-      decay: spec.decay,
+    const target = this.target(spec.delay);
+    if (!target) return;
+    const chain = spec.cutoff ? [createFilter(target.context, 'lowpass', spec.cutoff)] : [];
+    playTone(target, {
+      frequency: spec.frequency,
+      wave: spec.wave,
+      glide: spec.glide,
+      envelope: envelopeOf(spec),
+      chain,
     });
-    const filters = spec.cutoff ? [createFilter(context, 'lowpass', spec.cutoff)] : [];
-    routeVoice(oscillator, [...filters, gain], bus.input);
-    playUntil([oscillator], start, end);
   }
 
   private noise(spec: NoiseSpec): void {
+    const target = this.target(spec.delay);
+    if (target) playNoise(target, { filter: spec.filter, envelope: envelopeOf(spec) });
+  }
+
+  private target(delay = 0): VoiceTarget | undefined {
     const bus = this.activeBus();
-    if (!bus) return;
-    const { context } = bus;
-    const start = context.currentTime + (spec.delay ?? 0);
-    const source = context.createBufferSource();
-    source.buffer = getNoiseBuffer(context);
-    const filter = createFilter(context, spec.filter, spec.frequency, spec.q);
-    const gain = context.createGain();
-    const end = applyEnvelope(gain.gain, start, {
-      peak: spec.volume,
-      attack: spec.attack ?? DEFAULT_ATTACK,
-      decay: spec.decay,
-    });
-    routeVoice(source, [filter, gain], bus.input);
-    source.start(start, Math.random() * (source.buffer.duration - spec.decay));
-    source.stop(end + STOP_MARGIN_SECONDS);
+    if (!bus) return undefined;
+    const { context, input } = bus;
+    return { context, destination: input, time: context.currentTime + delay };
   }
 
   private activeBus(): SfxBus | undefined {
-    return this.enabled ? this.bus : undefined;
+    const output = this.enabled ? peekAudioOutput() : undefined;
+    if (!output || !isAudioRunning()) return undefined;
+    this.bus ??= createBus(output);
+    return this.bus;
   }
 }
 
-function createBus(context: AudioContext): SfxBus {
-  const limiter = context.createDynamicsCompressor();
-  limiter.threshold.value = LIMITER.threshold;
-  limiter.knee.value = LIMITER.knee;
-  limiter.ratio.value = LIMITER.ratio;
-  limiter.attack.value = LIMITER.attack;
-  limiter.release.value = LIMITER.release;
-  const master = context.createGain();
-  master.gain.value = MASTER_GAIN;
-  limiter.connect(master).connect(context.destination);
-  return { context, input: limiter };
+function createBus({ context, sfx }: AudioOutput): SfxBus {
+  const input = createCompressor(context, BUS_COMPRESSOR);
+  input.connect(sfx);
+  return { context, input };
 }
 
-function createFilter(
-  context: BaseAudioContext,
-  type: BiquadFilterType,
-  frequency: number,
-  q?: number,
-): BiquadFilterNode {
-  const filter = context.createBiquadFilter();
-  filter.type = type;
-  filter.frequency.value = frequency;
-  filter.Q.value = q ?? (type === 'bandpass' ? BANDPASS_Q : BUTTERWORTH_Q_DB);
-  return filter;
+function envelopeOf(spec: Loudness): Envelope {
+  return { peak: spec.volume, attack: spec.attack ?? DEFAULT_ATTACK, decay: spec.decay };
 }
 
 function pentatonicSemitones(step: number): number {

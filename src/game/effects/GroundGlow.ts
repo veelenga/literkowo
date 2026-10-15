@@ -42,8 +42,4 @@ export class GroundGlow {
     );
     material.color.copy(this.baseColor).lerp(WARNING_COLOR, threat * threat * WARNING_BLEND);
   }
-
-  dispose(): void {
-    this.mesh.material.dispose();
-  }
 }

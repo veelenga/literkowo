@@ -1,3 +1,7 @@
+import { NodeGroup, createGain } from '../synthesis';
+
+const CENTER_PAN = 0;
+
 export interface ChannelSpec {
   volume: number;
   pan?: number;
@@ -13,7 +17,7 @@ export interface ChannelTargets {
 
 export class Channel {
   readonly input: GainNode;
-  private readonly nodes: AudioNode[] = [];
+  private readonly nodes = new NodeGroup();
 
   constructor(
     private readonly context: BaseAudioContext,
@@ -21,16 +25,15 @@ export class Channel {
     targets: ChannelTargets,
   ) {
     this.input = this.gain(spec.volume);
-    const panner = context.createStereoPanner();
-    panner.pan.value = spec.pan ?? 0;
-    this.nodes.push(panner);
+    const panner = this.nodes.track(context.createStereoPanner());
+    panner.pan.value = spec.pan ?? CENTER_PAN;
     this.input.connect(panner).connect(targets.dry);
     this.send(panner, spec.reverb, targets.reverb);
     this.send(panner, spec.delay, targets.echo);
   }
 
   dispose(): void {
-    this.nodes.forEach((node) => node.disconnect());
+    this.nodes.dispose();
   }
 
   private send(source: AudioNode, amount: number | undefined, target: AudioNode): void {
@@ -39,9 +42,6 @@ export class Channel {
   }
 
   private gain(value: number): GainNode {
-    const node = this.context.createGain();
-    node.gain.value = value;
-    this.nodes.push(node);
-    return node;
+    return this.nodes.track(createGain(this.context, value));
   }
 }

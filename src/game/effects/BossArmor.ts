@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { createAssetCache } from './assetCache';
+import { createAssetCache } from '../assetCache';
 import { chunkyBlock } from './chunkyGeometry';
 import { setEmissiveLuminance } from './luminance';
 
@@ -37,7 +37,7 @@ interface Chunk {
 const geometries = createAssetCache<THREE.BufferGeometry>();
 
 function chunkGeometry(): THREE.BufferGeometry {
-  return geometries('armor-chunk', () => chunkyBlock(CHUNK.width, CHUNK.height, CHUNK.depth));
+  return geometries.get('armor-chunk', () => chunkyBlock(CHUNK.width, CHUNK.height, CHUNK.depth));
 }
 
 export class BossArmor {
@@ -83,10 +83,6 @@ export class BossArmor {
       this.detach(attached[Math.floor(Math.random() * attached.length)]);
       attached = this.attachedChunks;
     }
-  }
-
-  dispose(): void {
-    this.material.dispose();
   }
 
   private orbit(chunk: Chunk): void {

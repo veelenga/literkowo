@@ -1,10 +1,9 @@
-import { getNoiseBuffer } from '../../synthesis';
+import { HALF, getNoiseBuffer } from '../../synthesis';
 import type { BedSpec } from '../specs';
 import type { LayerContext } from './Layer';
 import { SustainedLayer } from './SustainedLayer';
 
 const FADE_IN_SECONDS = 4;
-const HALF = 0.5;
 
 export class NoiseBedLayer extends SustainedLayer {
   constructor(
@@ -19,10 +18,7 @@ export class NoiseBedLayer extends SustainedLayer {
     const noise = this.source(context.createBufferSource());
     noise.buffer = getNoiseBuffer(context);
     noise.loop = true;
-    const filter = this.track(context.createBiquadFilter());
-    filter.type = this.spec.filter;
-    filter.frequency.value = this.spec.frequency;
-    filter.Q.value = this.spec.q;
+    const filter = this.filter(this.spec.filter, this.spec.frequency, this.spec.q);
     this.lfo({ rate: this.spec.sweepRate, depth: this.spec.sweepDepth, target: filter.frequency });
     const swell = this.gain(1 - this.spec.swellDepth * HALF);
     this.lfo({ rate: this.spec.swellRate, depth: this.spec.swellDepth * HALF, target: swell.gain });

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
+import { ambientGlowTexture } from './effects/glowAssets';
 import type { Rng } from './environment/random';
 import type { Region } from './environment/scatter';
-import { glowSprite } from './environment/sprites';
 
 export type AmbientMotion = 'drift' | 'fall' | 'rise' | 'blink' | 'twinkle';
 
@@ -109,7 +109,7 @@ export class AmbientParticles {
         uHeight: { value: new THREE.Vector2(spec.height[0], spec.height[1]) },
         uGlow: { value: spec.glow },
         uOpacity: { value: spec.opacity ?? 1 },
-        uMap: { value: glowSprite() },
+        uMap: { value: ambientGlowTexture() },
       },
     });
     this.points = new THREE.Points(geometry, material);

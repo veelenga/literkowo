@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { createAssetCache } from './assetCache';
+import { createAssetCache } from '../assetCache';
 import { withLuminance } from './luminance';
 
 const PUFF_COUNT = 5;
@@ -14,11 +14,11 @@ const geometries = createAssetCache<THREE.BufferGeometry>();
 const materials = createAssetCache<THREE.MeshBasicMaterial>();
 
 function puffGeometry(): THREE.BufferGeometry {
-  return geometries('puff', () => new THREE.BoxGeometry(PUFF_SIZE, PUFF_SIZE, PUFF_SIZE));
+  return geometries.get('puff', () => new THREE.BoxGeometry(PUFF_SIZE, PUFF_SIZE, PUFF_SIZE));
 }
 
 function puffMaterial(color: THREE.Color): THREE.MeshBasicMaterial {
-  return materials(
+  return materials.get(
     color.getHexString(),
     () =>
       new THREE.MeshBasicMaterial({

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { disposeObject } from './disposal';
 import { groundPlaneGeometry, shockwaveTexture, softGlowTexture } from './effects/glowAssets';
 import { PulsePool, type PulseSettings, type PulseVisual } from './effects/PulsePool';
 import { ShatterField } from './effects/ShatterField';
@@ -46,13 +47,15 @@ function createShockwave(): PulseVisual {
 }
 
 export class Particles {
+  private readonly root = new THREE.Group();
   private readonly shatter = new ShatterField(FRAGMENTS_PER_BURST * CONCURRENT_BURSTS);
   private readonly flashes = new PulsePool(FLASH, createFlash);
   private readonly shockwaves = new PulsePool(SHOCKWAVE, createShockwave);
   private readonly groundPoint = new THREE.Vector3();
 
   constructor(scene: THREE.Scene) {
-    scene.add(this.shatter.mesh, this.flashes.group, this.shockwaves.group);
+    this.root.add(this.shatter.mesh, this.flashes.group, this.shockwaves.group);
+    scene.add(this.root);
   }
 
   burst(position: THREE.Vector3, color: THREE.Color): void {
@@ -66,5 +69,10 @@ export class Particles {
     this.shatter.update(delta);
     this.flashes.update(delta);
     this.shockwaves.update(delta);
+  }
+
+  dispose(): void {
+    this.root.removeFromParent();
+    disposeObject(this.root);
   }
 }

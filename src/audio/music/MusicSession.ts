@@ -1,3 +1,4 @@
+import { createGain } from '../synthesis';
 import { Channel } from './Channel';
 import { FdnReverb, PingPongDelay } from './effects';
 import { Harmony } from './harmony';
@@ -8,12 +9,13 @@ import type { Arrangement } from './specs';
 import type { VoiceBudget } from './VoiceBudget';
 
 const SCHEDULER_INTERVAL_MS = 25;
-const LOOKAHEAD_SECONDS = 0.1;
+const LOOKAHEAD_SECONDS = 0.25;
 const START_DELAY_SECONDS = 0.05;
 const DISPOSE_MARGIN_SECONDS = 0.25;
 const ECHO_TO_REVERB = 0.25;
 const SECONDS_PER_MINUTE = 60;
-const MILLISECONDS_PER_SECOND = 1000;
+const SILENT_OFFSET = 0;
+const RUNNING: AudioContextState = 'running';
 const SWING_STEP_PARITY = 2;
 
 export interface SessionOptions {
@@ -34,6 +36,7 @@ export class MusicSession {
   private readonly layers: Layer[];
   private readonly beatSeconds: number;
   private readonly stepSeconds: number;
+  private readonly onStateChange = (): void => this.syncScheduler();
   private timer: number | undefined;
   private nextStepTime = 0;
   private stepIndex = 0;
@@ -44,8 +47,7 @@ export class MusicSession {
     this.arrangement = arrangement;
     this.beatSeconds = SECONDS_PER_MINUTE / arrangement.tempo;
     this.stepSeconds = this.beatSeconds / STEPS_PER_BEAT;
-    this.output = context.createGain();
-    this.output.gain.value = 0;
+    this.output = createGain(context, 0);
     this.output.connect(destination);
     const { space } = arrangement;
     this.reverb = new FdnReverb(context, {
@@ -57,8 +59,7 @@ export class MusicSession {
       feedback: space.echoFeedback,
       tone: space.echoTone,
     });
-    this.echoToReverb = context.createGain();
-    this.echoToReverb.gain.value = ECHO_TO_REVERB;
+    this.echoToReverb = createGain(context, ECHO_TO_REVERB);
     this.reverb.output.connect(this.output);
     this.echo.output.connect(this.output);
     this.echo.output.connect(this.echoToReverb).connect(this.reverb.input);
@@ -70,22 +71,20 @@ export class MusicSession {
     this.output.gain.setValueAtTime(0, now);
     this.output.gain.linearRampToValueAtTime(1, now + fadeSeconds);
     this.nextStepTime = now + START_DELAY_SECONDS;
-    this.timer = window.setInterval(() => this.schedule(), SCHEDULER_INTERVAL_MS);
-    this.schedule();
+    this.context.addEventListener('statechange', this.onStateChange);
+    this.syncScheduler();
   }
 
   fadeOut(fadeSeconds: number): void {
-    window.clearInterval(this.timer);
+    this.context.removeEventListener('statechange', this.onStateChange);
+    this.stopScheduler();
     const now = this.context.currentTime;
     const end = now + fadeSeconds;
     this.output.gain.cancelScheduledValues(now);
     this.output.gain.setValueAtTime(this.output.gain.value, now);
     this.output.gain.linearRampToValueAtTime(0, end);
     this.layers.forEach((layer) => layer.release?.(end));
-    window.setTimeout(
-      () => this.dispose(),
-      (fadeSeconds + DISPOSE_MARGIN_SECONDS) * MILLISECONDS_PER_SECOND,
-    );
+    this.disposeAt(end + DISPOSE_MARGIN_SECONDS);
   }
 
   setIntensity(value: number): void {
@@ -108,6 +107,22 @@ export class MusicSession {
         beatSeconds: this.beatSeconds,
       });
     });
+  }
+
+  private syncScheduler(): void {
+    if (this.context.state === RUNNING) this.startScheduler();
+    else this.stopScheduler();
+  }
+
+  private startScheduler(): void {
+    if (this.timer !== undefined) return;
+    this.timer = window.setInterval(() => this.schedule(), SCHEDULER_INTERVAL_MS);
+    this.schedule();
+  }
+
+  private stopScheduler(): void {
+    window.clearInterval(this.timer);
+    this.timer = undefined;
   }
 
   private schedule(): void {
@@ -142,6 +157,18 @@ export class MusicSession {
   private chordRootAt(bar: number): number {
     const { progression, barsPerChord } = this.arrangement;
     return progression[Math.floor(bar / barsPerChord) % progression.length];
+  }
+
+  private disposeAt(time: number): void {
+    const clock = this.context.createConstantSource();
+    clock.offset.value = SILENT_OFFSET;
+    clock.connect(this.output);
+    clock.onended = () => {
+      clock.disconnect();
+      this.dispose();
+    };
+    clock.start();
+    clock.stop(time);
   }
 
   private dispose(): void {
