@@ -12,6 +12,8 @@ import { courseFor } from './course';
 
 export interface Attempt extends LevelResult {
   lettersFreed: number;
+  xp: number;
+  coins: number;
 }
 
 export function isBetterResult(candidate: LevelResult, previous: LevelResult | undefined): boolean {
@@ -32,6 +34,8 @@ export function recordResult(profile: Profile, level: Level, attempt: Attempt): 
     ...profile,
     totalScore: profile.totalScore + attempt.score,
     lettersFreed: profile.lettersFreed + attempt.lettersFreed,
+    xp: profile.xp + attempt.xp,
+    coins: profile.coins + attempt.coins,
     levelResults: improved ? { ...profile.levelResults, [level.id]: result } : profile.levelResults,
   };
 }
