@@ -1,9 +1,11 @@
 import { i18n } from '../i18n/i18n';
 import type { Progress } from '../game/Game';
+import type { Rewards } from '../game/RunRewards';
 import type { SessionStats } from '../game/SessionStats';
 import type { Profile } from '../profiles/Profile';
 import { characterAvatar } from './CharacterAvatar';
 import { Counter, el, icon, releaseFocus, restartAnimation } from './dom';
+import { playerLevelOf, playerLevelTitle, xpGainText } from './progression';
 import { soundToggle } from './SoundToggle';
 
 const MAX_LIVES = 3;
@@ -18,6 +20,8 @@ interface HudActions {
 export class Hud {
   readonly element: HTMLElement;
   private readonly score = new Counter(el('strong', { class: 'hud-value' }));
+  private readonly xpGain = new Counter(el('span', { class: 'hud-xp' }), xpGainText);
+  private readonly levelBadge = el('span', { class: 'hud-level-badge' });
   private readonly combo = el('strong', { class: 'hud-value' });
   private readonly multiplier = el('span', { class: 'multiplier' });
   private readonly wpm = el('strong', { class: 'hud-value' });
@@ -31,9 +35,15 @@ export class Hud {
   private readonly progressFill = el('div', { class: 'progress-fill' });
   private lives = MAX_LIVES;
   private lastMultiplier = BASE_MULTIPLIER;
+  private playerLevel: number;
 
-  constructor(profile: Profile, actions: HudActions) {
+  constructor(
+    private readonly profile: Profile,
+    actions: HudActions,
+  ) {
     const t = i18n.t;
+    this.playerLevel = playerLevelOf(profile.xp);
+    this.showPlayerLevel();
     this.element = el(
       'header',
       { class: 'hud' },
@@ -48,12 +58,16 @@ export class Hud {
           },
         },
         characterAvatar(profile.avatar, 'hud-avatar'),
+        this.levelBadge,
         el('span', { class: 'hud-map-label', text: t.map }),
       ),
       el(
         'div',
         { class: 'hud-stats' },
-        this.stat(t.score, this.score.element),
+        this.stat(
+          t.score,
+          el('span', { class: 'hud-score' }, this.score.element, this.xpGain.element),
+        ),
         this.stat(t.combo, el('span', { class: 'hud-combo' }, this.combo, this.multiplier)),
         this.stat(t.accuracy, this.accuracy),
         this.stat(t.speed, this.wpm, t.wpm),
@@ -79,6 +93,15 @@ export class Hud {
     this.updateHearts(lives);
   }
 
+  setRewards(rewards: Rewards): void {
+    this.xpGain.set(rewards.xp);
+    const level = playerLevelOf(this.profile.xp + rewards.xp);
+    if (level === this.playerLevel) return;
+    this.playerLevel = level;
+    this.showPlayerLevel();
+    restartAnimation(this.levelBadge, 'is-bumped');
+  }
+
   progress({ kind, done, total }: Progress): void {
     const t = i18n.t;
     const labels = { warmup: t.warmup, words: t.words, boss: t.bossHealth };
@@ -86,6 +109,11 @@ export class Hud {
     this.progressCount.textContent = `${done}/${total}`;
     this.progressFill.style.width = `${(done / total) * PERCENT}%`;
     this.progressFill.classList.toggle('is-boss', kind === 'boss');
+  }
+
+  private showPlayerLevel(): void {
+    this.levelBadge.textContent = String(this.playerLevel);
+    this.levelBadge.title = playerLevelTitle(this.playerLevel);
   }
 
   private updateMultiplier(multiplier: number): void {

@@ -1,0 +1,84 @@
+:root {
+  --xp: #9a86ff;
+  --xp-strong: #6b54f0;
+  --xp-light: #d4ccff;
+  --xp-edge: #2f2280;
+  --xp-glow: rgba(154, 134, 255, 0.6);
+  --coin: #ffcf3f;
+  --coin-edge: #b86b00;
+  --coin-shine: #fff2b0;
+}
+
+.xp-pop {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  font-size: 1.2rem;
+  font-weight: 900;
+  white-space: nowrap;
+  color: var(--xp-light);
+  text-shadow:
+    0 2px 0 var(--xp-edge),
+    0 0 14px var(--xp-glow);
+  pointer-events: none;
+  animation: xp-pop-rise 900ms var(--ease-out) forwards;
+}
+
+.hud-score {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.hud-xp {
+  color: var(--xp-light);
+  font-size: 0.74rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.hud-map {
+  position: relative;
+}
+
+.hud-map .hud-level-badge {
+  position: absolute;
+  left: -4px;
+  bottom: -6px;
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--xp-edge);
+  background: linear-gradient(180deg, var(--xp-light), var(--xp));
+  color: var(--xp-edge);
+  font-size: 0.7rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.hud-level-badge.is-bumped {
+  animation: badge-pop 480ms var(--ease-spring);
+}
+
+@keyframes xp-pop-rise {
+  0% {
+    opacity: 0;
+    scale: 0.6;
+    translate: 0 8px;
+  }
+  20% {
+    opacity: 1;
+    scale: 1.12;
+    translate: 0 -6px;
+  }
+  100% {
+    opacity: 0;
+    scale: 1;
+    translate: 0 -56px;
+  }
+}

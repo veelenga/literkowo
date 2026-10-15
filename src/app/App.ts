@@ -146,6 +146,7 @@ export class App {
         callouts.setFever(stats.fever);
         music.setIntensity(musicIntensity(stats));
       },
+      onRewards: (rewards) => hud.setRewards(rewards),
       onNextKey: (char) => keyboard.show(char),
       onProgress: (progress) => hud.progress(progress),
       onAnnounce: (text, style, accent) => callouts.show(text, style, accent),

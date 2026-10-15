@@ -42,6 +42,7 @@ export function fakeMechanicContext(overrides: Partial<MechanicContext> = {}): M
     announce: noop,
     loseLife: noop,
     absorbNextHit: noop,
+    addCoins: noop,
     ...overrides,
   };
 }
