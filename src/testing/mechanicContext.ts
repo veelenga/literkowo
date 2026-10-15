@@ -1,11 +1,10 @@
 import * as THREE from 'three';
 import { Sfx } from '../audio/Sfx';
-import { WordSource } from '../course/WordSource';
 import type { Phase } from '../game/LevelPlan';
 import type { MechanicContext } from '../game/mechanics/Mechanic';
 import { SessionStats } from '../game/SessionStats';
 import { themeFor } from '../game/themes';
-import { requireLevel } from './levels';
+import { levelWords, requireLevel } from './levels';
 
 const FAKE_LEVEL = 'polana-1';
 const FAKE_PHASE: Phase = { kind: 'words', count: 10, speed: 1, spawnInterval: 2 };
@@ -30,7 +29,7 @@ export function fakeMechanicContext(overrides: Partial<MechanicContext> = {}): M
     shields: 0,
     theme: themeFor('meadow'),
     sfx: new Sfx(),
-    words: new WordSource(requireLevel(FAKE_LEVEL), 'pl'),
+    words: levelWords(requireLevel(FAKE_LEVEL), 'pl'),
     level: requireLevel(FAKE_LEVEL),
     language: 'pl',
     equipped: {},

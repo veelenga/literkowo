@@ -4,6 +4,7 @@ import { practiceDay, type KeyStats } from '../course/keyStats';
 import { keyWeight } from '../course/mastery';
 import { allowedKeysFor, type Level } from '../course/regions';
 import { hatSpec } from '../course/shop';
+import { levelWordRules } from '../course/wordRules';
 import { WordSource } from '../course/WordSource';
 import type { Equipped, WordLanguage } from '../profiles/Profile';
 import { xpPop } from '../ui/progression';
@@ -140,7 +141,7 @@ export class Game {
       allowedKeysFor(config.level, config.language),
       practiceDay(new Date()),
     );
-    this.words = new WordSource(config.level, config.language, {
+    this.words = new WordSource(config.language, levelWordRules(config.level, config.language), {
       weightOf: (key) => keyWeight(key, this.keys.statOf(key)),
     });
     this.phases = planFor(config.level);

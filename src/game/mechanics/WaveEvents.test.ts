@@ -1,8 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
-import { WordSource } from '../../course/WordSource';
 import { fakeBoard } from '../../testing/enemyBoard';
-import { requireLevel } from '../../testing/levels';
+import { levelWords, requireLevel } from '../../testing/levels';
 import { MAX_ENEMIES, SPAWN_RADIUS } from '../board';
 import { Boss } from '../Boss';
 import type { Enemy } from '../Enemy';
@@ -29,7 +28,7 @@ function eventBoard(roll: number, phase: Phase = WORDS) {
   const board = fakeBoard({
     level,
     phase,
-    words: new WordSource(level, 'pl'),
+    words: levelWords(level, 'pl'),
     announce,
     addCoins,
   });

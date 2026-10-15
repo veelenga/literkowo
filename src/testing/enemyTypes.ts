@@ -1,5 +1,4 @@
 import { vi } from 'vitest';
-import { WordSource } from '../course/WordSource';
 import { SPAWN_RADIUS } from '../game/board';
 import type { Enemy } from '../game/Enemy';
 import { EnemyTypes } from '../game/mechanics/EnemyTypes';
@@ -12,7 +11,7 @@ import {
 import type { MechanicContext } from '../game/mechanics/Mechanic';
 import type { WordLanguage } from '../profiles/Profile';
 import { fakeBoard } from './enemyBoard';
-import { requireLevel } from './levels';
+import { levelWords, requireLevel } from './levels';
 
 export const FRAME = 1 / 30;
 export const VIEWER = { x: 0, y: 15, z: 15.5 };
@@ -49,7 +48,7 @@ export function enemyTypesBoard(
   const announce = vi.fn<MechanicContext['announce']>();
   const board = fakeBoard({
     level,
-    words: new WordSource(level, 'pl'),
+    words: levelWords(level, 'pl'),
     loseLife,
     shakeCamera,
     announce,

@@ -1,8 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { WordSource } from '../../../course/WordSource';
 import { FRAME, VIEWER, enemyTypesBoard, rollFor, specialOf } from '../../../testing/enemyTypes';
-import { requireLevel } from '../../../testing/levels';
+import { levelWords, requireLevel } from '../../../testing/levels';
 import { CHANGE_SECONDS, ChameleonEnemy, LOCKED_CLASS } from './ChameleonEnemy';
 
 const LEVEL = 'wyspa-7';
@@ -21,7 +20,7 @@ describe('Chameleon', () => {
     const english = requireLevel('jaskinia-15');
     const board = enemyTypesBoard('jaskinia-15', () => rollFor('chameleon', 'jaskinia-15', 'en'), {
       language: 'en',
-      words: new WordSource(english, 'en'),
+      words: levelWords(english, 'en'),
     });
     expect(board.spawn()).toBeInstanceOf(ChameleonEnemy);
     expect(spawnChameleon()).toBeInstanceOf(ChameleonEnemy);
