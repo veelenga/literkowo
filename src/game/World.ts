@@ -10,8 +10,18 @@ import type { LightSpec, Theme } from './themes';
 
 const SUN_DISTANCE = 60;
 const SHADOW_TARGET = new THREE.Vector3(0, 0, -4);
-const SHADOW_EXTENT = 30;
 const SHADOW_MAP_SIZE = 2048;
+const SHADOW_FOCUS_HEIGHT = 7;
+const SHADOW_FOCUS_GROUND: ReadonlyArray<readonly [x: number, z: number]> = [
+  [-14, 10],
+  [14, 10],
+  [-30, -24],
+  [30, -24],
+];
+const SHADOW_FOCUS = [0, SHADOW_FOCUS_HEIGHT].flatMap((y) =>
+  SHADOW_FOCUS_GROUND.map(([x, z]) => new THREE.Vector3(x, y, z)),
+);
+const SHADOW_MARGIN = 1;
 const SHADOW_NEAR = 1;
 const SHADOW_FAR = 140;
 const SHADOW_BIAS = -0.0004;
@@ -70,7 +80,7 @@ export class World {
     directional.position.copy(sunDirection).multiplyScalar(SUN_DISTANCE).add(SHADOW_TARGET);
     directional.target.position.copy(SHADOW_TARGET);
     directional.castShadow = true;
-    configureSunShadow(directional.shadow);
+    configureSunShadow(directional);
     this.root.add(directional, directional.target);
   }
 
@@ -81,14 +91,29 @@ export class World {
   }
 }
 
-function configureSunShadow(shadow: THREE.DirectionalLightShadow): void {
+function configureSunShadow(light: THREE.DirectionalLight): void {
+  const { shadow } = light;
   shadow.mapSize.set(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
-  shadow.camera.left = -SHADOW_EXTENT;
-  shadow.camera.right = SHADOW_EXTENT;
-  shadow.camera.top = SHADOW_EXTENT;
-  shadow.camera.bottom = -SHADOW_EXTENT;
   shadow.camera.near = SHADOW_NEAR;
   shadow.camera.far = SHADOW_FAR;
   shadow.bias = SHADOW_BIAS;
   shadow.normalBias = SHADOW_NORMAL_BIAS;
+  fitShadowCamera(shadow.camera, light.position);
+}
+
+function fitShadowCamera(camera: THREE.OrthographicCamera, from: THREE.Vector3): void {
+  camera.position.copy(from);
+  camera.lookAt(SHADOW_TARGET);
+  camera.updateMatrixWorld();
+  const bounds = new THREE.Box3();
+  const point = new THREE.Vector3();
+  SHADOW_FOCUS.forEach((corner) =>
+    bounds.expandByPoint(point.copy(corner).applyMatrix4(camera.matrixWorldInverse)),
+  );
+  bounds.expandByScalar(SHADOW_MARGIN);
+  camera.left = bounds.min.x;
+  camera.right = bounds.max.x;
+  camera.bottom = bounds.min.y;
+  camera.top = bounds.max.y;
+  camera.updateProjectionMatrix();
 }

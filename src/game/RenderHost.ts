@@ -5,6 +5,8 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 const BLOOM = { strength: 0.5, radius: 0.7, threshold: 0.8 };
+const BLOOM_SCALE = 0.5;
+const MIN_BLOOM_SIZE = 1;
 const MSAA_SAMPLES = 4;
 const MAX_PIXEL_RATIO = 1.5;
 const EXPOSURE = 1.05;
@@ -27,12 +29,27 @@ interface Stage {
   camera: THREE.PerspectiveCamera;
 }
 
+class ScaledBloomPass extends UnrealBloomPass {
+  constructor(private readonly scale: number) {
+    const resolution = new THREE.Vector2(INITIAL_SIZE, INITIAL_SIZE);
+    super(resolution, BLOOM.strength, BLOOM.radius, BLOOM.threshold);
+  }
+
+  override setSize(width: number, height: number): void {
+    super.setSize(this.scaled(width), this.scaled(height));
+  }
+
+  private scaled(size: number): number {
+    return Math.max(MIN_BLOOM_SIZE, Math.round(size * this.scale));
+  }
+}
+
 function pixelRatio(): number {
   return Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO);
 }
 
 function createRenderer(): THREE.WebGLRenderer {
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  const renderer = new THREE.WebGLRenderer({ antialias: false });
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -49,11 +66,8 @@ function createPipeline(scene: THREE.Scene, camera: THREE.Camera): Pipeline {
   });
   const composer = new EffectComposer(renderer, target);
   const scenePass = new RenderPass(scene, camera);
-  const bloomResolution = new THREE.Vector2(INITIAL_SIZE, INITIAL_SIZE);
   composer.addPass(scenePass);
-  composer.addPass(
-    new UnrealBloomPass(bloomResolution, BLOOM.strength, BLOOM.radius, BLOOM.threshold),
-  );
+  composer.addPass(new ScaledBloomPass(BLOOM_SCALE));
   composer.addPass(new OutputPass());
   return { renderer, composer, scenePass };
 }
