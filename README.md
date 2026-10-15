@@ -22,6 +22,8 @@ npm run dev
 
 `nvm use` picks the Node LTS version from `.nvmrc`. `npm test` runs the unit tests, `npm run lint` checks types and formatting. In development, `?level=polana-1` on the dev URL starts a level directly.
 
+`npm run e2e` builds the game and plays the first level in headless Chromium. Run `npx playwright install chromium` once before the first run.
+
 Contribution rules are in [CLAUDE.md](CLAUDE.md).
 
 ## Credits
