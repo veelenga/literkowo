@@ -299,3 +299,90 @@
     rotate: var(--spin);
   }
 }
+
+.level-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.level-badge .level-disc {
+  width: 34px;
+  height: 34px;
+  border-width: 2px;
+  font-size: 0.92rem;
+}
+
+.level-badge-text {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 96px;
+  text-align: left;
+}
+
+.level-badge-rank {
+  overflow: hidden;
+  font-size: 0.86rem;
+  font-weight: 900;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.xp-bar-thin {
+  height: 6px;
+}
+
+.map-player {
+  justify-self: start;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.level-badge-card {
+  width: 100%;
+  justify-content: center;
+}
+
+.level-badge-card .level-badge-text {
+  flex: 0 1 100px;
+  min-width: 0;
+}
+
+.level-badge-card .level-badge-rank {
+  line-height: 1.1;
+  white-space: normal;
+}
+
+.profile-card .profile-meta {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.meta-coins {
+  gap: 4px;
+  padding: 3px 9px 3px 5px;
+  border: 0;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.meta-coins .coin-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.meta-coins strong {
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .map-player .level-badge-text {
+    display: none;
+  }
+}

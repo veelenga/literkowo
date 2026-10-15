@@ -4,7 +4,7 @@ import { format } from '../i18n/format';
 import { i18n } from '../i18n/i18n';
 import { Counter, el, restartAnimation } from './dom';
 import {
-  coinIcon,
+  coinPill,
   levelDisc,
   playerLevelTitle,
   rankName,
@@ -64,7 +64,7 @@ export class ResultProgress {
         this.disc,
         el('span', { class: 'result-rank' }, this.levelLabel, this.rank),
         this.xpGain.element,
-        coinsEarned(earned.coins),
+        coinPill(`+${earned.coins}`),
       ),
       this.bar.element,
     );
@@ -110,15 +110,6 @@ export class ResultProgress {
     this.levelLabel.textContent = format(i18n.t.features.progression.playerLevel, { level });
     this.rank.textContent = rankName(level);
   }
-}
-
-function coinsEarned(coins: number): HTMLElement {
-  return el(
-    'span',
-    { class: 'coin-pill', title: i18n.t.features.progression.coins },
-    coinIcon(),
-    el('strong', { text: `+${coins}` }),
-  );
 }
 
 function levelUpBanner(level: number): HTMLElement {

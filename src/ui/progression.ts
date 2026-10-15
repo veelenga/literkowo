@@ -41,6 +41,32 @@ export function coinIcon(className = 'coin-icon'): SVGSVGElement {
   );
 }
 
+export function coinPill(text: string, className = 'coin-pill'): HTMLElement {
+  const label = i18n.t.features.progression.coins;
+  return el(
+    'span',
+    { class: className, title: label, 'aria-label': `${label}: ${text}` },
+    coinIcon(),
+    el('strong', { text }),
+  );
+}
+
+export function levelBadge(xp: number, className = 'level-badge'): HTMLElement {
+  const { level, xpInLevel, xpToNext, fraction } = levelProgress(xp);
+  const title = `${playerLevelTitle(level)}, ${xpInLevel} / ${xpToNext} ${i18n.t.features.progression.xp}`;
+  return el(
+    'span',
+    { class: className, title, 'aria-label': title },
+    levelDisc(level),
+    el(
+      'span',
+      { class: 'level-badge-text' },
+      el('strong', { class: 'level-badge-rank', text: rankName(level) }),
+      xpBar(fraction, 'xp-bar xp-bar-thin').element,
+    ),
+  );
+}
+
 export function levelDisc(level: number, className = 'level-disc'): HTMLElement {
   return el('span', { class: className, text: String(level), title: playerLevelTitle(level) });
 }
