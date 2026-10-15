@@ -141,7 +141,7 @@ describe('EnemyTypes', () => {
   });
 
   it('leaves enemies tagged by any other feature alone', () => {
-    const { spawn, enemies, context } = setup('gory-2', () => 0);
+    const { spawn, enemies, context } = enemyTypesBoard('gory-2', () => 0);
     const label = () => context.createLabel();
     const twin = new Enemy('kot', label(), 1, LOOK);
     twin.tags.add(TWIN_TAG);
