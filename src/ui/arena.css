@@ -367,7 +367,7 @@
   .arena-records {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 4px;
     margin-top: 0;
   }
 
@@ -377,10 +377,15 @@
 
   .arena-record {
     grid-template-columns: auto auto auto;
-    gap: 6px;
-    padding: 3px 6px 3px 10px;
+    gap: 5px;
+    padding: 2px 4px 2px 9px;
     border-radius: var(--radius-pill);
-    font-size: 0.8rem;
+    font-size: 0.74rem;
+  }
+
+  .arena-record .medal-small {
+    width: 18px;
+    height: 18px;
   }
 
   .arena-setup {
@@ -389,6 +394,11 @@
 
   .arena-field .arena-chips {
     align-self: stretch;
+  }
+
+  .arena-difficulties {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 
   .arena-chips .chip {
