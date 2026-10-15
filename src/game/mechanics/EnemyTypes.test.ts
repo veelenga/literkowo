@@ -38,8 +38,9 @@ describe('EnemyTypes unlocks', () => {
     expect(kindsAt('polana-2')).toEqual([]);
     expect(kindsAt('polana-3')).toEqual(['jumper', 'balloon']);
     expect(kindsAt('las-1')).toEqual(['jumper', 'balloon', 'bat']);
-    expect(kindsAt('gory-1')).toEqual(['jumper', 'balloon', 'bat', 'swarm']);
-    expect(kindsAt('gory-2')).toEqual(['jumper', 'balloon', 'bat', 'swarm', 'splitter']);
+    expect(kindsAt('gory-1')).toEqual(['jumper', 'balloon', 'bat', 'swarm', 'ghost']);
+    expect(kindsAt('gory-2')).toEqual(['jumper', 'balloon', 'bat', 'swarm', 'splitter', 'ghost']);
+    expect(kindsAt('las-2')).toEqual(['jumper', 'balloon', 'bat', 'ghost']);
     expect(kindsAt('jaskinia-1')).toEqual([
       'jumper',
       'balloon',
@@ -47,12 +48,13 @@ describe('EnemyTypes unlocks', () => {
       'swarm',
       'splitter',
       'shield',
+      'ghost',
     ]);
   });
 
   it('turns about one spawn in four into a special enemy', () => {
     const kinds = unlockedKinds(requireLevel('gory-1'));
-    expect(rollKind(kinds, () => SPECIAL_SHARE - 0.001)).toBe('swarm');
+    expect(rollKind(kinds, () => SPECIAL_SHARE - 0.001)).toBe(kinds.at(-1));
     expect(rollKind(kinds, () => 0)).toBe('jumper');
     expect(rollKind(kinds, NO_SPECIAL)).toBeUndefined();
     expect(rollKind([], () => 0)).toBeUndefined();

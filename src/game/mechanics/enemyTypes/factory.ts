@@ -2,6 +2,7 @@ import type { WordSource } from '../../../course/WordSource';
 import type { Phase } from '../../LevelPlan';
 import { BalloonEnemy } from './BalloonEnemy';
 import { BatEnemy } from './BatEnemy';
+import { GhostEnemy } from './GhostEnemy';
 import { JumperEnemy } from './JumperEnemy';
 import type { EnemyKind, Random } from './kinds';
 import type { SpecialEnemy, SpecialHost, SpecialSpec } from './SpecialEnemy';
@@ -14,7 +15,8 @@ const JUMPER_LETTERS = { min: 4, max: 7 };
 const BALLOON_LETTERS = { min: 3, max: 5 };
 const SWARM_LETTERS = { min: 5, max: 7 };
 const SHIELDED_LETTERS = { min: 4, max: 6 };
-const SPEED_SHARES = { jumper: 1, bat: 2.5, swarm: 1.25, splitter: 0.8, shield: 0.85 };
+const GHOST_LETTERS = { min: 3, max: 5 };
+const SPEED_SHARES = { jumper: 1, bat: 2.5, swarm: 1.25, splitter: 0.8, shield: 0.85, ghost: 0.9 };
 
 const HALF = 0.5;
 
@@ -62,6 +64,11 @@ const RECIPES: Readonly<Record<EnemyKind, Recipe>> = {
     speedShare: SPEED_SHARES.shield,
     create: (spec, words) =>
       new ShieldEnemy(spec(keyOf(words, KEY_LENGTH) + wordWithin(words, SHIELDED_LETTERS))),
+  },
+  ghost: {
+    speedShare: SPEED_SHARES.ghost,
+    create: (spec, words, random) =>
+      new GhostEnemy(spec(wordWithin(words, GHOST_LETTERS)), random() < HALF ? 1 : -1),
   },
 };
 

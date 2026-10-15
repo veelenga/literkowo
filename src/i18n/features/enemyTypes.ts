@@ -6,6 +6,7 @@ const pl = {
     swarm: 'Rój',
     splitter: 'Rozszczep',
     shield: 'Tarczownik',
+    ghost: 'Duch',
   },
   hints: {
     jumper: 'Wpisuj tę samą literę',
@@ -14,6 +15,7 @@ const pl = {
     swarm: 'Szukaj świecącej litery',
     splitter: 'Trafiony pęka na dwie mniejsze połówki',
     shield: 'Wpisz klucz z tarczy, a zobaczysz słowo',
+    ghost: 'Znika i wraca, więc zapamiętaj jego słowo',
   },
 };
 
@@ -25,6 +27,7 @@ const uk: typeof pl = {
     swarm: 'Рій',
     splitter: 'Розщеп',
     shield: 'Щитоносець',
+    ghost: 'Привид',
   },
   hints: {
     jumper: 'Друкуй ту саму літеру',
@@ -33,6 +36,7 @@ const uk: typeof pl = {
     swarm: 'Шукай літеру, що світиться',
     splitter: 'Після влучання розпадається на дві менші половинки',
     shield: 'Надрукуй ключ зі щита, і побачиш слово',
+    ghost: 'Зникає і повертається, тож запам’ятай його слово',
   },
 };
 

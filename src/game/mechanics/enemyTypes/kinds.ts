@@ -1,6 +1,6 @@
 import { REGIONS, type Level } from '../../../course/regions';
 
-export type EnemyKind = 'jumper' | 'balloon' | 'bat' | 'swarm' | 'splitter' | 'shield';
+export type EnemyKind = 'jumper' | 'balloon' | 'bat' | 'swarm' | 'splitter' | 'shield' | 'ghost';
 export type Random = () => number;
 
 const ENEMY_KINDS: readonly EnemyKind[] = [
@@ -10,6 +10,7 @@ const ENEMY_KINDS: readonly EnemyKind[] = [
   'swarm',
   'splitter',
   'shield',
+  'ghost',
 ];
 export const ENEMY_TYPE_TAG = 'enemy-type';
 export const SPECIAL_SHARE = 0.25;
@@ -20,6 +21,7 @@ export const KIND_WEIGHTS: Readonly<Record<EnemyKind, number>> = {
   swarm: 2,
   splitter: 2,
   shield: 2,
+  ghost: 2,
 };
 export const BONUS_WORDS: Readonly<Record<EnemyKind, number>> = {
   jumper: 0,
@@ -28,6 +30,7 @@ export const BONUS_WORDS: Readonly<Record<EnemyKind, number>> = {
   swarm: 0,
   splitter: 0,
   shield: 0,
+  ghost: 0,
 };
 
 interface Unlock {
@@ -42,6 +45,7 @@ const UNLOCKS: Readonly<Record<EnemyKind, Unlock>> = {
   swarm: { region: 'gory', level: 1 },
   splitter: { region: 'gory', level: 2 },
   shield: { region: 'jaskinia', level: 1 },
+  ghost: { region: 'las', level: 2 },
 };
 const FIRST_REGION_CAP = 1;
 const LATER_REGION_CAP = 3;

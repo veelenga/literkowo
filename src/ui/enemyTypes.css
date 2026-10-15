@@ -206,6 +206,18 @@
   }
 }
 
+.word-label.is-ghost {
+  color: #f2f6ff;
+  background: rgba(34, 40, 78, 0.78);
+  border: 2px dashed rgba(216, 232, 255, 0.75);
+  box-shadow: 0 0 22px rgba(184, 240, 255, 0.4);
+}
+
+.word-label.is-ghost.is-target {
+  border-color: var(--accent);
+  border-style: solid;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .word-label.is-swarm .swarm-glyph,
   .word-label.is-balloon {
