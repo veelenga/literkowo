@@ -2,7 +2,10 @@ import * as THREE from 'three';
 import type { EnemyBody, EnemyLook } from '../../Enemy';
 import { blockAssembly, chunkyBlock, type Block } from '../../effects/chunkyGeometry';
 import type { BobMotion } from '../../effects/enemyStyles';
+import { softGlowTexture } from '../../effects/glowAssets';
+import { withLuminance } from '../../effects/luminance';
 import { cachedGeometry } from '../enemyTypes/bodies';
+import { Crater } from './Crater';
 import { EventEnemy, type EventHost } from './EventEnemy';
 
 export const START_HEIGHT = 11;
@@ -12,28 +15,46 @@ export const GROUND_SECONDS = 6;
 const LABEL_CLASS = 'is-meteor';
 const FADE_SECONDS = 0.5;
 const FALL_OFFSET = 2.5;
-const HOVER = 0.35;
-const LABEL_GAP = 1;
+const HOVER = 0.42;
+const LABEL_GAP = 1.2;
 const STILL: BobMotion = { speed: 0, height: 0, ripple: 0 };
-const LOOK: EnemyLook = { shape: 'wisp', colors: [0xff7a1a, 0xff4a2a, 0xffb02a], scale: 0.8 };
+const LOOK: EnemyLook = { shape: 'wisp', colors: [0xff7a1a, 0xff4a2a, 0xffb02a], scale: 1 };
 const STREAK = { puffs: 5, spacing: 0.5, lean: 0.12, size: 0.34, shrink: 0.15, opacity: 0.8 };
+const HALO = { size: 1.9, luminance: 1.3, flickerSpeed: 17, flickerAmount: 0.08 };
+const COOLED = { heat: 0.35, color: new THREE.Color(0xa8200c) };
+const CORE_SIZE = 0.52;
 
 const ROCK: readonly Block[] = [
-  { size: [0.56, 0.5, 0.52] },
-  { size: [0.3, 0.3, 0.3], position: [0.28, 0.16, 0.1], rotation: [0.4, 0.3, 0.2] },
-  { size: [0.26, 0.26, 0.26], position: [-0.26, -0.12, 0.16], rotation: [0.2, 0.7, 0.4] },
+  { size: [0.7, 0.32, 0.64], position: [0, -0.22, 0] },
+  { size: [0.46, 0.4, 0.5], position: [-0.2, 0.08, 0.04], rotation: [0.1, 0.2, 0.15] },
+  { size: [0.42, 0.38, 0.46], position: [0.2, 0.1, -0.06], rotation: [-0.15, 0.4, -0.2] },
+  { size: [0.32, 0.28, 0.32], position: [0.04, 0.3, 0.16], rotation: [0.3, 0.1, 0.2] },
+  { size: [0.28, 0.24, 0.28], position: [0.3, -0.1, 0.26], rotation: [0.2, 0.6, 0.3] },
 ];
 
 function rockBody(): EnemyBody {
   return {
     shell: cachedGeometry('meteor-rock', () => blockAssembly(ROCK)),
-    core: cachedGeometry('meteor-core', () => chunkyBlock(0.3, 0.3, 0.3)),
-    shellShade: 0.55,
-    shellOpacity: 0.97,
-    motion: { hoverHeight: HOVER, bob: STILL, facesViewer: false },
+    core: cachedGeometry('meteor-core', () => chunkyBlock(CORE_SIZE, CORE_SIZE, CORE_SIZE)),
+    shellShade: 0.35,
+    shellOpacity: 0.98,
+    motion: { hoverHeight: HOVER, bob: STILL, facesViewer: true },
     sparkCount: 0,
     hasTrail: false,
   };
+}
+
+function createHalo(color: THREE.Color): THREE.Sprite {
+  const material = new THREE.SpriteMaterial({
+    map: softGlowTexture(),
+    color: withLuminance(color.clone(), HALO.luminance),
+    blending: THREE.AdditiveBlending,
+    transparent: true,
+    depthWrite: false,
+  });
+  const sprite = new THREE.Sprite(material);
+  sprite.scale.setScalar(HALO.size);
+  return sprite;
 }
 
 function createStreak(color: THREE.Color): THREE.Mesh[] {
@@ -58,6 +79,10 @@ export class MeteorEnemy extends EventEnemy {
   private readonly start = new THREE.Vector3();
   private readonly landing = new THREE.Vector3();
   private readonly streak: THREE.Mesh[];
+  private readonly halo: THREE.Sprite;
+  private readonly crater = new Crater();
+  private readonly hot = new THREE.Color();
+  private readonly cooling = new THREE.Color();
   private age = 0;
   private landed = false;
 
@@ -72,7 +97,10 @@ export class MeteorEnemy extends EventEnemy {
     this.start.copy(this.landing).setLength(this.landing.length() + FALL_OFFSET);
     this.object.position.copy(this.start);
     this.streak = createStreak(this.color);
-    this.object.add(...this.streak);
+    this.halo = createHalo(this.color);
+    this.hot.copy(this.color);
+    this.object.add(...this.streak, this.crater.group);
+    this.rig.add(this.halo);
   }
 
   get isLanded(): boolean {
@@ -92,9 +120,18 @@ export class MeteorEnemy extends EventEnemy {
   override update(delta: number, elapsed: number, viewer: THREE.Vector3Like): void {
     super.update(delta, elapsed, viewer);
     if (!this.isFrozen) this.age += delta;
-    if (this.landed) this.smoulder();
+    if (this.landed) this.smoulder(delta);
     else this.fall();
     this.rig.position.y += this.altitude;
+    this.burn(elapsed);
+  }
+
+  private get cooled(): number {
+    return this.landed ? Math.min(1, this.age / GROUND_SECONDS) : 0;
+  }
+
+  private get heat(): number {
+    return THREE.MathUtils.lerp(1, COOLED.heat, this.cooled);
   }
 
   private fall(): void {
@@ -119,13 +156,21 @@ export class MeteorEnemy extends EventEnemy {
     this.landed = true;
     this.age = 0;
     this.streak.forEach((puff) => (puff.visible = false));
+    this.crater.open();
     this.host.land(this.object.position, this.color);
   }
 
-  private smoulder(): void {
-    if (this.age < GROUND_SECONDS) return;
-    const left = 1 - (this.age - GROUND_SECONDS) / FADE_SECONDS;
-    this.rig.scale.multiplyScalar(Math.max(0, left));
-    if (left <= 0) this.host.dismiss(this);
+  private smoulder(delta: number): void {
+    const presence = THREE.MathUtils.clamp(1 - (this.age - GROUND_SECONDS) / FADE_SECONDS, 0, 1);
+    this.crater.update(delta, this.heat, presence);
+    this.recolor(this.cooling.copy(this.hot).lerp(COOLED.color, this.cooled));
+    this.rig.scale.multiplyScalar(presence);
+    if (presence <= 0) this.host.dismiss(this);
+  }
+
+  private burn(elapsed: number): void {
+    const flicker = 1 + Math.sin(elapsed * HALO.flickerSpeed) * HALO.flickerAmount;
+    this.halo.scale.setScalar(HALO.size * this.heat * flicker);
+    this.halo.material.opacity = this.heat;
   }
 }
