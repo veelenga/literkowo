@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { courseFor } from '../course/course';
 import { createProfile, type Profile } from '../profiles/Profile';
+import { levelTitle } from './levelKind';
 import { WorldMap } from './WorldMap';
 
 const DONE = { stars: 2, score: 1, accuracy: 1, wpm: 1 };
@@ -80,6 +81,26 @@ describe('WorldMap', () => {
     expect(titles[2]).toBe('Wygraj poziomy przed powtórką');
     expect(titles[3]).toBe('Najpierw ukończ wcześniejsze poziomy');
     expect(titles[18]).toBe('Wygraj powtórkę przed bossem');
+  });
+
+  it('hangs every learn level on its practice stop with a short link', () => {
+    const map = mapOf(createProfile('Ola', 'a'));
+    const learnLevels = courseFor('pl').levels.filter((level) => level.kind === 'learn');
+    const satellites = [...map.querySelectorAll('.journey-stop.is-satellite')];
+    expect(satellites).toHaveLength(learnLevels.length);
+    satellites.forEach((satellite) => expect(satellite.querySelector('.stop-link')).not.toBeNull());
+    expect(map.querySelector('.journey-stop.is-boss .stop-link')).toBeNull();
+  });
+
+  it('keeps the stops in course order for keyboard focus', () => {
+    const map = mapOf(polanaDone());
+    const titles = [...map.querySelectorAll<HTMLElement>('.level-node:not([disabled])')].map(
+      (node) => node.title,
+    );
+    const expected = courseFor('pl')
+      .levels.slice(0, titles.length)
+      .map((level) => levelTitle(level));
+    expect(titles).toEqual(expected);
   });
 
   it('shows a dimmed arena gate and a locked header button before the Polana boss', () => {

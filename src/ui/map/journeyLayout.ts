@@ -1,46 +1,98 @@
+import type { LevelKind } from '../../course/catalog';
+
 export type Side = 'start' | 'end';
+export type StopRole = 'satellite' | 'stop' | 'boss';
+type Column = -1 | 1;
+type Shift = Column | 0;
 
 export interface JourneyPoint {
   readonly x: number;
   readonly y: number;
 }
 
+export interface JourneyStop extends JourneyPoint {
+  readonly role: StopRole;
+  readonly shift: Shift;
+}
+
+export interface BandSpec {
+  readonly roles: readonly StopRole[];
+  readonly gate: boolean;
+}
+
 export interface BandLayout {
   readonly top: number;
   readonly height: number;
   readonly headerSide: Side;
-  readonly stops: readonly JourneyPoint[];
+  readonly stops: readonly JourneyStop[];
+  readonly road: readonly JourneyPoint[];
+  readonly roadIndex: readonly number[];
 }
 
 export interface JourneyLayout {
   readonly height: number;
   readonly bands: readonly BandLayout[];
-  readonly stops: readonly JourneyPoint[];
+  readonly road: readonly JourneyPoint[];
+  readonly roadIndex: readonly number[];
 }
 
 export const JOURNEY_SPACING = {
-  header: 210,
-  stop: 150,
-  footer: 190,
+  header: 148,
+  row: 112,
+  footer: 40,
+  gateFooter: 200,
+  heroRoom: 72,
 } as const;
 
-const CENTER = 50;
-const SWING = 25;
-const GATE_DROP = 0.4;
+export const NO_FOCUS = -1;
 
-export function journeyLayout(stopCounts: readonly number[]): JourneyLayout {
+const CENTER = 50;
+const SWING = 20;
+const TURN_BULGE = 14;
+const ROAD_WAVE = 14;
+const THIRD = 3;
+const SLOTS_PER_ROW = 2;
+const FIRST_COLUMN: Column = 1;
+
+interface Slot {
+  readonly main: number;
+  readonly satellites: readonly number[];
+}
+
+interface Placement {
+  readonly point: JourneyPoint;
+  readonly lead: Column;
+}
+
+export function stopRoles(kinds: readonly LevelKind[]): StopRole[] {
+  return kinds.map((kind, index) => {
+    if (kind === 'boss') return 'boss';
+    return kind === 'learn' && kinds[index + 1] === 'practice' ? 'satellite' : 'stop';
+  });
+}
+
+export function journeyLayout(specs: readonly BandSpec[], focus = NO_FOCUS): JourneyLayout {
   let top = 0;
-  const bands = stopCounts.map((count, index) => {
-    const band = bandLayout(top, count, index % 2 === 0 ? 'start' : 'end');
+  let entry = FIRST_COLUMN;
+  let first = 0;
+  const roadIndex: number[] = [];
+  const road: JourneyPoint[] = [];
+  const bands = specs.map((spec) => {
+    const band = bandLayout(spec, top, entry, focus - first);
+    const roadStart = road.length;
+    roadIndex.push(...band.roadIndex.map((slot) => roadStart + slot));
+    road.push(...band.road);
     top += band.height;
+    entry = columnOf(band.road.at(-1)?.x ?? CENTER);
+    first += spec.roles.length;
     return band;
   });
-  return { height: top, bands, stops: bands.flatMap((band) => band.stops) };
+  return { height: top, bands, road, roadIndex };
 }
 
 export function gatePoint(band: BandLayout): JourneyPoint {
-  const last = band.stops.at(-1) ?? { x: CENTER, y: band.top + JOURNEY_SPACING.header };
-  return { x: CENTER * 2 - last.x, y: last.y + JOURNEY_SPACING.footer * GATE_DROP };
+  const last = band.road.at(-1) ?? { x: CENTER, y: band.top + JOURNEY_SPACING.header };
+  return { x: CENTER * 2 - last.x, y: last.y + JOURNEY_SPACING.row };
 }
 
 export function journeyPath(points: readonly JourneyPoint[]): string {
@@ -51,23 +103,91 @@ export function journeyPath(points: readonly JourneyPoint[]): string {
 }
 
 function curveTo(from: JourneyPoint, to: JourneyPoint): string {
-  const middle = (from.y + to.y) / 2;
-  return `C${from.x} ${middle} ${to.x} ${middle} ${to.x} ${to.y}`;
+  if (from.x === to.x) {
+    const bulge = from.x + columnOf(from.x) * TURN_BULGE;
+    return `C${bulge} ${from.y} ${bulge} ${to.y} ${to.x} ${to.y}`;
+  }
+  const step = (to.x - from.x) / THIRD;
+  return `C${from.x + step} ${from.y + ROAD_WAVE} ${to.x - step} ${to.y - ROAD_WAVE} ${to.x} ${to.y}`;
 }
 
-function bandLayout(top: number, count: number, headerSide: Side): BandLayout {
-  const height =
-    JOURNEY_SPACING.header + (count - 1) * JOURNEY_SPACING.stop + JOURNEY_SPACING.footer;
-  const pathSide = headerSide === 'start' ? 1 : -1;
-  const turns = oddTurns(count);
-  const stops = Array.from({ length: count }, (_, index) => ({
-    x: CENTER + pathSide * SWING * Math.cos((Math.PI * turns * index) / Math.max(1, count - 1)),
-    y: top + JOURNEY_SPACING.header + index * JOURNEY_SPACING.stop,
-  }));
-  return { top, height, headerSide, stops };
+function bandLayout(spec: BandSpec, top: number, entry: Column, focus: number): BandLayout {
+  const slots = slotsOf(spec.roles);
+  const placements = placeSlots(slots, top, entry, focus);
+  const road = placements.map((placement) => placement.point);
+  const roadIndex = slotIndexes(slots, spec.roles.length);
+  const stops = spec.roles.map((role, index) => stopOf(role, placements[roadIndex[index]]));
+  const last = road.at(-1)?.y ?? top + JOURNEY_SPACING.header;
+  const footer = spec.gate ? JOURNEY_SPACING.gateFooter : JOURNEY_SPACING.footer;
+  return {
+    top,
+    height: last - top + footer,
+    headerSide: entry === FIRST_COLUMN ? 'start' : 'end',
+    stops,
+    road,
+    roadIndex,
+  };
 }
 
-function oddTurns(count: number): number {
-  const steps = Math.max(1, count - 1);
-  return steps % 2 === 1 ? steps : steps - 1;
+function placeSlots(
+  slots: readonly Slot[],
+  top: number,
+  entry: Column,
+  focus: number,
+): Placement[] {
+  const placements: Placement[] = [];
+  let y = top + JOURNEY_SPACING.header;
+  let column = entry;
+  for (let start = 0; start < slots.length; start += SLOTS_PER_ROW) {
+    const row = slots.slice(start, start + SLOTS_PER_ROW);
+    if (row.some((slot) => holds(slot, focus))) y += JOURNEY_SPACING.heroRoom;
+    const lead = column;
+    row.forEach((_, index) => {
+      const side = index === 0 ? column : opposite(column);
+      placements.push({ point: { x: columnX(side), y }, lead });
+    });
+    column = row.length === SLOTS_PER_ROW ? opposite(column) : column;
+    y += JOURNEY_SPACING.row;
+  }
+  return placements;
+}
+
+function stopOf(role: StopRole, { point, lead }: Placement): JourneyStop {
+  return { ...point, role, shift: role === 'satellite' ? lead : 0 };
+}
+
+function slotsOf(roles: readonly StopRole[]): Slot[] {
+  const slots: Slot[] = [];
+  let satellites: number[] = [];
+  roles.forEach((role, index) => {
+    if (role === 'satellite' && index < roles.length - 1) {
+      satellites.push(index);
+      return;
+    }
+    slots.push({ main: index, satellites });
+    satellites = [];
+  });
+  return slots;
+}
+
+function slotIndexes(slots: readonly Slot[], stopCount: number): number[] {
+  return Array.from({ length: stopCount }, (_, index) =>
+    slots.findIndex((slot) => holds(slot, index)),
+  );
+}
+
+function holds(slot: Slot, level: number): boolean {
+  return slot.main === level || slot.satellites.includes(level);
+}
+
+function columnX(column: Column): number {
+  return CENTER + column * SWING;
+}
+
+function columnOf(x: number): Column {
+  return x < CENTER ? -1 : 1;
+}
+
+function opposite(column: Column): Column {
+  return column === 1 ? -1 : 1;
 }

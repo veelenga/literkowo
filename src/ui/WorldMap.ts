@@ -10,8 +10,11 @@ import {
   gatePoint,
   journeyLayout,
   journeyPath,
+  stopRoles,
   type BandLayout,
+  type BandSpec,
   type JourneyLayout,
+  type JourneyStop,
 } from './map/journeyLayout';
 import { followScroll, revealOnEnter, type StopEffect } from './map/journeyMotion';
 import { mapHeader } from './map/mapHeader';
@@ -30,6 +33,7 @@ const BOSS_FACE = '🌑';
 const KIND_BADGES: Readonly<Partial<Record<LevelKind, string>>> = { learn: '✨', review: '👑' };
 const HALF = 2;
 const STOP_CLASS = 'journey-stop';
+const SATELLITE_ROLE = 'satellite';
 const STOP_SELECTOR = `.${STOP_CLASS}`;
 const REVEAL_CLASS = 'has-reveal';
 const AMBIENT_CLASS = 'has-ambient';
@@ -67,7 +71,7 @@ export class WorldMap {
   ) {
     this.course = courseFor(profile.wordLanguage);
     this.current = this.course.current(profile.levelResults);
-    this.layout = journeyLayout(this.course.regions.map((region) => region.levels.length));
+    this.layout = journeyLayout(this.bandSpecs(), this.currentIndex());
     this.render();
   }
 
@@ -75,6 +79,17 @@ export class WorldMap {
     this.effects.forEach((stop) => stop());
     this.effects = [];
     releaseOutfitAvatars();
+  }
+
+  private bandSpecs(): BandSpec[] {
+    return this.course.regions.map((region) => ({
+      roles: stopRoles(region.levels.map((level) => level.kind)),
+      gate: this.hasGate(region),
+    }));
+  }
+
+  private currentIndex(): number {
+    return this.course.levels.findIndex((level) => this.stateOf(level) === 'current');
   }
 
   private render(): void {
@@ -227,8 +242,9 @@ export class WorldMap {
 
   private path(): SVGElement {
     const reached = this.course.levels.filter((level) => this.isUnlocked(level)).length;
-    const route = journeyPath(this.layout.stops);
-    const walked = journeyPath(this.layout.stops.slice(0, reached));
+    const { road, roadIndex } = this.layout;
+    const route = journeyPath(road);
+    const walked = journeyPath(road.slice(0, (roadIndex[reached - 1] ?? -1) + 1));
     return svg(
       'svg',
       {
@@ -247,14 +263,12 @@ export class WorldMap {
   private stop(level: Level, band: BandLayout, index: number): HTMLElement {
     const state = this.stateOf(level);
     const point = band.stops[index];
-    const classes = [STOP_CLASS, `is-${state}`];
-    if (level.isBoss) classes.push('is-boss');
+    const isSatellite = point.role === SATELLITE_ROLE;
+    const classes = [STOP_CLASS, `is-${state}`, `is-${point.role}`];
     return el(
       'div',
-      {
-        class: classes.join(' '),
-        style: `--x: ${point.x.toFixed(2)}; --y: ${point.y - band.top}`,
-      },
+      { class: classes.join(' '), style: stopStyle(point, band) },
+      isSatellite ? el('span', { class: 'stop-link', 'aria-hidden': 'true' }) : null,
       state === 'current' ? this.hero() : null,
       this.node(level, state),
       state === 'current' ? el('span', { class: 'node-tag', text: i18n.t.play }) : null,
@@ -322,6 +336,10 @@ export class WorldMap {
   private isUnlocked(level: Level): boolean {
     return this.course.isUnlocked(level, this.profile.levelResults);
   }
+}
+
+function stopStyle(point: JourneyStop, band: BandLayout): string {
+  return `--x: ${point.x.toFixed(2)}; --y: ${point.y - band.top}; --shift: ${point.shift}`;
 }
 
 function kindBadge(kind: LevelKind): HTMLElement | null {

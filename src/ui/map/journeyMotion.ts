@@ -1,6 +1,7 @@
 const REVEALED_CLASS = 'is-revealed';
 const REVEAL_MARGIN = '0px 0px -6% 0px';
 const REVEAL_STAGGER_MS = 70;
+const MAX_STAGGER_STEPS = 12;
 const SCROLL_CENTER_PROPERTY = '--scroll-center';
 const HALF = 2;
 
@@ -13,7 +14,8 @@ export function revealOnEnter(targets: readonly HTMLElement[]): StopEffect {
         .filter((entry) => entry.isIntersecting)
         .forEach((entry, index) => {
           if (!(entry.target instanceof HTMLElement)) return;
-          entry.target.style.setProperty('--reveal-delay', `${index * REVEAL_STAGGER_MS}ms`);
+          const step = Math.min(index, MAX_STAGGER_STEPS);
+          entry.target.style.setProperty('--reveal-delay', `${step * REVEAL_STAGGER_MS}ms`);
           entry.target.classList.add(REVEALED_CLASS);
           observer.unobserve(entry.target);
         }),
