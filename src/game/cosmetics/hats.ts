@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { HatId, HatSpec } from '../../course/shop';
-import { blockAssembly, type Block } from '../effects/chunkyGeometry';
+import { blockAssembly, type Block, type Triple } from '../effects/chunkyGeometry';
 import { finish, part, pivot, shade } from './parts';
 
 type HatBuilder = (color: string) => THREE.Group;
@@ -61,25 +61,26 @@ const PIRATE_BRIM = { count: 3, ring: 0.44, lift: 0.12, tilt: 0.3 };
 const PIRATE_COIN = { radius: 0.13, depth: 0.05, position: [0, 0.06, 0.06] as const };
 
 const STEEL = { metalness: 0.25, roughness: 0.3 };
-const HELMET_SHELL: readonly Block[] = [{ size: [1.12, 1.16, 1.12], position: [0, -0.4, 0] }];
+const HELMET_SHELL: readonly Block[] = [
+  { size: [1.12, 0.36, 1.12], position: [0, 0.1, 0] },
+  { size: [1.12, 0.62, 0.07], position: [0, -0.36, -0.565] },
+  ...[-1, 1].map((side) => ({
+    size: [0.07, 0.62, 1.04] as const,
+    position: [side * 0.565, -0.36, -0.04] as const,
+  })),
+];
 const HELMET_TRIM: readonly Block[] = [
-  { size: [1, 0.1, 0.05], position: [0, -0.3, 0.57] },
-  { size: [0.1, 0.4, 0.05], position: [0, -0.64, 0.57] },
-  { size: [0.16, 0.1, 0.16], position: [0, 0.21, 0] },
+  { size: [1.16, 0.1, 1.16], position: [0, -0.06, 0] },
+  { size: [0.16, 0.1, 0.16], position: [0, 0.32, 0] },
 ];
-const HELMET_SLIT: readonly Block[] = [
-  { size: [0.84, 0.07, 0.03], position: [0, -0.42, 0.565] },
-  ...[-1, 1].flatMap((side) =>
-    [-0.6, -0.72].map((height) => ({
-      size: [0.05, 0.05, 0.03] as const,
-      position: [side * 0.24, height, 0.565] as const,
-    })),
-  ),
-];
+const HELMET_VISOR: readonly Block[] = [{ size: [0.94, 0.34, 0.06], position: [0, 0.17, 0] }];
+const HELMET_SLIT: readonly Block[] = [{ size: [0.72, 0.06, 0.03], position: [0, 0.2, 0.035] }];
+const HELMET_VISOR_HINGE: Triple = [0, 0.06, 0.62];
+const HELMET_VISOR_LIFT = -0.6;
 const HELMET_PLUME: readonly Block[] = [
-  { size: [0.16, 0.28, 0.16], position: [0, 0.34, 0], rotation: [-0.2, 0, 0] },
-  { size: [0.14, 0.26, 0.14], position: [0, 0.44, -0.16], rotation: [-0.8, 0, 0] },
-  { size: [0.12, 0.22, 0.12], position: [0, 0.42, -0.34], rotation: [-1.4, 0, 0] },
+  { size: [0.16, 0.28, 0.16], position: [0, 0.4, 0], rotation: [-0.2, 0, 0] },
+  { size: [0.14, 0.26, 0.14], position: [0, 0.5, -0.16], rotation: [-0.8, 0, 0] },
+  { size: [0.12, 0.22, 0.12], position: [0, 0.48, -0.34], rotation: [-1.4, 0, 0] },
 ];
 
 const LAUREL_LEAF: readonly Block[] = [{ size: [0.24, 0.1, 0.05] }];
@@ -272,11 +273,18 @@ function brimWall(angle: number, ...parts: THREE.Object3D[]): THREE.Group {
 }
 
 function buildHelmet(color: string): THREE.Group {
+  const steel = finish(color, STEEL);
+  const visor = pivot(
+    HELMET_VISOR_HINGE,
+    part(blockAssembly(HELMET_VISOR), steel),
+    part(blockAssembly(HELMET_SLIT), finish(DARK)),
+  );
+  visor.rotation.x = HELMET_VISOR_LIFT;
   return pivot(
     [0, 0, 0],
-    part(blockAssembly(HELMET_SHELL), finish(color, STEEL)),
+    part(blockAssembly(HELMET_SHELL), steel),
     part(blockAssembly(HELMET_TRIM), finish(shade(color, TRIM_DARKEN), STEEL)),
-    part(blockAssembly(HELMET_SLIT), finish(DARK)),
+    visor,
     part(blockAssembly(HELMET_PLUME), finish(PLUME)),
   );
 }
