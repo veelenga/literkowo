@@ -16,9 +16,15 @@ export interface ParsedProfiles {
 }
 
 const LEGACY_SCHEMA_VERSION = 1;
+const SCORE_SCHEMA_VERSION = 2;
+const SCORE_PER_SEEDED_XP = 10;
 
 const MIGRATIONS: Partial<Record<number, Migration>> = {
   [LEGACY_SCHEMA_VERSION]: (raw) => ({ ...raw, totalScore: raw.totalScore ?? raw.bestScore }),
+  [SCORE_SCHEMA_VERSION]: (raw) => ({
+    ...raw,
+    xp: raw.xp ?? Math.round(countOf(raw.totalScore) / SCORE_PER_SEEDED_XP),
+  }),
 };
 
 export function parseProfiles(json: string): ParsedProfiles {
@@ -41,6 +47,8 @@ export function normalizeProfile(value: unknown): Profile | undefined {
     wordLanguage: isWordLanguage(raw.wordLanguage) ? raw.wordLanguage : DEFAULT_WORD_LANGUAGE,
     totalScore: countOf(raw.totalScore),
     lettersFreed: countOf(raw.lettersFreed),
+    xp: countOf(raw.xp),
+    coins: countOf(raw.coins),
     seenStories: stringsOf(raw.seenStories),
     levelResults: levelResultsOf(raw.levelResults),
   };
