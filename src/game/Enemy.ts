@@ -156,6 +156,10 @@ export class Enemy {
     return this.currentWord;
   }
 
+  get typedLength(): number {
+    return this.typed;
+  }
+
   get isComplete(): boolean {
     return this.typed >= this.word.length;
   }

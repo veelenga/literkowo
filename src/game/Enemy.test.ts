@@ -10,7 +10,9 @@ describe('Enemy', () => {
     enemy.advance();
     enemy.advance();
     expect(enemy.label.querySelector('.done')?.textContent).toBe('jj');
+    expect(enemy.typedLength).toBe(2);
     enemy.resetTyped();
+    expect(enemy.typedLength).toBe(0);
     expect(enemy.expectedChar).toBe('j');
     expect(enemy.label.querySelector('.done')?.textContent).toBe('');
     expect(enemy.label.querySelector('.rest')?.textContent).toBe('jjkj');

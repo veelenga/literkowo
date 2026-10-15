@@ -45,7 +45,7 @@ Actions:
 - `absorbNextHit()`: adds one shield. Each shield cancels one `loseLife`.
 - `addCoins(amount)`: adds coins to this run, for example from a balloon or a chest. They reach `GameResult.coins` and the profile with the level's other coins.
 
-Enemies also offer `tags` (a `Set<string>` for your own markers), `setSpeedScale(scale)`, `freeze(seconds)` (stops and dims), `isFrozen`, `burstPosition` and `setLabelMode('full' | 'firstLetter' | 'hidden')`. `firstLetter` shows the typed part and the next letter and masks the rest.
+Enemies also offer `tags` (a `Set<string>` for your own markers), `typedLength` (letters typed so far), `setSpeedScale(scale)`, `freeze(seconds)` (stops and dims), `isFrozen`, `burstPosition` and `setLabelMode('full' | 'firstLetter' | 'hidden')`. `firstLetter` shows the typed part and the next letter and masks the rest.
 
 ## Composition points
 
