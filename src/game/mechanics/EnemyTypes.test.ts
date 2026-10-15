@@ -108,6 +108,20 @@ describe('EnemyTypes', () => {
     expect(availableKinds({ ...ALL_UNLOCKED, level: requireLevel('polana-2') })).toHaveLength(11);
   });
 
+  it('turns spawns into special enemies at the share the phase asks for', () => {
+    const roll = () => SPECIAL_SHARE + 0.1;
+    expect(enemyTypesBoard('gory-5', roll).spawn().tags.has(ENEMY_TYPE_TAG)).toBe(false);
+    const phase: Phase = {
+      kind: 'words',
+      count: 10,
+      speed: 1,
+      spawnInterval: 2,
+      specialShare: 0.5,
+    };
+    const special = enemyTypesBoard('gory-5', roll, { phase }).spawn();
+    expect(special.tags.has(ENEMY_TYPE_TAG)).toBe(true);
+  });
+
   it('keeps the first two meadow levels plain', () => {
     for (const id of ['polana-1', 'polana-2']) {
       const { spawn, enemies } = enemyTypesBoard(id, () => 0);

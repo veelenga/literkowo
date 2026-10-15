@@ -20,6 +20,7 @@ import { EVENT_SOUNDS, type EventCue } from './waveEvents/sounds';
 
 export const EVENT_WINDOW = { start: 1 / 3, end: 2 / 3 };
 export const CHEST_COINS = 15;
+export const DEFAULT_EVENTS = 1;
 
 const EVENT_PHASE: PhaseKind = 'words';
 const LETTER = /\p{L}/u;
@@ -37,15 +38,21 @@ interface ActiveEvent {
   sinceLast: number;
 }
 
-export function eventDelay(phase: Phase, random: Random): number {
-  const share = THREE.MathUtils.lerp(EVENT_WINDOW.start, EVENT_WINDOW.end, random());
-  return phase.count * phase.spawnInterval * share;
+export function eventDelays(phase: Phase, random: Random): number[] {
+  const events = phase.events ?? DEFAULT_EVENTS;
+  const slot = (EVENT_WINDOW.end - EVENT_WINDOW.start) / events;
+  return Array.from({ length: events }, (_, index) => {
+    const start = EVENT_WINDOW.start + slot * index;
+    const share = THREE.MathUtils.lerp(start, start + slot, random());
+    return phase.count * phase.spawnInterval * share;
+  });
 }
 
 export class WaveEvents implements Mechanic {
   private readonly kit: EventKit;
   private readonly scatter = new THREE.Vector3();
-  private countdown: number | undefined;
+  private schedule: number[] = [];
+  private clock = 0;
   private active: ActiveEvent | undefined;
   private fired = false;
 
@@ -62,13 +69,15 @@ export class WaveEvents implements Mechanic {
 
   update(delta: number): void {
     if (!this.isRunning) return;
-    this.tickCountdown(delta);
+    this.clock += delta;
+    this.startDueEvent();
     this.spawnPieces(delta);
   }
 
   onPhaseChange(phase: Phase): void {
     this.active = undefined;
-    this.countdown = phase.kind === EVENT_PHASE ? eventDelay(phase, this.random) : undefined;
+    this.clock = 0;
+    this.schedule = phase.kind === EVENT_PHASE ? eventDelays(phase, this.random) : [];
   }
 
   onWordComplete(enemy: Enemy): void {
@@ -77,7 +86,7 @@ export class WaveEvents implements Mechanic {
 
   dispose(): void {
     this.active = undefined;
-    this.countdown = undefined;
+    this.schedule = [];
   }
 
   private get isRunning(): boolean {
@@ -89,10 +98,11 @@ export class WaveEvents implements Mechanic {
     return this.context.enemies.length < MAX_ENEMIES;
   }
 
-  private tickCountdown(delta: number): void {
-    if (this.countdown === undefined) return;
-    this.countdown -= delta;
-    if (this.countdown <= 0) this.start(this.pickKind());
+  private startDueEvent(): void {
+    const [due] = this.schedule;
+    if (due === undefined || due > this.clock || this.active) return;
+    this.schedule.shift();
+    this.start(this.pickKind());
   }
 
   private pickKind(): WaveEventKind {
@@ -102,7 +112,6 @@ export class WaveEvents implements Mechanic {
   private start(kind: WaveEventKind): void {
     const plan = EVENT_PLANS[kind];
     this.fired = true;
-    this.countdown = undefined;
     this.active = { plan, spawned: 0, sinceLast: plan.spacing };
     this.context.announce(i18n.t.features.waveEvents.banners[kind], 'banner', ACCENTS[kind]);
     this.play(kind);

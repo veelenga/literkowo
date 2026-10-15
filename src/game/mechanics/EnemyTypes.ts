@@ -56,6 +56,7 @@ export class EnemyTypes implements Mechanic {
     const kind = rollKind(
       this.kinds.filter((each) => this.hasRoomFor(each)),
       this.random,
+      this.context.phase.specialShare,
     );
     if (kind) this.replace(enemy, kind);
   }

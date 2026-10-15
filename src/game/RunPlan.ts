@@ -7,6 +7,8 @@ export interface Phase {
   readonly count: number;
   readonly speed: number;
   readonly spawnInterval: number;
+  readonly specialShare?: number;
+  readonly events?: number;
 }
 
 export interface RunPhase extends Phase {

@@ -106,11 +106,15 @@ export function specialCap(context: KindsContext): number {
   return context.allMechanicsUnlocked ? LATER_REGION_CAP : boardCap(context.level);
 }
 
-export function rollKind(kinds: readonly EnemyKind[], random: Random): EnemyKind | undefined {
+export function rollKind(
+  kinds: readonly EnemyKind[],
+  random: Random,
+  share = SPECIAL_SHARE,
+): EnemyKind | undefined {
   const roll = random();
-  if (kinds.length === 0 || roll >= SPECIAL_SHARE) return undefined;
+  if (kinds.length === 0 || roll >= share) return undefined;
   const total = kinds.reduce((sum, kind) => sum + KIND_WEIGHTS[kind], 0);
-  let position = (roll / SPECIAL_SHARE) * total;
+  let position = (roll / share) * total;
   for (const kind of kinds) {
     position -= KIND_WEIGHTS[kind];
     if (position < 0) return kind;

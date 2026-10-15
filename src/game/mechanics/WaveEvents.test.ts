@@ -7,7 +7,7 @@ import { Boss } from '../Boss';
 import type { Enemy } from '../Enemy';
 import type { Phase } from '../RunPlan';
 import type { MechanicContext } from './Mechanic';
-import { CHEST_COINS, EVENT_WINDOW, WaveEvents, eventDelay } from './WaveEvents';
+import { CHEST_COINS, EVENT_WINDOW, WaveEvents, eventDelays } from './WaveEvents';
 import { CHEST_DEPTH, ChestEnemy } from './waveEvents/ChestEnemy';
 import { WAVE_EVENT_TAG } from './waveEvents/EventEnemy';
 import { CHEST, METEORS, RUSH } from './waveEvents/events';
@@ -40,7 +40,7 @@ function eventBoard(roll: number, phase: Phase = WORDS) {
       for (const enemy of [...board.enemies]) enemy.update(FRAME, time, VIEWER);
     }
   };
-  const untilEvent = () => wait(eventDelay(phase, () => roll) + FRAME);
+  const untilEvent = () => wait(eventDelays(phase, () => roll)[0] + FRAME);
   const pieces = () => board.enemies.filter((enemy) => enemy.tags.has(WAVE_EVENT_TAG));
   return { ...board, mechanic, announce, addCoins, wait, untilEvent, pieces };
 }
@@ -97,6 +97,23 @@ describe('WaveEvents timing', () => {
     );
     guarded.wait(60);
     expect(guarded.mechanic.hasFired).toBe(false);
+  });
+
+  it('runs as many events as the phase asks for, one after another', () => {
+    const twice = eventBoard(PICK.chest, { ...WORDS, events: 2 });
+    twice.wait(WORDS.count * WORDS.spawnInterval);
+    expect(twice.announce).toHaveBeenCalledTimes(2);
+
+    const none = eventBoard(PICK.chest, { ...WORDS, events: 0 });
+    none.wait(WORDS.count * WORDS.spawnInterval);
+    expect(none.mechanic.hasFired).toBe(false);
+  });
+
+  it('spreads several events over the middle third of the phase', () => {
+    const [first, second] = eventDelays({ ...WORDS, events: 2 }, () => 0);
+    const length = WORDS.count * WORDS.spawnInterval;
+    expect(first).toBeCloseTo(length * EVENT_WINDOW.start);
+    expect(second).toBeCloseTo(length / 2);
   });
 
   it('stops spawning when the phase changes', () => {
