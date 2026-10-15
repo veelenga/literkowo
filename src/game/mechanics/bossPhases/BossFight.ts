@@ -1,8 +1,10 @@
 import { i18n } from '../../../i18n/i18n';
 import type { Boss } from '../../Boss';
+import type { Enemy } from '../../Enemy';
 import type { MechanicContext } from '../Mechanic';
 import { Minions } from './Minions';
 import { phaseFor, type BossPhase } from './phases';
+import { SignatureAttacks } from './SignatureAttacks';
 import { WeakPoint } from './WeakPoint';
 
 export const RAGE_SPEED = 1.3;
@@ -19,6 +21,7 @@ export class BossFight {
   private readonly announced = new Set<BossPhase>();
   private readonly weakPoint: WeakPoint;
   private readonly minions: Minions;
+  private readonly attacks: SignatureAttacks;
 
   constructor(
     private readonly context: MechanicContext,
@@ -28,11 +31,13 @@ export class BossFight {
     this.phase = phaseFor(boss.health);
     this.weakPoint = new WeakPoint(context);
     this.minions = new Minions(context);
+    this.attacks = new SignatureAttacks(context);
   }
 
   update(delta: number): void {
     this.weakPoint.update(delta);
     if (this.phase === 'rage') this.minions.update(delta);
+    this.attacks.update(delta);
     this.trackHealth();
   }
 
@@ -40,8 +45,13 @@ export class BossFight {
     if (phaseFor(this.healthAfterHit) === 'weakPoint') this.weakPoint.prepareShortWord();
   }
 
+  onSpawn(enemy: Enemy): void {
+    this.attacks.onSpawn(enemy);
+  }
+
   end(): void {
     this.weakPoint.close();
+    this.attacks.stop();
   }
 
   private get healthAfterHit(): number {

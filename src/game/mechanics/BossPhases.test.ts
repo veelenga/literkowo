@@ -8,7 +8,11 @@ import { Boss } from '../Boss';
 import { Enemy } from '../Enemy';
 import type { Phase } from '../LevelPlan';
 import { themeFor } from '../themes';
+import { FIRST_STRIKE, STRIKE_INTERVAL, TELEGRAPH_LEAD } from './bossPhases/AttackSchedule';
 import { RAGE_SPEED } from './bossPhases/BossFight';
+import { DARKNESS_CLASS, DARKNESS_SECONDS } from './bossPhases/Darkness';
+import { QUAKE_SHAKE } from './bossPhases/Earthquake';
+import { FOG_SECONDS } from './bossPhases/Fog';
 import { MAX_MINIONS, MINION_INTERVAL, MINION_TAG } from './bossPhases/Minions';
 import { SLOW_MOTION, STUN_SECONDS } from './bossPhases/WeakPoint';
 import { BossPhases } from './BossPhases';
@@ -19,6 +23,8 @@ const HITS = 8;
 const SPEED = 0.4;
 const ARMOUR_HITS = 2;
 const WEAK_POINT_HITS = 3;
+const MASK = '•';
+const TELEGRAPH = 'Mrok szykuje atak';
 const BOSS_LEVELS: Record<ThemeId, string> = {
   meadow: 'polana-5',
   forest: 'las-4',
@@ -91,11 +97,24 @@ function setup(themeId: ThemeId = 'forest') {
   };
 }
 
+function rest(enemy: Enemy): string | null | undefined {
+  return enemy.label.querySelector('.rest')?.textContent;
+}
+
+function masked(word: string): string {
+  return word[0] + MASK.repeat(word.length - 1);
+}
+
+function isDark(): boolean {
+  return document.body.classList.contains(DARKNESS_CLASS);
+}
+
 beforeEach(() => {
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
 });
 
 afterEach(() => {
+  document.body.className = '';
   vi.restoreAllMocks();
 });
 
@@ -151,11 +170,93 @@ describe('BossPhases phases', () => {
     expect(minions.every((enemy) => enemy.tags.has(MINION_TAG))).toBe(true);
   });
 
-  it('restores time when the boss leaves', () => {
-    const { enemies, setTimeScale, hit, run } = setup('meadow');
+  it('restores time and light when the boss leaves', () => {
+    const { enemies, setTimeScale, hit, run } = setup('forest');
+    run(FIRST_STRIKE);
     hit(ARMOUR_HITS + 1);
+    expect(isDark()).toBe(true);
     enemies.length = 0;
     run(STEP);
     expect(setTimeScale).toHaveBeenLastCalledWith(1);
+    expect(isDark()).toBe(false);
+  });
+});
+
+describe('BossPhases signature attacks', () => {
+  it('telegraphs the attack before it strikes', () => {
+    const { texts, run } = setup('forest');
+    run(FIRST_STRIKE - TELEGRAPH_LEAD - STEP);
+    expect(texts('warning')).toEqual([]);
+    run(STEP);
+    expect(texts('warning')).toEqual([TELEGRAPH]);
+    expect(isDark()).toBe(false);
+    run(TELEGRAPH_LEAD);
+    expect(isDark()).toBe(true);
+    run(STRIKE_INTERVAL - TELEGRAPH_LEAD - STEP);
+    expect(texts('warning')).toHaveLength(1);
+    run(STEP);
+    expect(texts('warning')).toHaveLength(2);
+  });
+
+  it('darkness hides the keyboard for a while', () => {
+    const { run } = setup('forest');
+    run(FIRST_STRIKE);
+    expect(isDark()).toBe(true);
+    run(DARKNESS_SECONDS - STEP);
+    expect(isDark()).toBe(true);
+    run(STEP);
+    expect(isDark()).toBe(false);
+  });
+
+  it('fog masks every label, also new ones, then clears', () => {
+    const { boss, mechanic, spawnWord, run } = setup('mountains');
+    run(FIRST_STRIKE);
+    expect(rest(boss)).toBe(masked(boss.word));
+    const newcomer = spawnWord('kot');
+    mechanic.onSpawn(newcomer);
+    expect(rest(newcomer)).toBe(masked('kot'));
+    run(FOG_SECONDS);
+    expect(rest(boss)).toBe(boss.word);
+    expect(rest(newcomer)).toBe('kot');
+  });
+
+  it('earthquake shakes and scrambles enemies at the same distance', () => {
+    const { boss, shakeCamera, burst, addEnemy, run } = setup('cave');
+    const near = addEnemy('kot', 3, -4);
+    const far = addEnemy('pies', -6, -8);
+    const bossPosition = boss.object.position.clone();
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    run(FIRST_STRIKE);
+    expect(shakeCamera).toHaveBeenCalledWith(QUAKE_SHAKE.strength, QUAKE_SHAKE.seconds);
+    for (const [enemy, distance] of [
+      [near, 5],
+      [far, 10],
+    ] as const) {
+      expect(enemy.distanceToCenter).toBeCloseTo(distance);
+      expect(enemy.object.position.x).toBeLessThan(0);
+      expect(enemy.object.position.z).toBeGreaterThan(0);
+    }
+    expect(boss.object.position.equals(bossPosition)).toBe(true);
+    expect(burst).toHaveBeenCalled();
+  });
+
+  it('the island boss rotates through every attack', () => {
+    const { boss, shakeCamera, run } = setup('island');
+    run(FIRST_STRIKE);
+    expect(isDark()).toBe(true);
+    run(STRIKE_INTERVAL);
+    expect(isDark()).toBe(false);
+    expect(rest(boss)).toBe(masked(boss.word));
+    expect(shakeCamera).not.toHaveBeenCalled();
+    run(STRIKE_INTERVAL);
+    expect(shakeCamera).toHaveBeenCalledOnce();
+  });
+
+  it('the meadow boss stays gentle', () => {
+    const { shakeCamera, texts, run } = setup('meadow');
+    run(FIRST_STRIKE + STRIKE_INTERVAL * 2);
+    expect(texts('warning')).toEqual([]);
+    expect(shakeCamera).not.toHaveBeenCalled();
+    expect(isDark()).toBe(false);
   });
 });

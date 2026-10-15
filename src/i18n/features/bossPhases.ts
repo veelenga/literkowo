@@ -4,6 +4,7 @@ const pl = {
     weakPoint: 'Słaby punkt!',
     rage: 'Furia!',
   },
+  telegraph: 'Mrok szykuje atak',
 };
 
 const uk: typeof pl = {
@@ -12,6 +13,7 @@ const uk: typeof pl = {
     weakPoint: 'Слабке місце!',
     rage: 'Лють!',
   },
+  telegraph: 'Морок готує атаку',
 };
 
 export const bossPhases = { pl, uk };

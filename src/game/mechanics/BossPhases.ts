@@ -16,6 +16,10 @@ export class BossPhases implements Mechanic {
     this.fight.update(delta);
   }
 
+  onSpawn(enemy: Enemy): void {
+    this.fight?.onSpawn(enemy);
+  }
+
   onWordComplete(enemy: Enemy): void {
     const { fight } = this;
     if (fight && enemy === fight.boss) fight.beforeHit();
