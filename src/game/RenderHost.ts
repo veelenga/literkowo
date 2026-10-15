@@ -9,6 +9,7 @@ const MSAA_SAMPLES = 4;
 const MAX_PIXEL_RATIO = 1.5;
 const EXPOSURE = 1.05;
 const INITIAL_SIZE = 1;
+const VISIBLE: DocumentVisibilityState = 'visible';
 
 export interface Viewport {
   readonly width: number;
@@ -96,6 +97,7 @@ class RenderHost {
     this.applyPixelRatio();
     renderer.setSize(this.size.width, this.size.height);
     composer.setSize(this.size.width, this.size.height);
+    if (document.visibilityState === VISIBLE) composer.render();
   };
 
   private applyPixelRatio(): void {

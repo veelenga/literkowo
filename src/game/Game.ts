@@ -99,6 +99,7 @@ export class Game {
   private elapsed = 0;
   private sinceSpawn = Number.POSITIVE_INFINITY;
   private paused = false;
+  private suspended = false;
   private finished = false;
   private running = false;
   private frame = 0;
@@ -125,7 +126,18 @@ export class Game {
     this.events.onStats(this.stats, this.lives);
     this.reportProgress();
     this.mechanics.onPhaseChange(this.phase);
-    this.loop();
+    this.syncFrames();
+  }
+
+  suspend(): void {
+    this.suspended = true;
+    if (!this.paused && !this.finished) this.togglePause();
+    this.syncFrames();
+  }
+
+  wake(): void {
+    this.suspended = false;
+    this.syncFrames();
   }
 
   destroy(): void {
@@ -202,11 +214,26 @@ export class Game {
     this.boss = undefined;
   }
 
+  private get isAnimating(): boolean {
+    return this.running && !this.paused && !this.suspended;
+  }
+
+  private syncFrames(): void {
+    if (!this.isAnimating) return this.stopFrames();
+    if (this.frame) return;
+    this.clock.getDelta();
+    this.frame = requestAnimationFrame(this.loop);
+  }
+
+  private stopFrames(): void {
+    cancelAnimationFrame(this.frame);
+    this.frame = 0;
+  }
+
   private readonly loop = (): void => {
     if (!this.running) return;
     this.frame = requestAnimationFrame(this.loop);
     const delta = Math.min(this.clock.getDelta(), MAX_FRAME_DELTA);
-    if (this.paused) return;
     this.tick(delta);
     this.labels.position(this.enemies, this.camera, renderHost.viewport);
     renderHost.render();
@@ -389,7 +416,7 @@ export class Game {
 
   private togglePause(): void {
     this.paused = !this.paused;
-    this.clock.getDelta();
+    this.syncFrames();
     this.events.onPause(this.paused);
   }
 
