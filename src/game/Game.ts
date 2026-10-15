@@ -23,6 +23,7 @@ import { Player } from './Player';
 import { currentQuality } from './quality';
 import { renderHost } from './RenderHost';
 import { SessionStats } from './SessionStats';
+import { Targeting } from './Targeting';
 import type { Theme } from './themes';
 import { World } from './World';
 
@@ -89,10 +90,12 @@ export class Game {
   private readonly enemies: Enemy[] = [];
   private readonly mechanics = new MechanicGroup();
   private readonly shake = new CameraShake();
+  private readonly targeting = new Targeting<Enemy>((enemy, isCandidate) =>
+    enemy.setTargeted(isCandidate),
+  );
   private phaseIndex = 0;
   private spawned = 0;
   private boss: Boss | undefined;
-  private target: Enemy | undefined;
   private lives = INITIAL_LIVES;
   private shields = 0;
   private timeScale = 1;
@@ -161,6 +164,10 @@ export class Game {
     return this.phases[Math.min(this.phaseIndex, this.phases.length - 1)];
   }
 
+  private get focus(): Enemy | undefined {
+    return nearestEnemy(this.targeting.candidates);
+  }
+
   private get inIntro(): boolean {
     return this.elapsed < CAMERA_INTRO_DURATION;
   }
@@ -213,7 +220,6 @@ export class Game {
   private releaseEnemies(): void {
     this.enemies.forEach((enemy) => enemy.dispose());
     this.enemies.length = 0;
-    this.target = undefined;
     this.boss = undefined;
   }
 
@@ -256,7 +262,8 @@ export class Game {
     if (!this.inIntro) this.spawnIfDue(worldDelta);
     this.updateEnemies(worldDelta);
     this.stats.addActiveTime(delta);
-    if (this.target) this.player.lookAt(this.target.object.position);
+    const focus = this.focus;
+    if (focus) this.player.lookAt(focus.object.position);
     this.events.onNextKey(this.nextExpectedChar());
   }
 
@@ -330,9 +337,14 @@ export class Game {
     this.mechanics.onEnemyReached(enemy);
     if (!this.enemies.includes(enemy)) return;
     if (this.phase.kind === 'warmup') return this.clearEnemy(enemy);
-    if (enemy instanceof Boss) enemy.reset();
+    if (enemy instanceof Boss) this.resetBoss(enemy);
     else this.clearEnemy(enemy);
     this.loseLife();
+  }
+
+  private resetBoss(boss: Boss): void {
+    this.targeting.forget(boss);
+    boss.reset();
   }
 
   private loseLife(): void {
@@ -427,25 +439,18 @@ export class Game {
   }
 
   private handleChar(char: string): void {
-    if (!this.target) this.acquireTarget(char);
-    if (!this.target || this.target.expectedChar !== char) return this.mistake();
-    const target = this.target;
-    target.advance();
+    const keystroke = this.targeting.type(char, nearestFirst(this.enemies));
+    if (keystroke.kind === 'miss') return this.mistake();
     this.stats.recordHit();
     sfx.hit(this.stats.combo);
     this.mechanics.onHit();
-    if (target.isComplete) this.completeWord(target);
+    if (keystroke.kind === 'complete') this.completeWord(keystroke.item);
     this.events.onStats(this.stats, this.lives);
-  }
-
-  private acquireTarget(char: string): void {
-    this.target = nearestEnemy(this.enemies, (enemy) => enemy.expectedChar === char);
-    this.target?.setTargeted(true);
   }
 
   private mistake(): void {
     this.recordMistake();
-    this.target?.flashMistake();
+    this.targeting.candidates.forEach((enemy) => enemy.flashMistake());
     sfx.mistake();
     this.events.onStats(this.stats, this.lives);
   }
@@ -464,8 +469,6 @@ export class Game {
   private hitBoss(boss: Boss): void {
     sfx.bossHit();
     boss.takeHit();
-    boss.setTargeted(false);
-    this.target = undefined;
     this.reportProgress();
     if (!boss.isDefeated) return;
     this.remove(boss);
@@ -481,7 +484,7 @@ export class Game {
   private remove(enemy: Enemy): boolean {
     const index = this.enemies.indexOf(enemy);
     if (index < 0) return false;
-    if (this.target === enemy) this.target = undefined;
+    this.targeting.forget(enemy);
     this.scene.remove(enemy.object);
     enemy.dispose();
     this.enemies.splice(index, 1);
@@ -489,7 +492,7 @@ export class Game {
   }
 
   private nextExpectedChar(): string | undefined {
-    return (this.target ?? nearestEnemy(this.enemies))?.expectedChar;
+    return (this.focus ?? nearestEnemy(this.enemies))?.expectedChar;
   }
 }
 
@@ -498,16 +501,12 @@ function placeOnSpawnArc(enemy: Enemy, radius: number): void {
   enemy.object.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
 }
 
-function nearestEnemy(
-  enemies: readonly Enemy[],
-  matches: (enemy: Enemy) => boolean = () => true,
-): Enemy | undefined {
-  let nearest: Enemy | undefined;
-  for (const enemy of enemies) {
-    if (!matches(enemy)) continue;
-    if (!nearest || enemy.distanceToCenter < nearest.distanceToCenter) nearest = enemy;
-  }
-  return nearest;
+function nearestFirst(enemies: readonly Enemy[]): Enemy[] {
+  return [...enemies].sort((first, second) => first.distanceToCenter - second.distanceToCenter);
+}
+
+function nearestEnemy(enemies: readonly Enemy[]): Enemy | undefined {
+  return nearestFirst(enemies).at(0);
 }
 
 function isShortcut(event: KeyboardEvent): boolean {
