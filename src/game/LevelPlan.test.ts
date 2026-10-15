@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LevelKind } from '../course/catalog';
+import { COINS_PER_WORD } from '../course/coins';
 import { LEVELS, REGIONS, type Level } from '../course/regions';
 import { requireLevel } from '../testing/levels';
 import { LEVEL_LIVES, LEVEL_XP_FACTOR, levelPhases, levelPlan } from './LevelPlan';
@@ -36,6 +37,8 @@ describe('levelPlan', () => {
     const plan = levelPlan(requireLevel('polana-1'), 'pl');
     expect(plan.lives).toBe(LEVEL_LIVES);
     expect(plan.xpFactor).toBe(LEVEL_XP_FACTOR);
+    expect(plan.coinsPerWord).toBe(COINS_PER_WORD);
+    expect(plan.allMechanicsUnlocked).toBe(false);
     expectPace(plan.phaseAt(0), { kind: 'warmup', count: 8, speed: 0.42, spawnInterval: 1.6 });
     expectPace(plan.phaseAt(1), { kind: 'learn', count: 8, speed: 0.416, spawnInterval: 4.37 });
     expect(plan.phaseAt(2)).toBeUndefined();

@@ -1,4 +1,5 @@
 import type { LevelKind } from '../course/catalog';
+import { COINS_PER_WORD } from '../course/coins';
 import { difficultyFor } from '../course/difficulty';
 import type { Level } from '../course/regions';
 import { levelWordRules } from '../course/wordRules';
@@ -27,6 +28,7 @@ export function levelPlan(level: Level, language: WordLanguage): RunPlan {
   return {
     lives: LEVEL_LIVES,
     xpFactor: LEVEL_XP_FACTOR,
+    coinsPerWord: COINS_PER_WORD,
     allMechanicsUnlocked: false,
     phaseAt: (index) => phases[index],
   };

@@ -148,7 +148,7 @@ export class Game {
     this.phase = firstPhase(config.plan);
     this.calm = this.phase.calmSeconds ?? NO_CALM;
     this.lives = config.plan.lives;
-    this.rewards = new RunRewards(config.plan.xpFactor);
+    this.rewards = new RunRewards(config.plan);
     this.words = new WordSource(config.language, this.phase.words, {
       weightOf: (key) => keyWeight(key, this.keys.statOf(key)),
     });

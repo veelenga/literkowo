@@ -20,6 +20,7 @@ export interface RunPhase extends Phase {
 export interface RunPlan {
   readonly lives: number;
   readonly xpFactor: number;
+  readonly coinsPerWord: number;
   readonly allMechanicsUnlocked: boolean;
   phaseAt(index: number): RunPhase | undefined;
 }
