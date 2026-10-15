@@ -31,6 +31,18 @@ function expectPace(phase: RunPhase | undefined, expected: Phase): void {
   expect(phase?.count).toBe(expected.count);
   expect(phase?.speed).toBeCloseTo(expected.speed, PRECISION);
   expect(phase?.spawnInterval).toBeCloseTo(expected.spawnInterval, PRECISION);
+  expect(phase?.rampTo?.speed).toBeCloseTo(expected.rampTo?.speed ?? NaN, PRECISION);
+  expect(phase?.rampTo?.spawnInterval).toBeCloseTo(
+    expected.rampTo?.spawnInterval ?? NaN,
+    PRECISION,
+  );
+}
+
+function expectSteady(phase: RunPhase | undefined, expected: Phase): void {
+  expect(phase).toMatchObject({ kind: expected.kind, count: expected.count });
+  expect(phase?.speed).toBeCloseTo(expected.speed, PRECISION);
+  expect(phase?.spawnInterval).toBeCloseTo(expected.spawnInterval, PRECISION);
+  expect(phase?.rampTo).toBeUndefined();
 }
 
 describe('levelPlan', () => {
@@ -40,8 +52,14 @@ describe('levelPlan', () => {
     expect(plan.xpFactor).toBe(LEVEL_XP_FACTOR);
     expect(plan.coinsPerWord).toBe(COINS_PER_WORD);
     expect(plan.allMechanicsUnlocked).toBe(false);
-    expectPace(plan.phaseAt(0), { kind: 'warmup', count: 8, speed: 0.42, spawnInterval: 1.6 });
-    expectPace(plan.phaseAt(1), { kind: 'learn', count: 8, speed: 0.416, spawnInterval: 4.37 });
+    expectSteady(plan.phaseAt(0), { kind: 'warmup', count: 5, speed: 0.42, spawnInterval: 1.6 });
+    expectPace(plan.phaseAt(1), {
+      kind: 'learn',
+      count: 12,
+      speed: 0.42,
+      spawnInterval: 4.4,
+      rampTo: { speed: 0.420856, spawnInterval: 4.397257 },
+    });
     expect(plan.phaseAt(2)).toBeUndefined();
     expect(plan.phaseAt(1)?.words).toEqual({
       allowedKeys: 'fj',
@@ -54,12 +72,18 @@ describe('levelPlan', () => {
 
   it('runs a practice level as a warmup and a words phase', () => {
     const plan = levelPlan(requireLevel('polana-5'), 'pl');
-    expectPace(plan.phaseAt(0), { kind: 'warmup', count: 5, speed: 0.5, spawnInterval: 1.5 });
+    expectSteady(plan.phaseAt(0), {
+      kind: 'warmup',
+      count: 5,
+      speed: 0.426847,
+      spawnInterval: 1.5,
+    });
     expectPace(plan.phaseAt(1), {
       kind: 'words',
-      count: 10,
-      speed: 0.547755,
-      spawnInterval: 3.722449,
+      count: 12,
+      speed: 0.426847,
+      spawnInterval: 4.378055,
+      rampTo: { speed: 0.429569, spawnInterval: 4.369331 },
     });
     expect(plan.phaseAt(2)).toBeUndefined();
     expect(plan.phaseAt(1)?.words).toEqual({
@@ -73,12 +97,18 @@ describe('levelPlan', () => {
 
   it('runs a review level as a warmup and a longer words phase', () => {
     const plan = levelPlan(requireLevel('polana-8'), 'pl');
-    expectPace(plan.phaseAt(0), { kind: 'warmup', count: 5, speed: 0.5, spawnInterval: 1.5 });
+    expectSteady(plan.phaseAt(0), {
+      kind: 'warmup',
+      count: 5,
+      speed: 0.435851,
+      spawnInterval: 1.5,
+    });
     expectPace(plan.phaseAt(1), {
       kind: 'words',
       count: 13,
-      speed: 0.568571,
-      spawnInterval: 3.664286,
+      speed: 0.435851,
+      spawnInterval: 4.349196,
+      rampTo: { speed: 0.439366, spawnInterval: 4.33793 },
     });
     expect(plan.phaseAt(2)).toBeUndefined();
     expect(plan.phaseAt(1)?.words).toEqual({
@@ -92,7 +122,7 @@ describe('levelPlan', () => {
 
   it('runs a boss level as a single boss phase', () => {
     const plan = levelPlan(requireLevel('polana-19'), 'pl');
-    expectPace(plan.phaseAt(0), { kind: 'boss', count: 6, speed: 0.340408, spawnInterval: 0 });
+    expectSteady(plan.phaseAt(0), { kind: 'boss', count: 6, speed: 0.340408, spawnInterval: 0 });
     expect(plan.phaseAt(1)).toBeUndefined();
     expect(plan.phaseAt(0)?.words).toEqual({
       allowedKeys: 'fjdksla;',
@@ -137,12 +167,28 @@ describe('levelPhases', () => {
     }
   });
 
-  it('makes a learn level slower and shorter than the practice level after it', () => {
-    const learn = phasesOf(requireLevel('polana-4'));
-    const practice = phasesOf(requireLevel('polana-5'));
-    expect(learn[1].speed).toBeLessThan(practice[1].speed);
-    expect(learn[1].count).toBeLessThan(practice[1].count);
-    expect(learn[0].speed).toBeLessThan(practice[0].speed);
+  it('starts every level at the pace the level before it ended with', () => {
+    const teaching = LEVELS.filter((level) => !level.isBoss).map(mainPhase);
+    for (let index = 1; index < teaching.length; index += 1) {
+      const previous = teaching[index - 1].rampTo;
+      expect(teaching[index].speed).toBeCloseTo(previous?.speed ?? NaN, PRECISION);
+      expect(teaching[index].spawnInterval).toBeCloseTo(previous?.spawnInterval ?? NaN, PRECISION);
+    }
+  });
+
+  it('starts the warmup at the pace the main phase starts with', () => {
+    for (const level of LEVELS.filter((candidate) => !candidate.isBoss)) {
+      const [warmup, main] = phasesOf(level);
+      expect(warmup.speed).toBe(main.speed);
+    }
+  });
+
+  it('speeds up inside a level', () => {
+    for (const level of LEVELS.filter((candidate) => !candidate.isBoss)) {
+      const main = mainPhase(level);
+      expect(main.rampTo?.speed).toBeGreaterThan(main.speed);
+      expect(main.rampTo?.spawnInterval).toBeLessThan(main.spawnInterval);
+    }
   });
 
   it.each(['learn', 'practice', 'review'] as const)(

@@ -1,4 +1,4 @@
-import { coursePosition, type Level, type LevelKind } from './catalog';
+import { coursePosition, LEVELS, type Level, type LevelKind } from './catalog';
 import { stagesSpan } from './wordStages';
 
 export interface Span {
@@ -21,6 +21,11 @@ export interface Pace extends Tempo {
   readonly rampTo?: Tempo;
 }
 
+export interface LevelTempo {
+  readonly start: Tempo;
+  readonly end: Tempo;
+}
+
 export type WordStageKind = 'combos' | 'focusWords' | 'words';
 
 export interface WordStage {
@@ -39,16 +44,31 @@ export interface Difficulty {
 
 type TeachingKind = Exclude<LevelKind, 'boss'>;
 
+interface Warmup {
+  readonly count: number;
+  readonly spawnInterval: number;
+}
+
 interface KindRules {
-  readonly warmup: Pace;
+  readonly warmup: Warmup;
   readonly wordCount: Span;
-  readonly speedFactor: number;
-  readonly intervalFactor: number;
   readonly stages: readonly WordStage[];
 }
 
-export const WORD_SPEED: Span = { first: 0.52, last: 1.2 };
-export const SPAWN_INTERVAL: Span = { first: 3.8, last: 1.9 };
+interface PaceSpan {
+  readonly start: number;
+  readonly end: number;
+}
+
+export const WORD_SPEED: Span = { first: 0.42, last: 1.2 };
+export const SPAWN_INTERVAL: Span = { first: 4.4, last: 1.9 };
+export const PACE_EASING = 1.5;
+export const PACE_STEPS: Readonly<Record<LevelKind, number>> = {
+  learn: 1,
+  practice: 1,
+  review: 1,
+  boss: 0,
+};
 export const GENERATED_MAX_LENGTH: Span = { first: 3, last: 5 };
 export const BOSS_HITS: Span = { first: 4, last: 14 };
 export const BOSS_SPEED: Span = { first: 0.3, last: 0.52 };
@@ -60,53 +80,68 @@ export const REVIEW_LENGTHS: LetterRange = { min: 2, max: 5 };
 
 export const KIND_RULES: Readonly<Record<TeachingKind, KindRules>> = {
   learn: {
-    warmup: { count: 8, speed: 0.42, spawnInterval: 1.6 },
-    wordCount: { first: 8, last: 12 },
-    speedFactor: 0.8,
-    intervalFactor: 1.15,
+    warmup: { count: 5, spawnInterval: 1.6 },
+    wordCount: { first: 12, last: 18 },
     stages: [
       { kind: 'combos', share: 0.6, lengths: COMBO_LENGTHS },
       { kind: 'focusWords', share: 0.4, lengths: FOCUS_WORD_LENGTHS },
     ],
   },
   practice: {
-    warmup: { count: 5, speed: 0.5, spawnInterval: 1.5 },
-    wordCount: { first: 10, last: 16 },
-    speedFactor: 1,
-    intervalFactor: 1,
+    warmup: { count: 5, spawnInterval: 1.5 },
+    wordCount: { first: 12, last: 18 },
     stages: [
       { kind: 'focusWords', share: 0.2, lengths: FOCUS_WORD_LENGTHS },
       { kind: 'words', share: 0.8, lengths: PRACTICE_LENGTHS },
     ],
   },
   review: {
-    warmup: { count: 5, speed: 0.5, spawnInterval: 1.5 },
+    warmup: { count: 5, spawnInterval: 1.5 },
     wordCount: { first: 12, last: 20 },
-    speedFactor: 1,
-    intervalFactor: 1,
     stages: [{ kind: 'words', share: 1, lengths: REVIEW_LENGTHS }],
   },
 };
 
 const NO_SPAWN_INTERVAL = 0;
 const NO_STAGES: readonly WordStage[] = [];
+const PACE_SPANS = paceSpans(LEVELS);
 
 export function difficultyFor(level: Level): Difficulty {
   const position = coursePosition(level);
   if (level.kind === 'boss') return bossDifficulty(position);
   const rules = KIND_RULES[level.kind];
+  const { start, end } = levelTempo(level);
   const lengths = stagesSpan(rules.stages);
   return {
-    warmup: rules.warmup,
-    main: {
-      count: Math.round(valueAt(rules.wordCount, position)),
-      speed: valueAt(WORD_SPEED, position) * rules.speedFactor,
-      spawnInterval: valueAt(SPAWN_INTERVAL, position) * rules.intervalFactor,
-    },
+    warmup: { ...rules.warmup, speed: start.speed },
+    main: { count: Math.round(valueAt(rules.wordCount, position)), ...start, rampTo: end },
     lengths,
     generatedLengths: generatedWithin(lengths, position),
     stages: rules.stages,
   };
+}
+
+export function levelTempo(level: Level): LevelTempo {
+  const span = PACE_SPANS.get(level.id);
+  if (!span) throw new Error(`Unknown level: ${level.id}`);
+  return { start: courseTempo(span.start), end: courseTempo(span.end) };
+}
+
+export function courseTempo(progress: number): Tempo {
+  const eased = progress ** PACE_EASING;
+  return { speed: valueAt(WORD_SPEED, eased), spawnInterval: valueAt(SPAWN_INTERVAL, eased) };
+}
+
+function paceSpans(levels: readonly Level[]): Map<string, PaceSpan> {
+  const total = levels.reduce((sum, level) => sum + PACE_STEPS[level.kind], 0);
+  const spans = new Map<string, PaceSpan>();
+  let walked = 0;
+  for (const level of levels) {
+    const start = walked;
+    walked += PACE_STEPS[level.kind];
+    spans.set(level.id, { start: start / total, end: walked / total });
+  }
+  return spans;
 }
 
 function bossDifficulty(position: number): Difficulty {

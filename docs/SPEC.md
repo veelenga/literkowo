@@ -92,7 +92,7 @@ The game runs a run plan: its phases by index, its lives, its XP factor, and the
    - Review level: "Powtórka" / "Повторення", the reviewed keys and one line: "Powtarzamy wszystkie poznane klawisze. Dasz radę!" / "Повторюємо всі вивчені клавіші. Ти впораєшся!".
 3. Camera intro of 1.8 seconds. Typing is ignored until it ends.
 4. Warm-up. Single letters from the level's focus keys. A letter that reaches the player is removed and costs nothing.
-5. Main phase. A learn level runs a learn phase, practice and review levels run a words phase. A word that reaches the player costs a life and counts as a mistake. Counts, speeds and lengths are in [Difficulty](#difficulty).
+5. Main phase. A learn level runs a learn phase, practice and review levels run a words phase. A word that reaches the player costs a life and counts as a mistake. Counts, the pace and the word stages are in [Difficulty](#difficulty).
 6. Boss, for boss levels only, with no learn card and no warm-up. One boss that needs the number of words in [Difficulty](#difficulty). Each hit knocks it back and makes it 12% faster. When it reaches the player, it jumps back to distance 9 and the player loses a life (`src/game/Boss.ts`).
 7. Result card. It shows stars, score, accuracy, words per minute and letters freed, the XP bar with the XP and coins earned, the keys row (see [Key mastery](#key-mastery)), the treasure chips (see [Shop](#shop)), and buttons for the next level when there is one, retry and map (`src/ui/LevelResult.ts`, `src/ui/ResultProgress.ts`). Enter presses the main button, marked with ⏎: the next level when there is one, retry after a run without stars and the map otherwise, and, like Enter on the learn card, it is ignored for the first 600 ms so keys pressed at the end of the level do not skip either card.
 
@@ -126,23 +126,29 @@ Stars, with the current thresholds (`src/course/scoring.ts`). They are judged on
 
 ## Difficulty
 
-Owner: `src/course/difficulty.ts`. Every pace and length limit comes from the kind of the level and its position in the course.
+Owner: `src/course/difficulty.ts`. Every pace and length limit comes from the kind of the level and its place in the course.
 
 Position is `order / (number of levels − 1)`, from 0 at `polana-1` to 1 at `wyspa-24`. Order counts every level of the catalog from 0, bosses included, so an English course ends at `jaskinia-24`, position 0.76. A value written as "a to b" grows in a straight line from a at position 0 to b at position 1.
 
-| Value          | Learn                                                                  | Practice                                                              | Review                      |
-| -------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------- |
-| Warm-up        | 8 letters, speed 0.42, 1.6 s                                           | 5 letters, speed 0.5, 1.5 s                                           | 5 letters, speed 0.5, 1.5 s |
-| Main phase     | `learn`                                                                | `words`                                                               | `words`                     |
-| Words          | 8 to 12                                                                | 10 to 16                                                              | 12 to 20                    |
-| Speed          | 0.8 × word speed                                                       | word speed                                                            | word speed                  |
-| Spawn interval | 1.15 × spawn interval                                                  | spawn interval                                                        | spawn interval              |
-| Word stages    | `combos` 1 to 3 letters for 60% of the words, then `focusWords` 2 to 3 | `focusWords` 2 to 3 letters for 20% of the words, then `words` 2 to 4 | `words` 2 to 5 letters      |
+| Value       | Learn                                                                  | Practice                                                              | Review                 |
+| ----------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------- |
+| Warm-up     | 5 letters, 1.6 s apart                                                 | 5 letters, 1.5 s apart                                                | 5 letters, 1.5 s apart |
+| Main phase  | `learn`                                                                | `words`                                                               | `words`                |
+| Words       | 12 to 18                                                               | 12 to 18                                                              | 12 to 20               |
+| Word stages | `combos` 1 to 3 letters for 60% of the words, then `focusWords` 2 to 3 | `focusWords` 2 to 3 letters for 20% of the words, then `words` 2 to 4 | `words` 2 to 5 letters |
 
-- Word speed is 0.52 to 1.2 (`WORD_SPEED`). Spawn interval is 3.8 to 1.9 seconds (`SPAWN_INTERVAL`). Word counts are rounded.
+Pace:
+
+- The course has one pace that grows without jumps. Every learn, practice and review level walks one step of it, and a boss walks none (`PACE_STEPS`). A level starts at the pace the level before it ended with.
+- The pace at step progress `p`, from 0 at the start of `polana-1` to 1 at the end of the last review, is a word speed of 0.42 to 1.2 (`WORD_SPEED`) and a spawn interval of 4.4 to 1.9 seconds (`SPAWN_INTERVAL`), both taken at `p^1.5` (`PACE_EASING`). So Polana grows slowly and the later regions carry the growth.
+- The main phase eases the speed and the spawn interval of each new enemy from the start pace of the level to its end pace, by the number of enemies sent (`rampTo` and `tempoAt` in `src/game/RunPlan.ts`). The warm-up runs at the start pace.
+- An enemy walks 9.4 units from the spawn arc to the hero. That takes about 22.4 seconds at the start of `polana-1`, 22.1 seconds at the end of `polana-3`, 19.4 seconds at the end of Polana, 16.1 at the end of Las, 13.3 at the end of Góry, 10.1 at the end of Jaskinia and 7.8 at the end of Wyspa Ogonków.
+
+More rules:
+
+- Word counts are rounded.
 - Generated words of a `words` stage have at most `round(3 to 5)` letters (`GENERATED_MAX_LENGTH`) and never more than the stage allows, so early levels get generated strings of at most 3 letters. Real words and combos use the full length of the stage.
 - Boss: `round(4 to 14)` words (`BOSS_HITS`), so 6, 7, 9, 12 and 14 for the five bosses, at speed 0.3 to 0.52 (`BOSS_SPEED`). Other enemies in a boss fight use 2 to 5 letters.
-- An enemy walks 9.4 units from the spawn arc to the hero. In the first level a letter takes about 22 seconds to reach the hero, and in the second level a word takes about 18 seconds. Before this course, a word in the first level took about 13 seconds.
 - Apart from warm-ups and the rush and meteor events, single letters show only in learn levels.
 
 ## Action events
@@ -591,7 +597,7 @@ Difficulty presets (`src/arena/difficulty.ts`):
 
 Endless waves (`src/arena/endlessPlan.ts`):
 
-- Wave 1 starts at the practice pace of the key set's boss level: the word speed and the spawn interval at its course position (see [Difficulty](#difficulty)), times the preset's speed and spawn gap.
+- Wave 1 starts at the course pace of the key set's boss level, which is the pace the region's last review ends with (see [Difficulty](#difficulty)), times the preset's speed and spawn gap.
 - Wave `n` has `8 + 2n` words, at most 30.
 - Each wave is 5% faster than the one before, up to 1.8 times wave 1.
 - The spawn interval shrinks 5% per wave, down to 85% of wave 1 (`SPAWN_GAP`). The floor keeps the XP rule below.

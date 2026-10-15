@@ -1,9 +1,28 @@
 import { describe, expect, it } from 'vitest';
 import { requireLevel } from '../testing/levels';
-import { LEVELS } from './catalog';
-import { difficultyFor, FOCUS_WORD_LENGTHS, PRACTICE_LENGTHS, REVIEW_LENGTHS } from './difficulty';
+import { LEVELS, REGIONS, type Region } from './catalog';
+import {
+  difficultyFor,
+  FOCUS_WORD_LENGTHS,
+  levelTempo,
+  PRACTICE_LENGTHS,
+  REVIEW_LENGTHS,
+  WORD_SPEED,
+} from './difficulty';
 
 const OLD_FIRST_LEVEL = { wordSpeed: 0.7, warmupSpeed: 0.55, spawns: 18 };
+const WALK_DISTANCE = 9.4;
+const FIRST_LEVEL_SECONDS = 22;
+const SECONDS_PRECISION = 0;
+const SMALL_STEP = 1.02;
+const PRECISION = 6;
+
+function regionGrowth(region: Region): number {
+  const teaching = region.levels.filter((level) => !level.isBoss);
+  const first = teaching[0];
+  const last = teaching[teaching.length - 1];
+  return levelTempo(last).end.speed - levelTempo(first).start.speed;
+}
 
 describe('difficultyFor', () => {
   it('makes the first levels slower and shorter than the old first level', () => {
@@ -13,6 +32,42 @@ describe('difficultyFor', () => {
       expect(warmup?.speed).toBeLessThan(OLD_FIRST_LEVEL.warmupSpeed);
       expect((warmup?.count ?? 0) + main.count).toBeLessThan(OLD_FIRST_LEVEL.spawns);
     }
+  });
+
+  it('lets a letter of the first level take about 22 seconds to reach the hero', () => {
+    const { main } = difficultyFor(requireLevel('polana-1'));
+    expect(WALK_DISTANCE / main.speed).toBeCloseTo(FIRST_LEVEL_SECONDS, SECONDS_PRECISION);
+  });
+
+  it('makes the second and third levels only a little faster', () => {
+    const first = levelTempo(requireLevel('polana-1')).start.speed;
+    const third = levelTempo(requireLevel('polana-3')).end.speed;
+    expect(third).toBeGreaterThan(first);
+    expect(third / first).toBeLessThan(SMALL_STEP);
+  });
+
+  it('grows the pace slowly in Polana and lets later regions carry the growth', () => {
+    const growth = REGIONS.map(regionGrowth);
+    for (let index = 1; index < growth.length; index += 1) {
+      expect(growth[index]).toBeGreaterThan(growth[index - 1]);
+    }
+  });
+
+  it('reaches the last word speed at the end of the course', () => {
+    const lastTeaching = LEVELS.filter((level) => !level.isBoss).at(-1);
+    expect(lastTeaching && levelTempo(lastTeaching).end.speed).toBeCloseTo(
+      WORD_SPEED.last,
+      PRECISION,
+    );
+  });
+
+  it('keeps the pace through a boss level', () => {
+    const review = levelTempo(requireLevel('polana-18')).end;
+    const boss = levelTempo(requireLevel('polana-19'));
+    const nextLearn = levelTempo(requireLevel('las-1')).start;
+    expect(boss.start).toEqual(review);
+    expect(boss.end).toEqual(review);
+    expect(nextLearn).toEqual(review);
   });
 
   it('allows single letters only in learn levels', () => {

@@ -1,12 +1,5 @@
-import { coursePosition, type Level } from '../course/catalog';
-import {
-  KIND_RULES,
-  SPAWN_INTERVAL,
-  WORD_SPEED,
-  difficultyFor,
-  valueAt,
-  type Pace,
-} from '../course/difficulty';
+import type { Level } from '../course/catalog';
+import { difficultyFor, levelTempo, type Pace } from '../course/difficulty';
 import type { WordRules } from '../course/wordRules';
 import type { RunPhase, RunPlan } from '../game/RunPlan';
 import type { ArenaDifficulty } from './difficulty';
@@ -91,13 +84,11 @@ function wavePace(wave: number, start: Pace): Pace {
 }
 
 function startingPace(bossLevel: Level, difficulty: ArenaDifficulty): Pace {
-  const position = coursePosition(bossLevel);
-  const practice = KIND_RULES.practice;
+  const { start } = levelTempo(bossLevel);
   return {
     count: WAVE_WORDS.first,
-    speed: valueAt(WORD_SPEED, position) * practice.speedFactor * difficulty.speedFactor,
-    spawnInterval:
-      valueAt(SPAWN_INTERVAL, position) * practice.intervalFactor * difficulty.spawnGapFactor,
+    speed: start.speed * difficulty.speedFactor,
+    spawnInterval: start.spawnInterval * difficulty.spawnGapFactor,
   };
 }
 
