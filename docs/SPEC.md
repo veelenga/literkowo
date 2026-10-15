@@ -366,15 +366,16 @@ Each theme also sets enemy colours, sky, fog, light and a fixed random seed for 
 
 ## Menus
 
-Owners: `src/ui/ProfileScreen.ts`, `src/ui/landing/LandingBackdrop.ts`, `src/ui/WorldMap.ts`, `src/ui/map/journeyLayout.ts`, `src/ui/map/regionArt.ts`.
+Owners: `src/ui/ProfileScreen.ts`, `src/ui/landing/LandingBackdrop.ts`, `src/ui/landing/dockRow.ts`, `src/ui/WorldMap.ts`, `src/ui/map/journeyLayout.ts`, `src/ui/map/regionArt.ts`.
 
 Profile screen:
 
 - Layered hills drift slowly behind the logo, and glowing letters float and twinkle over them. On devices that can hover, the hills lean a little toward the pointer.
 - With reduced motion or the low quality preset the hills stand still and there are no letters (`src/ui/menuMotion.ts`).
 - Each profile is a card with the rendered portrait under a spotlight, the name, the level, the rank, a thin XP bar, and pills for stars and coins.
-- The selected card lifts, glows and shows the live 3D character. The play panel comes right after it: a big Play button, then the word language chips and the delete button in a quieter row.
-- The dashed new profile card opens the create panel in its place: a large preview of the chosen character, the name field, the 18 characters and a Create button.
+- The selected card lifts, glows and shows the live 3D character. The play panel opens right under the row of the selected card, and cards from later rows move below it. The panel has a big Play button, then the word language chips and the delete button in a quieter row.
+- The dashed new profile card opens the create panel in its place: a large live preview of the chosen character that switches with every pick, the name field, the 18 characters and a Create button.
+- Long names and rank names end with an ellipsis on the cards.
 
 Map:
 
