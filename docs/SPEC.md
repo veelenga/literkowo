@@ -1,10 +1,11 @@
 # Literkowo spec
 
 This page describes the game as it is on `main` today.
-The code is the source of truth. Each section names the file that owns its numbers.
+The code is the source of truth. Each section names the file that owns its values.
+The numbers here are current values, not fixed rules. They can change in the owning file.
 When a pull request changes behaviour, it updates this page in the same pull request.
 
-Input is a physical keyboard only. The game listens to `keydown` events (`src/game/Game.ts`).
+Today the game takes input from a physical keyboard. It listens to `keydown` events (`src/game/Game.ts`).
 
 ## Regions and levels
 
@@ -18,10 +19,10 @@ Owner: `src/course/catalog.ts`.
 | `jaskinia` | Jaskinia / Печера                | cave      | `vm`, `cn`, `xz`, `b,.` | pl, en         |
 | `wyspa`    | Wyspa Ogonków / Острів Хвостиків | island    | `ąęó`, `łść`, `żźń`     | pl             |
 
-- Every region ends with a boss level that adds no new keys.
+- Today there are five regions. Each one ends with a boss level that adds no new keys.
 - Level ids are `<region>-<number>`, counted from 1. The bosses are `polana-5`, `las-4`, `gory-4`, `jaskinia-5` and `wyspa-4`.
-- Polish word profiles get 17 key levels and 5 bosses, 22 levels in total.
-- English word profiles do not see the Wyspa Ogonków region. They get 14 key levels and 4 bosses, 18 in total.
+- A region lists the word languages it supports. Wyspa Ogonków teaches Polish letters, so English word profiles do not see it.
+- With the current regions, Polish word profiles get 17 key levels and 5 bosses, 22 levels in total. English word profiles get 14 key levels and 4 bosses, 18 in total.
 - A level allows every key introduced up to and including that level (`src/course/course.ts`).
 - The first level is always open. Every other level opens once the previous level in the course has at least one star (`src/course/course.ts`).
 - Polish letters are typed with right Alt. Ctrl with Alt also counts as right Alt, so AltGr works on Windows (`src/game/Game.ts`, `src/course/fingers.ts`).
@@ -47,7 +48,7 @@ Rules during a level:
 - Escape pauses and resumes. Pause also suspends audio.
 - Words (`src/course/WordSource.ts`): when at least 12 words from `src/course/wordLists.ts` fit the allowed keys, about half of the words are real words. The rest are generated strings of 2 to 5 letters, where about half of the letters come from the new keys. Boss words are real words of 4 or more letters when at least 12 fit, otherwise generated strings of 5 to 7 letters.
 
-Stars (`src/course/scoring.ts`):
+Stars, with the current thresholds (`src/course/scoring.ts`):
 
 | Accuracy         | Stars |
 | ---------------- | ----- |
@@ -68,7 +69,7 @@ Owners: `src/profiles/Profile.ts`, `src/profiles/profileSchema.ts`, `src/profile
 - Schema version is 2 (`PROFILE_SCHEMA_VERSION`). Version 1 profiles are migrated on load. A shape change bumps the version and adds a migration.
 - Entries that cannot be read are dropped, and the raw value is copied to `literkowo.profiles.backup` first.
 - Fields: id, name (up to 16 characters, `src/ui/ProfileScreen.ts`), avatar, word language, total score, letters freed, seen stories and the best result per level.
-- Word language is Polish (default) or English and is set per profile.
+- Word language is set per profile. Today the choices are Polish (default) and English (`WORD_LANGUAGES` in `src/profiles/Profile.ts`).
 - Avatars are character skins: 18 Kenney Blocky Characters with ids `a` to `r`. Portraits are in `public/characters`, 3D models in `public/models/characters` (`src/game/Player.ts`).
 - Other keys: `literkowo.activeProfile`, `literkowo.uiLanguage`, `literkowo.sound`, `literkowo.music`, `literkowo.reloadedAfterPreloadError`.
 - When localStorage is blocked, storage falls back to memory for the session (`src/storage.ts`).
@@ -124,9 +125,10 @@ Owners: `src/audio/Sfx.ts`, `src/audio/Music.ts`, `src/audio/music/themes.ts`.
 
 Owners: `src/i18n/translations.ts`, `src/i18n/i18n.ts`.
 
-- Polish (default) and Ukrainian. The PL and UA switch is on the profile screen. The choice is saved under `literkowo.uiLanguage`.
+- Today the interface is in Polish (default) and Ukrainian. The language switch is on the profile screen. The choice is saved under `literkowo.uiLanguage`.
 - Interface language and word language are separate settings.
-- Region names and story lines carry both languages next to the data (`src/course/catalog.ts`, `src/story/story.ts`).
+- Region names and story lines carry every interface language next to the data (`src/course/catalog.ts`, `src/story/story.ts`).
+- A new interface language needs a new entry in `src/i18n/translations.ts` and text in the region and story data.
 
 ## Dev shortcut
 
