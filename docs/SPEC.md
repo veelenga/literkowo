@@ -5,7 +5,8 @@ The code is the source of truth. Each section names the file that owns its value
 The numbers here are current values, not fixed rules. They can change in the owning file.
 When a pull request changes behaviour, it updates this page in the same pull request.
 
-Today the game takes input from a physical keyboard. It listens to `keydown` events (`src/game/Game.ts`).
+The game takes input from a physical keyboard through `keydown` events (`src/game/Game.ts`).
+Touch screens can also type through a hidden input, see [Mobile and tablets](#mobile-and-tablets).
 
 ## Regions and levels
 
@@ -45,7 +46,7 @@ Rules during a level:
 
 - At most 6 enemies are on screen at once. The player has 3 lives. Losing the last life ends the level as lost.
 - Typing follows every enemy whose word starts with the letters typed so far, a key that fits none of them is a mistake, and when a word is done every enemy with that same word is done too while the others go back to untyped (`src/game/Targeting.ts`).
-- Escape pauses and resumes. Pause also suspends audio.
+- Escape pauses and resumes. Pause also suspends audio. The pause card also has a resume button, and touch screens get a pause button in the HUD.
 - Words (`src/course/WordSource.ts`): when at least 12 words from `src/course/wordLists.ts` fit the allowed keys, about half of the words are real words. The rest are generated strings of 2 to 5 letters, where about half of the letters come from the new keys. Boss words are real words of 4 or more letters when at least 12 fit, otherwise generated strings of 5 to 7 letters. New words and warm-up letters prefer a first letter that no enemy on the board is waiting for.
 
 Stars, with the current thresholds (`src/course/scoring.ts`):
@@ -149,6 +150,42 @@ Owners: `src/i18n/translations.ts`, `src/i18n/i18n.ts`.
 - Region names and story lines carry every interface language next to the data (`src/course/catalog.ts`, `src/story/story.ts`).
 - A new interface language needs a new entry in `src/i18n/translations.ts` and text in the region and story data.
 
+## Mobile and tablets
+
+Owners: `src/styles.css`, `src/ui/TouchTyping.ts`, `src/ui/keyboardFit.ts`, `src/ui/KeyboardHint.ts`, `src/game/arena.ts`, `vite.config.ts`.
+
+The course still assumes a physical keyboard. A tablet with a Bluetooth keyboard is the main target. A phone plays the game without the keyboard hint.
+
+Layout:
+
+- Phones are screens up to 600 px wide or up to 480 px tall. Tablets are up to 1024 px wide.
+- On tablets and phones the HUD shows score, combo, hearts and progress. On a phone in portrait it takes two rows.
+- The keyboard hint is hidden on phones and smaller on tablets in portrait.
+- On a phone in portrait the map trail runs from top to bottom.
+- Touch targets are at least 44 px on touch screens. Hover effects apply only on devices that can hover.
+- The app is `100dvh` tall. The HUD, the keyboard hint, the map header and overlays stay inside the safe area insets.
+- The camera keeps a horizontal field of view of at least 62 degrees, so the whole spawn arc stays in frame on narrow and portrait screens. The vertical field of view grows when needed and never drops below 42 degrees (`src/game/arena.ts`).
+
+Touch input:
+
+- With a coarse pointer, a level adds a hidden input to the stage. A tap on the stage or on the "Stuknij, aby pisać" pill focuses it and opens the native keyboard.
+- Characters from its `input` events go to `Game.typeCharacter`, the same path that `keydown` uses. During a composition only the new characters count. Backspace does nothing.
+- The keyboard hint is tappable. Right Alt is sticky: tap it, then a letter, to type the Polish letter.
+- While the native keyboard is open, the level screen follows the visual viewport, so the scene and the keyboard hint stay above it. The keyboard counts as open when the visual viewport is at least 150 px shorter than the page and the page is not zoomed (`src/ui/keyboardFit.ts`).
+- The pill hides while the native keyboard is open. It hides for the rest of the session once a key arrives while the native keyboard is closed, which means a physical keyboard.
+- Resuming from the pause card focuses the hidden input again.
+
+Performance:
+
+- In auto quality, touch screens get the low preset: pixel ratio at most 1, dynamic resolution down to 0.75, no MSAA, no bloom and a 512 px shadow map (`src/game/quality.ts`).
+- The live 3D portrait preview is off on touch screens. They show the static portrait (`src/ui/LivePreview.ts`).
+
+Install and offline:
+
+- `vite-plugin-pwa` writes the web manifest: name Literkowo, standalone display, theme colour `#070b1a`, background `#050816`, start URL and scope from the base path.
+- The service worker precaches the build and caches files under `models/` at runtime, cache first. It registers only in production builds (`src/app/serviceWorker.ts`).
+- Icons come from `public/icon.svg` and `public/icon-maskable.svg` through `npm run icons`.
+
 ## Dev shortcut
 
 Owners: `src/app/devShortcut.ts`, `src/app/App.ts`.
@@ -164,8 +201,7 @@ Not built yet. In this order:
 1. Power words
 2. Merging enemies
 3. Boss phases and attacks
-4. Mobile support
-5. Mid-wave events
-6. Coins shop and pets
-7. Runner segments
-8. Sibling race and arena
+4. Mid-wave events
+5. Coins shop and pets
+6. Runner segments
+7. Sibling race and arena
