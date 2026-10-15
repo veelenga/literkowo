@@ -66,6 +66,7 @@ export class App {
   private readonly arena = new ArenaFlow({
     showMenu: (create) => this.showMenu(create),
     showMap: (profile) => this.showMap(profile),
+    showShop: (profile, exit, tab) => this.showShop(profile, exit, tab),
     startRun: (profile, run) => this.startRun(profile, run),
     openOverlay: (overlay) => this.overlays.open(overlay),
     dismissThen: (next) => this.dismissThen(next),
@@ -332,6 +333,7 @@ export class App {
           onNext: next ? leave((current) => this.openLevel(current, next)) : undefined,
           onRetry: this.dismissThen(() => this.openLevel(updated, level)),
           onMap: leave((current) => this.showMap(current)),
+          onShop: (tab) => leave((current) => this.showShop(current, this.backToMap(), tab))(),
         },
       ),
     );

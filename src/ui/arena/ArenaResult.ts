@@ -8,7 +8,7 @@ import { el, prefersReducedMotion } from '../dom';
 import { statTile, type LevelRewards } from '../LevelResult';
 import { createOverlay, KEY_READY_MS, onWindowKeyAfter, type Overlay } from '../overlay';
 import { ResultProgress } from '../ResultProgress';
-import { treasuresNote } from '../resultTreasures';
+import { treasuresNote, type OpenShop } from '../resultTreasures';
 import { medalBadge, nextMedalHint } from './arenaParts';
 
 const REVEAL_DELAY_MS = 700;
@@ -26,6 +26,7 @@ export interface ArenaRunSummary {
 interface ArenaResultActions {
   onArena: () => void;
   onRetry: () => void;
+  onShop: OpenShop;
 }
 
 export function arenaResult(summary: ArenaRunSummary, actions: ArenaResultActions): Overlay {
@@ -45,7 +46,7 @@ export function arenaResult(summary: ArenaRunSummary, actions: ArenaResultAction
     el('p', { class: 'result-hint', text: nextMedalHint(medal) }),
     el('div', { class: 'result-stats' }, ...tiles.map((tile) => tile.element)),
     progress.element,
-    treasuresNote(earned.treasures),
+    treasuresNote(earned.treasures, actions.onShop),
     actionsRow(actions),
   );
   const revealTimer = window.setTimeout(

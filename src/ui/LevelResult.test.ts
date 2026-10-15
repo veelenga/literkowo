@@ -27,7 +27,7 @@ const REWARDS = {
 };
 
 function actions() {
-  return { onNext: vi.fn(), onRetry: vi.fn(), onMap: vi.fn() };
+  return { onNext: vi.fn(), onRetry: vi.fn(), onMap: vi.fn(), onShop: vi.fn() };
 }
 
 function pressEnter(): void {

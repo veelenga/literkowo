@@ -4,10 +4,12 @@ import { hasNewItems } from '../course/inventory';
 import { practiceDay } from '../course/keyStats';
 import { freshTrophies } from '../course/trophies';
 import type { GameResult } from '../game/Game';
+import { i18n } from '../i18n/i18n';
 import type { Profile } from '../profiles/Profile';
 import { arenaResult, type ArenaRunSummary } from '../ui/arena/ArenaResult';
 import { ArenaScreen } from '../ui/arena/ArenaScreen';
 import type { Overlay } from '../ui/overlay';
+import type { ShopExit, ShopTab } from '../ui/ShopScreen';
 import type { GameRun } from './GameRun';
 
 export interface Screen {
@@ -18,6 +20,7 @@ export interface Screen {
 export interface ArenaHost {
   showMenu(create: () => Screen): void;
   showMap(profile: Profile): void;
+  showShop(profile: Profile, exit: ShopExit, tab?: ShopTab): void;
   startRun(profile: Profile, run: GameRun): void;
   openOverlay(overlay: Overlay): void;
   dismissThen(next: () => void): () => void;
@@ -58,7 +61,17 @@ export class ArenaFlow {
       arenaResult(summaryOf(profile, updated, result, outcome), {
         onArena: this.host.dismissThen(() => this.show(updated, choice)),
         onRetry: this.host.dismissThen(() => this.start(updated, choice)),
+        onShop: (tab) => this.host.dismissThen(() => this.openShop(updated, choice, tab))(),
       }),
+    );
+  }
+
+  private openShop(profile: Profile, choice: ArenaChoice, tab?: ShopTab): void {
+    const backLabel = i18n.t.features.arena.title;
+    this.host.showShop(
+      profile,
+      { onBack: (current) => this.show(current, choice), backLabel },
+      tab,
     );
   }
 }
