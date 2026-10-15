@@ -1,5 +1,6 @@
 import type { UiLanguage } from '../translations';
 import { bombers, speedSurge, twins } from './actionEvents';
+import { arena } from './arena';
 import { bossPhases } from './bossPhases';
 import { course } from './course';
 import { enemyTypes } from './enemyTypes';
@@ -32,5 +33,6 @@ export function featureTexts(language: UiLanguage) {
     shop: shop[language],
     worldMap: worldMap[language],
     course: course[language],
+    arena: arena[language],
   };
 }
