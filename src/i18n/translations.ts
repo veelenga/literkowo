@@ -1,3 +1,5 @@
+import { featureTexts } from './features';
+
 export type UiLanguage = 'pl' | 'uk';
 
 const pl = {
@@ -53,6 +55,7 @@ const pl = {
   sound: 'Dźwięk',
   chapter: 'Rozdział',
   rightShort: 'prawy',
+  features: featureTexts('pl'),
   fingers: {
     leftPinky: 'lewy mały',
     leftRing: 'lewy serdeczny',
@@ -121,6 +124,7 @@ const uk: Translation = {
   sound: 'Звук',
   chapter: 'Розділ',
   rightShort: 'правий',
+  features: featureTexts('uk'),
   fingers: {
     leftPinky: 'лівий мізинець',
     leftRing: 'лівий підмізинний',

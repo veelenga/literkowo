@@ -11,9 +11,13 @@ import {
   SPAWN_RADIUS,
 } from './arena';
 import { Boss } from './Boss';
+import { CameraShake } from './CameraShake';
 import { Enemy, type EnemyLook } from './Enemy';
 import { LabelLayer } from './LabelLayer';
 import { planFor, type Phase, type PhaseKind } from './LevelPlan';
+import { createMechanics } from './mechanics';
+import type { AnnounceStyle, MechanicContext } from './mechanics/Mechanic';
+import { MechanicGroup } from './mechanics/MechanicGroup';
 import { Particles } from './Particles';
 import { Player } from './Player';
 import { renderHost } from './RenderHost';
@@ -36,7 +40,7 @@ const MAX_ENEMIES = 6;
 const INITIAL_LIVES = 3;
 const SHAKE_DURATION = 0.25;
 const SHAKE_AMPLITUDE = 0.18;
-const BURST_DROP = 0.8;
+const SHIELD_IMPACT = 0.5;
 const FINISH_DELAY_MS = 1100;
 
 export interface GameConfig {
@@ -65,6 +69,7 @@ export interface GameEvents {
   onNextKey(char: string | undefined): void;
   onPause(paused: boolean): void;
   onProgress(progress: Progress): void;
+  onAnnounce(text: string, style: AnnounceStyle, accent?: string): void;
   onFinished(result: GameResult): void;
 }
 
@@ -81,16 +86,18 @@ export class Game {
   private readonly labels: LabelLayer;
   private readonly phases: Phase[];
   private readonly enemies: Enemy[] = [];
+  private readonly mechanics = new MechanicGroup();
+  private readonly shake = new CameraShake();
   private phaseIndex = 0;
   private spawned = 0;
-  private cleared = 0;
   private boss: Boss | undefined;
   private target: Enemy | undefined;
   private lives = INITIAL_LIVES;
+  private shields = 0;
+  private timeScale = 1;
   private lettersFreed = 0;
   private elapsed = 0;
   private sinceSpawn = Number.POSITIVE_INFINITY;
-  private shake = 0;
   private paused = false;
   private finished = false;
   private running = false;
@@ -109,6 +116,7 @@ export class Game {
     this.placeCameraForIntro();
     renderHost.attach(container, this.scene, this.camera);
     this.labels = new LabelLayer(container);
+    this.mechanics.register(createMechanics(this.createMechanicContext()));
   }
 
   start(): void {
@@ -116,6 +124,7 @@ export class Game {
     window.addEventListener('keydown', this.onKeyDown);
     this.events.onStats(this.stats, this.lives);
     this.reportProgress();
+    this.mechanics.onPhaseChange(this.phase);
     this.loop();
   }
 
@@ -123,6 +132,7 @@ export class Game {
     this.running = false;
     cancelAnimationFrame(this.frame);
     window.removeEventListener('keydown', this.onKeyDown);
+    this.mechanics.dispose();
     this.releaseEnemies();
     this.world.dispose();
     this.particles.dispose();
@@ -133,11 +143,49 @@ export class Game {
   }
 
   private get phase(): Phase {
-    return this.phases[this.phaseIndex];
+    return this.phases[Math.min(this.phaseIndex, this.phases.length - 1)];
   }
 
   private get inIntro(): boolean {
     return this.elapsed < CAMERA_INTRO_DURATION;
+  }
+
+  private get isPlaying(): boolean {
+    return !this.inIntro && !this.finished;
+  }
+
+  private createMechanicContext(): MechanicContext {
+    const phase = (): Phase => this.phase;
+    const playing = (): boolean => this.isPlaying;
+    const shields = (): number => this.shields;
+    return {
+      enemies: this.enemies,
+      player: this.player,
+      scene: this.scene,
+      particles: this.particles,
+      stats: this.stats,
+      theme: this.config.theme,
+      sfx,
+      words: this.words,
+      get phase() {
+        return phase();
+      },
+      get playing() {
+        return playing();
+      },
+      get shields() {
+        return shields();
+      },
+      createLabel: () => this.labels.createLabel(),
+      addEnemy: (enemy, radius) => this.addEnemy(enemy, radius),
+      removeEnemy: (enemy) => this.clearEnemy(enemy),
+      spawnWord: (word) => this.spawnWord(word),
+      setTimeScale: (scale) => this.setTimeScale(scale),
+      shakeCamera: (strength, seconds) => this.shake.start(strength, seconds),
+      announce: (text, style, accent) => this.events.onAnnounce(text, style, accent),
+      loseLife: () => this.loseLife(),
+      absorbNextHit: () => this.addShield(),
+    };
   }
 
   private placeCameraForIntro(): void {
@@ -167,18 +215,21 @@ export class Game {
     this.world.update(delta, this.elapsed);
     this.player.update(delta, this.elapsed);
     this.particles.update(delta);
+    this.mechanics.update(delta, this.elapsed);
     this.updateCamera(delta);
     if (this.finished) return;
-    if (!this.inIntro) this.spawnIfDue(delta);
-    this.updateEnemies(delta);
+    const worldDelta = delta * this.timeScale;
+    if (!this.inIntro) this.spawnIfDue(worldDelta);
+    this.updateEnemies(worldDelta);
     this.stats.addActiveTime(delta);
     if (this.target) this.player.lookAt(this.target.object.position);
     this.events.onNextKey(this.nextExpectedChar());
   }
 
   private updateEnemies(delta: number): void {
-    for (let index = this.enemies.length - 1; index >= 0 && !this.finished; index -= 1) {
-      const enemy = this.enemies[index];
+    for (const enemy of [...this.enemies]) {
+      if (this.finished) return;
+      if (!this.enemies.includes(enemy)) continue;
       enemy.update(delta, this.elapsed, this.camera.position);
       if (enemy.distanceToCenter < REACH_DISTANCE) this.enemyReached(enemy);
     }
@@ -191,26 +242,31 @@ export class Game {
     const sway = Math.sin(this.elapsed * CAMERA_SWAY_SPEED) * CAMERA_SWAY;
     this.camera.position.copy(CAMERA_POSITION).multiplyScalar(scale);
     this.camera.position.x += sway;
-    this.applyShake(delta);
+    this.shake.apply(this.camera.position, delta);
     this.camera.lookAt(this.cameraTarget);
   }
 
   private spawnIfDue(delta: number): void {
     if (this.phase.kind === 'boss') return this.spawnBossOnce();
     this.sinceSpawn += delta;
-    const remaining = this.spawned < this.phase.count;
-    if (
-      !remaining ||
-      this.sinceSpawn < this.phase.spawnInterval ||
-      this.enemies.length >= MAX_ENEMIES
-    ) {
-      return;
-    }
+    if (!this.isSpawnDue()) return;
     this.sinceSpawn = 0;
     this.spawned += 1;
-    const word = this.phase.kind === 'warmup' ? this.words.singleLetter() : this.words.next();
+    this.spawnWord(this.phase.kind === 'warmup' ? this.words.singleLetter() : this.words.next());
+  }
+
+  private isSpawnDue(): boolean {
+    return (
+      this.spawned < this.phase.count &&
+      this.sinceSpawn >= this.phase.spawnInterval &&
+      this.enemies.length < MAX_ENEMIES
+    );
+  }
+
+  private spawnWord(word = this.words.next()): Enemy {
     const enemy = new Enemy(word, this.labels.createLabel(), this.phase.speed, this.look());
     this.addEnemy(enemy, SPAWN_RADIUS);
+    return enemy;
   }
 
   private spawnBossOnce(): void {
@@ -229,14 +285,16 @@ export class Game {
     return { shape: this.config.theme.enemyShape, colors: this.config.theme.enemyColors };
   }
 
-  private addEnemy(enemy: Enemy, radius: number): void {
-    const angle = Math.PI - SPAWN_ARC_MARGIN + Math.random() * (Math.PI + SPAWN_ARC_MARGIN * 2);
-    enemy.object.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+  private addEnemy(enemy: Enemy, radius?: number): void {
+    if (radius !== undefined) placeOnSpawnArc(enemy, radius);
     this.scene.add(enemy.object);
     this.enemies.push(enemy);
+    this.mechanics.onSpawn(enemy);
   }
 
   private enemyReached(enemy: Enemy): void {
+    this.mechanics.onEnemyReached(enemy);
+    if (!this.enemies.includes(enemy)) return;
     if (this.phase.kind === 'warmup') return this.clearEnemy(enemy);
     if (enemy instanceof Boss) enemy.reset();
     else this.clearEnemy(enemy);
@@ -244,34 +302,57 @@ export class Game {
   }
 
   private loseLife(): void {
+    if (this.finished || this.absorbHit()) return;
     this.lives -= 1;
-    this.shake = SHAKE_DURATION;
+    this.shake.start(SHAKE_AMPLITUDE, SHAKE_DURATION);
     this.player.hurt();
-    this.stats.recordMistake();
+    this.recordMistake();
     sfx.lifeLost();
     this.events.onStats(this.stats, this.lives);
     if (this.lives <= 0) this.finish(false);
   }
 
+  private addShield(): void {
+    this.shields += 1;
+  }
+
+  private absorbHit(): boolean {
+    if (this.shields <= 0) return false;
+    this.shields -= 1;
+    sfx.impact(SHIELD_IMPACT);
+    return true;
+  }
+
+  private setTimeScale(scale: number): void {
+    this.timeScale = Math.max(0, scale);
+  }
+
   private clearEnemy(enemy: Enemy): void {
-    this.remove(enemy);
-    this.cleared += 1;
+    if (!this.remove(enemy)) return;
     this.reportProgress();
-    if (this.cleared >= this.phase.count) this.advancePhase();
+    if (this.isPhaseCleared()) this.advancePhase();
+  }
+
+  private isPhaseCleared(): boolean {
+    return (
+      this.phase.kind !== 'boss' && this.spawned >= this.phase.count && this.enemies.length === 0
+    );
   }
 
   private advancePhase(): void {
     this.phaseIndex += 1;
     this.spawned = 0;
-    this.cleared = 0;
     this.sinceSpawn = Number.POSITIVE_INFINITY;
     if (this.phaseIndex >= this.phases.length) return this.finish(true);
     this.reportProgress();
+    this.mechanics.onPhaseChange(this.phase);
   }
 
   private reportProgress(): void {
     const total = this.phase.count;
-    const done = this.boss ? total - Math.round(this.boss.health * total) : this.cleared;
+    const done = this.boss
+      ? total - Math.round(this.boss.health * total)
+      : THREE.MathUtils.clamp(this.spawned - this.enemies.length, 0, total);
     this.events.onProgress({ kind: this.phase.kind, done, total });
   }
 
@@ -313,10 +394,12 @@ export class Game {
   private handleChar(char: string): void {
     if (!this.target) this.acquireTarget(char);
     if (!this.target || this.target.expectedChar !== char) return this.mistake();
-    this.target.advance();
+    const target = this.target;
+    target.advance();
     this.stats.recordHit();
     sfx.hit(this.stats.combo);
-    if (this.target.isComplete) this.completeWord(this.target);
+    this.mechanics.onHit();
+    if (target.isComplete) this.completeWord(target);
     this.events.onStats(this.stats, this.lives);
   }
 
@@ -326,7 +409,7 @@ export class Game {
   }
 
   private mistake(): void {
-    this.stats.recordMistake();
+    this.recordMistake();
     this.target?.flashMistake();
     sfx.mistake();
     this.events.onStats(this.stats, this.lives);
@@ -336,8 +419,8 @@ export class Game {
     this.stats.recordWord(enemy.word);
     this.lettersFreed += enemy.word.length;
     this.player.jump();
-    const burstAt = enemy.object.position.clone().setY(enemy.labelHeight - BURST_DROP);
-    this.particles.burst(burstAt, enemy.color);
+    this.particles.burst(enemy.burstPosition, enemy.color);
+    this.mechanics.onWordComplete(enemy);
     if (enemy instanceof Boss) return this.hitBoss(enemy);
     sfx.word();
     this.clearEnemy(enemy);
@@ -355,24 +438,29 @@ export class Game {
     this.advancePhase();
   }
 
-  private remove(enemy: Enemy): void {
+  private recordMistake(): void {
+    this.stats.recordMistake();
+    this.mechanics.onMistake();
+  }
+
+  private remove(enemy: Enemy): boolean {
+    const index = this.enemies.indexOf(enemy);
+    if (index < 0) return false;
     if (this.target === enemy) this.target = undefined;
     this.scene.remove(enemy.object);
     enemy.dispose();
-    this.enemies.splice(this.enemies.indexOf(enemy), 1);
+    this.enemies.splice(index, 1);
+    return true;
   }
 
   private nextExpectedChar(): string | undefined {
     return (this.target ?? nearestEnemy(this.enemies))?.expectedChar;
   }
+}
 
-  private applyShake(delta: number): void {
-    if (this.shake <= 0) return;
-    this.shake -= delta;
-    const strength = (this.shake / SHAKE_DURATION) * SHAKE_AMPLITUDE;
-    this.camera.position.x += (Math.random() - 0.5) * strength;
-    this.camera.position.y += (Math.random() - 0.5) * strength;
-  }
+function placeOnSpawnArc(enemy: Enemy, radius: number): void {
+  const angle = Math.PI - SPAWN_ARC_MARGIN + Math.random() * (Math.PI + SPAWN_ARC_MARGIN * 2);
+  enemy.object.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
 }
 
 function nearestEnemy(
