@@ -104,8 +104,11 @@ Rules during a level:
 - Typing follows every enemy whose word starts with the letters typed so far, a key that fits none of them is a mistake, and when a word is done every enemy with that same word is done too while the others go back to untyped (`src/game/Targeting.ts`).
 - Escape pauses and resumes. Pause also suspends audio. The pause card also has a resume button, a quiet "Ustawienia" / "Налаштування" button with a gear and the key heatmap, and touch screens get a pause button in the HUD. The settings button opens the [Settings](#settings) screen over the paused level. Graphics quality is picked there, not on the pause card.
 - Every correct letter fires a bolt from the hero to the nearest enemy being typed, and every finished word gets a lightning strike with a soft crack and a small camera punch, 30 ms apart when several words finish on one key (`src/game/mechanics/HeroStrikes.ts`). The strikes turn from the world's accent colour toward gold as the combo grows and are fully golden in fever, while a glow under the hero charges with the combo up to 15.
-- Words (`src/course/WordSource.ts`): when at least 12 words from `src/course/wordLists.ts` fit the allowed keys and the length limits of the level, about half of the words are real words, preferring words with a focus key. The rest are generated strings within the generated length limits, where about half of the letters come from the focus keys. Boss words are real words of 4 or more letters when at least 12 fit, otherwise generated strings of 5 to 7 letters. New words and warm-up letters prefer a first letter that no enemy on the board is waiting for. Generated letters and real words lean toward the player's weak keys, see [Key mastery](#key-mastery).
-- The learn phase teaches the new key in two halves. In the first half every enemy is a combo of 1 or 2 letters with the new key and maybe a known key, for example `f` `j` `fj` `jf` `ff` `jj`. In the second half the words have 2 or 3 letters with the new key: a real word about half of the time when at least 3 such words fit, otherwise a generated one.
+- Words (`src/course/WordSource.ts`): the main phase of a level runs its word stages in order, see [Difficulty](#difficulty). Each stage takes a share of the phase's words and has its own kind and length limits (`src/course/wordStages.ts`). In the first half of a stage the longest word is one letter shorter, as long as the stage keeps at least two lengths, so `2 to 4` starts as `2 to 3`.
+  - `combos`: a generated string with at least one focus key, the other letters from the focus keys about half of the time and from all known keys otherwise, for example `f` `fj` `jf` `fjj`.
+  - `focusWords`: a real word with a focus key about half of the time when at least 3 such words fit, otherwise a combo.
+  - `words`: when at least 12 words from `src/course/wordLists.ts` fit the allowed keys and the length limits, about half of the words are real words, preferring words with a focus key. The rest are generated strings within the generated length limits, where about half of the letters come from the focus keys.
+- Boss words are real words of 4 or more letters when at least 12 fit, otherwise generated strings of 5 to 7 letters. New words and warm-up letters prefer a first letter that no enemy on the board is waiting for. Generated letters and real words lean toward the player's weak keys, see [Key mastery](#key-mastery). Words that features add, such as minions, use the full length limits of the level.
 - The learn phase is calm. Special enemies, mid-wave events, speed surges, bombers, twins, power words and merging run only in the words phase and in boss fights, so learn levels have none of them.
 
 Stars, with the current thresholds (`src/course/scoring.ts`). They are judged on the accuracy rounded to a whole percent, the same number the result card and the HUD show, so 92.5% shows as 93% and earns 2 stars:
@@ -127,17 +130,17 @@ Owner: `src/course/difficulty.ts`. Every pace and length limit comes from the ki
 
 Position is `order / (number of levels − 1)`, from 0 at `polana-1` to 1 at `wyspa-24`. Order counts every level of the catalog from 0, bosses included, so an English course ends at `jaskinia-24`, position 0.76. A value written as "a to b" grows in a straight line from a at position 0 to b at position 1.
 
-| Value          | Learn                        | Practice                    | Review                      |
-| -------------- | ---------------------------- | --------------------------- | --------------------------- |
-| Warm-up        | 8 letters, speed 0.42, 1.6 s | 5 letters, speed 0.5, 1.5 s | 5 letters, speed 0.5, 1.5 s |
-| Main phase     | `learn`                      | `words`                     | `words`                     |
-| Words          | 8 to 12                      | 10 to 16                    | 12 to 20                    |
-| Speed          | 0.8 × word speed             | word speed                  | word speed                  |
-| Spawn interval | 1.15 × spawn interval        | spawn interval              | spawn interval              |
-| Word length    | 1 to 3 letters               | 2 to 4 letters              | 2 to 5 letters              |
+| Value          | Learn                                                                  | Practice                                                              | Review                      |
+| -------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------- |
+| Warm-up        | 8 letters, speed 0.42, 1.6 s                                           | 5 letters, speed 0.5, 1.5 s                                           | 5 letters, speed 0.5, 1.5 s |
+| Main phase     | `learn`                                                                | `words`                                                               | `words`                     |
+| Words          | 8 to 12                                                                | 10 to 16                                                              | 12 to 20                    |
+| Speed          | 0.8 × word speed                                                       | word speed                                                            | word speed                  |
+| Spawn interval | 1.15 × spawn interval                                                  | spawn interval                                                        | spawn interval              |
+| Word stages    | `combos` 1 to 3 letters for 60% of the words, then `focusWords` 2 to 3 | `focusWords` 2 to 3 letters for 20% of the words, then `words` 2 to 4 | `words` 2 to 5 letters      |
 
 - Word speed is 0.52 to 1.2 (`WORD_SPEED`). Spawn interval is 3.8 to 1.9 seconds (`SPAWN_INTERVAL`). Word counts are rounded.
-- Generated words have at most `round(3 to 5)` letters (`GENERATED_MAX_LENGTH`) and never more than the kind allows, so early levels get generated strings of at most 3 letters. Real words use the full length of the kind.
+- Generated words of a `words` stage have at most `round(3 to 5)` letters (`GENERATED_MAX_LENGTH`) and never more than the stage allows, so early levels get generated strings of at most 3 letters. Real words and combos use the full length of the stage.
 - Boss: `round(4 to 14)` words (`BOSS_HITS`), so 6, 7, 9, 12 and 14 for the five bosses, at speed 0.3 to 0.52 (`BOSS_SPEED`). Other enemies in a boss fight use 2 to 5 letters.
 - An enemy walks 9.4 units from the spawn arc to the hero. In the first level a letter takes about 22 seconds to reach the hero, and in the second level a word takes about 18 seconds. Before this course, a word in the first level took about 13 seconds.
 - Apart from warm-ups and the rush and meteor events, single letters show only in learn levels.

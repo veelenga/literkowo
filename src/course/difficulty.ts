@@ -1,4 +1,5 @@
 import { coursePosition, type Level, type LevelKind } from './catalog';
+import { stagesSpan } from './wordStages';
 
 export interface Span {
   readonly first: number;
@@ -20,11 +21,20 @@ export interface Pace extends Tempo {
   readonly rampTo?: Tempo;
 }
 
+export type WordStageKind = 'combos' | 'focusWords' | 'words';
+
+export interface WordStage {
+  readonly kind: WordStageKind;
+  readonly share: number;
+  readonly lengths: LetterRange;
+}
+
 export interface Difficulty {
   readonly warmup: Pace | undefined;
   readonly main: Pace;
   readonly lengths: LetterRange;
   readonly generatedLengths: LetterRange;
+  readonly stages: readonly WordStage[];
 }
 
 type TeachingKind = Exclude<LevelKind, 'boss'>;
@@ -34,7 +44,7 @@ interface KindRules {
   readonly wordCount: Span;
   readonly speedFactor: number;
   readonly intervalFactor: number;
-  readonly lengths: LetterRange;
+  readonly stages: readonly WordStage[];
 }
 
 export const WORD_SPEED: Span = { first: 0.52, last: 1.2 };
@@ -43,11 +53,10 @@ export const GENERATED_MAX_LENGTH: Span = { first: 3, last: 5 };
 export const BOSS_HITS: Span = { first: 4, last: 14 };
 export const BOSS_SPEED: Span = { first: 0.3, last: 0.52 };
 export const BOSS_LENGTHS: LetterRange = { min: 2, max: 5 };
-export const LEARN_STAGES = {
-  comboShare: 0.5,
-  combos: { min: 1, max: 2 },
-  words: { min: 2, max: 3 },
-} as const;
+export const COMBO_LENGTHS: LetterRange = { min: 1, max: 3 };
+export const FOCUS_WORD_LENGTHS: LetterRange = { min: 2, max: 3 };
+export const PRACTICE_LENGTHS: LetterRange = { min: 2, max: 4 };
+export const REVIEW_LENGTHS: LetterRange = { min: 2, max: 5 };
 
 export const KIND_RULES: Readonly<Record<TeachingKind, KindRules>> = {
   learn: {
@@ -55,30 +64,38 @@ export const KIND_RULES: Readonly<Record<TeachingKind, KindRules>> = {
     wordCount: { first: 8, last: 12 },
     speedFactor: 0.8,
     intervalFactor: 1.15,
-    lengths: { min: LEARN_STAGES.combos.min, max: LEARN_STAGES.words.max },
+    stages: [
+      { kind: 'combos', share: 0.6, lengths: COMBO_LENGTHS },
+      { kind: 'focusWords', share: 0.4, lengths: FOCUS_WORD_LENGTHS },
+    ],
   },
   practice: {
     warmup: { count: 5, speed: 0.5, spawnInterval: 1.5 },
     wordCount: { first: 10, last: 16 },
     speedFactor: 1,
     intervalFactor: 1,
-    lengths: { min: 2, max: 4 },
+    stages: [
+      { kind: 'focusWords', share: 0.2, lengths: FOCUS_WORD_LENGTHS },
+      { kind: 'words', share: 0.8, lengths: PRACTICE_LENGTHS },
+    ],
   },
   review: {
     warmup: { count: 5, speed: 0.5, spawnInterval: 1.5 },
     wordCount: { first: 12, last: 20 },
     speedFactor: 1,
     intervalFactor: 1,
-    lengths: { min: 2, max: 5 },
+    stages: [{ kind: 'words', share: 1, lengths: REVIEW_LENGTHS }],
   },
 };
 
 const NO_SPAWN_INTERVAL = 0;
+const NO_STAGES: readonly WordStage[] = [];
 
 export function difficultyFor(level: Level): Difficulty {
   const position = coursePosition(level);
   if (level.kind === 'boss') return bossDifficulty(position);
   const rules = KIND_RULES[level.kind];
+  const lengths = stagesSpan(rules.stages);
   return {
     warmup: rules.warmup,
     main: {
@@ -86,8 +103,9 @@ export function difficultyFor(level: Level): Difficulty {
       speed: valueAt(WORD_SPEED, position) * rules.speedFactor,
       spawnInterval: valueAt(SPAWN_INTERVAL, position) * rules.intervalFactor,
     },
-    lengths: rules.lengths,
-    generatedLengths: generatedWithin(rules.lengths, position),
+    lengths,
+    generatedLengths: generatedWithin(lengths, position),
+    stages: rules.stages,
   };
 }
 
@@ -101,6 +119,7 @@ function bossDifficulty(position: number): Difficulty {
     },
     lengths: BOSS_LENGTHS,
     generatedLengths: generatedWithin(BOSS_LENGTHS, position),
+    stages: NO_STAGES,
   };
 }
 

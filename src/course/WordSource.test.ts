@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { levelWords, requireLevel } from '../testing/levels';
-import { difficultyFor, LEARN_STAGES } from './difficulty';
+import { difficultyFor, FOCUS_WORD_LENGTHS, PRACTICE_LENGTHS } from './difficulty';
 import { LEVELS, allowedKeysFor } from './regions';
 import { WORD_LISTS } from './wordLists';
 import type { WordRules } from './wordRules';
@@ -11,6 +11,9 @@ const RARE_SAMPLES = 10;
 const WEIGHTED_SAMPLES = 3000;
 const WEAK_WEIGHT = 3;
 const CLEAR_PREFERENCE = 1.5;
+const SHORT_COMBO = 2;
+const EARLY_WORDS = 0.3;
+const LAST_SPAWN = 0.99;
 const PHASE_RULES: WordRules = {
   allowedKeys: 'kot',
   focusKeys: 'k',
@@ -32,7 +35,7 @@ describe('WordSource', () => {
       const allowed = allowedKeysFor(level);
       const source = levelWords(level, 'pl');
       for (let i = 0; i < SAMPLES; i += 1) {
-        for (const char of source.next() + source.learnWord(i / SAMPLES)) {
+        for (const char of source.next() + source.stagedWord(i / SAMPLES)) {
           expect(allowed).toContain(char);
         }
       }
@@ -63,31 +66,45 @@ describe('WordSource', () => {
   it('shows only f and j in the first level', () => {
     const source = levelWords(requireLevel('polana-1'), 'pl');
     for (let i = 0; i < SAMPLES; i += 1) {
-      const word = source.singleLetter() + source.learnWord(i / SAMPLES) + source.next();
+      const word = source.singleLetter() + source.stagedWord(i / SAMPLES) + source.next();
       expect(word).toMatch(/^[fj]+$/);
     }
   });
 
-  it('teaches the new key with combos before short words', () => {
-    const level = requireLevel('polana-4');
-    const source = levelWords(level, 'pl');
+  it('teaches the new key with short combos before short words', () => {
+    const source = levelWords(requireLevel('polana-4'), 'pl');
     for (let i = 0; i < SAMPLES; i += 1) {
-      const combo = source.learnWord(0);
-      const short = source.learnWord(1);
+      const combo = source.stagedWord(0);
+      const short = source.stagedWord(LAST_SPAWN);
       expect(combo).toContain('d');
-      expect(combo.length).toBeLessThanOrEqual(LEARN_STAGES.combos.max);
+      expect(combo.length).toBeLessThanOrEqual(SHORT_COMBO);
       expect(short).toContain('d');
-      expect(short.length).toBeGreaterThanOrEqual(LEARN_STAGES.words.min);
-      expect(short.length).toBeLessThanOrEqual(LEARN_STAGES.words.max);
+      expect(short.length).toBeGreaterThanOrEqual(FOCUS_WORD_LENGTHS.min);
+      expect(short.length).toBeLessThanOrEqual(FOCUS_WORD_LENGTHS.max);
     }
   });
 
   it('brings in short real words with the new key when the lists have them', () => {
     const source = levelWords(requireLevel('polana-14'), 'pl');
-    const words = new Set(Array.from({ length: SAMPLES }, () => source.learnWord(1)));
+    const words = new Set(Array.from({ length: SAMPLES }, () => source.stagedWord(LAST_SPAWN)));
     const real = [...words].filter((word) => WORD_LISTS.pl.includes(word));
     expect(real.length).toBeGreaterThan(0);
     for (const word of real) expect(word).toContain('a');
+  });
+
+  it('opens a practice level with words of the new key and grows the length after', () => {
+    const source = levelWords(requireLevel('las-12'), 'pl');
+    const sample = (progress: number) =>
+      Array.from({ length: SAMPLES }, () => source.stagedWord(progress));
+    const opening = sample(0);
+    const early = sample(EARLY_WORDS);
+    const late = sample(LAST_SPAWN);
+    for (const word of opening) {
+      expect(word).toContain('r');
+      expect(word.length).toBeLessThanOrEqual(FOCUS_WORD_LENGTHS.max);
+    }
+    for (const word of early) expect(word.length).toBeLessThan(PRACTICE_LENGTHS.max);
+    expect(late.some((word) => word.length === PRACTICE_LENGTHS.max)).toBe(true);
   });
 
   it('warm-up letters come from the focus keys of the level', () => {

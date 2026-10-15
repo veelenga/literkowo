@@ -401,10 +401,7 @@ export class Game {
   private nextSpawnWord(): string {
     const taken = this.liveStarts();
     if (this.phase.kind === 'warmup') return this.words.singleLetter(taken);
-    if (this.phase.kind === 'learn') {
-      return this.words.learnWord(this.spawned / this.phase.count, taken);
-    }
-    return this.words.next(taken);
+    return this.words.stagedWord(this.spawned / this.phase.count, taken);
   }
 
   private nextWord(): string {

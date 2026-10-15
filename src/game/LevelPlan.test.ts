@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { LevelKind } from '../course/catalog';
 import { COINS_PER_WORD } from '../course/coins';
+import { KIND_RULES } from '../course/difficulty';
 import { LEVELS, REGIONS, type Level } from '../course/regions';
 import { requireLevel } from '../testing/levels';
 import { LEVEL_LIVES, LEVEL_XP_FACTOR, levelPhases, levelPlan } from './LevelPlan';
@@ -47,6 +48,7 @@ describe('levelPlan', () => {
       focusKeys: 'fj',
       lengths: { min: 1, max: 3 },
       generatedLengths: { min: 1, max: 3 },
+      stages: KIND_RULES.learn.stages,
     });
   });
 
@@ -65,6 +67,7 @@ describe('levelPlan', () => {
       focusKeys: 'd',
       lengths: { min: 2, max: 4 },
       generatedLengths: { min: 2, max: 3 },
+      stages: KIND_RULES.practice.stages,
     });
   });
 
@@ -83,6 +86,7 @@ describe('levelPlan', () => {
       focusKeys: 'dk',
       lengths: { min: 2, max: 5 },
       generatedLengths: { min: 2, max: 3 },
+      stages: KIND_RULES.review.stages,
     });
   });
 
@@ -95,6 +99,7 @@ describe('levelPlan', () => {
       focusKeys: 'fjdksla;',
       lengths: { min: 2, max: 5 },
       generatedLengths: { min: 2, max: 3 },
+      stages: [],
     });
   });
 

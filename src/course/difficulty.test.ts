@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { requireLevel } from '../testing/levels';
 import { LEVELS } from './catalog';
-import { difficultyFor, KIND_RULES } from './difficulty';
+import { difficultyFor, FOCUS_WORD_LENGTHS, PRACTICE_LENGTHS, REVIEW_LENGTHS } from './difficulty';
 
 const OLD_FIRST_LEVEL = { wordSpeed: 0.7, warmupSpeed: 0.55, spawns: 18 };
 
@@ -23,11 +23,9 @@ describe('difficultyFor', () => {
   });
 
   it('caps words by the kind of level', () => {
-    expect(difficultyFor(requireLevel('polana-4')).lengths.max).toBe(KIND_RULES.learn.lengths.max);
-    expect(difficultyFor(requireLevel('polana-5')).lengths.max).toBe(
-      KIND_RULES.practice.lengths.max,
-    );
-    expect(difficultyFor(requireLevel('polana-8')).lengths.max).toBe(KIND_RULES.review.lengths.max);
+    expect(difficultyFor(requireLevel('polana-4')).lengths.max).toBe(FOCUS_WORD_LENGTHS.max);
+    expect(difficultyFor(requireLevel('polana-5')).lengths.max).toBe(PRACTICE_LENGTHS.max);
+    expect(difficultyFor(requireLevel('polana-8')).lengths.max).toBe(REVIEW_LENGTHS.max);
   });
 
   it('lets generated words grow longer along the course', () => {
