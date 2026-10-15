@@ -1,13 +1,12 @@
-import { endlessPlan, type ArenaChoice } from '../arena/endlessPlan';
+import type { ArenaChoice } from '../arena/endlessPlan';
 import { isArenaOpen } from '../arena/keySets';
-import { recordEndlessRun, type EndlessAttempt } from '../arena/progress';
 import { music } from '../audio/Music';
+import type { MusicMood } from '../audio/music/specs';
 import { sfx } from '../audio/Sfx';
 import { regionOf, type Level } from '../course/catalog';
 import { levelCoins } from '../course/coins';
 import { courseFor } from '../course/course';
 import { hasNewItems } from '../course/inventory';
-import { practiceDay } from '../course/keyStats';
 import {
   markStorySeen,
   recordResult,
@@ -17,18 +16,15 @@ import {
 } from '../course/progress';
 import { starsFor } from '../course/scoring';
 import { freshTrophies } from '../course/trophies';
-import type { MusicMood } from '../audio/music/specs';
 import { hasCoarsePointer } from '../game/deviceProbe';
 import type { Game, GameResult } from '../game/Game';
 import { levelPlan } from '../game/LevelPlan';
-import type { PhaseKind, RunPlan } from '../game/RunPlan';
+import type { PhaseKind } from '../game/RunPlan';
 import type { SessionStats } from '../game/SessionStats';
 import { i18n } from '../i18n/i18n';
 import type { Profile } from '../profiles/Profile';
 import { ProfileStore } from '../profiles/ProfileStore';
 import type { StoryScene } from '../story/story';
-import { arenaResult } from '../ui/arena/ArenaResult';
-import { ArenaScreen } from '../ui/arena/ArenaScreen';
 import { el } from '../ui/dom';
 import { Callouts } from '../ui/Callouts';
 import { Hud } from '../ui/Hud';
@@ -53,25 +49,27 @@ import {
   devProfile,
   unlockAudioOnFirstInput,
 } from './devShortcut';
+import { ArenaFlow, type Screen } from './ArenaFlow';
+import type { GameRun } from './GameRun';
 import { loadGameModule, prefetchGameModule, type GameModule } from './gameModule';
 import { PageAttention } from './PageAttention';
 
 const COMBO_FOR_FULL_INTENSITY = 20;
 const FULL_INTENSITY = 1;
 
-interface GameRun {
-  readonly level: Level;
-  readonly plan: RunPlan;
-  readonly rotateHint: boolean;
-  readonly onFinished: (result: GameResult) => void;
-  readonly restart: () => void;
-}
-
 export class App {
   private readonly store = new ProfileStore();
   private readonly screen = el('div', { class: 'app-screen' });
   private readonly overlays: OverlaySlot;
   private readonly attention = new PageAttention((away) => this.onAttentionChange(away));
+  private readonly arena = new ArenaFlow({
+    showMenu: (create) => this.showMenu(create),
+    showMap: (profile) => this.showMap(profile),
+    startRun: (profile, run) => this.startRun(profile, run),
+    openOverlay: (overlay) => this.overlays.open(overlay),
+    dismissThen: (next) => this.dismissThen(next),
+    save: (profile) => this.save(profile),
+  });
   private game: Game | undefined;
   private touch: TouchTyping | undefined;
   private pause: Overlay | undefined;
@@ -101,7 +99,7 @@ export class App {
 
   private startDevArena(choice: ArenaChoice): void {
     unlockAudioOnFirstInput();
-    this.startArena(devProfile(this.store.active()), choice);
+    this.arena.start(devProfile(this.store.active()), choice);
   }
 
   private showProfiles(): void {
@@ -117,33 +115,24 @@ export class App {
   }
 
   private showMap(profile: Profile): void {
-    this.leaveScreen();
-    music.stop();
-    prefetchGameModule();
-    const map = new WorldMap(profile, {
-      onPlay: (level) => this.openLevel(profile, level),
-      onSwitchPlayer: () => this.showProfiles(),
-      onShop: () => this.showShop(profile),
-      onArena: () => this.showArena(profile),
-    });
-    this.showScreen(map.element);
-    this.disposeScreen = () => map.dispose();
+    this.showMenu(
+      () =>
+        new WorldMap(profile, {
+          onPlay: (level) => this.openLevel(profile, level),
+          onSwitchPlayer: () => this.showProfiles(),
+          onShop: () => this.showShop(profile),
+          onArena: () => this.arena.show(profile),
+        }),
+    );
   }
 
-  private showArena(profile: Profile, previous?: ArenaChoice): void {
+  private showMenu(create: () => Screen): void {
     this.leaveScreen();
     music.stop();
     prefetchGameModule();
-    const arena = new ArenaScreen(
-      profile,
-      {
-        onBack: (current) => this.showMap(current),
-        onPlay: (current, choice) => this.startArena(current, choice),
-      },
-      previous,
-    );
-    this.showScreen(arena.element);
-    this.disposeScreen = () => arena.dispose();
+    const screen = create();
+    this.showScreen(screen.element);
+    this.disposeScreen = () => screen.dispose();
   }
 
   private showShop(profile: Profile): void {
@@ -181,16 +170,6 @@ export class App {
       rotateHint: courseFor(profile.wordLanguage).isFirst(level),
       onFinished: (result) => this.finishLevel(profile, level, result),
       restart: () => this.startLevel(profile, level),
-    });
-  }
-
-  private startArena(profile: Profile, choice: ArenaChoice): void {
-    this.startRun(profile, {
-      level: choice.keySet.bossLevel,
-      plan: endlessPlan(choice),
-      rotateHint: false,
-      onFinished: (result) => this.finishArena(profile, choice, result),
-      restart: () => this.startArena(profile, choice),
     });
   }
 
@@ -332,40 +311,6 @@ export class App {
     );
   }
 
-  private finishArena(profile: Profile, choice: ArenaChoice, result: GameResult): void {
-    const outcome = recordEndlessRun(profile, endlessAttemptOf(choice, result));
-    const updated = this.trySave(outcome.profile);
-    const treasures = {
-      trophies: freshTrophies(profile, updated),
-      newItems: hasNewItems(profile, updated),
-      arenaOpened: false,
-    };
-    this.overlays.open(
-      arenaResult(
-        {
-          result,
-          wavesCleared: result.phasesCleared,
-          medal: outcome.medal,
-          newRecord: outcome.newBestWave,
-          earned: { xpBefore: profile.xp, xp: result.xp, coins: outcome.payout.total, treasures },
-        },
-        {
-          onArena: this.dismissThen(() => this.showArena(updated, choice)),
-          onRetry: this.dismissThen(() => this.startArena(updated, choice)),
-        },
-      ),
-    );
-  }
-
-  private trySave(profile: Profile): Profile {
-    try {
-      this.store.update(profile);
-    } catch (error) {
-      reportError(error);
-    }
-    return profile;
-  }
-
   private recordAttempt(profile: Profile, level: Level, attempt: Attempt): Profile {
     let updated = profile;
     try {
@@ -435,20 +380,6 @@ function musicMood(kind: PhaseKind): MusicMood {
 function musicIntensity(stats: SessionStats): number {
   if (stats.fever) return FULL_INTENSITY;
   return Math.min(FULL_INTENSITY, stats.combo / COMBO_FOR_FULL_INTENSITY);
-}
-
-function endlessAttemptOf(choice: ArenaChoice, result: GameResult): EndlessAttempt {
-  return {
-    ...choice,
-    wavesCleared: result.phasesCleared,
-    score: result.score,
-    accuracy: result.accuracy,
-    lettersFreed: result.lettersFreed,
-    xp: result.xp,
-    runCoins: result.coins,
-    keyStats: result.keys.practised,
-    date: practiceDay(new Date()),
-  };
 }
 
 function attemptOf(result: GameResult, stars: number, coins: number): Attempt {
