@@ -1,13 +1,32 @@
 import { describe, expect, it } from 'vitest';
 import { levelPhases } from '../game/LevelPlan';
+import { MAX_BOOST, NO_BOOST } from '../game/RunRewards';
 import { AVATARS, STARTER_SKINS } from '../profiles/Profile';
 import { levelCoins } from './coins';
 import { courseFor } from './course';
+import { MAX_TIMES, STRENGTH_UNITS, SWITCH_ON, type ItemPower } from './powers';
 import { HATS, PETS, SHOP_ITEMS, SKINS, TROPHIES, itemKey, priceOf, type ShopItem } from './shop';
 
 const TYPICAL_STARS = 2;
 const STAR_RANGE = [1, 2, 3];
 const FIRST_PET_LEVELS = { min: 4, max: 6 };
+const BOOST_CAPS: Readonly<Record<string, number>> = {
+  coins: MAX_BOOST.coins - NO_BOOST.coins,
+  xp: MAX_BOOST.xp - NO_BOOST.xp,
+};
+
+function isWithinUnit({ kind, strength }: ItemPower): boolean {
+  switch (STRENGTH_UNITS[kind]) {
+    case 'times':
+      return Number.isInteger(strength) && strength >= 1 && strength <= MAX_TIMES;
+    case 'seconds':
+      return strength > 0;
+    case 'share':
+      return strength > 0 && strength <= (BOOST_CAPS[kind] ?? Number.POSITIVE_INFINITY);
+    case 'switch':
+      return strength === SWITCH_ON;
+  }
+}
 
 function coinsPerLevel(stars: number): number[] {
   return courseFor('pl').levels.map((level) => {
@@ -52,6 +71,19 @@ describe('shop catalogue', () => {
   it('unlocks some items by rank in every kind', () => {
     for (const items of [PETS, HATS, SKINS]) {
       expect(items.some((item) => item.unlock.by === 'rank')).toBe(true);
+    }
+  });
+
+  it('gives every pet and hat one power within the limits of its kind', () => {
+    for (const spec of [...PETS, ...HATS]) {
+      expect(isWithinUnit(spec.power), spec.id).toBe(true);
+    }
+  });
+
+  it('never boosts XP by more than 10% or coins by more than 25%', () => {
+    for (const { power } of HATS) {
+      if (power.kind === 'xp') expect(power.strength).toBeLessThanOrEqual(0.1);
+      if (power.kind === 'coins') expect(power.strength).toBeLessThanOrEqual(0.25);
     }
   });
 

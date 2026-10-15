@@ -14,7 +14,7 @@ const VIEWER = { x: 0, y: 10, z: 10 };
 
 function withCaster(overrides: Partial<MechanicContext> = {}) {
   const board = fakeBoard(overrides);
-  const caster = new PowerEnemy('lód', board.context.createLabel(), 1, 'crystal');
+  const caster = new PowerEnemy('lód', board.context.createLabel(), 1, 'crystal', 'freeze');
   board.enemies.push(caster);
   return { ...board, caster };
 }

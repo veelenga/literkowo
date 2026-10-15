@@ -3,9 +3,9 @@ import type { Phase } from '../RunPlan';
 import type { Mechanic } from './Mechanic';
 
 export class MechanicGroup implements Required<Mechanic> {
-  private readonly mechanics: Mechanic[] = [];
+  private readonly mechanics: Partial<Mechanic>[] = [];
 
-  register(mechanics: readonly Mechanic[]): void {
+  register(mechanics: readonly Partial<Mechanic>[]): void {
     this.mechanics.push(...mechanics);
   }
 
@@ -38,11 +38,11 @@ export class MechanicGroup implements Required<Mechanic> {
   }
 
   dispose(): void {
-    this.each((mechanic) => mechanic.dispose());
+    this.each((mechanic) => mechanic.dispose?.());
     this.mechanics.length = 0;
   }
 
-  private each(visit: (mechanic: Mechanic) => void): void {
+  private each(visit: (mechanic: Partial<Mechanic>) => void): void {
     for (const mechanic of this.mechanics) visit(mechanic);
   }
 }

@@ -1,5 +1,6 @@
 import { AVATARS, STARTER_SKINS } from '../profiles/Profile';
 import { REGIONS, type ThemeId } from './catalog';
+import type { HatPower, HatPowerKind, PetPower, PetPowerKind } from './powers';
 import type { RankId } from './xp';
 
 export const ITEM_KINDS = ['pet', 'hat', 'skin'] as const;
@@ -27,13 +28,17 @@ export interface PetSpec extends ShopItem {
   readonly kind: 'pet';
   readonly id: PetId;
   readonly color: string;
+  readonly power: PetPower;
 }
 
 export interface HatSpec extends ShopItem {
   readonly kind: 'hat';
   readonly id: HatId;
   readonly color: string;
+  readonly power: HatPower;
 }
+
+export type WearableSpec = PetSpec | HatSpec;
 
 export interface SkinSpec extends ShopItem {
   readonly kind: 'skin';
@@ -63,22 +68,54 @@ function rank(rankId: RankId): Unlock {
   return { by: 'rank', rank: rankId };
 }
 
+function pet(kind: PetPowerKind, strength: number): PetPower {
+  return { kind, strength };
+}
+
+function hat(kind: HatPowerKind, strength: number): HatPower {
+  return { kind, strength };
+}
+
 export const PETS: readonly PetSpec[] = [
-  { kind: 'pet', id: 'cube-cat', unlock: coins(160), color: '#5ce1ff' },
-  { kind: 'pet', id: 'bee', unlock: coins(320), color: '#ffc61a' },
-  { kind: 'pet', id: 'star', unlock: rank('apprentice'), color: '#ffe066' },
-  { kind: 'pet', id: 'ghost', unlock: coins(480), color: '#c9b8ff' },
-  { kind: 'pet', id: 'robot', unlock: rank('wordGuardian'), color: '#9fc3e0' },
-  { kind: 'pet', id: 'dragon', unlock: coins(900), color: '#4ade80' },
+  { kind: 'pet', id: 'cube-cat', unlock: coins(160), color: '#5ce1ff', power: pet('zap', 1) },
+  { kind: 'pet', id: 'bee', unlock: coins(320), color: '#ffc61a', power: pet('popBalloon', 3) },
+  {
+    kind: 'pet',
+    id: 'star',
+    unlock: rank('apprentice'),
+    color: '#ffe066',
+    power: pet('restoreHeart', 1),
+  },
+  { kind: 'pet', id: 'ghost', unlock: coins(480), color: '#c9b8ff', power: pet('catchGhost', 2) },
+  {
+    kind: 'pet',
+    id: 'robot',
+    unlock: rank('wordGuardian'),
+    color: '#9fc3e0',
+    power: pet('catchBomber', 1),
+  },
+  { kind: 'pet', id: 'dragon', unlock: coins(900), color: '#4ade80', power: pet('catchBat', 2) },
 ];
 
 export const HATS: readonly HatSpec[] = [
-  { kind: 'hat', id: 'cap', unlock: coins(75), color: '#ff5f7e' },
-  { kind: 'hat', id: 'headphones', unlock: coins(200), color: '#3db4ff' },
-  { kind: 'hat', id: 'horns', unlock: coins(350), color: '#ff7a45' },
-  { kind: 'hat', id: 'wizard', unlock: rank('letterHunter'), color: '#7c5cff' },
-  { kind: 'hat', id: 'halo', unlock: coins(600), color: '#ffe08a' },
-  { kind: 'hat', id: 'crown', unlock: rank('legend'), color: '#ffbe2e' },
+  { kind: 'hat', id: 'cap', unlock: coins(75), color: '#ff5f7e', power: hat('coins', 0.1) },
+  { kind: 'hat', id: 'headphones', unlock: coins(200), color: '#3db4ff', power: hat('xp', 0.05) },
+  { kind: 'hat', id: 'horns', unlock: coins(350), color: '#ff7a45', power: hat('solidGhosts', 1) },
+  {
+    kind: 'hat',
+    id: 'wizard',
+    unlock: rank('letterHunter'),
+    color: '#7c5cff',
+    power: hat('xp', 0.1),
+  },
+  { kind: 'hat', id: 'halo', unlock: coins(600), color: '#ffe08a', power: hat('bossGuard', 1) },
+  {
+    kind: 'hat',
+    id: 'crown',
+    unlock: rank('legend'),
+    color: '#ffbe2e',
+    power: hat('coins', 0.25),
+  },
 ];
 
 const LOCKED_SKINS: Readonly<Record<string, Unlock>> = {
@@ -158,6 +195,12 @@ export function petSpec(id: string | undefined): PetSpec | undefined {
 
 export function hatSpec(id: string | undefined): HatSpec | undefined {
   return HATS.find((hat) => hat.id === id);
+}
+
+export function wearableSpec(item: ShopItem): WearableSpec | undefined {
+  if (item.kind === 'pet') return petSpec(item.id);
+  if (item.kind === 'hat') return hatSpec(item.id);
+  return undefined;
 }
 
 export function skinSpec(id: string): SkinSpec | undefined {

@@ -76,7 +76,7 @@ export class PowerWords implements Mechanic {
     const choice = choosePowerWord(power, this.allowedKeys, context.language, this.random);
     const label = decoratePowerLabel(context.createLabel(), choice);
     const speed = context.phase.speed * POWER_SPEED_SCALE;
-    const enemy = new PowerEnemy(choice.word, label, speed, context.theme.enemyShape);
+    const enemy = new PowerEnemy(choice.word, label, speed, context.theme.enemyShape, power);
     context.addEnemy(enemy, SPAWN_RADIUS);
     playSummon(context.sfx);
     this.summoned = { enemy, choice };

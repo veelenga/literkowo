@@ -3,6 +3,7 @@ import { softGlowTexture } from '../../effects/glowAssets';
 import { Enemy } from '../../Enemy';
 import type { EnemyShape } from '../../themes';
 import { StarSparks } from './effects/StarSparks';
+import type { Power } from './powers';
 
 export const POWER_TAG = 'power-word';
 
@@ -16,7 +17,13 @@ export class PowerEnemy extends Enemy {
   private readonly stars = new StarSparks(STAR_COUNT);
   private readonly halo = createHalo();
 
-  constructor(word: string, label: HTMLElement, speed: number, shape: EnemyShape) {
+  constructor(
+    word: string,
+    label: HTMLElement,
+    speed: number,
+    shape: EnemyShape,
+    readonly power: Power,
+  ) {
     super(word, label, speed, { shape, colors: [GOLD], scale: BODY_SCALE });
     this.tags.add(POWER_TAG);
     this.rig.add(this.stars.group, this.halo);

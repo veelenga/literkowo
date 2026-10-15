@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
+import { POWER_COMBOS } from '../../course/powers';
 import { fakeBoard } from '../../testing/enemyBoard';
 import type { Phase } from '../RunPlan';
-import { Companion, ZAP_DELAY } from './Companion';
-import { ZAP_MIN_COMBO } from './companion/zapRules';
+import { ZAP_DELAY } from './itemPowers/Pet';
+import { ItemPowers } from './ItemPowers';
 import type { MechanicContext } from './Mechanic';
 import { wordPoints } from './mergeEnemies/scoring';
 
@@ -18,38 +19,41 @@ const HERO_REACH = 2;
 function setup(overrides: Partial<MechanicContext> = {}) {
   const announce = vi.fn<MechanicContext['announce']>();
   const burst = vi.fn<MechanicContext['particles']['burst']>();
+  const boostRewards = vi.fn<MechanicContext['boostRewards']>();
   const board = fakeBoard({
     equipped: { pet: 'cube-cat' },
     announce,
+    boostRewards,
     particles: { burst },
     ...overrides,
   });
-  const companion = new Companion(board.context);
+  const powers = new ItemPowers(board.context);
   let elapsed = 0;
   const run = (seconds: number) => {
     for (let time = 0; time < seconds; time += FRAME) {
       elapsed += FRAME;
-      companion.update(FRAME, elapsed);
+      powers.update(FRAME, elapsed);
     }
   };
-  const buildCombo = (combo = ZAP_MIN_COMBO) => {
+  const buildCombo = (combo: number = POWER_COMBOS.zap) => {
     for (let hit = 0; hit < combo; hit += 1) board.context.stats.recordHit();
   };
-  return { ...board, announce, burst, companion, run, buildCombo };
+  return { ...board, announce, burst, boostRewards, powers, run, buildCombo };
 }
 
 function petOf(scene: THREE.Scene): THREE.Object3D {
   return scene.children[0];
 }
 
-describe('Companion', () => {
-  it('stays away when no pet is equipped', () => {
-    const { context, enemyAt, buildCombo, run, enemies } = setup({ equipped: {} });
+describe('ItemPowers with a pet', () => {
+  it('stays away when nothing is equipped', () => {
+    const { context, enemyAt, buildCombo, run, enemies, boostRewards } = setup({ equipped: {} });
     enemyAt(NEAR);
     buildCombo();
     run(1);
     expect(context.scene.children).toHaveLength(0);
     expect(enemies).toHaveLength(1);
+    expect(boostRewards).not.toHaveBeenCalled();
   });
 
   it('follows the hero with a lag', () => {
@@ -85,7 +89,7 @@ describe('Companion', () => {
   it('waits for a combo of five', () => {
     const { enemies, enemyAt, buildCombo, run } = setup();
     enemyAt(NEAR);
-    buildCombo(ZAP_MIN_COMBO - 1);
+    buildCombo(POWER_COMBOS.zap - 1);
     run(1);
     expect(enemies).toHaveLength(1);
   });
@@ -115,10 +119,10 @@ describe('Companion', () => {
   });
 
   it('keeps its zap when the target is typed before the bolt lands', () => {
-    const { enemies, enemyAt, buildCombo, run, companion, context } = setup();
+    const { enemies, enemyAt, buildCombo, run, powers, context } = setup();
     const first = enemyAt(NEAR);
     buildCombo();
-    companion.update(FRAME, FRAME);
+    powers.update(FRAME, FRAME);
     context.removeEnemy(first);
     run(ZAP_DELAY * 2);
     const second = enemyAt(NEAR);
@@ -127,8 +131,22 @@ describe('Companion', () => {
   });
 
   it('removes the pet from the scene on dispose', () => {
-    const { context, companion } = setup();
-    companion.dispose();
+    const { context, powers } = setup();
+    powers.dispose();
     expect(context.scene.children).toHaveLength(0);
+  });
+});
+
+describe('ItemPowers with a hat', () => {
+  it('runs the power of the equipped hat', () => {
+    const { boostRewards, context } = setup({ equipped: { hat: 'cap' } });
+    expect(boostRewards).toHaveBeenCalledWith({ coins: 1.1, xp: 1 });
+    expect(context.scene.children).toHaveLength(0);
+  });
+
+  it('runs the powers of a pet and a hat together', () => {
+    const { boostRewards, context } = setup({ equipped: { pet: 'cube-cat', hat: 'wizard' } });
+    expect(boostRewards).toHaveBeenCalledWith({ coins: 1, xp: 1.1 });
+    expect(context.scene.children.length).toBeGreaterThan(0);
   });
 });
