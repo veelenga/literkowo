@@ -62,6 +62,31 @@ Stars, with the current thresholds (`src/course/scoring.ts`):
 - Accuracy is `hits / (hits + mistakes)`. Words per minute is correct letters divided by 5, per active minute (`src/game/SessionStats.ts`).
 - The best result per level is kept, compared by stars first and score second. Total score and letters freed add up on every attempt (`src/course/progress.ts`).
 
+## Action events
+
+Owners: `src/game/mechanics/SpeedSurge.ts`, `src/game/mechanics/Bombers.ts`, `src/game/mechanics/Twins.ts`.
+
+Speed surges:
+
+- They run in the words phase and in boss fights. The first one comes 20 seconds after the phase starts. The next ones follow every 40 seconds in Polana, 25 seconds in Wyspa Ogonków, and evenly in between for the other regions. During the boss rage the countdown runs twice as fast.
+- A warning, "Przyspieszenie!" / "Прискорення!", and a rising sweep come 1.5 seconds before the surge.
+- For 7 seconds every enemy except the boss moves 1.8 times faster, also enemies that appear during the surge. Short cube trails follow the enemies and the screen edges glow red. Then every speed goes back to normal.
+- A surge is skipped while any enemy is frozen, and it ends early when a freeze lands.
+
+Bombers:
+
+- From Las on, in the words phase and in boss fights. One comes about every 40 to 50 seconds while enemies are on the board, and at most one is on the board at a time.
+- A bomber is 1.7 times bigger and moves at 0.55 times the phase speed. Its word has 6 to 9 letters: a boss word when one fits, otherwise letters from the allowed keys. A lit fuse sparks on top and ticks faster and faster from 7 units away.
+- Typing its word detonates it: slow motion at 0.3 for 0.6 seconds, a camera shake and a shockwave. Every enemy within 4.5 units shatters and scores its normal word points. The boss never shatters. Other bombers in range go off 0.25 seconds later. When 3 or more enemies go down, a banner shows "Bum! x3" / "Бум! x3".
+- A bomber that reaches the player costs a life and knocks every other enemy 4 units back.
+
+Twins:
+
+- From Las on, in the words phase, about one spawn in eight becomes 2 to 4 smaller twins in a line or a V. They share one word and bob in step.
+- They finish together on the same key. Each twin after the first adds the points of one more word, and a callout shows "Bliźniaki x3!" / "Близнюки x3!" with a spark arc between them.
+- Twins that reach the player cost at most one life per group.
+- Twins can briefly put more than 6 enemies on the board.
+
 ## Profiles
 
 Owners: `src/profiles/Profile.ts`, `src/profiles/profileSchema.ts`, `src/profiles/ProfileStore.ts`.
