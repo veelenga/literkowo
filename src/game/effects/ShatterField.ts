@@ -67,7 +67,7 @@ function createFragmentMaterial(): THREE.MeshStandardMaterial {
   material.onBeforeCompile = (shader) => {
     shader.fragmentShader = shader.fragmentShader.replace(
       EMISSIVE_CHUNK,
-      `${EMISSIVE_CHUNK}\ntotalEmissiveRadiance *= vColor;`,
+      `${EMISSIVE_CHUNK}\ntotalEmissiveRadiance *= vColor.rgb;`,
     );
   };
   return material;
