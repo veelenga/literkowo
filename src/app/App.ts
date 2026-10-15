@@ -39,7 +39,7 @@ import { pauseOverlay } from '../ui/PauseOverlay';
 import { ProfileScreen } from '../ui/ProfileScreen';
 import { rotateHint } from '../ui/RotateHint';
 import { SettingsScreen, settingsOverlay } from '../ui/SettingsScreen';
-import { ShopScreen } from '../ui/ShopScreen';
+import { ShopScreen, type ShopExit, type ShopTab } from '../ui/ShopScreen';
 import { watchStageInsets } from '../ui/stageInsets';
 import { storyCard } from '../ui/StoryCard';
 import { TouchTyping } from '../ui/TouchTyping';
@@ -122,7 +122,7 @@ export class App {
         new WorldMap(profile, {
           onPlay: (level) => this.openLevel(profile, level),
           onSwitchPlayer: () => this.showProfiles(),
-          onShop: () => this.showShop(profile),
+          onShop: () => this.showShop(profile, this.backToMap()),
           onArena: () => this.arena.show(profile),
           onSettings: () => this.showSettings(() => this.showMap(profile)),
         }),
@@ -142,14 +142,19 @@ export class App {
     this.showMenu(() => new SettingsScreen({ onBack: back }));
   }
 
-  private showShop(profile: Profile): void {
+  private showShop(profile: Profile, exit: ShopExit, tab?: ShopTab): void {
     this.leaveScreen();
-    const shop = new ShopScreen(profile, {
-      onBack: (current) => this.showMap(current),
-      onChange: (current) => this.save(current),
-    });
+    const shop = new ShopScreen(
+      profile,
+      { ...exit, onChange: (current) => this.save(current) },
+      tab,
+    );
     this.showScreen(shop.element);
     this.disposeScreen = () => shop.dispose();
+  }
+
+  private backToMap(): ShopExit {
+    return { onBack: (current) => this.showMap(current) };
   }
 
   private openLevel(profile: Profile, level: Level): void {
