@@ -1639,8 +1639,8 @@ h3 {
 
 @media (max-width: 600px), (max-height: 480px) {
   :root {
-    --chrome-inset: 8px;
-    --hud-height: 48px;
+    --chrome-inset: 0px;
+    --hud-height: 44px;
   }
 
   .keyboard,
@@ -1650,30 +1650,83 @@ h3 {
   }
 
   .hud {
-    gap: 4px;
+    gap: 2px;
+    padding: 0 4px;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    background: linear-gradient(180deg, rgba(10, 15, 40, 0.7), rgba(10, 15, 40, 0.4));
+    box-shadow: none;
+    backdrop-filter: blur(4px);
+  }
+
+  .hud .hud-map,
+  .hud .hud-pause,
+  .hud .sound-toggle {
+    min-width: 0;
+    height: var(--hud-height);
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .hud .hud-map {
     padding: 0 6px 0 4px;
-    border-radius: 18px;
+  }
+
+  .hud .hud-pause,
+  .hud .sound-toggle {
+    width: 36px;
+  }
+
+  .hud .hud-pause:active,
+  .hud .sound-toggle:active,
+  .hud .hud-map:active {
+    transform: none;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .hud .hud-pause-icon,
+  .hud .sound-toggle-icon {
+    width: 20px;
+    height: 20px;
   }
 
   .hud-avatar {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
   }
 
-  .hud-stats {
-    margin-left: 2px;
-  }
-
-  .hud-stat {
-    padding: 0 9px;
-  }
-
-  .hud-label {
+  .hud .hud-map .hud-level-badge {
+    left: auto;
+    right: -2px;
+    bottom: 3px;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
     font-size: 0.62rem;
   }
 
+  .hud-stats {
+    margin-left: 0;
+  }
+
+  .hud-stat {
+    padding: 0 6px;
+    border-left: 0;
+  }
+
+  .hud-label {
+    font-size: 0.6rem;
+  }
+
+  .hud-xp {
+    display: none;
+  }
+
   .hud-value {
-    font-size: 1rem;
+    font-size: 1.05rem;
   }
 
   .multiplier {
@@ -1682,25 +1735,52 @@ h3 {
   }
 
   .hud-progress {
-    padding: 0 8px;
-    gap: 4px;
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+    padding: 0 4px;
+    gap: 0;
   }
 
   .progress-head {
-    font-size: 0.68rem;
+    justify-content: center;
+    font-size: 0.78rem;
+  }
+
+  .progress-label,
+  .progress-count {
+    display: none;
   }
 
   .progress-bar {
-    height: 9px;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    border-radius: 0;
+    background: rgba(3, 6, 20, 0.45);
+    box-shadow: none;
+  }
+
+  .progress-fill {
+    border-radius: 0;
+  }
+
+  .progress-fill::after {
+    display: none;
   }
 
   .hearts {
-    padding-left: 8px;
+    gap: 0;
+    padding-left: 2px;
+    border-left: 0;
   }
 
   .heart-icon {
-    width: 22px;
-    height: 22px;
+    width: 19px;
+    height: 19px;
   }
 
   .word-label {
@@ -1830,24 +1910,15 @@ h3 {
   }
 }
 
-@media (max-width: 600px) {
-  .hud {
-    flex-wrap: wrap;
-    row-gap: 6px;
-    height: auto;
-    padding: 5px 6px 8px 4px;
+@media (min-width: 400px) and (max-width: 600px), (min-width: 400px) and (max-height: 480px) {
+  .progress-count {
+    display: inline;
   }
+}
 
-  .hearts {
-    margin-left: auto;
-  }
-
-  .hud-progress {
-    order: 1;
-    flex: 1 0 100%;
-    max-width: none;
-    margin: 0;
-    padding: 0 6px;
+@media (min-width: 601px) and (max-height: 480px) {
+  .hud-xp {
+    display: inline;
   }
 }
 
