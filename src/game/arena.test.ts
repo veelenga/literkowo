@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   BOSS_SPAWN_RADIUS,
+  CAMERA_FOV,
   CAMERA_POSITION,
   CAMERA_TARGET,
   CLEARING_RADIUS,
   REACH_DISTANCE,
   SPAWN_RADIUS,
+  cameraFovFor,
 } from './arena';
 import { ARENA, inView } from './environment/layout';
 import { TERRAIN_EXTENT } from './environment/Terrain';
@@ -34,5 +36,22 @@ describe('arena', () => {
 
   it('extends the terrain behind the camera', () => {
     expect(TERRAIN_EXTENT.maxZ).toBeGreaterThan(CAMERA_POSITION.z);
+  });
+});
+
+describe('cameraFovFor', () => {
+  const horizontalFov = (aspect: number) => {
+    const half = Math.tan((cameraFovFor(aspect) * Math.PI) / 360) * aspect;
+    return (Math.atan(half) * 360) / Math.PI;
+  };
+
+  it('keeps the base field of view on wide screens', () => {
+    expect(cameraFovFor(16 / 9)).toBe(CAMERA_FOV);
+  });
+
+  it('widens the view on narrow screens so the spawn arc stays in frame', () => {
+    expect(cameraFovFor(390 / 844)).toBeGreaterThan(CAMERA_FOV);
+    expect(horizontalFov(390 / 844)).toBeCloseTo(62);
+    expect(horizontalFov(820 / 1180)).toBeCloseTo(62);
   });
 });

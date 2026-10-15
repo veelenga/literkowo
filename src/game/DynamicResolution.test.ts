@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DynamicResolution } from './DynamicResolution';
+import { DynamicResolution, MIN_PIXEL_RATIO } from './DynamicResolution';
+import { QUALITY_PRESETS } from './quality';
 
 const SLOW_MS = 25;
 const STEADY_MS = 16.7;
@@ -62,5 +63,14 @@ describe('DynamicResolution', () => {
     expect(play(controller, SLOW_MS, WINDOW_MS * 2)).toEqual([]);
     expect(play(controller, FAST_MS, RECOVERY_MS * 2)).toEqual([]);
     expect(controller.pixelRatio).toBe(0.5);
+  });
+});
+
+describe('DynamicResolution under the low preset', () => {
+  it('starts at a pixel ratio of 1 and can still drop to the floor', () => {
+    const controller = new DynamicResolution(QUALITY_PRESETS.low.maxPixelRatio);
+    expect(controller.pixelRatio).toBe(1);
+    play(controller, SLOW_MS, WINDOW_MS * 4);
+    expect(controller.pixelRatio).toBe(MIN_PIXEL_RATIO);
   });
 });

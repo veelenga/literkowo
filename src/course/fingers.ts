@@ -36,6 +36,10 @@ export const POLISH_BASE_KEY: Record<string, string> = {
   ż: 'z',
 };
 
+const RIGHT_ALT_LETTERS: Record<string, string> = Object.fromEntries(
+  Object.entries(POLISH_BASE_KEY).map(([letter, base]) => [base, letter]),
+);
+
 export const FINGER_COLORS: Record<Finger, string> = {
   leftPinky: '#f472b6',
   leftRing: '#fb923c',
@@ -51,6 +55,10 @@ export const FINGER_COLORS: Record<Finger, string> = {
 export function baseKey(char: string): string {
   const lower = char.toLowerCase();
   return POLISH_BASE_KEY[lower] ?? lower;
+}
+
+export function withRightAlt(key: string): string {
+  return RIGHT_ALT_LETTERS[key] ?? key;
 }
 
 export function needsRightAlt(char: string): boolean {

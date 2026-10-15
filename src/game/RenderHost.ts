@@ -85,6 +85,7 @@ class RenderHost {
   private stage: Stage | undefined;
   private resolution: DynamicResolution | undefined;
   private size: Viewport = { width: INITIAL_SIZE, height: INITIAL_SIZE };
+  private readonly resizer = new ResizeObserver(() => this.resize());
 
   get viewport(): Viewport {
     return this.size;
@@ -101,12 +102,12 @@ class RenderHost {
     this.stage = { container, camera };
     this.resolution = new DynamicResolution(pixelRatioCap(preset));
     container.append(renderer.domElement);
-    window.addEventListener('resize', this.resize);
+    this.resizer.observe(container);
     this.resize();
   }
 
   detach(): void {
-    window.removeEventListener('resize', this.resize);
+    this.resizer.disconnect();
     this.renderer?.domElement.remove();
     this.stage = undefined;
     this.resolution = undefined;
@@ -135,7 +136,7 @@ class RenderHost {
     this.pipeline.scenePass.camera = camera;
   }
 
-  private readonly resize = (): void => {
+  private resize(): void {
     if (!this.renderer || !this.pipeline || !this.stage) return;
     const { container, camera } = this.stage;
     this.size = { width: container.clientWidth, height: container.clientHeight };
@@ -146,7 +147,7 @@ class RenderHost {
     this.renderer.setSize(width, height);
     this.pipeline.composer.setSize(width, height);
     if (document.visibilityState === VISIBLE) this.pipeline.composer.render();
-  };
+  }
 
   private applyPixelRatio(): void {
     if (!this.renderer || !this.pipeline || !this.resolution) return;

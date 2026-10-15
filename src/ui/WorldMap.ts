@@ -131,7 +131,7 @@ export class WorldMap {
     const points = trailPoints(levels.length);
     return el(
       'div',
-      { class: 'level-trail' },
+      { class: 'level-trail', style: `--stops: ${levels.length}` },
       this.trailPath(levels, points),
       ...levels.map((level, index) => this.stop(level, points[index])),
     );

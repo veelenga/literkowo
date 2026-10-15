@@ -5,10 +5,12 @@ import { WordSource } from '../course/WordSource';
 import type { WordLanguage } from '../profiles/Profile';
 import {
   BOSS_SPAWN_RADIUS,
+  CAMERA_FOV,
   CAMERA_POSITION,
   CAMERA_TARGET,
   REACH_DISTANCE,
   SPAWN_RADIUS,
+  cameraFovFor,
 } from './arena';
 import { Boss } from './Boss';
 import { CameraShake } from './CameraShake';
@@ -29,7 +31,6 @@ import { World } from './World';
 
 export { themeFor } from './themes';
 
-const CAMERA_FOV = 42;
 const CAMERA_NEAR = 0.1;
 const CAMERA_FAR = 120;
 const CAMERA_INTRO_SCALE = 2.2;
@@ -144,6 +145,18 @@ export class Game {
   wake(): void {
     this.suspended = false;
     this.syncFrames();
+  }
+
+  typeCharacter(char: string): void {
+    if (this.acceptsTyping) this.handleChar(char.toLowerCase());
+  }
+
+  togglePause(): void {
+    if (this.finished) return;
+    this.paused = !this.paused;
+    this.timer.reset();
+    this.syncFrames();
+    this.events.onPause(this.paused);
   }
 
   destroy(): void {
@@ -285,6 +298,14 @@ export class Game {
     this.camera.position.x += sway;
     this.shake.apply(this.camera.position, delta);
     this.camera.lookAt(this.cameraTarget);
+    this.frameArena();
+  }
+
+  private frameArena(): void {
+    const fov = cameraFovFor(this.camera.aspect);
+    if (fov === this.camera.fov) return;
+    this.camera.fov = fov;
+    this.camera.updateProjectionMatrix();
   }
 
   private spawnIfDue(delta: number): void {
@@ -436,18 +457,14 @@ export class Game {
   }
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
-    if (this.finished) return;
     if (event.key === 'Escape') return this.togglePause();
-    if (this.paused || this.inIntro || isShortcut(event) || event.key.length !== 1) return;
+    if (!this.acceptsTyping || isShortcut(event) || event.key.length !== 1) return;
     event.preventDefault();
-    this.handleChar(event.key.toLowerCase());
+    this.typeCharacter(event.key);
   };
 
-  private togglePause(): void {
-    this.paused = !this.paused;
-    this.timer.reset();
-    this.syncFrames();
-    this.events.onPause(this.paused);
+  private get acceptsTyping(): boolean {
+    return !this.finished && !this.paused && !this.inIntro;
   }
 
   private handleChar(char: string): void {

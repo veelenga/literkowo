@@ -13,7 +13,7 @@ import './quality.css';
 const ESCAPE_LABEL = 'Esc';
 const ACTIVE_CLASS = 'is-active';
 
-export function pauseOverlay(): Overlay {
+export function pauseOverlay(onResume: () => void): Overlay {
   const t = i18n.t;
   const escapeKey = el('kbd', { class: 'kbd', text: ESCAPE_LABEL });
   return createOverlay(
@@ -26,6 +26,16 @@ export function pauseOverlay(): Overlay {
         el('span', { class: 'pause-badge' }, icon('pause', 'pause-icon')),
         el('h2', { class: 'pause-title', text: t.paused }),
         el('p', { class: 'pause-hint' }, ...formatParts(t.resumeHint, { key: escapeKey })),
+        el(
+          'div',
+          { class: 'actions' },
+          el('button', {
+            class: 'button button-primary button-large',
+            type: 'button',
+            text: `▶ ${t.features.touch.resume}`,
+            onClick: onResume,
+          }),
+        ),
         qualityPicker(),
       ),
     ),

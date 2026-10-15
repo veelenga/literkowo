@@ -10,6 +10,11 @@ const MAX_LIVES = 3;
 const PERCENT = 100;
 const BASE_MULTIPLIER = 1;
 
+interface HudActions {
+  onMap: () => void;
+  onPause: () => void;
+}
+
 export class Hud {
   readonly element: HTMLElement;
   private readonly score = new Counter(el('strong', { class: 'hud-value' }));
@@ -27,7 +32,7 @@ export class Hud {
   private lives = MAX_LIVES;
   private lastMultiplier = BASE_MULTIPLIER;
 
-  constructor(profile: Profile, onMap: () => void) {
+  constructor(profile: Profile, actions: HudActions) {
     const t = i18n.t;
     this.element = el(
       'header',
@@ -39,11 +44,11 @@ export class Hud {
           title: t.map,
           onClick: (event) => {
             releaseFocus(event);
-            onMap();
+            actions.onMap();
           },
         },
         characterAvatar(profile.avatar, 'hud-avatar'),
-        el('span', { text: t.map }),
+        el('span', { class: 'hud-map-label', text: t.map }),
       ),
       el(
         'div',
@@ -60,6 +65,7 @@ export class Hud {
         el('div', { class: 'progress-bar' }, this.progressFill),
       ),
       this.heartRow,
+      pauseButton(actions.onPause),
       soundToggle(),
     );
   }
@@ -113,4 +119,21 @@ export class Hud {
       ),
     );
   }
+}
+
+function pauseButton(onPause: () => void): HTMLElement {
+  const label = i18n.t.features.touch.pause;
+  return el(
+    'button',
+    {
+      class: 'hud-pause',
+      title: label,
+      'aria-label': label,
+      onClick: (event) => {
+        releaseFocus(event);
+        onPause();
+      },
+    },
+    icon('pause', 'hud-pause-icon'),
+  );
 }
