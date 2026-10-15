@@ -901,6 +901,37 @@
     padding: 4px;
     border-radius: 14px;
   }
+
+  .avatar-options .avatar-option.is-locked .lock-badge {
+    right: 50%;
+    bottom: -4px;
+    gap: 2px;
+    padding: 1px 5px;
+    border-width: 1px;
+    font-size: 0.62rem;
+    translate: 50% 0;
+  }
+
+  .avatar-options .avatar-option.is-locked .lock-badge-icon {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 6px);
+    width: 14px;
+    height: 14px;
+    translate: -50% 0;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7));
+  }
+
+  .avatar-options .avatar-option.is-locked .lock-badge-coin {
+    width: 10px;
+    height: 10px;
+  }
+
+  .avatar-options .avatar-option.is-locked .lock-badge-level {
+    min-width: 14px;
+    height: 14px;
+    font-size: 0.6rem;
+  }
 }
 
 @media (max-height: 480px) {
