@@ -10,6 +10,7 @@ import {
 import type { Level } from './catalog';
 import { courseFor } from './course';
 import type { KeyStats } from './keyStats';
+import { awardTrophies } from './trophies';
 
 export interface Attempt extends LevelResult {
   lettersFreed: number;
@@ -32,7 +33,7 @@ export function recordResult(profile: Profile, level: Level, attempt: Attempt): 
     wpm: attempt.wpm,
   };
   const improved = isBetterResult(result, profile.levelResults[level.id]);
-  return {
+  return awardTrophies({
     ...profile,
     totalScore: profile.totalScore + attempt.score,
     lettersFreed: profile.lettersFreed + attempt.lettersFreed,
@@ -40,7 +41,7 @@ export function recordResult(profile: Profile, level: Level, attempt: Attempt): 
     coins: profile.coins + attempt.coins,
     levelResults: improved ? { ...profile.levelResults, [level.id]: result } : profile.levelResults,
     keyStats: { ...profile.keyStats, ...attempt.keyStats },
-  };
+  });
 }
 
 export function markStorySeen(profile: Profile, storyId: string): Profile {

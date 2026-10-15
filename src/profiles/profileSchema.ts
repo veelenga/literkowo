@@ -7,6 +7,7 @@ import {
   type KeyStat,
 } from '../course/keyStats';
 import { HATS, PETS, SKINS, TROPHIES } from '../course/shop';
+import { awardTrophies } from '../course/trophies';
 import {
   AVATARS,
   DEFAULT_WORD_LANGUAGE,
@@ -66,7 +67,7 @@ export function normalizeProfile(value: unknown): Profile | undefined {
   if (!isNonEmptyString(id) || !isNonEmptyString(name)) return undefined;
   const avatar = avatarOf(raw.avatar);
   const inventory = inventoryOf(raw.inventory, avatar);
-  return {
+  const profile: Profile = {
     schemaVersion: PROFILE_SCHEMA_VERSION,
     id,
     name,
@@ -82,6 +83,7 @@ export function normalizeProfile(value: unknown): Profile | undefined {
     inventory,
     equipped: equippedOf(raw.equipped, inventory),
   };
+  return predatesShop(value) ? awardTrophies(profile) : profile;
 }
 
 function parseJson(json: string): unknown {
@@ -98,6 +100,10 @@ function migrate(raw: RawRecord): RawRecord {
     migrated = MIGRATIONS[version]?.(migrated) ?? migrated;
   }
   return migrated;
+}
+
+function predatesShop(raw: RawRecord): boolean {
+  return schemaVersionOf(raw) <= KEY_STATS_SCHEMA_VERSION;
 }
 
 function schemaVersionOf({ schemaVersion }: RawRecord): number {

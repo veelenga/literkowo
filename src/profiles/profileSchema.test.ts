@@ -125,6 +125,16 @@ describe('normalizeProfile', () => {
     expect(profile?.equipped).toEqual({});
   });
 
+  it('awards the trophies a version 4 profile already earned', () => {
+    const profile = normalizeProfile({
+      schemaVersion: 4,
+      id: 'x',
+      name: 'A',
+      levelResults: { 'polana-5': { stars: 1, score: 10, accuracy: 0.9, wpm: 10 } },
+    });
+    expect(profile?.inventory.trophies).toEqual(['first-boss']);
+  });
+
   it('keeps known items and drops unknown ones', () => {
     const profile = normalizeProfile({
       schemaVersion: PROFILE_SCHEMA_VERSION,

@@ -62,6 +62,20 @@ describe('recordResult', () => {
     expect(updated.keyStats).toEqual({ f, j: f });
   });
 
+  it('awards trophies earned by the attempt', () => {
+    const results = { stars: 1, score: 10, accuracy: 0.9, wpm: 10 };
+    const profile = profileWith({
+      levelResults: {
+        'polana-1': results,
+        'polana-2': results,
+        'polana-3': results,
+        'polana-4': results,
+      },
+    });
+    const beaten = recordResult(profile, level('polana-5'), attempt());
+    expect(beaten.inventory.trophies).toEqual(['first-boss', 'region-polana']);
+  });
+
   it('does not change the original profile', () => {
     const profile = profileWith();
     recordResult(profile, level('polana-1'), attempt());
