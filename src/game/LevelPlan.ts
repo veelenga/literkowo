@@ -6,6 +6,7 @@ import type { WordLanguage } from '../profiles/Profile';
 import type { PhaseKind, RunPhase, RunPlan } from './RunPlan';
 
 export const LEVEL_LIVES = 3;
+export const LEVEL_XP_FACTOR = 1;
 
 const MAIN_PHASE: Readonly<Record<LevelKind, PhaseKind>> = {
   learn: 'learn',
@@ -23,5 +24,5 @@ export function levelPhases(level: Level, language: WordLanguage): RunPhase[] {
 
 export function levelPlan(level: Level, language: WordLanguage): RunPlan {
   const phases = levelPhases(level, language);
-  return { lives: LEVEL_LIVES, phaseAt: (index) => phases[index] };
+  return { lives: LEVEL_LIVES, xpFactor: LEVEL_XP_FACTOR, phaseAt: (index) => phases[index] };
 }

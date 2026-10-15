@@ -338,6 +338,7 @@ XP only grows. It drives the player level and the rank. A child never loses XP, 
 
 - Each completed word gives `letters × multiplier × fever bonus × tag factor` XP, rounded. The multiplier and the fever bonus are the ones from scoring, so XP follows the combo.
 - Tag factor: a boss hit 3, `merged` 3, `power-word` 2, `minion` 1. Any other or unknown tag is 1. With several tags the highest factor counts.
+- The XP of each word is then scaled by the XP factor of the run plan and rounded again. Course levels use 1 (`LEVEL_XP_FACTOR` in `src/game/LevelPlan.ts`).
 - A floating "+12 XP" rises from the enemy on each completed word, and the HUD shows the XP of the run next to the score. The level number sits on the avatar button of the HUD.
 - XP of the run is added to the profile after every attempt, won or lost.
 

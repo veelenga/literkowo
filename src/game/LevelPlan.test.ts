@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { LevelKind } from '../course/catalog';
 import { LEVELS, REGIONS, type Level } from '../course/regions';
 import { requireLevel } from '../testing/levels';
-import { LEVEL_LIVES, levelPhases, levelPlan } from './LevelPlan';
+import { LEVEL_LIVES, LEVEL_XP_FACTOR, levelPhases, levelPlan } from './LevelPlan';
 import type { Phase, RunPhase, RunPlan } from './RunPlan';
 
 const PRECISION = 6;
@@ -35,6 +35,7 @@ describe('levelPlan', () => {
   it('runs a learn level as a warmup and a learn phase', () => {
     const plan = levelPlan(requireLevel('polana-1'), 'pl');
     expect(plan.lives).toBe(LEVEL_LIVES);
+    expect(plan.xpFactor).toBe(LEVEL_XP_FACTOR);
     expectPace(plan.phaseAt(0), { kind: 'warmup', count: 8, speed: 0.42, spawnInterval: 1.6 });
     expectPace(plan.phaseAt(1), { kind: 'learn', count: 8, speed: 0.416, spawnInterval: 4.37 });
     expect(plan.phaseAt(2)).toBeUndefined();

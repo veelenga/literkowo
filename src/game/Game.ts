@@ -102,7 +102,7 @@ export class Game {
   private readonly world: World;
   private readonly words: WordSource;
   private readonly stats = new SessionStats();
-  private readonly rewards = new RunRewards();
+  private readonly rewards: RunRewards;
   private readonly keys: KeyTracker;
   private readonly labels: LabelLayer;
   private readonly enemies: Enemy[] = [];
@@ -143,6 +143,7 @@ export class Game {
     );
     this.phase = firstPhase(config.plan);
     this.lives = config.plan.lives;
+    this.rewards = new RunRewards(config.plan.xpFactor);
     this.words = new WordSource(config.language, this.phase.words, {
       weightOf: (key) => keyWeight(key, this.keys.statOf(key)),
     });

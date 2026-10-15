@@ -10,6 +10,8 @@ export class RunRewards implements Rewards {
   private earnedXp = 0;
   private earnedCoins = 0;
 
+  constructor(private readonly xpFactor: number) {}
+
   get xp(): number {
     return this.earnedXp;
   }
@@ -19,7 +21,7 @@ export class RunRewards implements Rewards {
   }
 
   recordWord(word: CompletedWord): number {
-    const gained = wordXp(word);
+    const gained = Math.round(wordXp(word) * this.xpFactor);
     this.earnedXp += gained;
     this.earnedCoins += COINS_PER_WORD;
     return gained;
