@@ -47,7 +47,12 @@ import { watchStageInsets } from '../ui/stageInsets';
 import { storyCard } from '../ui/StoryCard';
 import { TouchTyping } from '../ui/TouchTyping';
 import { WorldMap } from '../ui/WorldMap';
-import { devLevelFromUrl, devProfile, unlockAudioOnFirstInput } from './devShortcut';
+import {
+  devArenaFromUrl,
+  devLevelFromUrl,
+  devProfile,
+  unlockAudioOnFirstInput,
+} from './devShortcut';
 import { loadGameModule, prefetchGameModule, type GameModule } from './gameModule';
 import { PageAttention } from './PageAttention';
 
@@ -83,6 +88,8 @@ export class App {
     if (import.meta.env.DEV) {
       const level = devLevelFromUrl();
       if (level) return this.startDevLevel(level);
+      const arena = devArenaFromUrl();
+      if (arena) return this.startDevArena(arena);
     }
     this.showProfiles();
   }
@@ -90,6 +97,11 @@ export class App {
   private startDevLevel(level: Level): void {
     unlockAudioOnFirstInput();
     this.startLevel(devProfile(this.store.active()), level);
+  }
+
+  private startDevArena(choice: ArenaChoice): void {
+    unlockAudioOnFirstInput();
+    this.startArena(devProfile(this.store.active()), choice);
   }
 
   private showProfiles(): void {
