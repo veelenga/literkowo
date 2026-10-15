@@ -351,6 +351,10 @@
   filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.3)) drop-shadow(0 0 16px var(--trophy));
 }
 
+.shop-trophy .shop-item-footer {
+  align-self: stretch;
+}
+
 .trophy-progress {
   display: flex;
   flex-direction: column;
