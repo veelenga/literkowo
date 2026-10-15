@@ -1,10 +1,12 @@
 import type { WordLanguage } from '../profiles/Profile';
-import { LEARN_STAGES, type LetterRange } from './difficulty';
+import type { LetterRange, WordStageKind } from './difficulty';
+import { typability } from './typability';
 import type { WordRules } from './wordRules';
 import { WORD_LISTS } from './wordLists';
+import { lengthsAt, stageAt } from './wordStages';
 
 const MIN_REAL_WORDS = 12;
-const MIN_LEARN_REAL_WORDS = 3;
+const MIN_FOCUS_WORDS = 3;
 export const BOSS_MIN_LENGTH = 4;
 const BOSS_GENERATED_LENGTH: LetterRange = { min: 5, max: 7 };
 export const SHORT_LENGTH: [number, number] = [3, 4];
@@ -13,6 +15,9 @@ const LETTERS_ONLY = /[a-ząćęłńóśźż]/;
 const MAX_DRAWS = 10;
 const NO_STARTS: ReadonlySet<string> = new Set();
 const EVEN_WEIGHT = 1;
+const NO_STAGES = [] as const;
+const TYPABILITY_DRAWS = 4;
+const TYPABILITY_FLOOR = 0.25;
 
 export interface KeyWeights {
   weightOf(key: string): number;
@@ -22,8 +27,6 @@ interface WordPools {
   readonly rules: WordRules;
   readonly fresh: string;
   readonly realWords: readonly string[];
-  readonly fittingWords: readonly string[];
-  readonly learnWords: readonly string[];
 }
 
 const EVEN_WEIGHTS: KeyWeights = { weightOf: () => EVEN_WEIGHT };
@@ -50,12 +53,14 @@ export class WordSource {
   }
 
   next(takenStarts = NO_STARTS): string {
-    return drawAvoiding(takenStarts, () => this.anyWord());
+    return drawAvoiding(takenStarts, () => this.anyWord(this.pools.rules.lengths));
   }
 
-  learnWord(progress: number, takenStarts = NO_STARTS): string {
-    const isComboStage = progress < LEARN_STAGES.comboShare;
-    return drawAvoiding(takenStarts, () => (isComboStage ? this.combo() : this.shortLearnWord()));
+  stagedWord(progress: number, takenStarts = NO_STARTS): string {
+    const point = stageAt(this.pools.rules.stages ?? NO_STAGES, progress);
+    if (!point) return this.next(takenStarts);
+    const lengths = lengthsAt(point.stage.lengths, point.progress);
+    return drawAvoiding(takenStarts, () => this.stageWord(point.stage.kind, lengths));
   }
 
   bossWord(): string {
@@ -85,33 +90,45 @@ export class WordSource {
     return this.pools.fresh;
   }
 
-  private anyWord(): string {
-    return this.realWord() ?? this.generate(this.pools.rules.generatedLengths);
+  private stageWord(kind: WordStageKind, lengths: LetterRange): string {
+    if (kind === 'combos') return this.focused(lengths);
+    if (kind === 'focusWords') return this.focusWord(lengths);
+    return this.anyWord(lengths);
   }
 
-  private realWord(): string | undefined {
-    const { fittingWords } = this.pools;
-    if (fittingWords.length < MIN_REAL_WORDS || isGeneratedTurn()) return undefined;
-    const fresh = fittingWords.filter((word) => usesFresh(word, this.fresh));
-    return this.pickWord(fresh) ?? this.pickWord(fittingWords);
+  private anyWord(lengths: LetterRange): string {
+    return this.realWord(lengths) ?? this.generate(this.generatedWithin(lengths));
   }
 
-  private combo(): string {
-    return this.focused(LEARN_STAGES.combos);
+  private realWord(lengths: LetterRange): string | undefined {
+    const fitting = this.wordsWithin(lengths);
+    if (fitting.length < MIN_REAL_WORDS || isGeneratedTurn()) return undefined;
+    const fresh = fitting.filter((word) => usesFresh(word, this.fresh));
+    return this.pickWord(fresh) ?? this.pickWord(fitting);
   }
 
-  private shortLearnWord(): string {
-    const { learnWords } = this.pools;
-    const hasWords = learnWords.length >= MIN_LEARN_REAL_WORDS;
-    const word = hasWords && !isGeneratedTurn() ? this.pickWord(learnWords) : undefined;
-    return word ?? this.focused(LEARN_STAGES.words);
+  private focusWord(lengths: LetterRange): string {
+    const words = this.wordsWithin(lengths).filter((word) => usesFresh(word, this.fresh));
+    const hasWords = words.length >= MIN_FOCUS_WORDS;
+    const word = hasWords && !isGeneratedTurn() ? this.pickWord(words) : undefined;
+    return word ?? this.focused(lengths);
+  }
+
+  private wordsWithin(lengths: LetterRange): string[] {
+    return this.pools.realWords.filter((word) => isWithin(word, lengths));
+  }
+
+  private generatedWithin(lengths: LetterRange): LetterRange {
+    const cap = this.pools.rules.generatedLengths.max;
+    return { min: lengths.min, max: Math.max(lengths.min, Math.min(lengths.max, cap)) };
   }
 
   private pickWord(words: readonly string[]): string | undefined {
     const weights = new Map([...this.allowed].map((char) => [char, this.weightOf(char)]));
-    const wordWeight = (word: string) =>
+    const weakness = (word: string) =>
       Math.max(...[...word].map((char) => weights.get(char) ?? EVEN_WEIGHT));
-    return weightedPick(words, wordWeight);
+    const ease = (word: string) => TYPABILITY_FLOOR + typability(word, this.fresh);
+    return weightedPick(words, (word) => weakness(word) * ease(word));
   }
 
   private pickChar(pool: string): string {
@@ -128,17 +145,18 @@ export class WordSource {
 
   private generate(range: LetterRange, pool = this.allowed): string {
     const fresh = [...this.fresh].filter((char) => pool.includes(char)).join('') || pool;
-    return Array.from({ length: randomInt(range.min, range.max) }, () =>
-      this.biasedChar(pool, fresh),
-    ).join('');
+    const length = randomInt(range.min, range.max);
+    return easiestOf(() => Array.from({ length }, () => this.biasedChar(pool, fresh)).join(''));
   }
 
   private focused(range: LetterRange): string {
     const length = randomInt(range.min, range.max);
-    const anchor = randomInt(0, length - 1);
-    return Array.from({ length }, (_, index) =>
-      index === anchor ? this.pickChar(this.fresh) : this.biasedChar(this.allowed, this.fresh),
-    ).join('');
+    return easiestOf(() => {
+      const anchor = randomInt(0, length - 1);
+      return Array.from({ length }, (_, index) =>
+        index === anchor ? this.pickChar(this.fresh) : this.biasedChar(this.allowed, this.fresh),
+      ).join('');
+    });
   }
 
   private biasedChar(pool: string, fresh: string): string {
@@ -147,16 +165,10 @@ export class WordSource {
 }
 
 function poolsFor(language: WordLanguage, rules: WordRules): WordPools {
-  const fresh = rules.focusKeys || rules.allowedKeys;
-  const realWords = WORD_LISTS[language].filter((word) => usesOnly(word, rules.allowedKeys));
   return {
     rules,
-    fresh,
-    realWords,
-    fittingWords: realWords.filter((word) => isWithin(word, rules.lengths)),
-    learnWords: realWords.filter(
-      (word) => isWithin(word, LEARN_STAGES.words) && usesFresh(word, fresh),
-    ),
+    fresh: rules.focusKeys || rules.allowedKeys,
+    realWords: WORD_LISTS[language].filter((word) => usesOnly(word, rules.allowedKeys)),
   };
 }
 
@@ -166,6 +178,11 @@ function usesOnly(word: string, keys: string): boolean {
 
 function usesFresh(word: string, fresh: string): boolean {
   return [...word].some((char) => fresh.includes(char));
+}
+
+function easiestOf(draw: () => string): string {
+  const candidates = Array.from({ length: TYPABILITY_DRAWS }, draw);
+  return candidates.reduce((best, word) => (typability(word) > typability(best) ? word : best));
 }
 
 function drawAvoiding(takenStarts: ReadonlySet<string>, draw: () => string): string {

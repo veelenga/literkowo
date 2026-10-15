@@ -19,7 +19,7 @@ import {
   frameBoard,
   type StageInsets,
 } from './board';
-import { Boss } from './Boss';
+import { BOSS_SCALE, Boss, MINI_BOSS_SCALE } from './Boss';
 import { CameraShake } from './CameraShake';
 import { Enemy, type EnemyLook } from './Enemy';
 import type { Tally } from '../course/counters';
@@ -32,7 +32,7 @@ import { Particles } from './Particles';
 import { Player } from './Player';
 import { currentQuality } from './quality';
 import { renderHost, type Viewport } from './RenderHost';
-import type { Phase, PhaseKind, RunPhase, RunPlan } from './RunPlan';
+import { tempoAt, type Phase, type PhaseKind, type RunPhase, type RunPlan } from './RunPlan';
 import type { RewardBoost } from '../course/powers';
 import { RunRewards, type Rewards } from './RunRewards';
 import { RunTally } from './RunTally';
@@ -122,6 +122,7 @@ export class Game {
     enemy.setTargeted(isCandidate),
   );
   private insets: StageInsets = NO_INSETS;
+  private plannedPhase: RunPhase;
   private phase: RunPhase;
   private phaseIndex = FIRST_PHASE;
   private spawned = 0;
@@ -152,7 +153,8 @@ export class Game {
       allowedKeysFor(config.level, config.language),
       practiceDay(new Date()),
     );
-    this.phase = firstPhase(config.plan);
+    this.plannedPhase = firstPhase(config.plan);
+    this.phase = this.plannedPhase;
     this.calm = this.phase.calmSeconds ?? NO_CALM;
     this.lives = config.plan.lives;
     this.rewards = new RunRewards(config.plan);
@@ -375,6 +377,11 @@ export class Game {
     const word = this.nextSpawnWord();
     this.spawned += 1;
     this.spawnGroups.spawn(() => this.spawnWord(word));
+    this.retime();
+  }
+
+  private retime(): void {
+    this.phase = { ...this.plannedPhase, ...tempoAt(this.plannedPhase, this.spawned) };
   }
 
   private restsInCalm(delta: number): boolean {
@@ -394,10 +401,7 @@ export class Game {
   private nextSpawnWord(): string {
     const taken = this.liveStarts();
     if (this.phase.kind === 'warmup') return this.words.singleLetter(taken);
-    if (this.phase.kind === 'learn') {
-      return this.words.learnWord(this.spawned / this.phase.count, taken);
-    }
-    return this.words.next(taken);
+    return this.words.stagedWord(this.spawned / this.phase.count, taken);
   }
 
   private nextWord(): string {
@@ -416,12 +420,14 @@ export class Game {
 
   private spawnBossOnce(): void {
     if (this.boss) return;
+    const isMini = this.phase.miniBoss === true;
     this.boss = new Boss(
       this.labels.createLabel(),
       this.phase.speed,
       this.look(),
-      () => this.words.bossWord(),
+      isMini ? () => this.words.next() : () => this.words.bossWord(),
       this.phase.count,
+      isMini ? MINI_BOSS_SCALE : BOSS_SCALE,
     );
     this.addEnemy(this.boss, BOSS_SPAWN_RADIUS);
   }
@@ -526,7 +532,8 @@ export class Game {
     this.sinceSpawn = Number.POSITIVE_INFINITY;
     const next = this.config.plan.phaseAt(this.phaseIndex);
     if (!next) return this.finish(true);
-    this.phase = next;
+    this.plannedPhase = next;
+    this.retime();
     this.calm = next.calmSeconds ?? NO_CALM;
     this.words.use(next.words);
     this.reportProgress();

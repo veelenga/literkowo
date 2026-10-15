@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { coursePosition } from '../course/catalog';
-import { SPAWN_INTERVAL, WORD_SPEED, difficultyFor, valueAt } from '../course/difficulty';
+import { difficultyFor, levelTempo } from '../course/difficulty';
 import { difficultyById, type ArenaDifficulty, type DifficultyId } from './difficulty';
 import { arenaCoinsPerWord } from './economy';
 import {
@@ -50,17 +49,14 @@ describe('endlessPlan', () => {
     expect(endlessPlan({ keySet: POLANA, difficulty: NORMAL }).xpFactor).toBe(0.4);
   });
 
-  it('starts at the practice pace of the boss level, scaled by the preset', () => {
-    const position = coursePosition(POLANA.bossLevel);
+  it('starts at the course pace of the boss level, scaled by the preset', () => {
+    const { start } = levelTempo(POLANA.bossLevel);
     const first = waveOf(1, POLANA, FAST);
     expect(first.wave).toBe(1);
     expect(first.kind).toBe('words');
     expect(first.count).toBe(10);
-    expect(first.speed).toBeCloseTo(valueAt(WORD_SPEED, position) * FAST.speedFactor, PRECISION);
-    expect(first.spawnInterval).toBeCloseTo(
-      valueAt(SPAWN_INTERVAL, position) * FAST.spawnGapFactor,
-      PRECISION,
-    );
+    expect(first.speed).toBeCloseTo(start.speed * FAST.speedFactor, PRECISION);
+    expect(first.spawnInterval).toBeCloseTo(start.spawnInterval * FAST.spawnGapFactor, PRECISION);
   });
 
   it('adds two words per wave up to thirty', () => {

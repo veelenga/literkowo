@@ -25,7 +25,7 @@ The levels of a region are built from its keys, so the catalog lists keys and no
 
 - `learn`: introduces one new key. Its focus key is the new key. The warm-up shows only that key, see [Difficulty](#difficulty).
 - `practice`: comes right after the learn level of the same key, with real words of all known keys and a bias to the new key.
-- `review`: comes after every two new keys of a region (`KEYS_PER_REVIEW`) and mixes all known keys. Its focus keys are the keys since the previous review. A key left over at the end of a region gets its own review, so a review always comes right before the boss.
+- `review`: comes after every two new keys of a region (`KEYS_PER_REVIEW`) and mixes all known keys. Its focus keys are the keys since the previous review. A key left over at the end of a region gets its own review, so a review always comes right before the boss. Every review ends with a mini boss, see [Boss phases](#boss-phases).
 - `boss`: the last level of each region. It adds no keys, and its focus keys are all keys of the region.
 
 More rules:
@@ -34,10 +34,18 @@ More rules:
 - Polish word profiles get 37 learn, 37 practice, 20 review and 5 boss levels, 99 in total. English word profiles get 28 learn, 28 practice, 15 review and 4 boss levels, 75 in total.
 - A region lists the word languages it supports. Wyspa Ogonków teaches Polish letters, so English word profiles do not see it.
 - A level allows every key introduced up to and including that level (`src/course/course.ts`).
-- The first level is always open. Every other level opens once the previous level in the course has at least one star (`src/course/course.ts`).
+- Which levels are open (`src/course/course.ts`). A level is won when it has at least one star.
+  - Before any win only the first level is open.
+  - After that, every level up to 3 levels past the furthest won level is open (`OPEN_AHEAD`), so a child can try ahead.
+  - Reviews and bosses are gates, and the open window never goes past a gate without a star. A review opens only when every practice level before it in its region is won, and a boss only when the review before it is won. A gate that cannot open yet stays locked, and so do the levels after it.
+  - For example, with `polana-1` won, `polana-2` is open and the review `polana-3` is locked. With `polana-1` to `polana-3` won, `polana-4`, `polana-5` and `polana-6` are open.
+  - The current level is the first open level without a star after the furthest win, or the first open level without a star when none is left ahead. The map marks it with the hero and the Play tag. The other open levels look the same but have no marker.
+  - The result card offers the next level only when it is open.
 - Polish letters are typed with right Alt. Ctrl with Alt also counts as right Alt, so AltGr works on Windows (`src/game/Game.ts`, `src/course/fingers.ts`).
 
 All levels:
+
+Every review in the table ends with a mini boss.
 
 | Region     | Key     | Learn         | Practice      | Then                                     |
 | ---------- | ------- | ------------- | ------------- | ---------------------------------------- |
@@ -89,11 +97,11 @@ The game runs a run plan: its phases by index, its lives, its XP factor, and the
 2. Learn card, for every level except bosses (`src/ui/LearnCard.ts`). Enter starts the level. The ✕ button in the top right corner, a 44 px touch target with the label "Wróć do mapy" / "Повернутися до мапи", and Escape close the card and go back to the map without starting the level. Like Enter, Escape waits 600 ms after the card opens. A story card before the level still plays first and stays seen when the learn card is closed.
    - Learn level: "Nowy klawisz" / "Нова клавіша" ("Nowe klawisze" / "Нові клавіші" for `f` `j`), the new key with its finger and mastery status, the hands diagram and the hint to put the fingers on the home row.
    - Practice level: "Trening" / "Тренування", the key and one line: "Ćwiczymy w krótkich słowach. Najpierw dokładnie, potem szybko!" / "Тренуємося на коротких словах. Спершу точно, потім швидко!".
-   - Review level: "Powtórka" / "Повторення", the reviewed keys and one line: "Powtarzamy wszystkie poznane klawisze. Dasz radę!" / "Повторюємо всі вивчені клавіші. Ти впораєшся!".
+   - Review level: "Powtórka" / "Повторення", the reviewed keys and one line: "Powtarzamy wszystkie poznane klawisze. Na końcu czeka Mały Strażnik!" / "Повторюємо всі вивчені клавіші. Наприкінці чекає Малий Вартовий!".
 3. Camera intro of 1.8 seconds. Typing is ignored until it ends.
 4. Warm-up. Single letters from the level's focus keys. A letter that reaches the player is removed and costs nothing.
-5. Main phase. A learn level runs a learn phase, practice and review levels run a words phase. A word that reaches the player costs a life and counts as a mistake. Counts, speeds and lengths are in [Difficulty](#difficulty).
-6. Boss, for boss levels only, with no learn card and no warm-up. One boss that needs the number of words in [Difficulty](#difficulty). Each hit knocks it back and makes it 12% faster. When it reaches the player, it jumps back to distance 9 and the player loses a life (`src/game/Boss.ts`).
+5. Main phase. A learn level runs a learn phase, practice and review levels run a words phase. A word that reaches the player costs a life and counts as a mistake. Counts, the pace and the word stages are in [Difficulty](#difficulty).
+6. Boss. A boss level has only the region boss, with no learn card and no warm-up. A review level ends with a mini boss once its words are cleared. A boss needs the number of words in [Difficulty](#difficulty). Each hit knocks it back and makes it 12% faster. When it reaches the player, it jumps back to distance 9 and the player loses a life (`src/game/Boss.ts`). The HUD shows its health in the progress bar.
 7. Result card. It shows stars, score, accuracy, words per minute and letters freed, the XP bar with the XP and coins earned, the keys row (see [Key mastery](#key-mastery)), the treasure chips (see [Shop](#shop)), and buttons for the next level when there is one, retry and map (`src/ui/LevelResult.ts`, `src/ui/ResultProgress.ts`). Enter presses the main button, marked with ⏎: the next level when there is one, retry after a run without stars and the map otherwise, and, like Enter on the learn card, it is ignored for the first 600 ms so keys pressed at the end of the level do not skip either card.
 
 Rules during a level:
@@ -104,8 +112,12 @@ Rules during a level:
 - Typing follows every enemy whose word starts with the letters typed so far, a key that fits none of them is a mistake, and when a word is done every enemy with that same word is done too while the others go back to untyped (`src/game/Targeting.ts`).
 - Escape pauses and resumes. Pause also suspends audio. The pause card also has a resume button, a quiet "Ustawienia" / "Налаштування" button with a gear and the key heatmap, and touch screens get a pause button in the HUD. The settings button opens the [Settings](#settings) screen over the paused level. Graphics quality is picked there, not on the pause card.
 - Every correct letter fires a bolt from the hero to the nearest enemy being typed, and every finished word gets a lightning strike with a soft crack and a small camera punch, 30 ms apart when several words finish on one key (`src/game/mechanics/HeroStrikes.ts`). The strikes turn from the world's accent colour toward gold as the combo grows and are fully golden in fever, while a glow under the hero charges with the combo up to 15.
-- Words (`src/course/WordSource.ts`): when at least 12 words from `src/course/wordLists.ts` fit the allowed keys and the length limits of the level, about half of the words are real words, preferring words with a focus key. The rest are generated strings within the generated length limits, where about half of the letters come from the focus keys. Boss words are real words of 4 or more letters when at least 12 fit, otherwise generated strings of 5 to 7 letters. New words and warm-up letters prefer a first letter that no enemy on the board is waiting for. Generated letters and real words lean toward the player's weak keys, see [Key mastery](#key-mastery).
-- The learn phase teaches the new key in two halves. In the first half every enemy is a combo of 1 or 2 letters with the new key and maybe a known key, for example `f` `j` `fj` `jf` `ff` `jj`. In the second half the words have 2 or 3 letters with the new key: a real word about half of the time when at least 3 such words fit, otherwise a generated one.
+- Words (`src/course/WordSource.ts`): the main phase of a level runs its word stages in order, see [Difficulty](#difficulty). Each stage takes a share of the phase's words and has its own kind and length limits (`src/course/wordStages.ts`). In the first half of a stage the longest word is one letter shorter, as long as the stage keeps at least two lengths, so `2 to 4` starts as `2 to 3`.
+  - `combos`: a generated string with at least one focus key, the other letters from the focus keys about half of the time and from all known keys otherwise, for example `f` `fj` `jf` `fjj`.
+  - `focusWords`: a real word with a focus key about half of the time when at least 3 such words fit, otherwise a combo.
+  - `words`: when at least 12 words from `src/course/wordLists.ts` fit the allowed keys and the length limits, about half of the words are real words, preferring words with a focus key. The rest are generated strings within the generated length limits, where about half of the letters come from the focus keys.
+- Easy to type first (`src/course/typability.ts`): every move between two letters gets a score from the finger map in `src/course/fingers.ts`. The hands taking turns score 1, a doubled letter 0.8, two fingers of one hand 0.5 and one finger pressing two different keys 0. A word scores the average of its moves, and when focus keys are given, only the moves into and out of a focus key count. A generated string or combo is the easiest of 4 random draws of the same length, so `fj` and `jf` show often and `fr` or `ju` almost never. A real word is picked with a weight of its weak key weight times `0.25 + score` around the focus keys, so words that are easy around the new key come more often while the new key keeps its bias.
+- Boss words are real words of 4 or more letters when at least 12 fit, otherwise generated strings of 5 to 7 letters. New words and warm-up letters prefer a first letter that no enemy on the board is waiting for. Generated letters and real words lean toward the player's weak keys, see [Key mastery](#key-mastery). Words that features add, such as minions, use the full length limits of the level.
 - The learn phase is calm. Special enemies, mid-wave events, speed surges, bombers, twins, power words and merging run only in the words phase and in boss fights, so learn levels have none of them.
 
 Stars, with the current thresholds (`src/course/scoring.ts`). They are judged on the accuracy rounded to a whole percent, the same number the result card and the HUD show, so 92.5% shows as 93% and earns 2 stars:
@@ -123,23 +135,30 @@ Stars, with the current thresholds (`src/course/scoring.ts`). They are judged on
 
 ## Difficulty
 
-Owner: `src/course/difficulty.ts`. Every pace and length limit comes from the kind of the level and its position in the course.
+Owner: `src/course/difficulty.ts`. Every pace and length limit comes from the kind of the level and its place in the course.
 
 Position is `order / (number of levels − 1)`, from 0 at `polana-1` to 1 at `wyspa-24`. Order counts every level of the catalog from 0, bosses included, so an English course ends at `jaskinia-24`, position 0.76. A value written as "a to b" grows in a straight line from a at position 0 to b at position 1.
 
-| Value          | Learn                        | Practice                    | Review                      |
-| -------------- | ---------------------------- | --------------------------- | --------------------------- |
-| Warm-up        | 8 letters, speed 0.42, 1.6 s | 5 letters, speed 0.5, 1.5 s | 5 letters, speed 0.5, 1.5 s |
-| Main phase     | `learn`                      | `words`                     | `words`                     |
-| Words          | 8 to 12                      | 10 to 16                    | 12 to 20                    |
-| Speed          | 0.8 × word speed             | word speed                  | word speed                  |
-| Spawn interval | 1.15 × spawn interval        | spawn interval              | spawn interval              |
-| Word length    | 1 to 3 letters               | 2 to 4 letters              | 2 to 5 letters              |
+| Value       | Learn                                                                  | Practice                                                              | Review                 |
+| ----------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------- |
+| Warm-up     | 5 letters, 1.6 s apart                                                 | 5 letters, 1.5 s apart                                                | 5 letters, 1.5 s apart |
+| Main phase  | `learn`                                                                | `words`                                                               | `words`                |
+| Words       | 12 to 18                                                               | 12 to 18                                                              | 12 to 20               |
+| Word stages | `combos` 1 to 3 letters for 60% of the words, then `focusWords` 2 to 3 | `focusWords` 2 to 3 letters for 20% of the words, then `words` 2 to 4 | `words` 2 to 5 letters |
 
-- Word speed is 0.52 to 1.2 (`WORD_SPEED`). Spawn interval is 3.8 to 1.9 seconds (`SPAWN_INTERVAL`). Word counts are rounded.
-- Generated words have at most `round(3 to 5)` letters (`GENERATED_MAX_LENGTH`) and never more than the kind allows, so early levels get generated strings of at most 3 letters. Real words use the full length of the kind.
+Pace:
+
+- The course has one pace that grows without jumps. Every learn, practice and review level walks one step of it, and a boss walks none (`PACE_STEPS`). A level starts at the pace the level before it ended with.
+- The pace at step progress `p`, from 0 at the start of `polana-1` to 1 at the end of the last review, is a word speed of 0.42 to 1.2 (`WORD_SPEED`) and a spawn interval of 4.4 to 1.9 seconds (`SPAWN_INTERVAL`), both taken at `p^1.5` (`PACE_EASING`). So Polana grows slowly and the later regions carry the growth.
+- The main phase eases the speed and the spawn interval of each new enemy from the start pace of the level to its end pace, by the number of enemies sent (`rampTo` and `tempoAt` in `src/game/RunPlan.ts`). The warm-up runs at the start pace.
+- An enemy walks 9.4 units from the spawn arc to the hero. That takes about 22.4 seconds at the start of `polana-1`, 22.1 seconds at the end of `polana-3`, 19.4 seconds at the end of Polana, 16.1 at the end of Las, 13.3 at the end of Góry, 10.1 at the end of Jaskinia and 7.8 at the end of Wyspa Ogonków.
+
+More rules:
+
+- Word counts are rounded.
+- Generated words of a `words` stage have at most `round(3 to 5)` letters (`GENERATED_MAX_LENGTH`) and never more than the stage allows, so early levels get generated strings of at most 3 letters. Real words and combos use the full length of the stage.
 - Boss: `round(4 to 14)` words (`BOSS_HITS`), so 6, 7, 9, 12 and 14 for the five bosses, at speed 0.3 to 0.52 (`BOSS_SPEED`). Other enemies in a boss fight use 2 to 5 letters.
-- An enemy walks 9.4 units from the spawn arc to the hero. In the first level a letter takes about 22 seconds to reach the hero, and in the second level a word takes about 18 seconds. Before this course, a word in the first level took about 13 seconds.
+- Mini boss of a review: `round(3 to 5)` words (`MINI_BOSS_HITS`), so 3 in Polana and `las-5`, 4 from `las-10` to `jaskinia-23` and 5 in Wyspa Ogonków, at 0.8 times the speed the review ends with (`MINI_BOSS_SPEED_SHARE`), but never faster than the boss of its region (`BOSS_SPEED` at the boss level). So the `polana-3` mini boss runs at 0.34, just below the Polana boss, and every later mini boss runs at the speed of its region boss. Its words are the review's own words.
 - Apart from warm-ups and the rush and meteor events, single letters show only in learn levels.
 
 ## Action events
@@ -267,7 +286,7 @@ Owners: `src/game/mechanics/MergeEnemies.ts`, `src/game/mechanics/mergeEnemies`,
 
 Owners: `src/game/mechanics/BossPhases.ts`, `src/game/mechanics/bossPhases`, copy in `src/i18n/features/bossPhases.ts`, darkness styles in `src/ui/bossPhases.css`.
 
-The boss fight has three phases by the boss's health: the words left out of the words needed (`src/game/mechanics/bossPhases/phases.ts`). Each phase shows its banner the first time a hit lands in it.
+The region boss fight has three phases by the boss's health: the words left out of the words needed (`src/game/mechanics/bossPhases/phases.ts`). Each phase shows its banner the first time a hit lands in it.
 
 | Phase       | Health          | Banner (pl / uk)               | Rule                                                                                                                                                                                                                                                                                          |
 | ----------- | --------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -287,10 +306,18 @@ Signature attacks (`src/game/mechanics/bossPhases/SignatureAttacks.ts`, `AttackS
 | `fog`        | Góry, Wyspa Ogonków     | For 8 seconds every label, also on new enemies, shows only the next letter of its word and dots for the rest (`FOG_SECONDS`).   |
 | `earthquake` | Jaskinia, Wyspa Ogonków | The camera shakes, and every enemy except the boss jumps to a random place at the same distance from the hero, with dust puffs. |
 
+Mini boss (`src/game/mechanics/bossPhases/MiniBossFight.ts`):
+
+- Every review level ends with a mini boss: a `boss` phase with `miniBoss` set in the plan (`src/game/LevelPlan.ts`). It starts once the review's words are cleared.
+- It is the region's boss model at 1.7 times the size of an enemy instead of 2.4 (`MINI_BOSS_SCALE` in `src/game/Boss.ts`), with the hits and speed in [Difficulty](#difficulty).
+- As it arrives, the banner "Mały Strażnik!" / "Малий Вартовий!" shows. The last hit plays a short fanfare and the callout "Mały Strażnik pokonany!" / "Малого Вартового переможено!" shows, then the level ends.
+- It fights in one phase: no armour, weak point or rage banners, no stun, no minions and no signature attacks. Speed surges keep their calm pace next to it.
+- Stars of a review still come from accuracy. A mini boss that reaches the hero jumps back and costs a life like the region boss.
+
 Score, XP and accuracy:
 
 - Attacks never cost a life and never count as a mistake.
-- A boss hit gives XP with tag factor 3 and a minion with factor 1, see [Progression](#progression). Minions score and pay coins like any word, and cost a life when they reach the hero.
+- A boss hit, also of a mini boss, gives XP with tag factor 3 and a minion with factor 1, see [Progression](#progression). Minions score and pay coins like any word, and cost a life when they reach the hero.
 
 ## Enemy types
 
@@ -298,7 +325,7 @@ Owners: `src/game/mechanics/EnemyTypes.ts`, `src/game/mechanics/enemyTypes/kinds
 
 - During the words phase, a fresh normal spawn turns into a special enemy with a chance of 25% (`SPECIAL_SHARE`). The chance is split by weight between the unlocked types: jumper 3, nest 1, the others 2 each (`KIND_WEIGHTS`).
 - The special enemy takes the place of the spawn, so the word count of the phase stays the same. A balloon that floats away or a thief that escapes counts as done.
-- Only plain spawns without a tag are replaced. The boss, power words, merged enemies, minions, twins, bombers, chicks, splitter halves and event pieces stay as they are. Special enemies never merge.
+- Only plain spawns without a tag are replaced. The boss, the mini boss, power words, merged enemies, minions, twins, bombers, chicks, splitter halves and event pieces stay as they are. Special enemies never merge.
 - At most 1 special enemy is on the board in Polana, and at most 3 in later regions. Bull, nest and thief also come one at a time (`KIND_LIMITS`).
 - The first time a type appears in a level, its name shows as a callout. Each type also has a short hint in `src/i18n/features/enemyTypes.ts`.
 - In an arena run every type is unlocked and up to 3 special enemies can be on the board, see [Arena](#arena). In a course level a type unlocks with the learn level of its key, see the table. Special enemies only replace spawns in the words phase, so the first one shows in the practice level of that key. When a profile's course never teaches that key, the type unlocks with its fallback key instead. English word profiles never see Wyspa Ogonków, so they meet the chameleon with `x` in `jaskinia-11` and the nest with `b` in `jaskinia-16` (`src/game/mechanics/enemyTypes/kinds.ts`).
@@ -588,7 +615,7 @@ Difficulty presets (`src/arena/difficulty.ts`):
 
 Endless waves (`src/arena/endlessPlan.ts`):
 
-- Wave 1 starts at the practice pace of the key set's boss level: the word speed and the spawn interval at its course position (see [Difficulty](#difficulty)), times the preset's speed and spawn gap.
+- Wave 1 starts at the course pace of the key set's boss level, which is the pace the region's last review ends with (see [Difficulty](#difficulty)), times the preset's speed and spawn gap.
 - Wave `n` has `8 + 2n` words, at most 30.
 - Each wave is 5% faster than the one before, up to 1.8 times wave 1.
 - The spawn interval shrinks 5% per wave, down to 85% of wave 1 (`SPAWN_GAP`). The floor keeps the XP rule below.
@@ -737,7 +764,7 @@ Map:
 - The map is one tall scene. The regions are stacked from top to bottom as bands that blend into each other: meadow, forest, mountains, cave and island. Locked bands are dimmed.
 - One winding path runs through every level. The walked part, up to the first level without a star, is gold.
 - Each band starts with a sign: the chapter number, the region name, a short mood line (`src/i18n/features/worldMap.ts`), the stars earned out of the total and the mastery meter. Signs switch sides from band to band, and the path passes each sign on the other side.
-- Levels are round badges on the path with their focus keys. Learn levels carry a ✨ badge and review levels a 🔁 badge, and the title names the kind and the keys, for example "Trening D" / "Тренування D" (`src/ui/levelKind.ts`). Unlocked learn, practice and review levels show the key dots under the keys, see [Key mastery](#key-mastery). Bosses have a crown. Locked levels show a lock. Levels with stars glow in the region colour and show their stars. The current level pulses, has a Play tag, and the hero stands on it.
+- Levels are round badges on the path with their focus keys. Learn levels carry a ✨ badge and review levels a 👑 badge for their mini boss, and the title names the kind and the keys, for example "Trening D" / "Тренування D" (`src/ui/levelKind.ts`). Unlocked learn, practice and review levels show the key dots under the keys, see [Key mastery](#key-mastery). Bosses have a crown. Locked levels show a lock, and their title says what to win first: "Wygraj poziomy przed powtórką" / "Виграй рівні перед повторенням" on a review whose practice levels are not all won, "Wygraj powtórkę przed bossem" / "Виграй повторення перед босом" on a boss whose review is not won, and "Najpierw ukończ wcześniejsze poziomy" / "Спочатку пройди попередні рівні" on any other level outside the open window (`lockReason` in `src/course/course.ts`). Levels with stars glow in the region colour and show their stars. The open levels pulse. The current level also has a Play tag, and the hero stands on it.
 - The hero on the current level wears the equipped hat and has the equipped pet in front of its hip, a little larger than in the game. The hero is framed like the plain portrait, so it keeps the same size, and a hat rises above the marker. It is a rendered image, not a live 3D view, so the map stays light on phones (`src/ui/OutfitAvatar.ts`, `src/ui/portraits/OutfitStudio.ts`). Until the image is ready, and when it cannot be rendered, the plain portrait shows. Each outfit is rendered once per session and kept in memory, so reopening the map shows it at once. With nothing equipped the hero is the plain portrait.
 - The header stays at the top: the avatar with the level number, the name, the rank and a thin XP bar, then stars, coins, the arena button, the shop button, the settings gear and the sound toggle. A tap on the avatar goes back to the profiles. The settings gear has the label "Ustawienia" / "Налаштування" only on screens wider than 1100 px, so the player name keeps its room on tablets. The shop button has the bag and the label "Sklep" / "Крамниця", only the bag on phones, and the green dot when something can be bought or claimed.
 - On open the map scrolls smoothly to the current level, or to the last open level when all levels have stars. Levels pop in as they scroll into view. With reduced motion the scroll is instant and nothing pops in.

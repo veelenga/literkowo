@@ -25,6 +25,9 @@ const ARMOUR_HITS = 2;
 const WEAK_POINT_HITS = 3;
 const MASK = '•';
 const TELEGRAPH = 'Mrok szykuje atak';
+const MINI_HITS = 3;
+const MINI_BANNER = 'Mały Strażnik!';
+const MINI_VICTORY = 'Mały Strażnik pokonany!';
 const BOSS_LEVELS: Record<ThemeId, string> = {
   meadow: 'polana-19',
   forest: 'las-16',
@@ -37,11 +40,12 @@ function label(): HTMLElement {
   return document.createElement('div');
 }
 
-function setup(themeId: ThemeId = 'forest') {
+function setup(themeId: ThemeId = 'forest', fight: Partial<Phase> = {}) {
   const theme = themeFor(themeId);
   const words = levelWords(requireLevel(BOSS_LEVELS[themeId]), 'pl');
   const look = { shape: theme.enemyShape, colors: theme.enemyColors };
-  const boss = new Boss(label(), SPEED, look, () => words.bossWord(), HITS);
+  const phase: Phase = { kind: 'boss', count: HITS, speed: SPEED, spawnInterval: 0, ...fight };
+  const boss = new Boss(label(), SPEED, look, () => words.bossWord(), phase.count);
   const enemies: Enemy[] = [boss];
   const addEnemy = (word: string, x = 0, z = 0) => {
     const enemy = new Enemy(word, label(), SPEED, look);
@@ -54,7 +58,6 @@ function setup(themeId: ThemeId = 'forest') {
   const shakeCamera = vi.fn<MechanicContext['shakeCamera']>();
   const burst = vi.fn<MechanicContext['particles']['burst']>();
   const spawnWord = vi.fn<MechanicContext['spawnWord']>((word = words.next()) => addEnemy(word));
-  const phase: Phase = { kind: 'boss', count: HITS, speed: SPEED, spawnInterval: 0 };
   const context = fakeMechanicContext({
     enemies,
     theme,
@@ -258,5 +261,40 @@ describe('BossPhases signature attacks', () => {
     expect(texts('warning')).toEqual([]);
     expect(shakeCamera).not.toHaveBeenCalled();
     expect(isDark()).toBe(false);
+  });
+});
+
+describe('BossPhases mini boss', () => {
+  const miniBoss = { miniBoss: true, count: MINI_HITS };
+
+  it('announces the mini boss as it arrives', () => {
+    const { texts } = setup('island', miniBoss);
+    expect(texts('banner')).toEqual([MINI_BANNER]);
+  });
+
+  it('fights in one phase without armour, weak point or rage', () => {
+    const { boss, setTimeScale, spawnWord, texts, hit, run } = setup('island', miniBoss);
+    hit(MINI_HITS - 1);
+    run(MINION_INTERVAL * 2);
+    expect(texts('banner')).toEqual([MINI_BANNER]);
+    expect(setTimeScale).not.toHaveBeenCalled();
+    expect(boss.isFrozen).toBe(false);
+    expect(spawnWord).not.toHaveBeenCalled();
+  });
+
+  it('never strikes with a signature attack', () => {
+    const { shakeCamera, texts, run } = setup('island', miniBoss);
+    run(FIRST_STRIKE + STRIKE_INTERVAL * 2);
+    expect(texts('warning')).toEqual([]);
+    expect(shakeCamera).not.toHaveBeenCalled();
+    expect(isDark()).toBe(false);
+  });
+
+  it('cheers when the last hit lands', () => {
+    const { texts, hit } = setup('forest', miniBoss);
+    hit(MINI_HITS - 1);
+    expect(texts('callout')).toEqual([]);
+    hit();
+    expect(texts('callout')).toEqual([MINI_VICTORY]);
   });
 });

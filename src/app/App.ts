@@ -333,7 +333,7 @@ export class App {
       newItems: hasNewItems(profile, updated),
       arenaOpened: !isArenaOpen(profile) && isArenaOpen(updated),
     };
-    const next = courseFor(updated.wordLanguage).next(level);
+    const next = openNext(updated, level);
     const leave = (then: (current: Profile) => void) =>
       this.dismissThen(() => this.afterLevel(updated, level, stars, then));
     this.overlays.open(
@@ -434,4 +434,10 @@ function attemptOf(result: GameResult, stars: number, coins: number): Attempt {
     keyStats: result.keys.practised,
     tally: result.tally,
   };
+}
+
+function openNext(profile: Profile, level: Level): Level | undefined {
+  const course = courseFor(profile.wordLanguage);
+  const next = course.next(level);
+  return next && course.isUnlocked(next, profile.levelResults) ? next : undefined;
 }

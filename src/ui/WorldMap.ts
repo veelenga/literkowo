@@ -27,7 +27,7 @@ import './worldMap.css';
 const STAR_BASE_DELAY_MS = 260;
 const STAR_STAGGER_MS = 110;
 const BOSS_FACE = '🌑';
-const KIND_BADGES: Readonly<Partial<Record<LevelKind, string>>> = { learn: '✨', review: '🔁' };
+const KIND_BADGES: Readonly<Partial<Record<LevelKind, string>>> = { learn: '✨', review: '👑' };
 const HALF = 2;
 const STOP_CLASS = 'journey-stop';
 const STOP_SELECTOR = `.${STOP_CLASS}`;
@@ -37,7 +37,14 @@ const PATH_WIDTH = 100;
 const GATE_SELECTOR = '.journey-gate';
 const NUDGE_CLASS = 'is-nudged';
 
-type NodeState = 'locked' | 'current' | 'done';
+type NodeState = 'locked' | 'open' | 'current' | 'done';
+
+const NODE_LOOKS: Readonly<Record<NodeState, string>> = {
+  locked: 'locked',
+  open: 'current',
+  current: 'current',
+  done: 'done',
+};
 
 interface Actions {
   onPlay: (level: Level) => void;
@@ -51,6 +58,7 @@ export class WorldMap {
   readonly element = el('div', { class: 'screen map-screen' });
   private readonly course: Course;
   private readonly layout: JourneyLayout;
+  private readonly current: Level | undefined;
   private effects: StopEffect[] = [];
 
   constructor(
@@ -58,6 +66,7 @@ export class WorldMap {
     private readonly actions: Actions,
   ) {
     this.course = courseFor(profile.wordLanguage);
+    this.current = this.course.current(profile.levelResults);
     this.layout = journeyLayout(this.course.regions.map((region) => region.levels.length));
     this.render();
   }
@@ -262,8 +271,9 @@ export class WorldMap {
   }
 
   private node(level: Level, state: NodeState): HTMLElement {
-    const classes = ['level-node', `is-${state}`, `is-${level.kind}`];
-    const title = state === 'locked' ? i18n.t.locked : levelTitle(level);
+    const classes = ['level-node', `is-${NODE_LOOKS[state]}`, `is-${level.kind}`];
+    const lock = this.course.lockReason(level, this.profile.levelResults);
+    const title = lock ? i18n.t.features.course.locks[lock] : levelTitle(level);
     return el(
       'button',
       {
@@ -301,7 +311,8 @@ export class WorldMap {
 
   private stateOf(level: Level): NodeState {
     if (!this.isUnlocked(level)) return 'locked';
-    return this.starsOf(level) > 0 ? 'done' : 'current';
+    if (this.starsOf(level) > 0) return 'done';
+    return level.id === this.current?.id ? 'current' : 'open';
   }
 
   private starsOf(level: Level): number {

@@ -141,6 +141,24 @@ describe('SpeedSurge', () => {
     expect(bossScale).not.toHaveBeenCalled();
   });
 
+  it('keeps its calm pace next to a mini boss with little health left', () => {
+    const board = fakeBoard({ phase: { ...BOSS, miniBoss: true } });
+    const boss = new Boss(
+      board.context.createLabel(),
+      1,
+      { shape: 'crystal', colors: [1] },
+      () => 'boss',
+      BOSS_WORDS,
+    );
+    board.enemies.push(boss);
+    const surge = new SpeedSurge(board.context);
+    for (let hit = 0; hit < BOSS_WORDS - 1; hit += 1) boss.takeHit();
+    play(surge, SURGE_FIRST_DELAY / 2 + FRAME);
+    expect(surge.isTelegraphing).toBe(false);
+    play(surge, SURGE_FIRST_DELAY / 2);
+    expect(surge.isTelegraphing).toBe(true);
+  });
+
   it('calms down when the phase changes', () => {
     const { surge, scale } = setup();
     reachSurge(surge);
