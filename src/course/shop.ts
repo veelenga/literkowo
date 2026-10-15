@@ -21,8 +21,30 @@ export interface ShopItem {
   readonly unlock: Unlock;
 }
 
-export const PET_IDS = ['cube-cat', 'bee', 'star', 'ghost', 'robot', 'dragon'] as const;
-export const HAT_IDS = ['cap', 'headphones', 'horns', 'wizard', 'halo', 'crown'] as const;
+export const PET_IDS = [
+  'cube-cat',
+  'piggy',
+  'bee',
+  'star',
+  'puppy',
+  'ghost',
+  'penguin',
+  'dragon',
+  'robot',
+  'shadow',
+] as const;
+export const HAT_IDS = [
+  'cap',
+  'headphones',
+  'horns',
+  'halo',
+  'beanie',
+  'wizard',
+  'helmet',
+  'pirate',
+  'crown',
+  'laurel',
+] as const;
 
 export type PetId = (typeof PET_IDS)[number];
 export type HatId = (typeof HAT_IDS)[number];
@@ -67,6 +89,7 @@ export interface Trophy {
 }
 
 const FREE: Unlock = { by: 'free' };
+const SHADOW_WAVE = 15;
 
 function coins(price: number): Unlock {
   return { by: 'coins', price };
@@ -74,6 +97,10 @@ function coins(price: number): Unlock {
 
 function rank(rankId: RankId): Unlock {
   return { by: 'rank', rank: rankId };
+}
+
+function arena(goal: ArenaGoal): Unlock {
+  return { by: 'arena', goal };
 }
 
 function pet(kind: PetPowerKind, strength: number): PetPower {
@@ -86,6 +113,7 @@ function hat(kind: HatPowerKind, strength: number): HatPower {
 
 export const PETS: readonly PetSpec[] = [
   { kind: 'pet', id: 'cube-cat', unlock: coins(160), color: '#5ce1ff', power: pet('zap', 1) },
+  { kind: 'pet', id: 'piggy', unlock: coins(250), color: '#ff9ec7', power: pet('doubleChest', 1) },
   { kind: 'pet', id: 'bee', unlock: coins(320), color: '#ffc61a', power: pet('popBalloon', 3) },
   {
     kind: 'pet',
@@ -94,7 +122,16 @@ export const PETS: readonly PetSpec[] = [
     color: '#ffe066',
     power: pet('restoreHeart', 1),
   },
+  { kind: 'pet', id: 'puppy', unlock: coins(400), color: '#e8b878', power: pet('catchThief', 2) },
   { kind: 'pet', id: 'ghost', unlock: coins(480), color: '#c9b8ff', power: pet('catchGhost', 2) },
+  {
+    kind: 'pet',
+    id: 'penguin',
+    unlock: coins(700),
+    color: '#7cc8ff',
+    power: pet('freezeBoard', 2),
+  },
+  { kind: 'pet', id: 'dragon', unlock: coins(900), color: '#4ade80', power: pet('catchBat', 2) },
   {
     kind: 'pet',
     id: 'robot',
@@ -102,13 +139,27 @@ export const PETS: readonly PetSpec[] = [
     color: '#9fc3e0',
     power: pet('catchBomber', 1),
   },
-  { kind: 'pet', id: 'dragon', unlock: coins(900), color: '#4ade80', power: pet('catchBat', 2) },
+  {
+    kind: 'pet',
+    id: 'shadow',
+    unlock: arena({ kind: 'wave', wave: SHADOW_WAVE }),
+    color: '#9a8cff',
+    power: pet('stopNear', 2),
+  },
 ];
 
 export const HATS: readonly HatSpec[] = [
   { kind: 'hat', id: 'cap', unlock: coins(75), color: '#ff5f7e', power: hat('coins', 0.1) },
   { kind: 'hat', id: 'headphones', unlock: coins(200), color: '#3db4ff', power: hat('xp', 0.05) },
   { kind: 'hat', id: 'horns', unlock: coins(350), color: '#ff7a45', power: hat('solidGhosts', 1) },
+  { kind: 'hat', id: 'halo', unlock: coins(600), color: '#ffe08a', power: hat('bossGuard', 1) },
+  {
+    kind: 'hat',
+    id: 'beanie',
+    unlock: coins(800),
+    color: '#4fd1c5',
+    power: hat('longFreeze', 0.5),
+  },
   {
     kind: 'hat',
     id: 'wizard',
@@ -116,13 +167,21 @@ export const HATS: readonly HatSpec[] = [
     color: '#7c5cff',
     power: hat('xp', 0.1),
   },
-  { kind: 'hat', id: 'halo', unlock: coins(600), color: '#ffe08a', power: hat('bossGuard', 1) },
+  { kind: 'hat', id: 'helmet', unlock: coins(1100), color: '#c9d4ea', power: hat('defuse', 1) },
+  { kind: 'hat', id: 'pirate', unlock: coins(1500), color: '#ffcf5a', power: hat('coins', 0.2) },
   {
     kind: 'hat',
     id: 'crown',
     unlock: rank('legend'),
     color: '#ffbe2e',
     power: hat('coins', 0.25),
+  },
+  {
+    kind: 'hat',
+    id: 'laurel',
+    unlock: arena({ kind: 'gold' }),
+    color: '#7dd56f',
+    power: hat('feverSlip', 1),
   },
 ];
 

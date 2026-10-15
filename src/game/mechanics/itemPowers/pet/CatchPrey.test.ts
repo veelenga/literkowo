@@ -127,7 +127,7 @@ describe('CatchPrey', () => {
   });
 
   it('catches a thief before it steals', () => {
-    const { spawn, run, enemies, context, announce } = withPrey('thief', 'catchThief');
+    const { spawn, run, enemies, context, announce } = withPet('thief', 'puppy');
     context.stats.score = STARTING_SCORE;
     const thief = specialOf(spawn(), ThiefEnemy);
     const caught = () => !enemies.includes(thief);
@@ -135,6 +135,6 @@ describe('CatchPrey', () => {
     expect(caught()).toBe(true);
     expect(enemies.some((enemy) => enemy instanceof ThiefEnemy)).toBe(false);
     expect(context.stats.score).toBeGreaterThan(STARTING_SCORE);
-    expect(announce).toHaveBeenCalledWith('Złodziej złapany!', 'callout', expect.any(String));
+    expect(announce).toHaveBeenCalledWith('Złodziej złapany!', 'callout', '#e8b878');
   });
 });

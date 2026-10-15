@@ -10,6 +10,8 @@ import { HATS, PETS, SHOP_ITEMS, SKINS, TROPHIES, itemKey, priceOf, type ShopIte
 const TYPICAL_STARS = 2;
 const STAR_RANGE = [1, 2, 3];
 const FIRST_PET_LEVELS = { min: 4, max: 6 };
+const PRICIEST_ITEM = 1500;
+const SHOP_TO_COURSE = 3;
 const BOOST_CAPS: Readonly<Record<string, number>> = {
   coins: MAX_BOOST.coins - NO_BOOST.coins,
   xp: MAX_BOOST.xp - NO_BOOST.xp,
@@ -51,9 +53,9 @@ function cheapest(items: readonly ShopItem[]): number {
 }
 
 describe('shop catalogue', () => {
-  it('has six pets, six hats and a skin for every character', () => {
-    expect(PETS).toHaveLength(6);
-    expect(HATS).toHaveLength(6);
+  it('has ten pets, ten hats and a skin for every character', () => {
+    expect(PETS).toHaveLength(10);
+    expect(HATS).toHaveLength(10);
     expect(SKINS.map((skin) => skin.id)).toEqual(AVATARS);
   });
 
@@ -71,6 +73,12 @@ describe('shop catalogue', () => {
   it('unlocks some items by rank in every kind', () => {
     for (const items of [PETS, HATS, SKINS]) {
       expect(items.some((item) => item.unlock.by === 'rank')).toBe(true);
+    }
+  });
+
+  it('keeps one pet and one hat as arena rewards', () => {
+    for (const items of [PETS, HATS]) {
+      expect(items.filter((item) => item.unlock.by === 'arena')).toHaveLength(1);
     }
   });
 
@@ -106,6 +114,18 @@ describe('shop economy', () => {
     expect(levelsToAfford(cheapest(HATS), TYPICAL_STARS)).toBeLessThan(
       levelsToAfford(cheapest(PETS), TYPICAL_STARS),
     );
+  });
+
+  it('climbs from the cheapest hat to about 1500 coins', () => {
+    const prices = [...PETS, ...HATS].map(priceOf).filter((price) => price > 0);
+    expect(Math.min(...prices)).toBe(cheapest(HATS));
+    expect(Math.max(...prices)).toBe(PRICIEST_ITEM);
+  });
+
+  it('needs far more coins for the whole shop than the whole course pays', () => {
+    const shop = SHOP_ITEMS.reduce((sum, item) => sum + priceOf(item), 0);
+    const course = coinsPerLevel(TYPICAL_STARS).reduce((sum, coins) => sum + coins, 0);
+    expect(shop).toBeGreaterThan(course * SHOP_TO_COURSE);
   });
 
   it('keeps the most expensive skin beyond the first region', () => {

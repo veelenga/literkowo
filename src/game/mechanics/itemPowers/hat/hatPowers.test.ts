@@ -74,15 +74,15 @@ describe('BoostRewards', () => {
 
 describe('FeverSlip', () => {
   it('keeps the fever through one slip per level while the mistake counts', () => {
-    const laurelLike = hat('cap');
+    const laurel = hat('laurel');
     const { context, fever, announce } = hatBoard();
-    const slip = new FeverSlip({ kind: 'feverSlip', strength: 1 }, laurelLike, context);
+    const slip = new FeverSlip(laurel.power, laurel, context);
     fever();
     slip.onHit();
     context.stats.recordMistake();
     slip.onMistake();
     expect(context.stats).toMatchObject({ fever: true, mistakes: 1, combo: 0 });
-    expect(announce).toHaveBeenCalledWith('Szał trwa!', 'callout', laurelLike.color);
+    expect(announce).toHaveBeenCalledWith('Szał trwa!', 'callout', laurel.color);
 
     context.stats.recordMistake();
     slip.onMistake();
@@ -92,7 +92,8 @@ describe('FeverSlip', () => {
 
   it('gets a new slip on every arena wave', () => {
     const { context, fever } = hatBoard();
-    const slip = new FeverSlip({ kind: 'feverSlip', strength: 1 }, hat('cap'), context);
+    const laurel = hat('laurel');
+    const slip = new FeverSlip(laurel.power, laurel, context);
     fever();
     context.stats.recordMistake();
     context.stats.recordMistake();
@@ -123,7 +124,8 @@ describe('SolidGhosts', () => {
 describe('LongFreeze', () => {
   it('makes the freeze power word last longer', () => {
     const { context, enemyAt, announce } = hatBoard();
-    const longer = new LongFreeze({ kind: 'longFreeze', strength: 0.5 }, hat('cap'), context);
+    const beanie = hat('beanie');
+    const longer = new LongFreeze(beanie.power, beanie, context);
     const walker = enemyAt(SPAWN_RADIUS);
     longer.onWordComplete(walker);
     expect(walker.isFrozen).toBe(false);
@@ -176,7 +178,7 @@ describe('Defuse', () => {
     const guardNextHit = vi.fn(() => calls.push('guard'));
     const loseLife = vi.fn(() => calls.push('hit'));
     const { context, enemies, announce } = hatBoard({ guardNextHit, loseLife });
-    const defuse = new Defuse(hat('cap'), context);
+    const defuse = new Defuse(hat('helmet'), context);
     const bomberAt = (distance: number) => {
       const bomber = new BomberEnemy(BOMBER_WORD, context.createLabel(), 1, 'crystal');
       bomber.object.position.set(0, 0, -distance);

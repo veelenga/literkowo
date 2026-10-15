@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createProfile, type Profile } from '../profiles/Profile';
-import { TROPHIES } from '../course/shop';
+import { GOLD } from '../arena/medals';
+import { emptyArenaRecord } from '../arena/record';
+import { PETS, TROPHIES } from '../course/shop';
 import { xpForLevel } from '../course/xp';
 import { ShopScreen } from './ShopScreen';
 
@@ -48,7 +50,10 @@ describe('ShopScreen', () => {
       'Postacie',
       'Trofea',
     ]);
-    expect(shop.element.querySelectorAll('.shop-item')).toHaveLength(6);
+    expect(shop.element.querySelectorAll('.shop-item')).toHaveLength(PETS.length);
+    expect(
+      shop.element.querySelector('[data-item="pet:puppy"] .shop-item-power')?.textContent,
+    ).toBe('Dwa razy na poziom łapie złodzieja, zanim coś ukradnie');
   });
 
   it('buys a pet, puts it on and saves the profile', () => {
@@ -89,6 +94,27 @@ describe('ShopScreen', () => {
     card('pet:star').querySelector<HTMLButtonElement>('.shop-action')?.click();
     expect(lastSaved()?.equipped.pet).toBe('star');
     expect(lastSaved()?.coins).toBe(0);
+  });
+
+  it('keeps arena rewards locked until the goal and then lets the player claim them', () => {
+    const locked = setup(profileWith({ coins: 5000 }));
+    expect(locked.card('pet:shadow').querySelector('.shop-note')?.textContent).toBe(
+      'Arena: fala 15',
+    );
+    locked.openTab(1);
+    const laurel = locked.card('hat:laurel');
+    expect(laurel.classList.contains('is-arenaLocked')).toBe(true);
+    expect(laurel.querySelector('.shop-note')?.textContent).toBe('Arena: złoty medal');
+    expect(laurel.querySelector('.lock-badge')).not.toBeNull();
+
+    const best = { wave: 10, score: 1, accuracy: 0.98, medal: GOLD, date: '2026-10-15', runs: 1 };
+    const arena = { ...emptyArenaRecord(), endless: { 'las/normal': best } };
+    const { card, openTab, lastSaved } = setup(profileWith({ arena }));
+    openTab(1);
+    card('hat:laurel').querySelector<HTMLButtonElement>('.shop-action')?.click();
+    expect(lastSaved()?.equipped.hat).toBe('laurel');
+    openTab(0);
+    expect(card('pet:shadow').classList.contains('is-arenaLocked')).toBe(true);
   });
 
   it('takes a hat off', () => {

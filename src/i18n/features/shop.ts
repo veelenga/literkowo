@@ -98,6 +98,16 @@ const pl = {
       name: 'Smoczek',
       description: 'Malutki smok. Zamiast ognia zieje iskierkami.',
     },
+    piggy: { name: 'Skarbonka', description: 'Różowa świnka, która uwielbia monety.' },
+    puppy: {
+      name: 'Piesek',
+      description: 'Wierny piesek. Pilnuje, żeby nikt nic nie zabrał.',
+    },
+    penguin: { name: 'Pingwinek', description: 'Lubi lód i chłodny wiatr.' },
+    shadow: {
+      name: 'Cień',
+      description: 'Tajemniczy cień z areny. Chodzi za tobą krok w krok.',
+    },
   },
   hats: {
     cap: { name: 'Czapka z daszkiem', description: 'Na słoneczne dni na polanie.' },
@@ -106,6 +116,10 @@ const pl = {
     wizard: { name: 'Kapelusz czarodzieja', description: 'Dla tych, co czarują klawiaturą.' },
     halo: { name: 'Aureola', description: 'Świeci nad głową jak małe słońce.' },
     crown: { name: 'Korona', description: 'Tylko dla prawdziwych legend.' },
+    beanie: { name: 'Czapka z pomponem', description: 'Ciepła czapka na mroźne dni.' },
+    pirate: { name: 'Kapelusz pirata', description: 'Dla łowców skarbów.' },
+    helmet: { name: 'Hełm rycerza', description: 'Mocny hełm, który chroni przed wybuchami.' },
+    laurel: { name: 'Wieniec laurowy', description: 'Nagroda za złoto na arenie.' },
   },
   trophies: {
     firstBoss: { name: 'Pogromca bossa', hint: 'Pokonaj pierwszego bossa' },
@@ -241,6 +255,16 @@ const uk: typeof pl = {
       name: 'Дракончик',
       description: 'Крихітний дракон. Замість вогню пускає іскорки.',
     },
+    piggy: { name: 'Скарбничка', description: 'Рожева свинка, яка обожнює монети.' },
+    puppy: {
+      name: 'Цуценя',
+      description: 'Вірне цуценя. Стежить, щоб ніхто нічого не забрав.',
+    },
+    penguin: { name: 'Пінгвінчик', description: 'Любить лід і прохолодний вітер.' },
+    shadow: {
+      name: 'Тінь',
+      description: 'Таємнича тінь з арени. Ходить за тобою слід у слід.',
+    },
   },
   hats: {
     cap: { name: 'Кепка', description: 'Для сонячних днів на галявині.' },
@@ -249,6 +273,10 @@ const uk: typeof pl = {
     wizard: { name: 'Капелюх чарівника', description: 'Для тих, хто чарує клавіатурою.' },
     halo: { name: 'Німб', description: 'Світить над головою, як маленьке сонце.' },
     crown: { name: 'Корона', description: 'Лише для справжніх легенд.' },
+    beanie: { name: 'Шапка з помпоном', description: 'Тепла шапка для морозних днів.' },
+    pirate: { name: 'Капелюх пірата', description: 'Для мисливців за скарбами.' },
+    helmet: { name: 'Шолом лицаря', description: 'Міцний шолом, що захищає від вибухів.' },
+    laurel: { name: 'Лавровий вінок', description: 'Нагорода за золото на арені.' },
   },
   trophies: {
     firstBoss: { name: 'Переможець боса', hint: 'Перемож першого боса' },
