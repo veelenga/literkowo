@@ -1,3 +1,5 @@
+@import './screenSizes.css';
+
 .touch-input {
   position: absolute;
   top: 0;
@@ -41,7 +43,7 @@
   display: none;
 }
 
-@media (max-width: 600px), (max-height: 480px) {
+@media (--phone) {
   .type-pill {
     display: none;
   }

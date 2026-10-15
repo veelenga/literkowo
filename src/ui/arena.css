@@ -1,3 +1,5 @@
+@import './screenSizes.css';
+
 :root {
   --medal-bronze: #d08a4a;
   --medal-silver: #c9d4ea;
@@ -350,7 +352,7 @@
   --trophy: #7c5cff;
 }
 
-@media (max-width: 600px) {
+@media (--phone-narrow) {
   .arena-layout .shop-hero {
     grid-template-columns: 64px 1fr;
     gap: 12px;

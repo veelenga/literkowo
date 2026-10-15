@@ -1,3 +1,5 @@
+@import './screenSizes.css';
+
 :root {
   --shop-card: linear-gradient(180deg, rgba(36, 52, 122, 0.92), rgba(19, 27, 70, 0.95));
   --shop-art:
@@ -449,7 +451,7 @@
   }
 }
 
-@media (max-width: 600px) {
+@media (--phone-narrow) {
   .shop-header {
     gap: 8px;
     padding: calc(8px + var(--safe-top)) calc(12px + var(--safe-right)) 8px

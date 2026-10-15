@@ -1,3 +1,5 @@
+@import './ui/screenSizes.css';
+
 :root {
   color-scheme: dark;
 
@@ -1646,7 +1648,7 @@ h3 {
   }
 }
 
-@media (max-width: 600px), (max-height: 480px) {
+@media (--phone) {
   :root {
     --chrome-inset: 0px;
     --hud-height: 44px;
@@ -2051,25 +2053,25 @@ h3 {
   }
 }
 
-@media (pointer: coarse) and (max-width: 600px), (pointer: coarse) and (max-height: 480px) {
+@media (pointer: coarse) and (--phone-narrow), (pointer: coarse) and (--phone-landscape) {
   .hud .hud-keys {
     display: grid;
   }
 }
 
-@media (min-width: 400px) and (max-width: 600px), (min-width: 400px) and (max-height: 480px) {
+@media (min-width: 400px) and (--phone-narrow), (min-width: 400px) and (--phone-landscape) {
   .progress-count {
     display: inline;
   }
 }
 
-@media (min-width: 601px) and (max-height: 480px) {
+@media (min-width: 601px) and (--phone-landscape) {
   .hud-xp {
     display: inline;
   }
 }
 
-@media (max-height: 480px) {
+@media (--phone-landscape) {
   .keyboard.keyboard-compact {
     --key-size: clamp(32px, calc((34dvh - 25px - var(--safe-bottom)) / 3), 40px);
   }

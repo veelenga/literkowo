@@ -824,13 +824,13 @@ Owners: `src/i18n/translations.ts`, `src/i18n/i18n.ts`.
 
 ## Mobile and tablets
 
-Owners: `src/styles.css`, `src/ui/TouchTyping.ts`, `src/ui/keyboardFit.ts`, `src/ui/KeyboardHint.ts`, `src/ui/keyboardLayout.ts`, `src/ui/stageInsets.ts`, `src/ui/formFactor.ts`, `src/ui/RotateHint.ts`, `src/game/board.ts`, `vite.config.ts`.
+Owners: `src/styles.css`, `src/ui/screenSizes.css`, `src/ui/TouchTyping.ts`, `src/ui/keyboardFit.ts`, `src/ui/KeyboardHint.ts`, `src/ui/keyboardLayout.ts`, `src/ui/stageInsets.ts`, `src/ui/formFactor.ts`, `src/ui/RotateHint.ts`, `src/game/board.ts`, `vite.config.ts`.
 
 The course still assumes a physical keyboard. A tablet with a Bluetooth keyboard is the main target. A phone plays the game with a built-in keyboard on the screen.
 
 Layout:
 
-- Phones are screens up to 600 px wide or up to 480 px tall. Tablets are up to 1024 px wide. `src/ui/formFactor.ts` mirrors the phone query for code.
+- Phones are screens up to 600 px wide or up to 480 px tall. Tablets are up to 1024 px wide. The screen size breakpoints are named once in `src/ui/screenSizes.css` as custom media (`postcss-custom-media`), and `src/ui/formFactor.ts` mirrors the phone query for code.
 - On tablets the HUD shows score, combo, hearts and progress.
 - On phones the HUD is one translucent strip 44 px tall at the top: avatar with the player level, score, combo, hearts, and small buttons for the native keyboard, pause and sound. The progress bar is a 3 px line along the bottom edge of the strip. The phase name is hidden, the count shows when the screen is at least 400 px wide, and the XP of the run shows next to the score when it is wider than 600 px. Buttons in the strip are 36 px wide and as tall as the strip.
 - The keyboard hint is smaller on tablets in portrait.

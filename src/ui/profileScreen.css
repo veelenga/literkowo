@@ -1,3 +1,5 @@
+@import './screenSizes.css';
+
 .profile-screen {
   --card-width: 214px;
   --stage-height: 196px;
@@ -761,7 +763,7 @@
   }
 }
 
-@media (max-width: 600px), (max-height: 480px) {
+@media (--phone) {
   .profile-screen {
     --stage-height: 104px;
   }
@@ -959,7 +961,7 @@
   }
 }
 
-@media (max-height: 480px) {
+@media (--phone-landscape) {
   .landing {
     padding-top: calc(14px + var(--safe-top));
   }

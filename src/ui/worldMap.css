@@ -1,3 +1,5 @@
+@import './screenSizes.css';
+
 .map-screen {
   --unit: 1px;
   --track-width: min(960px, 100% - 48px);
@@ -1080,7 +1082,7 @@ svg.stat-icon {
   }
 }
 
-@media (max-width: 600px), (max-height: 480px) {
+@media (--phone) {
   .map-screen {
     --unit: 0.8px;
     --track-width: calc(100% - 20px);
