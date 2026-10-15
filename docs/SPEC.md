@@ -44,10 +44,9 @@ Region index counts from 0 for `polana`. Level order counts every level of the c
 
 Rules during a level:
 
-- At most 6 enemies are on screen at once. The player has 3 lives. Losing the last life ends the level as lost.
+- At most 6 enemies are on screen at once (`MAX_ENEMIES` in `src/game/arena.ts`). The cap holds back the level's own spawns and event pieces. Enemies that other features add, such as twins, splitter halves, chicks, power words, bombers and minions, can join a full board.
+- The player has 3 lives (`INITIAL_LIVES` in `src/game/Game.ts`). Losing the last life ends the level as lost.
 - The progress bar counts a spawn as done once every enemy it turned into has left the board, so a spawn that becomes twins or a special enemy still counts as one. Enemies that features add later, such as power words or bombers, do not change it (`src/game/SpawnGroups.ts`).
-
-- At most 6 enemies are on screen at once (`MAX_ENEMIES` in `src/game/arena.ts`). Splitter halves and chicks can join a full board. The player has 3 lives. Losing the last life ends the level as lost.
 - Typing follows every enemy whose word starts with the letters typed so far, a key that fits none of them is a mistake, and when a word is done every enemy with that same word is done too while the others go back to untyped (`src/game/Targeting.ts`).
 - Escape pauses and resumes. Pause also suspends audio. The pause card also has a resume button and the key heatmap, and touch screens get a pause button in the HUD.
 - Every correct letter fires a bolt from the hero to the nearest enemy being typed, and every finished word gets a lightning strike with a soft crack and a small camera punch, 30 ms apart when several words finish on one key (`src/game/mechanics/HeroStrikes.ts`). The strikes turn from the world's accent colour toward gold as the combo grows and are fully golden in fever, while a glow under the hero charges with the combo up to 15.
@@ -132,14 +131,9 @@ Announcements never overlap. Callouts stack downwards with the newest on top, an
 
 Owners: `src/game/mechanics/EnemyTypes.ts`, `src/game/mechanics/enemyTypes/kinds.ts`, `src/game/mechanics/enemyTypes/factory.ts`, one class per type in `src/game/mechanics/enemyTypes`.
 
-- During the words phase, a fresh normal spawn turns into a special enemy with a chance of 25% (`SPECIAL_SHARE`). The chance is split by weight between the unlocked types: jumper 3, the others 2 each (`KIND_WEIGHTS`).
-- The special enemy takes the place of the spawn, so the word count of the phase stays the same. A balloon that floats away counts as done.
-- The boss and every enemy that another feature has tagged, such as power words, merged enemies, minions, twins and bombers, are never replaced. Special enemies never merge.
-- At most 1 special enemy is on the board in Polana, and at most 3 in later regions.
-
 - During the words phase, a fresh normal spawn turns into a special enemy with a chance of 25% (`SPECIAL_SHARE`). The chance is split by weight between the unlocked types: jumper 3, nest 1, the others 2 each (`KIND_WEIGHTS`).
 - The special enemy takes the place of the spawn, so the word count of the phase stays the same. A balloon that floats away or a thief that escapes counts as done.
-- Only plain spawns without a tag are replaced. The boss, power words, merged enemies, minions, chicks, splitter halves and event pieces stay as they are. Special enemies never merge.
+- Only plain spawns without a tag are replaced. The boss, power words, merged enemies, minions, twins, bombers, chicks, splitter halves and event pieces stay as they are. Special enemies never merge.
 - At most 1 special enemy is on the board in Polana, and at most 3 in later regions. Bull, nest and thief also come one at a time (`KIND_LIMITS`).
 - The first time a type appears in a level, its name shows as a callout. Each type also has a short hint in `src/i18n/features/enemyTypes.ts`.
 - A type unlocks at the first level in the table. When a profile's course skips that region, the type unlocks at its fallback level instead. English word profiles never see Wyspa Ogonków, so they meet the chameleon in `jaskinia-3` and the nest in `jaskinia-4`.
