@@ -38,7 +38,7 @@ import { OverlaySlot, type Overlay } from '../ui/overlay';
 import { pauseOverlay } from '../ui/PauseOverlay';
 import { ProfileScreen } from '../ui/ProfileScreen';
 import { rotateHint } from '../ui/RotateHint';
-import { SettingsScreen } from '../ui/SettingsScreen';
+import { SettingsScreen, settingsOverlay } from '../ui/SettingsScreen';
 import { ShopScreen } from '../ui/ShopScreen';
 import { watchStageInsets } from '../ui/stageInsets';
 import { storyCard } from '../ui/StoryCard';
@@ -73,7 +73,7 @@ export class App {
   });
   private game: Game | undefined;
   private touch: TouchTyping | undefined;
-  private pause: Overlay | undefined;
+  private pauseLayer: Overlay | undefined;
   private levelToken = 0;
   private disposeScreen: (() => void) | undefined;
 
@@ -260,7 +260,7 @@ export class App {
   }
 
   private syncAudio(): void {
-    if (this.attention.away || this.pause) music.pause();
+    if (this.attention.away || this.pauseLayer) music.pause();
     else music.resume();
   }
 
@@ -271,14 +271,28 @@ export class App {
 
   private pauseLevel(): void {
     music.pause();
-    this.pause = pauseOverlay(() => this.game?.togglePause(), this.game?.keyStats ?? {});
-    this.overlays.open(this.pause);
+    this.showPause();
+  }
+
+  private showPause(): void {
+    this.openPauseLayer(
+      pauseOverlay(
+        () => this.game?.togglePause(),
+        this.game?.keyStats ?? {},
+        () => this.openPauseLayer(settingsOverlay({ onBack: () => this.showPause() })),
+      ),
+    );
+  }
+
+  private openPauseLayer(layer: Overlay): void {
+    this.pauseLayer = layer;
+    this.overlays.open(layer);
   }
 
   private resumeLevel(): void {
     music.resume();
-    if (this.pause) this.overlays.release(this.pause);
-    this.pause = undefined;
+    if (this.pauseLayer) this.overlays.release(this.pauseLayer);
+    this.pauseLayer = undefined;
     this.touch?.refocus();
   }
 
@@ -375,7 +389,7 @@ export class App {
     this.game = undefined;
     this.touch?.dispose();
     this.touch = undefined;
-    this.pause = undefined;
+    this.pauseLayer = undefined;
     this.syncAudio();
   }
 }
