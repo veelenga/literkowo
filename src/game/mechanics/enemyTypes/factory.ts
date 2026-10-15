@@ -6,6 +6,7 @@ import { BullEnemy } from './BullEnemy';
 import { ChameleonEnemy } from './ChameleonEnemy';
 import { GhostEnemy } from './GhostEnemy';
 import { JumperEnemy } from './JumperEnemy';
+import { NestEnemy } from './NestEnemy';
 import type { EnemyKind, Random } from './kinds';
 import type { SpecialEnemy, SpecialHost, SpecialSpec } from './SpecialEnemy';
 import { KEY_LENGTH, ShieldEnemy } from './ShieldEnemy';
@@ -20,6 +21,8 @@ const SHIELDED_LETTERS = { min: 4, max: 6 };
 const GHOST_LETTERS = { min: 3, max: 5 };
 const CHAMELEON_LETTERS = { min: 3, max: 5 };
 const BULL_LETTERS = { min: 4, max: 5 };
+const NEST_LETTERS = { min: 7, max: 9 };
+const CHICK_LETTERS = { min: 2, max: 2 };
 const SPEED_SHARES = {
   jumper: 1,
   bat: 2.5,
@@ -29,6 +32,7 @@ const SPEED_SHARES = {
   ghost: 0.9,
   chameleon: 0.9,
   bull: 3,
+  nest: 1.1,
 };
 
 const HALF = 0.5;
@@ -93,6 +97,11 @@ const RECIPES: Readonly<Record<EnemyKind, Recipe>> = {
   bull: {
     speedShare: SPEED_SHARES.bull,
     create: (spec, words) => new BullEnemy(spec(wordWithin(words, BULL_LETTERS))),
+  },
+  nest: {
+    speedShare: SPEED_SHARES.nest,
+    create: (spec, words) =>
+      new NestEnemy(spec(wordWithin(words, NEST_LETTERS)), () => wordWithin(words, CHICK_LETTERS)),
   },
 };
 

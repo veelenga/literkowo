@@ -9,6 +9,7 @@ const pl = {
     ghost: 'Duch',
     chameleon: 'Kameleon',
     bull: 'Byk',
+    nest: 'Gniazdo',
   },
   hints: {
     jumper: 'Wpisuj tę samą literę',
@@ -20,6 +21,7 @@ const pl = {
     ghost: 'Znika i wraca, więc zapamiętaj jego słowo',
     chameleon: 'Zmienia słowo, dopóki nie wpiszesz pierwszej litery',
     bull: 'Każda litera odpycha go do tyłu',
+    nest: 'Wykluwa pisklęta, dopóki go nie wpiszesz',
   },
 };
 
@@ -34,6 +36,7 @@ const uk: typeof pl = {
     ghost: 'Привид',
     chameleon: 'Хамелеон',
     bull: 'Бик',
+    nest: 'Гніздо',
   },
   hints: {
     jumper: 'Друкуй ту саму літеру',
@@ -45,6 +48,7 @@ const uk: typeof pl = {
     ghost: 'Зникає і повертається, тож запам’ятай його слово',
     chameleon: 'Змінює слово, поки не надрукуєш першу літеру',
     bull: 'Кожна літера відштовхує його назад',
+    nest: 'Висиджує пташенят, поки його не надрукуєш',
   },
 };
 

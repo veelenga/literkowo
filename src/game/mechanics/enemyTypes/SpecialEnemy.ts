@@ -7,11 +7,13 @@ import type { SoundCue } from './sounds';
 export interface SpecialHost {
   dust(position: THREE.Vector3): void;
   pop(position: THREE.Vector3, color: THREE.Color): void;
+  shatter(position: THREE.Vector3, color: THREE.Color): void;
   confetti(position: THREE.Vector3): void;
   tumble(body: THREE.Object3D, color: THREE.Color): void;
   bomb(position: THREE.Vector3): void;
   dismiss(enemy: Enemy): void;
   spawn(enemy: Enemy): void;
+  isOnBoard(enemy: Enemy): boolean;
   createLabel(): HTMLElement;
   play(cue: SoundCue): void;
 }

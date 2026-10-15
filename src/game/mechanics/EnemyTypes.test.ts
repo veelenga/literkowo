@@ -44,6 +44,7 @@ const FIRST_LEVELS: Readonly<Record<WordLanguage, readonly (readonly [EnemyKind,
     ['shield', 'jaskinia-1'],
     ['bull', 'jaskinia-2'],
     ['chameleon', 'wyspa-1'],
+    ['nest', 'wyspa-2'],
   ],
   en: [
     ['jumper', 'polana-3'],
@@ -55,6 +56,7 @@ const FIRST_LEVELS: Readonly<Record<WordLanguage, readonly (readonly [EnemyKind,
     ['shield', 'jaskinia-1'],
     ['bull', 'jaskinia-2'],
     ['chameleon', 'jaskinia-3'],
+    ['nest', 'jaskinia-4'],
   ],
 };
 

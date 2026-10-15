@@ -20,6 +20,7 @@ export type StageContext = Pick<
   | 'removeEnemy'
   | 'addEnemy'
   | 'createLabel'
+  | 'enemies'
 >;
 
 const DUST_COLOR = new THREE.Color(0xe8dcc0);
@@ -84,6 +85,10 @@ export class Stage implements SpecialHost {
     this.sparks.play(position, color);
   }
 
+  shatter(position: THREE.Vector3, color: THREE.Color): void {
+    this.context.particles.burst(position, color);
+  }
+
   confetti(position: THREE.Vector3): void {
     for (const color of CONFETTI_COLORS) {
       this.scatter.randomDirection().multiplyScalar(CONFETTI_SPREAD).add(position);
@@ -109,6 +114,10 @@ export class Stage implements SpecialHost {
 
   spawn(enemy: Enemy): void {
     this.context.addEnemy(enemy);
+  }
+
+  isOnBoard(enemy: Enemy): boolean {
+    return this.context.enemies.includes(enemy);
   }
 
   createLabel(): HTMLElement {

@@ -28,6 +28,7 @@ const ACCENTS: Readonly<Record<EnemyKind, string>> = {
   ghost: '#d8e8ff',
   chameleon: '#5cf28a',
   bull: '#ff6a3d',
+  nest: '#e0b45a',
 };
 
 export class EnemyTypes implements Mechanic {

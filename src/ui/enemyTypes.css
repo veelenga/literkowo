@@ -262,6 +262,45 @@
   border-color: var(--accent);
 }
 
+.word-label.is-nest {
+  font-size: 1.35rem;
+  letter-spacing: 0.06em;
+  color: #fff6dc;
+  background: rgba(46, 30, 10, 0.92);
+  border: 3px dotted #e0b45a;
+  box-shadow:
+    0 4px 0 #7a5418,
+    0 0 16px rgba(224, 180, 90, 0.35);
+}
+
+.word-label.is-nest.is-target {
+  border-color: var(--accent);
+  border-style: solid;
+}
+
+.word-label.is-hatchling {
+  font-size: 1.05rem;
+  padding: 4px 9px 5px;
+  border-radius: 999px;
+  color: #3a2a00;
+  background: #fff3b0;
+  border: 2px solid #ffd02a;
+}
+
+.word-label.is-hatchling .done {
+  color: #2f7d12;
+  text-shadow: none;
+}
+
+.word-label.is-hatchling.is-target {
+  border-color: var(--accent);
+  background: #ffe680;
+}
+
+.word-label.is-hatchling.is-target .rest {
+  color: #3a2a00;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .word-label.is-swarm .swarm-glyph,
   .word-label.is-balloon,

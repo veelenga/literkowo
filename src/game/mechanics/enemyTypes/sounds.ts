@@ -22,7 +22,9 @@ export type SoundCue =
   | 'bullStamp'
   | 'bullCharge'
   | 'bullKnock'
-  | 'bullDown';
+  | 'bullDown'
+  | 'nestHatch'
+  | 'nestPopped';
 
 const CHIME_SPACING = 0.07;
 const SHORT_DECAY = 0.35;
@@ -102,6 +104,12 @@ export const SOUNDS: Readonly<Record<SoundCue, (sfx: Sfx) => void>> = {
   },
   bullKnock: (sfx) => sfx.impact(KNOCK_IMPACT),
   bullDown: (sfx) => sfx.chimes([55, 62, 67], CHIME_SPACING, LONG_DECAY),
+  nest: (sfx) => sfx.chimes([72, 76, 72, 79], CHIME_SPACING, SHORT_DECAY),
+  nestHatch: (sfx) => sfx.chimes([84, 88], CHIME_SPACING, SHORT_DECAY),
+  nestPopped: (sfx) => {
+    sfx.chimes([67, 72, 76, 79, 84], CHIME_SPACING, LONG_DECAY);
+    sfx.sparkle();
+  },
   ghostPop: (sfx) => {
     sfx.chimes([79, 86, 91], CHIME_SPACING, LONG_DECAY);
     sfx.sparkle();
