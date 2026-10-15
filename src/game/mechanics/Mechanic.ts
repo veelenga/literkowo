@@ -1,6 +1,8 @@
 import type * as THREE from 'three';
 import type { Sfx } from '../../audio/Sfx';
+import type { Level } from '../../course/regions';
 import type { WordSource } from '../../course/WordSource';
+import type { WordLanguage } from '../../profiles/Profile';
 import type { Enemy } from '../Enemy';
 import type { Phase } from '../LevelPlan';
 import type { Particles } from '../Particles';
@@ -33,6 +35,8 @@ export interface MechanicContext {
   readonly theme: Theme;
   readonly sfx: Sfx;
   readonly words: WordSource;
+  readonly level: Level;
+  readonly language: WordLanguage;
   createLabel(): HTMLElement;
   addEnemy(enemy: Enemy, radius?: number): void;
   removeEnemy(enemy: Enemy): void;
