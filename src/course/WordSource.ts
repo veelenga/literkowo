@@ -8,6 +8,7 @@ const GENERATED_MIN_LENGTH = 2;
 const GENERATED_MAX_LENGTH = 5;
 export const BOSS_MIN_LENGTH = 4;
 const BOSS_GENERATED_LENGTH: [number, number] = [5, 7];
+export const SHORT_LENGTH: [number, number] = [3, 4];
 const NEW_KEY_BIAS = 0.5;
 const LETTERS_ONLY = /[a-ząćęłńóśźż]/;
 
@@ -15,6 +16,7 @@ export class WordSource {
   private readonly allowed: string;
   private readonly fresh: string;
   private readonly realWords: string[];
+  private readonly queuedBossWords: string[] = [];
 
   constructor(level: Level, language: WordLanguage) {
     const course = courseFor(language);
@@ -32,9 +34,22 @@ export class WordSource {
   }
 
   bossWord(): string {
+    const queued = this.queuedBossWords.shift();
+    if (queued) return queued;
     const long = this.realWords.filter((word) => word.length >= BOSS_MIN_LENGTH);
     const word = long.length >= MIN_REAL_WORDS ? pick(long) : undefined;
     return word ?? this.generate(...BOSS_GENERATED_LENGTH, this.letters());
+  }
+
+  shortWord(): string {
+    const [min, max] = SHORT_LENGTH;
+    const short = this.realWords.filter((word) => word.length >= min && word.length <= max);
+    const word = short.length >= MIN_REAL_WORDS ? pick(short) : undefined;
+    return word ?? this.generate(min, max, this.letters());
+  }
+
+  queueBossWord(word: string): void {
+    this.queuedBossWords.push(word);
   }
 
   private realWord(): string | undefined {
