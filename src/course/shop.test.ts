@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { planFor } from '../game/LevelPlan';
+import { levelPhases } from '../game/LevelPlan';
 import { AVATARS, STARTER_SKINS } from '../profiles/Profile';
 import { levelCoins } from './coins';
 import { courseFor } from './course';
@@ -11,7 +11,7 @@ const FIRST_PET_LEVELS = { min: 4, max: 6 };
 
 function coinsPerLevel(stars: number): number[] {
   return courseFor('pl').levels.map((level) => {
-    const words = planFor(level).reduce((sum, phase) => sum + phase.count, 0);
+    const words = levelPhases(level, 'pl').reduce((sum, phase) => sum + phase.count, 0);
     return levelCoins({ runCoins: words, won: true, stars });
   });
 }

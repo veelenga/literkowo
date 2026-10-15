@@ -4,7 +4,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { fakeMechanicContext } from '../../testing/mechanicContext';
 import { FEVER_COMBO } from '../combo';
 import { Enemy, type EnemyLook } from '../Enemy';
-import type { Phase } from '../LevelPlan';
+import type { Phase } from '../RunPlan';
 import type { MechanicContext } from './Mechanic';
 import { MergeEnemies } from './MergeEnemies';
 import { MergedEnemy } from './mergeEnemies/MergedEnemy';

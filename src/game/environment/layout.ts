@@ -1,4 +1,4 @@
-import { CAMERA_POSITION, CLEARING_RADIUS } from '../arena';
+import { CAMERA_POSITION, CLEARING_RADIUS } from '../board';
 import type { Region } from './scatter';
 
 export const ARENA = {

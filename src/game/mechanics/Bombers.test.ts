@@ -4,7 +4,7 @@ import { fakeBoard } from '../../testing/enemyBoard';
 import { requireLevel } from '../../testing/levels';
 import { Boss } from '../Boss';
 import type { Enemy } from '../Enemy';
-import type { Phase } from '../LevelPlan';
+import type { Phase } from '../RunPlan';
 import { SessionStats } from '../SessionStats';
 import { BLOWBACK_DISTANCE, BOMBER_INTERVAL, BOMBER_SPEED_SHARE, Bombers } from './Bombers';
 import { BOMBER_SCALE, BOMBER_TAG, BomberEnemy } from './bombers/BomberEnemy';

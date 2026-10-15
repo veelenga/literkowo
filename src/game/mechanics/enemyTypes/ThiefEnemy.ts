@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { i18n } from '../../../i18n/i18n';
-import { REACH_DISTANCE, SPAWN_RADIUS } from '../../arena';
+import { REACH_DISTANCE, SPAWN_RADIUS } from '../../board';
 import type { EnemyBody, EnemyLook } from '../../Enemy';
 import { blockAssembly, chunkyBlock, type Block } from '../../effects/chunkyGeometry';
 import type { BobMotion } from '../../effects/enemyStyles';

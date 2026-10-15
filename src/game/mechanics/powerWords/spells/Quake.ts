@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { SPAWN_RADIUS } from '../../../arena';
+import { SPAWN_RADIUS } from '../../../board';
 import type { Enemy } from '../../../Enemy';
 import { GroundWave, type WaveStyle } from '../effects/GroundWave';
 import { Motes, type MoteStyle } from '../effects/Motes';

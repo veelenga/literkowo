@@ -1,5 +1,5 @@
 import type { Enemy } from '../Enemy';
-import type { Phase } from '../LevelPlan';
+import type { Phase } from '../RunPlan';
 import type { Mechanic } from './Mechanic';
 
 export class MechanicGroup implements Required<Mechanic> {

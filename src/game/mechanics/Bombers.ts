@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { allowedKeysFor } from '../../course/regions';
-import { SPAWN_RADIUS } from '../arena';
+import { SPAWN_RADIUS } from '../board';
 import type { Enemy } from '../Enemy';
-import type { PhaseKind } from '../LevelPlan';
+import type { PhaseKind } from '../RunPlan';
 import { isForestOrLater } from './actionEvents/regions';
 import { BomberEnemy, EMBER_COLOR } from './bombers/BomberEnemy';
 import { bomberWord, type Random } from './bombers/bomberWord';

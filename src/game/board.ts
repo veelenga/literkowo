@@ -27,7 +27,7 @@ export interface StageView extends StageInsets {
   readonly height: number;
 }
 
-export interface ArenaFraming {
+export interface BoardFraming {
   readonly fov: number;
   readonly fullHeight: number;
   readonly offsetY: number;
@@ -39,7 +39,7 @@ export function cameraFovFor(aspect: number): number {
   return Math.max(CAMERA_FOV, fitted);
 }
 
-export function frameArena(view: StageView): ArenaFraming {
+export function frameBoard(view: StageView): BoardFraming {
   const { top, band } = visibleBand(view);
   const center = top + band / 2;
   const fullHeight = 2 * Math.max(center, view.height - center);

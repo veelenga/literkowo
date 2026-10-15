@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { REACH_DISTANCE } from '../../arena';
+import { REACH_DISTANCE } from '../../board';
 
 export const TICK_START_DISTANCE = 7;
 export const TICK_INTERVAL = { far: 0.9, near: 0.18 };

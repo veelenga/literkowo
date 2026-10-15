@@ -1,6 +1,6 @@
 import '../../../ui/actionEvents.css';
 import * as THREE from 'three';
-import { REACH_DISTANCE, SPAWN_RADIUS } from '../../arena';
+import { REACH_DISTANCE, SPAWN_RADIUS } from '../../board';
 import { Enemy, themedBody, type EnemyBody } from '../../Enemy';
 import type { EnemyShape } from '../../themes';
 import { Fuse } from './Fuse';

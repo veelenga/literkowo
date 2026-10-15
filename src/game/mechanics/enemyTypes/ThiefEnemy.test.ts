@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
-import { SPAWN_RADIUS } from '../../arena';
+import { SPAWN_RADIUS } from '../../board';
 import { FRAME, VIEWER, enemyTypesBoard, rollFor, specialOf } from '../../../testing/enemyTypes';
 import type { MechanicContext } from '../Mechanic';
 import { wordPoints } from '../mergeEnemies/scoring';

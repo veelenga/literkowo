@@ -190,7 +190,7 @@ svg.stat-icon {
   filter: drop-shadow(0 0 6px var(--accent-glow));
 }
 
-.shop-button {
+.header-button {
   position: relative;
   display: flex;
   align-items: center;
@@ -211,25 +211,25 @@ svg.stat-icon {
 }
 
 @media (hover: hover) {
-  .shop-button:hover {
+  .header-button:hover {
     transform: translateY(-2px);
     border-color: var(--accent);
   }
 }
 
-.shop-button:active {
+.header-button:active {
   transform: translateY(2px);
   box-shadow: 0 1px 0 var(--surface-edge);
 }
 
-.shop-button-icon {
+.header-button-icon {
   width: 22px;
   height: 22px;
   fill: var(--accent);
   filter: drop-shadow(0 0 6px var(--accent-glow));
 }
 
-.shop-button-dot {
+.header-button-dot {
   position: absolute;
   top: -5px;
   right: -5px;
@@ -1140,14 +1140,14 @@ svg.stat-icon {
     height: 17px;
   }
 
-  .shop-button {
+  .header-button {
     justify-content: center;
     width: var(--touch-target);
     height: var(--touch-target);
     padding: 0;
   }
 
-  .shop-button-label {
+  .header-button-label {
     display: none;
   }
 
@@ -1225,7 +1225,7 @@ svg.stat-icon {
 }
 
 @media (pointer: coarse) {
-  .shop-button {
+  .header-button {
     min-width: var(--touch-target);
     height: var(--touch-target);
   }

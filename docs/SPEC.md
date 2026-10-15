@@ -81,7 +81,9 @@ All levels:
 
 ## Level flow
 
-Owners: `src/app/App.ts`, `src/course/progress.ts`, `src/game/LevelPlan.ts`, `src/game/Game.ts`.
+Owners: `src/app/App.ts`, `src/course/progress.ts`, `src/game/RunPlan.ts`, `src/game/LevelPlan.ts`, `src/game/Game.ts`.
+
+The game runs a run plan: its phases by index, its lives, its XP factor, and the keys and word lengths of each phase (`src/course/wordRules.ts`). `src/game/LevelPlan.ts` builds the plan of a course level.
 
 1. Story card. The intro plays before the first level. A boss scene plays before each boss. An after scene plays when a boss is beaten with at least one star. The finale replaces the after scene for the last boss of the course. Each scene plays once per profile. Speakers are Sowa Klara, Felek and Mrok (`src/story/story.ts`).
 2. Learn card, for every level except bosses (`src/ui/LearnCard.ts`). Enter starts the level.
@@ -96,8 +98,8 @@ Owners: `src/app/App.ts`, `src/course/progress.ts`, `src/game/LevelPlan.ts`, `sr
 
 Rules during a level:
 
-- At most 6 enemies are on screen at once (`MAX_ENEMIES` in `src/game/arena.ts`). The cap holds back the level's own spawns and event pieces. Enemies that other features add, such as twins, splitter halves, chicks, power words, bombers and minions, can join a full board.
-- The player has 3 lives (`INITIAL_LIVES` in `src/game/Game.ts`). Losing the last life ends the level as lost.
+- At most 6 enemies are on screen at once (`MAX_ENEMIES` in `src/game/board.ts`). The cap holds back the level's own spawns and event pieces. Enemies that other features add, such as twins, splitter halves, chicks, power words, bombers and minions, can join a full board.
+- The player has 3 lives (`LEVEL_LIVES` in `src/game/LevelPlan.ts`). Losing the last life ends the level as lost.
 - The progress bar counts a spawn as done once every enemy it turned into has left the board, so a spawn that becomes twins or a special enemy still counts as one. Enemies that features add later, such as power words or bombers, do not change it (`src/game/SpawnGroups.ts`).
 - Typing follows every enemy whose word starts with the letters typed so far, a key that fits none of them is a mistake, and when a word is done every enemy with that same word is done too while the others go back to untyped (`src/game/Targeting.ts`).
 - Escape pauses and resumes. Pause also suspends audio. The pause card also has a resume button and the key heatmap, and touch screens get a pause button in the HUD.
@@ -320,7 +322,7 @@ A type stays unlocked in every later region.
 
 Owners: `src/game/mechanics/WaveEvents.ts`, `src/game/mechanics/waveEvents/events.ts`.
 
-- Once per level, during the words phase, one event starts with a banner. It starts at a random moment between one third and two thirds of `count × spawnInterval` of the phase. Each event is equally likely.
+- Once in each words phase, one event starts with a banner. A course level has one words phase. It starts at a random moment between one third and two thirds of `count × spawnInterval` of the phase. Each event is equally likely.
 - Event pieces join the board only while fewer than 6 enemies are on it, so a full board delays them. They stop when the phase changes, and no event runs next to a boss.
 - Event pieces are never replaced by special enemies and never merge.
 
@@ -338,6 +340,7 @@ XP only grows. It drives the player level and the rank. A child never loses XP, 
 
 - Each completed word gives `letters × multiplier × fever bonus × tag factor` XP, rounded. The multiplier and the fever bonus are the ones from scoring, so XP follows the combo.
 - Tag factor: a boss hit 3, `merged` 3, `power-word` 2, `minion` 1. Any other or unknown tag is 1. With several tags the highest factor counts.
+- The XP of each word is then scaled by the XP factor of the run plan and rounded again. Course levels use 1 (`LEVEL_XP_FACTOR` in `src/game/LevelPlan.ts`).
 - A floating "+12 XP" rises from the enemy on each completed word, and the HUD shows the XP of the run next to the score. The level number sits on the avatar button of the HUD.
 - XP of the run is added to the profile after every attempt, won or lost.
 
@@ -569,7 +572,7 @@ Owners: `src/i18n/translations.ts`, `src/i18n/i18n.ts`.
 
 ## Mobile and tablets
 
-Owners: `src/styles.css`, `src/ui/TouchTyping.ts`, `src/ui/keyboardFit.ts`, `src/ui/KeyboardHint.ts`, `src/ui/keyboardLayout.ts`, `src/ui/stageInsets.ts`, `src/ui/formFactor.ts`, `src/ui/RotateHint.ts`, `src/game/arena.ts`, `vite.config.ts`.
+Owners: `src/styles.css`, `src/ui/TouchTyping.ts`, `src/ui/keyboardFit.ts`, `src/ui/KeyboardHint.ts`, `src/ui/keyboardLayout.ts`, `src/ui/stageInsets.ts`, `src/ui/formFactor.ts`, `src/ui/RotateHint.ts`, `src/game/board.ts`, `vite.config.ts`.
 
 The course still assumes a physical keyboard. A tablet with a Bluetooth keyboard is the main target. A phone plays the game with a built-in keyboard on the screen.
 
@@ -585,8 +588,8 @@ Layout:
 - On screens up to 480 px tall the profile screen shows a smaller logo and no tagline, so the Play button stays in view.
 - Touch targets are at least 44 px on touch screens, except the 36 px wide HUD buttons on phones. Hover effects apply only on devices that can hover.
 - The app is `100dvh` tall. The HUD, the keyboard hint, the map header and overlays stay inside the safe area insets.
-- The camera keeps a horizontal field of view of at least 62 degrees, so the whole spawn arc stays in frame on narrow and portrait screens. The vertical field of view grows when needed and never drops below 42 degrees (`src/game/arena.ts`).
-- On phones the camera frames the arena in the band of the stage that the HUD and the native keyboard do not cover, with a 16 px gutter at the sides so whole enemies stay in frame. The view is offset so the arena centre sits in the middle of that band, and the band keeps at least 40% of the stage (`frameArena`). Word labels stay below the HUD by the label height and above the covered bottom.
+- The camera keeps a horizontal field of view of at least 62 degrees, so the whole spawn arc stays in frame on narrow and portrait screens. The vertical field of view grows when needed and never drops below 42 degrees (`src/game/board.ts`).
+- On phones the camera frames the arena in the band of the stage that the HUD and the native keyboard do not cover, with a 16 px gutter at the sides so whole enemies stay in frame. The view is offset so the arena centre sits in the middle of that band, and the band keeps at least 40% of the stage (`frameBoard`). Word labels stay below the HUD by the label height and above the covered bottom.
 
 Touch input:
 

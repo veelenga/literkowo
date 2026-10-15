@@ -30,7 +30,7 @@ Read only:
 - `enemies`: live list of enemies on the board. Never mutate it, use the methods below.
 - `player` (`object`, `jump()`, `hurt()`), `scene`, `particles.burst(position, color)`.
 - `stats`: the `SessionStats` of this run. Scoring and the fever flag live there.
-- `phase`, `playing`, `shields`, `theme`, `sfx`, `words` (the level's `WordSource`), `level` and `language` (the profile word language).
+- `phase` (the current phase of the run plan, `src/game/RunPlan.ts`), `playing`, `shields`, `theme`, `sfx`, `words` (the run's `WordSource`, with the keys and lengths of the current phase), `level` and `language` (the profile word language).
 - `equipped`: the ids of the pet and the hat the profile wears (`src/course/shop.ts` has their specs). The game already puts the hat on the hero.
 
 Actions:

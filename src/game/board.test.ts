@@ -9,12 +9,12 @@ import {
   REACH_DISTANCE,
   SPAWN_RADIUS,
   cameraFovFor,
-  frameArena,
-} from './arena';
+  frameBoard,
+} from './board';
 import { ARENA, inView } from './environment/layout';
 import { TERRAIN_EXTENT } from './environment/Terrain';
 
-describe('arena', () => {
+describe('board', () => {
   it('orders the rings from the player outwards', () => {
     expect(REACH_DISTANCE).toBeLessThan(CLEARING_RADIUS);
     expect(CLEARING_RADIUS).toBeLessThan(SPAWN_RADIUS);
@@ -58,19 +58,19 @@ describe('cameraFovFor', () => {
   });
 });
 
-describe('frameArena', () => {
+describe('frameBoard', () => {
   const PORTRAIT = { width: 390, height: 432 };
   const halfTan = (fov: number) => Math.tan((fov * Math.PI) / 360);
 
   it('matches the plain camera when nothing covers the stage', () => {
-    const framing = frameArena({ ...PORTRAIT, ...NO_INSETS });
+    const framing = frameBoard({ ...PORTRAIT, ...NO_INSETS });
     expect(framing.fov).toBeCloseTo(cameraFovFor(390 / 432));
     expect(framing.fullHeight).toBe(432);
     expect(framing.offsetY).toBe(0);
   });
 
   it('centres the arena in the band below the HUD', () => {
-    const framing = frameArena({ ...PORTRAIT, top: 44, bottom: 0, side: 0 });
+    const framing = frameBoard({ ...PORTRAIT, top: 44, bottom: 0, side: 0 });
     const band = 432 - 44;
     expect(framing.fullHeight).toBe(432 + 44);
     expect(framing.offsetY).toBe(0);
@@ -79,21 +79,21 @@ describe('frameArena', () => {
   });
 
   it('widens the view to keep a gutter at the sides', () => {
-    const plain = frameArena({ ...PORTRAIT, ...NO_INSETS });
-    const framing = frameArena({ ...PORTRAIT, top: 0, bottom: 0, side: 16 });
+    const plain = frameBoard({ ...PORTRAIT, ...NO_INSETS });
+    const framing = frameBoard({ ...PORTRAIT, top: 0, bottom: 0, side: 16 });
     const fittedWidth = 390 - 2 * 16;
     expect(framing.fov).toBeGreaterThan(plain.fov);
     expect(halfTan(framing.fov)).toBeCloseTo(halfTan(cameraFovFor(fittedWidth / 432)));
   });
 
   it('extends the view above the stage when the bottom is covered', () => {
-    const framing = frameArena({ ...PORTRAIT, top: 0, bottom: 100, side: 0 });
+    const framing = frameBoard({ ...PORTRAIT, top: 0, bottom: 100, side: 0 });
     expect(framing.fullHeight).toBe(432 + 100);
     expect(framing.offsetY).toBe(100);
   });
 
   it('keeps at least part of the stage for the arena when the covers are too large', () => {
-    const framing = frameArena({ ...PORTRAIT, top: 300, bottom: 300, side: 0 });
+    const framing = frameBoard({ ...PORTRAIT, top: 300, bottom: 300, side: 0 });
     const band = 432 * 0.4;
     expect(framing.fullHeight).toBe(432);
     const bandHalfTan = (halfTan(framing.fov) * band) / framing.fullHeight;

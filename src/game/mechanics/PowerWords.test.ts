@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
 import { fakeBoard } from '../../testing/enemyBoard';
-import type { Phase } from '../LevelPlan';
+import type { Phase } from '../RunPlan';
 import type { MechanicContext } from './Mechanic';
 import { POWER_SPEED_SCALE, PowerWords } from './PowerWords';
 import { isPowerEnemy } from './powerWords/PowerEnemy';

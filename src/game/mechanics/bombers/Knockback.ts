@@ -1,4 +1,4 @@
-import { SPAWN_RADIUS } from '../../arena';
+import { SPAWN_RADIUS } from '../../board';
 import type { Enemy } from '../../Enemy';
 
 const PUSH_SPEED = 16;

@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { allowedKeysFor } from '../../course/regions';
 import { i18n } from '../../i18n/i18n';
-import { MAX_ENEMIES } from '../arena';
+import { MAX_ENEMIES } from '../board';
 import { Boss } from '../Boss';
 import type { Enemy } from '../Enemy';
-import type { Phase, PhaseKind } from '../LevelPlan';
+import type { Phase, PhaseKind } from '../RunPlan';
 import type { Mechanic, MechanicContext } from './Mechanic';
 import { ChestEnemy } from './waveEvents/ChestEnemy';
 import type { EventHost } from './waveEvents/EventEnemy';
@@ -68,8 +68,7 @@ export class WaveEvents implements Mechanic {
 
   onPhaseChange(phase: Phase): void {
     this.active = undefined;
-    this.countdown =
-      phase.kind === EVENT_PHASE && !this.fired ? eventDelay(phase, this.random) : undefined;
+    this.countdown = phase.kind === EVENT_PHASE ? eventDelay(phase, this.random) : undefined;
   }
 
   onWordComplete(enemy: Enemy): void {

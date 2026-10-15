@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ThemeId } from '../../course/regions';
-import { SHORT_LENGTH, WordSource } from '../../course/WordSource';
-import { requireLevel } from '../../testing/levels';
+import { SHORT_LENGTH } from '../../course/WordSource';
+import { levelWords, requireLevel } from '../../testing/levels';
 import { fakeMechanicContext } from '../../testing/mechanicContext';
 import { Boss } from '../Boss';
 import { Enemy } from '../Enemy';
-import type { Phase } from '../LevelPlan';
+import type { Phase } from '../RunPlan';
 import { themeFor } from '../themes';
 import { FIRST_STRIKE, STRIKE_INTERVAL, TELEGRAPH_LEAD } from './bossPhases/AttackSchedule';
 import { RAGE_SPEED } from './bossPhases/BossFight';
@@ -39,7 +39,7 @@ function label(): HTMLElement {
 
 function setup(themeId: ThemeId = 'forest') {
   const theme = themeFor(themeId);
-  const words = new WordSource(requireLevel(BOSS_LEVELS[themeId]), 'pl');
+  const words = levelWords(requireLevel(BOSS_LEVELS[themeId]), 'pl');
   const look = { shape: theme.enemyShape, colors: theme.enemyColors };
   const boss = new Boss(label(), SPEED, look, () => words.bossWord(), HITS);
   const enemies: Enemy[] = [boss];

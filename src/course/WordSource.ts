@@ -1,7 +1,6 @@
 import type { WordLanguage } from '../profiles/Profile';
-import type { Level } from './catalog';
-import { courseFor } from './course';
-import { difficultyFor, LEARN_STAGES, type LetterRange } from './difficulty';
+import { LEARN_STAGES, type LetterRange } from './difficulty';
+import type { WordRules } from './wordRules';
 import { WORD_LISTS } from './wordLists';
 
 const MIN_REAL_WORDS = 12;
@@ -19,31 +18,30 @@ export interface KeyWeights {
   weightOf(key: string): number;
 }
 
+interface WordPools {
+  readonly rules: WordRules;
+  readonly fresh: string;
+  readonly realWords: readonly string[];
+  readonly fittingWords: readonly string[];
+  readonly learnWords: readonly string[];
+}
+
 const EVEN_WEIGHTS: KeyWeights = { weightOf: () => EVEN_WEIGHT };
 
 export class WordSource {
-  private readonly allowed: string;
-  private readonly fresh: string;
-  private readonly generatedLengths: LetterRange;
-  private readonly realWords: string[];
-  private readonly levelWords: string[];
-  private readonly learnWords: string[];
+  private pools: WordPools;
   private readonly queuedBossWords: string[] = [];
 
   constructor(
-    level: Level,
-    language: WordLanguage,
+    private readonly language: WordLanguage,
+    rules: WordRules,
     private readonly weights: KeyWeights = EVEN_WEIGHTS,
   ) {
-    const { lengths, generatedLengths } = difficultyFor(level);
-    this.allowed = courseFor(language).allowedKeys(level);
-    this.fresh = level.focusKeys || this.allowed;
-    this.generatedLengths = generatedLengths;
-    this.realWords = WORD_LISTS[language].filter((word) => this.fitsAllowed(word));
-    this.levelWords = this.realWords.filter((word) => isWithin(word, lengths));
-    this.learnWords = this.realWords.filter(
-      (word) => isWithin(word, LEARN_STAGES.words) && this.usesFresh(word),
-    );
+    this.pools = poolsFor(language, rules);
+  }
+
+  use(rules: WordRules): void {
+    if (rules !== this.pools.rules) this.pools = poolsFor(this.language, rules);
   }
 
   singleLetter(takenStarts = NO_STARTS): string {
@@ -63,14 +61,14 @@ export class WordSource {
   bossWord(): string {
     const queued = this.queuedBossWords.shift();
     if (queued) return queued;
-    const long = this.realWords.filter((word) => word.length >= BOSS_MIN_LENGTH);
+    const long = this.pools.realWords.filter((word) => word.length >= BOSS_MIN_LENGTH);
     const word = long.length >= MIN_REAL_WORDS ? this.pickWord(long) : undefined;
     return word ?? this.generate(BOSS_GENERATED_LENGTH, this.letters());
   }
 
   shortWord(): string {
     const [min, max] = SHORT_LENGTH;
-    const short = this.realWords.filter((word) => word.length >= min && word.length <= max);
+    const short = this.pools.realWords.filter((word) => word.length >= min && word.length <= max);
     const word = short.length >= MIN_REAL_WORDS ? this.pickWord(short) : undefined;
     return word ?? this.generate({ min, max }, this.letters());
   }
@@ -79,14 +77,23 @@ export class WordSource {
     this.queuedBossWords.push(word);
   }
 
+  private get allowed(): string {
+    return this.pools.rules.allowedKeys;
+  }
+
+  private get fresh(): string {
+    return this.pools.fresh;
+  }
+
   private anyWord(): string {
-    return this.realWord() ?? this.generate(this.generatedLengths);
+    return this.realWord() ?? this.generate(this.pools.rules.generatedLengths);
   }
 
   private realWord(): string | undefined {
-    if (this.levelWords.length < MIN_REAL_WORDS || isGeneratedTurn()) return undefined;
-    const fresh = this.levelWords.filter((word) => this.usesFresh(word));
-    return this.pickWord(fresh) ?? this.pickWord(this.levelWords);
+    const { fittingWords } = this.pools;
+    if (fittingWords.length < MIN_REAL_WORDS || isGeneratedTurn()) return undefined;
+    const fresh = fittingWords.filter((word) => usesFresh(word, this.fresh));
+    return this.pickWord(fresh) ?? this.pickWord(fittingWords);
   }
 
   private combo(): string {
@@ -94,8 +101,9 @@ export class WordSource {
   }
 
   private shortLearnWord(): string {
-    const hasWords = this.learnWords.length >= MIN_LEARN_REAL_WORDS;
-    const word = hasWords && !isGeneratedTurn() ? this.pickWord(this.learnWords) : undefined;
+    const { learnWords } = this.pools;
+    const hasWords = learnWords.length >= MIN_LEARN_REAL_WORDS;
+    const word = hasWords && !isGeneratedTurn() ? this.pickWord(learnWords) : undefined;
     return word ?? this.focused(LEARN_STAGES.words);
   }
 
@@ -118,14 +126,6 @@ export class WordSource {
     return [...this.allowed].filter((char) => LETTERS_ONLY.test(char)).join('');
   }
 
-  private fitsAllowed(word: string): boolean {
-    return [...word].every((char) => this.allowed.includes(char));
-  }
-
-  private usesFresh(word: string): boolean {
-    return [...word].some((char) => this.fresh.includes(char));
-  }
-
   private generate(range: LetterRange, pool = this.allowed): string {
     const fresh = [...this.fresh].filter((char) => pool.includes(char)).join('') || pool;
     return Array.from({ length: randomInt(range.min, range.max) }, () =>
@@ -144,6 +144,28 @@ export class WordSource {
   private biasedChar(pool: string, fresh: string): string {
     return Math.random() < NEW_KEY_BIAS ? this.pickChar(fresh) : this.pickChar(pool);
   }
+}
+
+function poolsFor(language: WordLanguage, rules: WordRules): WordPools {
+  const fresh = rules.focusKeys || rules.allowedKeys;
+  const realWords = WORD_LISTS[language].filter((word) => usesOnly(word, rules.allowedKeys));
+  return {
+    rules,
+    fresh,
+    realWords,
+    fittingWords: realWords.filter((word) => isWithin(word, rules.lengths)),
+    learnWords: realWords.filter(
+      (word) => isWithin(word, LEARN_STAGES.words) && usesFresh(word, fresh),
+    ),
+  };
+}
+
+function usesOnly(word: string, keys: string): boolean {
+  return [...word].every((char) => keys.includes(char));
+}
+
+function usesFresh(word: string, fresh: string): boolean {
+  return [...word].some((char) => fresh.includes(char));
 }
 
 function drawAvoiding(takenStarts: ReadonlySet<string>, draw: () => string): string {
