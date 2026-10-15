@@ -26,11 +26,11 @@ const WEAK_POINT_HITS = 3;
 const MASK = '•';
 const TELEGRAPH = 'Mrok szykuje atak';
 const BOSS_LEVELS: Record<ThemeId, string> = {
-  meadow: 'polana-5',
-  forest: 'las-4',
-  mountains: 'gory-4',
-  cave: 'jaskinia-5',
-  island: 'wyspa-4',
+  meadow: 'polana-19',
+  forest: 'las-16',
+  mountains: 'gory-16',
+  cave: 'jaskinia-24',
+  island: 'wyspa-24',
 };
 
 function label(): HTMLElement {

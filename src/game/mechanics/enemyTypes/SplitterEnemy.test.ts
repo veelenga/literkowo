@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { FRAME, VIEWER, enemyTypesBoard, rollFor, specialOf } from '../../../testing/enemyTypes';
 import { SPLIT_HALF_TAG, SplitterEnemy } from './SplitterEnemy';
 
-const LEVEL = 'gory-2';
+const LEVEL = 'gory-10';
 const splitterRoll = () => rollFor('splitter', LEVEL);
 
 function travelled(enemy: SplitterEnemy, seconds: number): number {
@@ -14,7 +14,7 @@ function travelled(enemy: SplitterEnemy, seconds: number): number {
 
 describe('Splitter', () => {
   it('comes from the mountains with two short words joined', () => {
-    expect(enemyTypesBoard('gory-1', () => rollFor('swarm', 'gory-1')).spawn()).not.toBeInstanceOf(
+    expect(enemyTypesBoard('gory-5', () => rollFor('swarm', 'gory-5')).spawn()).not.toBeInstanceOf(
       SplitterEnemy,
     );
     const splitter = specialOf(enemyTypesBoard(LEVEL, splitterRoll).spawn(), SplitterEnemy);

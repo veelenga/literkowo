@@ -16,7 +16,7 @@ import { FALL_SECONDS, GROUND_SECONDS, MeteorEnemy, START_HEIGHT } from './waveE
 
 const FRAME = 1 / 30;
 const VIEWER = { x: 0, y: 15, z: 15.5 };
-const LEVEL = 'las-2';
+const LEVEL = 'las-10';
 const WORDS: Phase = { kind: 'words', count: 12, speed: 1, spawnInterval: 3 };
 const WARMUP: Phase = { kind: 'warmup', count: 8, speed: 0.55, spawnInterval: 1.5 };
 const BOSS: Phase = { kind: 'boss', count: 8, speed: 0.4, spawnInterval: 0 };

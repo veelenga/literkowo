@@ -130,7 +130,7 @@ describe('normalizeProfile', () => {
       schemaVersion: 4,
       id: 'x',
       name: 'A',
-      levelResults: { 'polana-5': { stars: 1, score: 10, accuracy: 0.9, wpm: 10 } },
+      levelResults: { 'polana-19': { stars: 1, score: 10, accuracy: 0.9, wpm: 10 } },
     });
     expect(profile?.inventory.trophies).toEqual(['first-boss']);
   });

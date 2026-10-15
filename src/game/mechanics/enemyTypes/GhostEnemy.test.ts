@@ -4,7 +4,7 @@ import { FRAME, VIEWER, enemyTypesBoard, rollFor, specialOf } from '../../../tes
 import { Enemy } from '../../Enemy';
 import { FADE_CYCLE_SECONDS, GhostEnemy, solidityAt } from './GhostEnemy';
 
-const LEVEL = 'las-2';
+const LEVEL = 'las-10';
 
 function haunt(ghost: GhostEnemy, seconds: number): void {
   for (let time = 0; time < seconds; time += FRAME) ghost.update(FRAME, time, VIEWER);
@@ -19,8 +19,8 @@ function heading(enemy: Enemy): number {
 }
 
 describe('Ghost', () => {
-  it('haunts the forest from its second level', () => {
-    expect(enemyTypesBoard('las-1', () => 0.2).spawn()).not.toBeInstanceOf(GhostEnemy);
+  it('haunts the forest from the key e', () => {
+    expect(enemyTypesBoard('las-5', () => 0.2).spawn()).not.toBeInstanceOf(GhostEnemy);
     expect(spawnGhost()).toBeInstanceOf(GhostEnemy);
   });
 

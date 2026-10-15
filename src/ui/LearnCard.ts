@@ -23,9 +23,9 @@ export function learnCard(level: Level, keyStats: KeyStats, onStart: () => void)
       el(
         'div',
         { class: 'keycaps' },
-        ...[...level.newKeys].map((char, index) => keycap(char, index, keyStats[char])),
+        ...[...level.focusKeys].map((char, index) => keycap(char, index, keyStats[char])),
       ),
-      handsDiagram(level.newKeys),
+      handsDiagram(level.focusKeys),
       el('p', { class: 'learn-hint', text: t.placeFingers }),
       el(
         'div',

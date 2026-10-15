@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { enemyTypesBoard, rollFor, specialOf } from '../../../testing/enemyTypes';
 import { BROKEN_CLASS, KEY_LENGTH, SHIELDED_CLASS, ShieldEnemy } from './ShieldEnemy';
 
-const LEVEL = 'jaskinia-1';
+const LEVEL = 'jaskinia-5';
 
 function shieldBearer() {
   const board = enemyTypesBoard(LEVEL, () => rollFor('shield', LEVEL));

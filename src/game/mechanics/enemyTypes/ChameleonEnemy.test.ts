@@ -5,7 +5,7 @@ import { FRAME, VIEWER, enemyTypesBoard, rollFor, specialOf } from '../../../tes
 import { requireLevel } from '../../../testing/levels';
 import { CHANGE_SECONDS, ChameleonEnemy, LOCKED_CLASS } from './ChameleonEnemy';
 
-const LEVEL = 'wyspa-1';
+const LEVEL = 'wyspa-7';
 
 function spawnChameleon(): ChameleonEnemy {
   const board = enemyTypesBoard(LEVEL, () => rollFor('chameleon', LEVEL));
@@ -18,8 +18,8 @@ function wait(chameleon: ChameleonEnemy, seconds: number): void {
 
 describe('Chameleon', () => {
   it('lives on the island, and in the cave for English words', () => {
-    const english = requireLevel('jaskinia-3');
-    const board = enemyTypesBoard('jaskinia-3', () => rollFor('chameleon', 'jaskinia-3', 'en'), {
+    const english = requireLevel('jaskinia-15');
+    const board = enemyTypesBoard('jaskinia-15', () => rollFor('chameleon', 'jaskinia-15', 'en'), {
       language: 'en',
       words: new WordSource(english, 'en'),
     });

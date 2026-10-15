@@ -352,8 +352,8 @@ export class Game {
     this.sinceSpawn += delta;
     if (!this.isSpawnDue()) return;
     this.sinceSpawn = 0;
+    const word = this.nextSpawnWord();
     this.spawned += 1;
-    const word = this.phase.kind === 'warmup' ? this.nextLetter() : this.nextWord();
     this.spawnGroups.spawn(() => this.spawnWord(word));
   }
 
@@ -365,8 +365,13 @@ export class Game {
     );
   }
 
-  private nextLetter(): string {
-    return this.words.singleLetter(this.liveStarts());
+  private nextSpawnWord(): string {
+    const taken = this.liveStarts();
+    if (this.phase.kind === 'warmup') return this.words.singleLetter(taken);
+    if (this.phase.kind === 'learn') {
+      return this.words.learnWord(this.spawned / this.phase.count, taken);
+    }
+    return this.words.next(taken);
   }
 
   private nextWord(): string {

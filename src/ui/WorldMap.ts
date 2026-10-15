@@ -224,7 +224,7 @@ export class WorldMap {
       },
       level.isBoss ? el('span', { class: 'node-crown' }, icon('crown', 'node-crown-icon')) : null,
       this.nodeFace(level, state),
-      state === 'locked' || level.isBoss ? null : keyDots(level.newKeys, this.profile.keyStats),
+      state === 'locked' || level.isBoss ? null : keyDots(level.focusKeys, this.profile.keyStats),
     );
   }
 
@@ -233,7 +233,7 @@ export class WorldMap {
     if (level.isBoss) return el('span', { class: 'level-label level-label-boss', text: BOSS_FACE });
     return el('span', {
       class: 'level-label',
-      text: level.newKeys.toUpperCase().split('').join(' '),
+      text: level.focusKeys.toUpperCase().split('').join(' '),
     });
   }
 

@@ -106,7 +106,7 @@ export class Hud {
 
   progress({ kind, done, total }: Progress): void {
     const t = i18n.t;
-    const labels = { warmup: t.warmup, words: t.words, boss: t.bossHealth };
+    const labels = { warmup: t.warmup, learn: t.words, words: t.words, boss: t.bossHealth };
     this.progressLabel.textContent = labels[kind];
     this.progressCount.textContent = `${done}/${total}`;
     this.progressFill.style.width = `${(done / total) * PERCENT}%`;

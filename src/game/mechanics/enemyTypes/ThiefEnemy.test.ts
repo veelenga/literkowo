@@ -13,7 +13,7 @@ import {
   ThiefEnemy,
 } from './ThiefEnemy';
 
-const LEVEL = 'las-3';
+const LEVEL = 'las-15';
 const STARTING_SCORE = 250;
 
 function thiefBoard() {

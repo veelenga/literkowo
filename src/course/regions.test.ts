@@ -7,9 +7,11 @@ describe('regions', () => {
   });
 
   it('unlocks keys cumulatively in level order', () => {
-    const [first, second] = LEVELS;
+    const [first, second, third, fourth] = LEVELS;
     expect(allowedKeysFor(first)).toBe('fj');
-    expect(allowedKeysFor(second, 'en')).toBe('fjdk');
+    expect(allowedKeysFor(second)).toBe('fj');
+    expect(allowedKeysFor(third)).toBe('fj');
+    expect(allowedKeysFor(fourth, 'en')).toBe('fjd');
   });
 
   it('hides the Polish letters region for English profiles', () => {

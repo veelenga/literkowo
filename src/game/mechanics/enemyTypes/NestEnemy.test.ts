@@ -5,7 +5,7 @@ import { FRAME, VIEWER, enemyTypesBoard, rollFor, specialOf } from '../../../tes
 import { HATCHLING_TAG, HatchlingEnemy } from './HatchlingEnemy';
 import { HATCH_SECONDS, MAX_BROOD, NEST_RADIUS, NestEnemy } from './NestEnemy';
 
-const LEVEL = 'wyspa-2';
+const LEVEL = 'wyspa-14';
 
 function nestBoard() {
   const board = enemyTypesBoard(LEVEL, () => rollFor('nest', LEVEL));

@@ -76,8 +76,9 @@ describe('shop economy', () => {
     );
   });
 
-  it('keeps the most expensive skin beyond one pass of the course', () => {
+  it('keeps the most expensive skin beyond the first region', () => {
     const priciest = Math.max(...SKINS.map(priceOf));
-    expect(levelsToAfford(priciest, TYPICAL_STARS)).toBeGreaterThan(courseFor('pl').levels.length);
+    const [firstRegion] = courseFor('pl').regions;
+    expect(levelsToAfford(priciest, TYPICAL_STARS)).toBeGreaterThan(firstRegion.levels.length);
   });
 });
