@@ -1,3 +1,4 @@
+import { Bombers } from './Bombers';
 import { BossPhases } from './BossPhases';
 import { EnemyTypes } from './EnemyTypes';
 import { Fever } from './Fever';
@@ -13,6 +14,7 @@ const MECHANICS: readonly MechanicType[] = [
   BossPhases,
   EnemyTypes,
   SpeedSurge,
+  Bombers,
 ];
 
 export function createMechanics(context: MechanicContext): Mechanic[] {
