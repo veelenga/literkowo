@@ -43,7 +43,7 @@ export class Hud {
           },
         },
         characterAvatar(profile.avatar, 'hud-avatar'),
-        el('span', { text: t.map }),
+        el('span', { class: 'hud-map-label', text: t.map }),
       ),
       el(
         'div',
