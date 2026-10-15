@@ -411,29 +411,35 @@ Owners: `src/i18n/translations.ts`, `src/i18n/i18n.ts`.
 
 ## Mobile and tablets
 
-Owners: `src/styles.css`, `src/ui/TouchTyping.ts`, `src/ui/keyboardFit.ts`, `src/ui/KeyboardHint.ts`, `src/game/arena.ts`, `vite.config.ts`.
+Owners: `src/styles.css`, `src/ui/TouchTyping.ts`, `src/ui/keyboardFit.ts`, `src/ui/KeyboardHint.ts`, `src/ui/keyboardLayout.ts`, `src/ui/stageInsets.ts`, `src/ui/formFactor.ts`, `src/ui/RotateHint.ts`, `src/game/arena.ts`, `vite.config.ts`.
 
-The course still assumes a physical keyboard. A tablet with a Bluetooth keyboard is the main target. A phone plays the game without the keyboard hint.
+The course still assumes a physical keyboard. A tablet with a Bluetooth keyboard is the main target. A phone plays the game with a built-in keyboard on the screen.
 
 Layout:
 
-- Phones are screens up to 600 px wide or up to 480 px tall. Tablets are up to 1024 px wide.
-- On tablets and phones the HUD shows score, combo, hearts and progress. On a phone in portrait it takes two rows.
-- The keyboard hint is hidden on phones and smaller on tablets in portrait.
-- On phones each profile card takes a full row. The map is the same vertical scene on every screen, scaled down on phones.
+- Phones are screens up to 600 px wide or up to 480 px tall. Tablets are up to 1024 px wide. `src/ui/formFactor.ts` mirrors the phone query for code.
+- On tablets the HUD shows score, combo, hearts and progress.
+- On phones the HUD is one translucent strip 44 px tall at the top: avatar with the player level, score, combo, hearts, and small buttons for the native keyboard, pause and sound. The progress bar is a 3 px line along the bottom edge of the strip. The phase name is hidden, and the count shows when the screen is at least 400 px wide. Buttons in the strip are 36 px wide and as tall as the strip.
+- The keyboard hint is smaller on tablets in portrait.
+- On a phone the learn card and the result card fit 390 by 660 px without scrolling: smaller keycaps, a smaller hands diagram and full width buttons. In landscape the result hides the stars hint and uses a smaller level up banner.
 - On screens up to 480 px tall the profile screen shows a smaller logo and no tagline, so the Play button stays in view.
-- Touch targets are at least 44 px on touch screens. Hover effects apply only on devices that can hover.
+- Touch targets are at least 44 px on touch screens, except the 36 px wide HUD buttons on phones. Hover effects apply only on devices that can hover.
 - The app is `100dvh` tall. The HUD, the keyboard hint, the map header and overlays stay inside the safe area insets.
 - The camera keeps a horizontal field of view of at least 62 degrees, so the whole spawn arc stays in frame on narrow and portrait screens. The vertical field of view grows when needed and never drops below 42 degrees (`src/game/arena.ts`).
+- On phones the camera frames the arena in the band of the stage that the HUD and the native keyboard do not cover, with a 16 px gutter at the sides so whole enemies stay in frame. The view is offset so the arena centre sits in the middle of that band, and the band keeps at least 40% of the stage (`frameArena`). Word labels stay below the HUD by the label height and above the covered bottom.
 
 Touch input:
 
-- With a coarse pointer, a level adds a hidden input to the stage. A tap on the stage or on the "Stuknij, aby pisać" pill focuses it and opens the native keyboard.
+- With a coarse pointer, a level adds a hidden input to the stage. It has `enterkeyhint="done"` and sits outside any form.
 - Characters from its `input` events go to `Game.typeCharacter`, the same path that `keydown` uses. During a composition only the new characters count. Backspace does nothing.
-- The keyboard hint is tappable. Right Alt is sticky: tap it, then a letter, to type the Polish letter.
+- Phones with a coarse pointer type on the built-in keyboard by default: a compact QWERTY with three rows (`qwertyuiop`, `asdfghjkl;`, `zxcvbnm,.` and a right Alt), lower case labels, keys at least 32 px tall, fixed at the bottom above the safe area and at most 40% of the screen height, or 34% in landscape. The stage sits above it. The next expected key glows as on the keyboard hint.
+- The keyboard button in the phone HUD opens the native keyboard and closes it on the second tap. While the native keyboard is open the built-in one hides, the level screen reaches down to the bottom of the page so the scene shows behind the keyboard accessory bar, and the arena is framed above the keyboard.
+- On tablets the keyboard hint is tappable, and a tap on the stage or on the "Stuknij, aby pisać" pill focuses the hidden input and opens the native keyboard. Phones have no pill and stage taps do nothing.
+- Right Alt is sticky on both keyboards: tap it, then a letter, to type the Polish letter.
 - While the native keyboard is open, the level screen follows the visual viewport, so the scene and the keyboard hint stay above it. The keyboard counts as open when the visual viewport is at least 150 px shorter than the page and the page is not zoomed (`src/ui/keyboardFit.ts`).
 - The pill hides while the native keyboard is open. It hides for the rest of the session once a key arrives while the native keyboard is closed, which means a physical keyboard.
-- Resuming from the pause card focuses the hidden input again.
+- Resuming from the pause card focuses the hidden input again on tablets.
+- During the first level of the course, a phone in portrait shows a small pill: "Obróć telefon, będzie wygodniej". A tap hides it for good, stored under `literkowo.rotateHintDismissed`.
 
 Performance:
 
