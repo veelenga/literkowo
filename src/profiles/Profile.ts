@@ -18,7 +18,11 @@ export interface Profile {
   levelResults: Record<string, LevelResult>;
 }
 
-export const AVATARS = ['🦊', '🐺', '🦉', '🐉', '🦄', '🐸', '🐧', '🦋'];
+export const AVATARS = 'abcdefghijklmnopqr'.split('');
+
+export function avatarImage(avatar: string): string {
+  return `${import.meta.env.BASE_URL}characters/character-${avatar}.png`;
+}
 
 export function createProfile(name: string, avatar: string): Profile {
   return {
@@ -37,6 +41,7 @@ export function normalizeProfile(raw: Partial<Profile>): Profile {
   return {
     ...createProfile(raw.name ?? '?', raw.avatar ?? AVATARS[0]),
     ...raw,
+    avatar: AVATARS.includes(raw.avatar ?? '') ? raw.avatar! : AVATARS[0],
     seenStories: raw.seenStories ?? [],
     levelResults: raw.levelResults ?? {},
     totalScore: raw.totalScore ?? 0,

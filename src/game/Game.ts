@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { sfx } from '../audio/Sfx';
@@ -16,13 +17,20 @@ import type { Theme } from './themes';
 import { World } from './World';
 
 const CAMERA_FOV = 42;
-const CAMERA_POSITION = new THREE.Vector3(0, 17, 14);
+const CAMERA_POSITION = new THREE.Vector3(0, 15, 15.5);
+const CAMERA_TARGET = new THREE.Vector3(0, 0.8, 0);
+const SPAWN_ARC_MARGIN = 0.35;
 const CAMERA_INTRO_SCALE = 2.2;
 const CAMERA_INTRO_DURATION = 1.8;
 const CAMERA_SWAY = 0.35;
-const BLOOM = { strength: 0.45, radius: 0.6, threshold: 0.8 };
+const BLOOM = { strength: 0.5, radius: 0.7, threshold: 0.8 };
+const MSAA_SAMPLES = 4;
+const MAX_PIXEL_RATIO = 1.5;
+const EXPOSURE = 1.05;
 const SPAWN_RADIUS = 11;
-const BOSS_SPAWN_RADIUS = 13;
+const BOSS_SPAWN_RADIUS = 12;
+const LABEL_SAFE_TOP = 120;
+const LABEL_SAFE_SIDE = 80;
 const REACH_DISTANCE = 1.6;
 const MAX_ENEMIES = 6;
 const INITIAL_LIVES = 3;
@@ -31,6 +39,7 @@ const SHAKE_AMPLITUDE = 0.18;
 const FINISH_DELAY = 1.1;
 
 export interface GameConfig {
+  character: string;
   level: Level;
   language: WordLanguage;
   theme: Theme;
@@ -64,7 +73,7 @@ export class Game {
   private readonly camera = new THREE.PerspectiveCamera(CAMERA_FOV, 1, 0.1, 120);
   private readonly composer: EffectComposer;
   private readonly clock = new THREE.Clock();
-  private readonly player = new Player();
+  private readonly player: Player;
   private readonly particles = new Particles(this.scene);
   private readonly world: World;
   private readonly words: WordSource;
@@ -92,6 +101,7 @@ export class Game {
     private readonly config: GameConfig,
     private readonly events: GameEvents,
   ) {
+    this.player = new Player(config.character);
     this.words = new WordSource(config.level, config.language);
     this.phases = planFor(config.level);
     this.composer = this.setupRendering();
@@ -134,14 +144,20 @@ export class Game {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.toneMappingExposure = EXPOSURE;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO));
     this.camera.position.copy(CAMERA_POSITION).multiplyScalar(CAMERA_INTRO_SCALE);
     this.camera.lookAt(0, 0, 0);
-    const composer = new EffectComposer(this.renderer);
+    const target = new THREE.WebGLRenderTarget(1, 1, {
+      samples: MSAA_SAMPLES,
+      type: THREE.HalfFloatType,
+    });
+    const composer = new EffectComposer(this.renderer, target);
     composer.addPass(new RenderPass(this.scene, this.camera));
     composer.addPass(
       new UnrealBloomPass(new THREE.Vector2(1, 1), BLOOM.strength, BLOOM.radius, BLOOM.threshold),
     );
+    composer.addPass(new OutputPass());
     return composer;
   }
 
@@ -189,7 +205,7 @@ export class Game {
       CAMERA_POSITION.z * scale,
     );
     this.applyShake(delta);
-    this.camera.lookAt(0, 0.5, 0);
+    this.camera.lookAt(CAMERA_TARGET);
   }
 
   private spawnIfDue(delta: number): void {
@@ -233,7 +249,7 @@ export class Game {
   }
 
   private addEnemy(enemy: Enemy, radius: number): void {
-    const angle = Math.random() * Math.PI * 2;
+    const angle = Math.PI - SPAWN_ARC_MARGIN + Math.random() * (Math.PI + SPAWN_ARC_MARGIN * 2);
     enemy.object.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
     this.scene.add(enemy.object);
     this.enemies.push(enemy);
@@ -249,6 +265,7 @@ export class Game {
   private loseLife(): void {
     this.lives -= 1;
     this.shake = SHAKE_DURATION;
+    this.player.hurt();
     this.stats.recordMistake();
     sfx.lifeLost();
     this.events.onStats(this.stats, this.lives);
@@ -382,9 +399,13 @@ export class Game {
     const projected = new THREE.Vector3();
     for (const enemy of this.enemies) {
       projected.copy(enemy.object.position).setY(enemy.labelHeight).project(this.camera);
-      const x = ((projected.x + 1) / 2) * width;
-      const y = ((1 - projected.y) / 2) * height;
+      const x = clamp(((projected.x + 1) / 2) * width, LABEL_SAFE_SIDE, width - LABEL_SAFE_SIDE);
+      const y = Math.max(((1 - projected.y) / 2) * height, LABEL_SAFE_TOP);
       enemy.label.style.transform = `translate(-50%, -100%) translate(${x}px, ${y}px)`;
     }
   }
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }

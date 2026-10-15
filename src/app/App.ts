@@ -1,3 +1,4 @@
+import { music } from '../audio/Music';
 import { sfx } from '../audio/Sfx';
 import { levelById, nextLevel, regionOf, regionsFor, type Level } from '../course/regions';
 import { starsFor } from '../course/scoring';
@@ -16,6 +17,8 @@ import { levelResult } from '../ui/LevelResult';
 import { ProfileScreen } from '../ui/ProfileScreen';
 import { storyCard } from '../ui/StoryCard';
 import { WorldMap } from '../ui/WorldMap';
+
+const COMBO_FOR_FULL_INTENSITY = 20;
 
 export class App {
   private readonly store = new ProfileStore();
@@ -51,6 +54,7 @@ export class App {
 
   private showMap(profile: Profile): void {
     this.teardownGame();
+    music.stop();
     const map = new WorldMap(profile, {
       onPlay: (level) => this.openLevel(profile, level),
       onSwitchPlayer: () => this.showProfiles(),
@@ -80,12 +84,17 @@ export class App {
     this.root.replaceChildren(stage, hud.element, keyboard.element);
 
     const config = {
+      character: profile.avatar,
       level,
       language: profile.wordLanguage,
       theme: themeFor(regionOf(level).theme),
     };
+    music.play(config.theme.id, level.isBoss ? 'boss' : 'calm');
     this.game = new Game(stage, config, {
-      onStats: (stats, lives) => hud.update(stats, lives),
+      onStats: (stats, lives) => {
+        hud.update(stats, lives);
+        music.setIntensity(Math.min(1, stats.combo / COMBO_FOR_FULL_INTENSITY));
+      },
       onNextKey: (char) => keyboard.show(char),
       onProgress: (progress) => hud.progress(progress),
       onPause: (paused) => {

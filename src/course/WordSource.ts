@@ -8,6 +8,7 @@ const GENERATED_MAX_LENGTH = 5;
 const BOSS_MIN_LENGTH = 4;
 const BOSS_GENERATED_LENGTH: [number, number] = [5, 7];
 const NEW_KEY_BIAS = 0.5;
+const LETTERS_ONLY = /[a-ząćęłńóśźż]/;
 
 export class WordSource {
   private readonly allowed: string;
@@ -36,7 +37,8 @@ export class WordSource {
   bossWord(): string {
     const long = this.realWords.filter((word) => word.length >= BOSS_MIN_LENGTH);
     if (long.length >= MIN_REAL_WORDS) return pick(long)!;
-    return this.generate(...BOSS_GENERATED_LENGTH);
+    const letters = [...this.allowed].filter((char) => LETTERS_ONLY.test(char)).join('');
+    return this.generate(...BOSS_GENERATED_LENGTH, letters);
   }
 
   private fitsAllowed(word: string): boolean {
@@ -47,10 +49,11 @@ export class WordSource {
     return [...word].some((char) => this.fresh.includes(char));
   }
 
-  private generate(min: number, max: number): string {
+  private generate(min: number, max: number, pool = this.allowed): string {
     const length = randomInt(min, max);
+    const fresh = [...this.fresh].filter((char) => pool.includes(char)).join('') || pool;
     return Array.from({ length }, () =>
-      Math.random() < NEW_KEY_BIAS ? randomChar(this.fresh) : randomChar(this.allowed),
+      Math.random() < NEW_KEY_BIAS ? randomChar(fresh) : randomChar(pool),
     ).join('');
   }
 }

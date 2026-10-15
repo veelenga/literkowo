@@ -57,6 +57,8 @@ const pl = {
   fox: 'Felek',
   shadow: 'Mrok',
   sound: 'Dźwięk',
+  chapter: 'Rozdział',
+  rightShort: 'prawy',
   fingers: {
     leftPinky: 'lewy mały',
     leftRing: 'lewy serdeczny',
@@ -74,7 +76,7 @@ export type Translation = typeof pl;
 
 const uk: Translation = {
   appName: 'Literkowo',
-  tagline: 'Пригода, де клавіатура — твоя чарівна паличка',
+  tagline: 'Пригода, у якій клавіатура стає твоєю чарівною паличкою',
   whoPlays: 'Хто грає?',
   newProfile: 'Новий профіль',
   profileName: 'Як тебе звати?',
@@ -129,6 +131,8 @@ const uk: Translation = {
   fox: 'Фелек',
   shadow: 'Морок',
   sound: 'Звук',
+  chapter: 'Розділ',
+  rightShort: 'правий',
   fingers: {
     leftPinky: 'лівий мізинець',
     leftRing: 'лівий підмізинний',

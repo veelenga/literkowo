@@ -16,3 +16,7 @@ npm run dev
 ```
 
 `npm run lint` checks types, ESLint and Prettier formatting.
+
+## Credits
+
+- Characters: "Blocky Characters" by Kenney (kenney.nl), CC0.

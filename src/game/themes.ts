@@ -1,133 +1,167 @@
-import * as THREE from 'three';
 import type { ThemeId } from '../course/regions';
 import type { AmbientSpec } from './AmbientParticles';
-import * as props from './props';
+import { cave } from './environment/biomes/cave';
+import { forest } from './environment/biomes/forest';
+import { island } from './environment/biomes/island';
+import { meadow } from './environment/biomes/meadow';
+import { mountains } from './environment/biomes/mountains';
+import type { CloudShadowSpec } from './environment/materials';
+import type { SkySpec } from './environment/SkyDome';
+import type { Biome } from './environment/types';
 
 export type EnemyShape = 'crystal' | 'wisp' | 'shard' | 'orb' | 'shell';
 
-export interface PropSpec {
-  build: () => THREE.Object3D;
-  count: number;
-  innerScale?: number;
+export interface LightSpec {
+  hemisphere: { sky: number; ground: number; intensity: number };
+  sun: { color: number; intensity: number; direction: [x: number, y: number, z: number] };
+}
+
+export interface FogSpec {
+  color: number;
+  near: number;
+  far: number;
 }
 
 export interface Theme {
   id: ThemeId;
-  sky: number;
-  fog: [near: number, far: number];
-  ground: [light: number, dark: number];
-  hemisphere: [sky: number, ground: number, intensity: number];
-  sun: [color: number, intensity: number];
   enemyColors: number[];
   enemyShape: EnemyShape;
-  props: PropSpec[];
-  ambient?: AmbientSpec;
-  clouds: number;
-  water?: number;
+  seed: number;
+  landscape: Biome;
+  sky: SkySpec;
+  fog: FogSpec;
+  light: LightSpec;
+  clouds?: CloudShadowSpec;
+  ambient: AmbientSpec[];
 }
 
 const THEMES: Record<ThemeId, Theme> = {
   meadow: {
     id: 'meadow',
-    sky: 0xbfe8ff,
-    fog: [26, 52],
-    ground: [0x8fd16b, 0x5fae4e],
-    hemisphere: [0xdff6ff, 0x4f7a3a, 0.9],
-    sun: [0xfff1d6, 2.2],
     enemyColors: [0x9b5de5, 0xf15bb5, 0x00bbf9, 0x00f5d4],
     enemyShape: 'crystal',
-    props: [
-      { build: () => props.coneTree([0x3f9a5a, 0x4fae6b, 0x2f8a4f, 0x6cc27e]), count: 60 },
-      { build: () => props.roundTree([0x5fb86a, 0x7ccc6f]), count: 25 },
-      { build: () => props.rock(), count: 24 },
+    seed: 1207,
+    landscape: meadow,
+    sky: {
+      top: 0x6fa8ff,
+      horizon: 0xffd6a0,
+      bottom: 0xf3d4a0,
+      sun: { color: 0xffc070, size: 0.012, glow: 0.8 },
+    },
+    fog: { color: 0xf3d4a0, near: 30, far: 74 },
+    light: {
+      hemisphere: { sky: 0x93a8ff, ground: 0xa88a4a, intensity: 1.35 },
+      sun: { color: 0xffa452, intensity: 4, direction: [-0.55, 0.5, -0.67] },
+    },
+    clouds: { strength: 0.5, scale: 0.045, speed: 1.1 },
+    ambient: [
       {
-        build: () => props.flower([0xffd166, 0xef476f, 0xf8f9fa, 0x8ecae6]),
-        count: 70,
-        innerScale: 0.5,
+        count: 110,
+        colors: [0xfff1a8, 0xffd36b],
+        size: 0.26,
+        glow: 1.7,
+        motion: 'drift',
+        height: [0.4, 3.2],
+        additive: true,
+        speed: 0.8,
       },
-      { build: () => props.bush([0x4fae6b, 0x3f9a5a]), count: 20 },
     ],
-    ambient: { count: 40, color: 0xfff4b0, size: 0.14, mode: 'drift' },
-    clouds: 6,
   },
   forest: {
     id: 'forest',
-    sky: 0x2b3a5c,
-    fog: [14, 36],
-    ground: [0x3f7a4a, 0x274d33],
-    hemisphere: [0x6b7fb3, 0x1f3324, 0.6],
-    sun: [0xffd9a3, 1.1],
     enemyColors: [0x7cf5a8, 0xb8ff7a, 0x5ee6d9],
     enemyShape: 'wisp',
-    props: [
+    seed: 2203,
+    landscape: forest,
+    sky: { top: 0x0d1530, horizon: 0x2c3f6e, bottom: 0x1a2648 },
+    fog: { color: 0x1a2648, near: 18, far: 48 },
+    light: {
+      hemisphere: { sky: 0x6a82c8, ground: 0x1d2e2c, intensity: 1.5 },
+      sun: { color: 0x9db8ff, intensity: 1.6, direction: [0.45, 0.65, -0.6] },
+    },
+    ambient: [
       {
-        build: () => props.coneTree([0x1f5e3c, 0x27704a, 0x17493a], 0x4a2f1a),
-        count: 140,
-        innerScale: 0.9,
+        count: 170,
+        colors: [0xd8ff6a, 0xfff07a, 0x9dffb0],
+        size: 0.42,
+        glow: 3.2,
+        motion: 'blink',
+        height: [0.4, 3.6],
+        additive: true,
+        speed: 0.9,
       },
-      { build: () => props.mushroom(), count: 45, innerScale: 0.5 },
-      { build: () => props.rock(0x5f6b73), count: 16 },
-      { build: () => props.bush([0x27704a, 0x1f5e3c]), count: 30 },
     ],
-    ambient: { count: 120, color: 0xd9ff7a, size: 0.16, mode: 'drift' },
-    clouds: 0,
   },
   mountains: {
     id: 'mountains',
-    sky: 0xd9ecff,
-    fog: [24, 50],
-    ground: [0xf4f7fb, 0xcfdbe8],
-    hemisphere: [0xffffff, 0x9fb3c8, 1.0],
-    sun: [0xffffff, 2.4],
-    enemyColors: [0x7dd3fc, 0xbae6fd, 0xa5b4fc],
+    enemyColors: [0x2f7bff, 0x7c4dff, 0x00a8d6],
     enemyShape: 'shard',
-    props: [
-      { build: () => props.snowPine(), count: 70 },
-      { build: () => props.rock(0x6b7a8a), count: 40 },
-      { build: () => props.rock(0xe2e8f0), count: 30 },
+    seed: 3301,
+    landscape: mountains,
+    sky: { top: 0x4f95ff, horizon: 0xdcecff, bottom: 0xd3e4f7 },
+    fog: { color: 0xd3e4f7, near: 28, far: 70 },
+    light: {
+      hemisphere: { sky: 0x8fb8ff, ground: 0xd8e4f5, intensity: 1.35 },
+      sun: { color: 0xfff1dc, intensity: 2.5, direction: [-0.5, 0.65, -0.55] },
+    },
+    clouds: { strength: 0.35, scale: 0.04, speed: 1.6 },
+    ambient: [
+      {
+        count: 650,
+        colors: [0xffffff, 0xeaf4ff],
+        size: 0.17,
+        glow: 1,
+        motion: 'fall',
+        height: [0, 13],
+        opacity: 0.9,
+        speed: 1.3,
+      },
     ],
-    ambient: { count: 220, color: 0xffffff, size: 0.12, mode: 'fall' },
-    clouds: 8,
   },
   cave: {
     id: 'cave',
-    sky: 0x0b0f1f,
-    fog: [10, 30],
-    ground: [0x2c3047, 0x161a2b],
-    hemisphere: [0x3b4a7a, 0x0b0f1f, 0.5],
-    sun: [0x8fa3ff, 0.7],
     enemyColors: [0xc084fc, 0xf472b6, 0x60a5fa],
     enemyShape: 'orb',
-    props: [
-      { build: () => props.stalagmite(), count: 90, innerScale: 0.9 },
+    seed: 4409,
+    landscape: cave,
+    sky: { top: 0x05070f, horizon: 0x0c0f22, bottom: 0x0c0f22 },
+    fog: { color: 0x0c0f22, near: 20, far: 50 },
+    light: {
+      hemisphere: { sky: 0x7078d0, ground: 0x1a1f3c, intensity: 1.9 },
+      sun: { color: 0x9aa6ff, intensity: 1.2, direction: [0.2, 0.9, -0.35] },
+    },
+    ambient: [
       {
-        build: () => props.crystalCluster([0x60a5fa, 0xc084fc, 0x34d399]),
-        count: 40,
-        innerScale: 0.7,
+        count: 140,
+        colors: [0x5ef2d8, 0xb98cff, 0x7ab8ff],
+        size: 0.22,
+        glow: 2.6,
+        motion: 'rise',
+        height: [0.2, 8],
+        additive: true,
+        speed: 0.35,
       },
-      { build: () => props.rock(0x3a3f55), count: 30 },
     ],
-    ambient: { count: 80, color: 0x93c5fd, size: 0.14, mode: 'drift' },
-    clouds: 0,
   },
   island: {
     id: 'island',
-    sky: 0xffc9a3,
-    fog: [26, 56],
-    ground: [0xfde9b8, 0xf3d79a],
-    hemisphere: [0xffe3c4, 0xd9b27a, 0.9],
-    sun: [0xffb070, 2.0],
-    enemyColors: [0xff8fab, 0xffd166, 0x06d6a0],
+    enemyColors: [0xff4f8b, 0x8f5cff, 0x00b894],
     enemyShape: 'shell',
-    props: [
-      { build: () => props.palm(), count: 36, innerScale: 0.8 },
-      { build: () => props.shell(), count: 50, innerScale: 0.4 },
-      { build: () => props.rock(0xc9b79c), count: 14 },
-      { build: () => props.bush([0x3fae5e, 0x2f8a4f]), count: 14 },
-    ],
-    ambient: { count: 50, color: 0xfff7d6, size: 0.12, mode: 'drift' },
-    clouds: 5,
-    water: 0x4cc3e8,
+    seed: 5503,
+    landscape: island,
+    sky: {
+      top: 0x7a6cc9,
+      horizon: 0xffa27a,
+      bottom: 0xffb994,
+      sun: { color: 0xffa050, size: 0.05, glow: 1.4 },
+    },
+    fog: { color: 0xffb994, near: 36, far: 84 },
+    light: {
+      hemisphere: { sky: 0xffd2c0, ground: 0xffe2a8, intensity: 1.35 },
+      sun: { color: 0xffb06a, intensity: 3.2, direction: [0.35, 0.32, -0.88] },
+    },
+    clouds: { strength: 0.3, scale: 0.04, speed: 1.2 },
+    ambient: [],
   },
 };
 

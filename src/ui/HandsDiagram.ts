@@ -1,77 +1,142 @@
-import { FINGER_COLORS, fingerFor, type Finger } from '../course/fingers';
+import { fingerFor, needsRightAlt, type Finger } from '../course/fingers';
+import { fingerColor, svg } from './dom';
 
-const SVG_NS = 'http://www.w3.org/2000/svg';
-const WIDTH = 360;
-const HEIGHT = 150;
+const WIDTH = 440;
+const HEIGHT = 196;
+const FINGER_WIDTH = 24;
+const FINGER_OVERLAP = 22;
+const PIVOT_DROP = 10;
+const TIP_LABEL_OFFSET = 17;
+const PALM = { x: 28, y: 104, width: 132, height: 86, radius: 30, waist: 0.56, wrist: 0.24 };
+const THUMB = { inset: 16, drop: 46, length: 60, angle: 50 };
 
-interface FingerShape {
+interface FingerSpec {
   finger: Finger;
   x: number;
-  height: number;
+  length: number;
+  angle: number;
+  home: string;
 }
 
-const LEFT_FINGERS: FingerShape[] = [
-  { finger: 'leftPinky', x: 20, height: 52 },
-  { finger: 'leftRing', x: 48, height: 74 },
-  { finger: 'leftMiddle', x: 76, height: 84 },
-  { finger: 'leftIndex', x: 104, height: 74 },
+interface HandSpec {
+  fingers: FingerSpec[];
+  palmX: number;
+  thumbX: number;
+  thumbAngle: number;
+  pressesAlt: boolean;
+}
+
+const LEFT_FINGERS: FingerSpec[] = [
+  { finger: 'leftPinky', x: 44, length: 52, angle: -14, home: 'A' },
+  { finger: 'leftRing', x: 74, length: 72, angle: -6, home: 'S' },
+  { finger: 'leftMiddle', x: 104, length: 82, angle: 0, home: 'D' },
+  { finger: 'leftIndex', x: 134, length: 72, angle: 7, home: 'F' },
 ];
 
-const RIGHT_FINGERS: FingerShape[] = LEFT_FINGERS.map((shape) => ({
-  finger: shape.finger.replace('left', 'right') as Finger,
-  x: WIDTH - shape.x - 22,
-  height: shape.height,
-}));
+const RIGHT_HOME: Partial<Record<Finger, string>> = {
+  rightIndex: 'J',
+  rightMiddle: 'K',
+  rightRing: 'L',
+  rightPinky: ';',
+};
 
-const PALM = { width: 118, height: 70, y: 78 };
-const FINGER_WIDTH = 22;
-const THUMB = { width: 20, height: 48 };
+const LEFT_HAND: HandSpec = {
+  fingers: LEFT_FINGERS,
+  palmX: PALM.x,
+  thumbX: PALM.x + PALM.width - THUMB.inset,
+  thumbAngle: THUMB.angle,
+  pressesAlt: false,
+};
+
+const RIGHT_HAND: HandSpec = {
+  fingers: LEFT_FINGERS.map(mirrorFinger),
+  palmX: WIDTH - PALM.x - PALM.width,
+  thumbX: WIDTH - LEFT_HAND.thumbX,
+  thumbAngle: -THUMB.angle,
+  pressesAlt: true,
+};
+
+function mirrorFinger(spec: FingerSpec): FingerSpec {
+  const finger = spec.finger.replace('left', 'right') as Finger;
+  return {
+    finger,
+    x: WIDTH - spec.x,
+    length: spec.length,
+    angle: -spec.angle,
+    home: RIGHT_HOME[finger] ?? '',
+  };
+}
 
 export function handsDiagram(highlightKeys: string): SVGSVGElement {
-  const highlighted = new Set([...highlightKeys].map(fingerFor).filter(Boolean));
-  const svg = document.createElementNS(SVG_NS, 'svg');
-  svg.setAttribute('viewBox', `0 0 ${WIDTH} ${HEIGHT}`);
-  svg.setAttribute('class', 'hands');
-  svg.append(palm(14), palm(WIDTH - PALM.width - 14));
-  svg.append(thumb(14 + PALM.width - 6, highlighted.has('thumb')));
-  svg.append(thumb(WIDTH - PALM.width - 14 - THUMB.width + 6, highlighted.has('thumb')));
-  [...LEFT_FINGERS, ...RIGHT_FINGERS].forEach((shape) => {
-    svg.append(finger(shape, highlighted.has(shape.finger)));
-  });
-  return svg;
+  const keys = [...highlightKeys];
+  const active = new Set(keys.map(fingerFor).filter(Boolean));
+  const usesAlt = keys.some(needsRightAlt);
+  return svg(
+    'svg',
+    { viewBox: `0 0 ${WIDTH} ${HEIGHT}`, class: 'hands', 'aria-hidden': 'true' },
+    hand(LEFT_HAND, active, usesAlt),
+    hand(RIGHT_HAND, active, usesAlt),
+  );
 }
 
-function palm(x: number): SVGRectElement {
-  const rect = document.createElementNS(SVG_NS, 'rect');
-  rect.setAttribute('x', String(x));
-  rect.setAttribute('y', String(PALM.y));
-  rect.setAttribute('width', String(PALM.width));
-  rect.setAttribute('height', String(PALM.height));
-  rect.setAttribute('rx', '22');
-  rect.setAttribute('class', 'hand-palm');
-  return rect;
+function hand(spec: HandSpec, active: Set<Finger | undefined>, usesAlt: boolean): SVGGElement {
+  const thumbActive = active.has('thumb') || (usesAlt && spec.pressesAlt);
+  const thumbSpec: FingerSpec = {
+    finger: 'thumb',
+    x: spec.thumbX,
+    length: THUMB.length,
+    angle: spec.thumbAngle,
+    home: '',
+  };
+  return svg(
+    'g',
+    { class: 'hand' },
+    ...spec.fingers.map((shape) => finger(shape, PALM.y, active.has(shape.finger))),
+    finger(thumbSpec, PALM.y + THUMB.drop, thumbActive),
+    palm(spec.palmX),
+  );
 }
 
-function thumb(x: number, active: boolean): SVGRectElement {
-  const rect = document.createElementNS(SVG_NS, 'rect');
-  rect.setAttribute('x', String(x));
-  rect.setAttribute('y', String(PALM.y + 10));
-  rect.setAttribute('width', String(THUMB.width));
-  rect.setAttribute('height', String(THUMB.height));
-  rect.setAttribute('rx', '10');
-  rect.setAttribute('class', active ? 'hand-finger is-active' : 'hand-finger');
-  rect.style.setProperty('--finger', FINGER_COLORS.thumb);
-  return rect;
+function palm(x: number): SVGPathElement {
+  const { y, width, height, radius } = PALM;
+  const right = x + width;
+  const bottom = y + height;
+  const waist = y + height * PALM.waist;
+  const wristInset = width * PALM.wrist;
+  const d = [
+    `M${x + radius} ${y}H${right - radius}`,
+    `Q${right} ${y} ${right} ${y + radius}V${waist}`,
+    `Q${right} ${bottom} ${right - wristInset} ${bottom}H${x + wristInset}`,
+    `Q${x} ${bottom} ${x} ${waist}V${y + radius}`,
+    `Q${x} ${y} ${x + radius} ${y}Z`,
+  ].join('');
+  return svg('path', { d, class: 'hand-palm' });
 }
 
-function finger(shape: FingerShape, active: boolean): SVGRectElement {
-  const rect = document.createElementNS(SVG_NS, 'rect');
-  rect.setAttribute('x', String(shape.x));
-  rect.setAttribute('y', String(PALM.y + 8 - shape.height));
-  rect.setAttribute('width', String(FINGER_WIDTH));
-  rect.setAttribute('height', String(shape.height + 8));
-  rect.setAttribute('rx', '11');
-  rect.setAttribute('class', active ? 'hand-finger is-active' : 'hand-finger');
-  rect.style.setProperty('--finger', FINGER_COLORS[shape.finger]);
-  return rect;
+function finger(shape: FingerSpec, rootY: number, isActive: boolean): SVGGElement {
+  const top = rootY - shape.length;
+  const group = svg(
+    'g',
+    {
+      class: isActive ? 'hand-finger is-active' : 'hand-finger',
+      transform: `rotate(${shape.angle} ${shape.x} ${rootY + PIVOT_DROP})`,
+    },
+    svg('rect', {
+      x: shape.x - FINGER_WIDTH / 2,
+      y: top,
+      width: FINGER_WIDTH,
+      height: shape.length + FINGER_OVERLAP,
+      rx: FINGER_WIDTH / 2,
+      class: 'hand-finger-body',
+    }),
+  );
+  group.style.setProperty('--finger', fingerColor(shape.finger));
+  if (shape.home) group.append(tipLabel(shape.x, top + TIP_LABEL_OFFSET, shape.home));
+  return group;
+}
+
+function tipLabel(x: number, y: number, text: string): SVGTextElement {
+  const label = svg('text', { x, y, class: 'hand-tip', 'text-anchor': 'middle' });
+  label.textContent = text;
+  return label;
 }

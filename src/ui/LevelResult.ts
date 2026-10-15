@@ -1,7 +1,13 @@
 import { MAX_STARS } from '../course/scoring';
 import { i18n } from '../i18n/i18n';
 import type { GameResult } from '../game/Game';
-import { el } from './dom';
+import { Counter, el, icon, prefersReducedMotion } from './dom';
+
+const PERCENT = 100;
+const STAR_INTRO_MS = 240;
+const STAR_STAGGER_MS = 220;
+const COUNTER_START_MS = STAR_INTRO_MS + MAX_STARS * STAR_STAGGER_MS;
+const COUNTER_DURATION_MS = 900;
 
 interface Actions {
   onNext?: () => void;
@@ -9,57 +15,92 @@ interface Actions {
   onMap: () => void;
 }
 
+interface StatTile {
+  element: HTMLElement;
+  reveal: () => void;
+}
+
 export function levelResult(result: GameResult, stars: number, actions: Actions): HTMLElement {
   const t = i18n.t;
+  const tiles = [
+    statTile(t.score, result.score),
+    statTile(t.accuracy, result.accuracy * PERCENT, '%'),
+    statTile(t.speed, result.wpm, t.wpm),
+    statTile(t.lettersFreed, result.lettersFreed),
+  ];
+  const revealDelay = prefersReducedMotion() ? 0 : COUNTER_START_MS;
+  window.setTimeout(() => tiles.forEach((tile) => tile.reveal()), revealDelay);
   return el(
     'div',
     { class: 'overlay' },
     el(
       'div',
-      { class: 'panel panel-center' },
-      el('h2', { text: result.won ? t.levelComplete : t.levelFailed }),
-      el(
-        'div',
-        { class: 'stars-row' },
-        ...Array.from({ length: MAX_STARS }, (_, index) =>
-          el('span', {
-            class: index < stars ? 'star is-earned' : 'star',
-            text: '★',
-            style: `--delay: ${index * 0.2}s`,
-          }),
-        ),
-      ),
-      el('p', { class: 'muted', text: result.won ? t.starsHint : t.retryHint }),
-      el(
-        'div',
-        { class: 'results' },
-        row(t.score, String(result.score)),
-        row(t.accuracy, `${Math.round(result.accuracy * 100)}%`),
-        row(t.speed, `${result.wpm} ${t.wpm}`),
-        row(t.lettersFreed, String(result.lettersFreed)),
-      ),
-      el(
-        'div',
-        { class: 'actions' },
-        actions.onNext && stars > 0
-          ? el('button', { class: 'button button-primary', text: t.next, onClick: actions.onNext })
-          : null,
-        el('button', {
-          class: stars > 0 ? 'button' : 'button button-primary',
-          text: t.retry,
-          onClick: actions.onRetry,
-        }),
-        el('button', { class: 'button', text: t.map, onClick: actions.onMap }),
-      ),
+      { class: `panel panel-center result-panel ${result.won ? 'is-won' : 'is-lost'}` },
+      el('h2', { class: 'result-title', text: result.won ? t.levelComplete : t.levelFailed }),
+      starsRow(stars),
+      el('p', { class: 'result-hint', text: result.won ? t.starsHint : t.retryHint }),
+      el('div', { class: 'result-stats' }, ...tiles.map((tile) => tile.element)),
+      actionsRow(stars, actions),
     ),
   );
 }
 
-function row(label: string, value: string): HTMLElement {
+function starsRow(stars: number): HTMLElement {
   return el(
     'div',
-    { class: 'result-row' },
-    el('span', { text: label }),
-    el('strong', { text: value }),
+    { class: 'stars-row', 'aria-label': `${stars} / ${MAX_STARS}` },
+    ...Array.from({ length: MAX_STARS }, (_, index) => {
+      const star = icon('star', index < stars ? 'star is-earned' : 'star');
+      star.style.setProperty('--delay', `${STAR_INTRO_MS + index * STAR_STAGGER_MS}ms`);
+      return star;
+    }),
+  );
+}
+
+function statTile(label: string, value: number, unit?: string): StatTile {
+  const counter = new Counter(
+    el('strong', { class: 'result-stat-value' }),
+    undefined,
+    COUNTER_DURATION_MS,
+  );
+  const element = el(
+    'div',
+    { class: 'result-stat' },
+    el('span', { class: 'result-stat-label', text: label }),
+    el(
+      'span',
+      { class: 'result-stat-reading' },
+      counter.element,
+      unit ? el('span', { class: 'result-stat-unit', text: unit }) : null,
+    ),
+  );
+  return { element, reveal: () => counter.set(value) };
+}
+
+function actionsRow(stars: number, actions: Actions): HTMLElement {
+  const t = i18n.t;
+  const onNext = stars > 0 ? actions.onNext : undefined;
+  const retryIsPrimary = stars === 0;
+  const mapIsPrimary = !onNext && !retryIsPrimary;
+  return el(
+    'div',
+    { class: 'actions result-actions' },
+    el('button', {
+      class: mapIsPrimary ? 'button button-primary button-large' : 'button button-ghost',
+      text: t.map,
+      onClick: actions.onMap,
+    }),
+    el('button', {
+      class: retryIsPrimary ? 'button button-primary button-large' : 'button',
+      text: t.retry,
+      onClick: actions.onRetry,
+    }),
+    onNext
+      ? el('button', {
+          class: 'button button-primary button-large',
+          text: t.next,
+          onClick: onNext,
+        })
+      : null,
   );
 }
