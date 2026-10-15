@@ -1,0 +1,5 @@
+export type RawRecord = Readonly<Record<string, unknown>>;
+
+export function isRecord(value: unknown): value is RawRecord {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
