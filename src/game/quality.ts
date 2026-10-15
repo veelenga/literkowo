@@ -1,4 +1,4 @@
-import { readStorage, writeStorage } from '../storage';
+import { readChoice, writeStorage } from '../storage';
 import { readDeviceProbe, type DeviceProbe } from './deviceProbe';
 
 export const QUALITY_LEVELS = ['high', 'medium', 'low'] as const;
@@ -82,8 +82,7 @@ export function resolveQuality(probe: DeviceProbe): QualityLevel {
 }
 
 export function readQualityChoice(): QualityChoice {
-  const stored = readStorage(STORAGE_KEY);
-  return QUALITY_CHOICES.find((choice) => choice === stored) ?? AUTO_QUALITY;
+  return readChoice(STORAGE_KEY, QUALITY_CHOICES, AUTO_QUALITY);
 }
 
 export function saveQualityChoice(choice: QualityChoice): void {

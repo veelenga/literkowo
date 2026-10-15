@@ -9,6 +9,11 @@ export function writeStorage(key: string, value: string): void {
   else fallback.set(key, value);
 }
 
+export function readChoice<T extends string>(key: string, choices: readonly T[], fallback: T): T {
+  const stored = readStorage(key);
+  return choices.find((choice) => choice === stored) ?? fallback;
+}
+
 export function removeStorage(key: string): void {
   fallback.delete(key);
   attempt(() => localStorage.removeItem(key));
