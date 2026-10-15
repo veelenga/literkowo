@@ -4,7 +4,6 @@ import { AVATARS } from '../profiles/Profile';
 import { characterAvatar } from './CharacterAvatar';
 import { preloadPortraits } from './CharacterPortraits';
 import { el } from './dom';
-import { livePreview } from './LivePreview';
 import { unlockHint } from './shopCopy';
 import { lockBadge } from './shopParts';
 
@@ -15,7 +14,6 @@ const OPEN_CLASS = 'avatar-option';
 interface AvatarTile {
   character: string;
   button: HTMLButtonElement;
-  portrait: HTMLElement;
   locked: boolean;
 }
 
@@ -31,7 +29,6 @@ export function avatarPicker(
     if (chosen === current) return;
     current = chosen;
     tiles.forEach((tile) => markActive(tile.button, tile === chosen));
-    livePreview.show(chosen.portrait, chosen.character);
     onPick(chosen.character);
   };
   tiles
@@ -43,7 +40,6 @@ export function avatarPicker(
 }
 
 function createTile(character: string, owned: readonly string[]): AvatarTile {
-  const portrait = characterAvatar(character);
   const unlock = isSkinLocked(character, owned) ? skinSpec(character)?.unlock : undefined;
   const button = el(
     'button',
@@ -53,10 +49,10 @@ function createTile(character: string, owned: readonly string[]): AvatarTile {
       'aria-disabled': unlock ? 'true' : undefined,
       title: unlock ? unlockHint(unlock) : undefined,
     },
-    portrait,
+    characterAvatar(character),
     unlock ? lockBadge(unlock) : null,
   );
-  return { character, button, portrait, locked: unlock !== undefined };
+  return { character, button, locked: unlock !== undefined };
 }
 
 function markActive(button: HTMLButtonElement, isActive: boolean): void {

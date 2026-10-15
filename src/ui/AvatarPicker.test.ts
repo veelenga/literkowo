@@ -10,10 +10,6 @@ vi.mock('./CharacterPortraits', () => ({
   preloadPortraits: () => undefined,
 }));
 
-vi.mock('./LivePreview', () => ({
-  livePreview: { show: () => undefined },
-}));
-
 const FIRST_LOCKED = STARTER_SKINS.length;
 
 function tiles(picker: HTMLElement): HTMLButtonElement[] {

@@ -68,62 +68,6 @@
   }
 }
 
-.shop-button {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 42px;
-  padding: 0 16px 0 10px;
-  border-radius: var(--radius-pill);
-  border: 2px solid rgba(255, 207, 63, 0.45);
-  background: linear-gradient(180deg, #3a3170, #241c52);
-  box-shadow: 0 3px 0 var(--surface-edge);
-  color: var(--accent-light);
-  font-weight: 900;
-  transition:
-    transform var(--duration-fast) var(--ease-out),
-    background var(--duration-fast) ease;
-}
-
-@media (hover: hover) {
-  .shop-button:hover {
-    transform: translateY(-2px);
-    background: linear-gradient(180deg, #483d8a, #2c2264);
-  }
-}
-
-.shop-button:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 var(--surface-edge);
-}
-
-.shop-button-icon {
-  width: 22px;
-  height: 22px;
-  fill: var(--accent);
-  filter: drop-shadow(0 0 6px var(--accent-glow));
-}
-
-.shop-button-dot {
-  position: absolute;
-  top: -3px;
-  right: -3px;
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  border: 2px solid var(--bg-deep);
-  background: var(--success);
-  box-shadow: 0 0 10px var(--success-glow);
-  animation: shop-dot-pulse 1.6s ease-in-out infinite;
-}
-
-@keyframes shop-dot-pulse {
-  50% {
-    scale: 1.25;
-  }
-}
-
 .shop-screen {
   padding-bottom: calc(48px + var(--safe-bottom));
 }
@@ -433,16 +377,6 @@
 }
 
 @media (max-width: 600px) {
-  .shop-button {
-    width: 42px;
-    padding: 0;
-    justify-content: center;
-  }
-
-  .shop-button-label {
-    display: none;
-  }
-
   .shop-header {
     gap: 8px;
     padding: calc(8px + var(--safe-top)) calc(12px + var(--safe-right)) 8px
@@ -490,11 +424,6 @@
 }
 
 @media (pointer: coarse) {
-  .shop-button {
-    min-width: var(--touch-target);
-    height: var(--touch-target);
-  }
-
   .shop-action {
     min-height: var(--touch-target);
   }

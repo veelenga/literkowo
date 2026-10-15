@@ -9,37 +9,24 @@ import {
   type WordLanguage,
 } from '../profiles/Profile';
 import type { ProfileStore } from '../profiles/ProfileStore';
-import { characterAvatar } from './CharacterAvatar';
 import { avatarPicker } from './AvatarPicker';
+import { characterAvatar } from './CharacterAvatar';
 import { releasePortraits } from './CharacterPortraits';
-import { el, present } from './dom';
-import { livePreview } from './LivePreview';
+import { el, icon, prefersReducedMotion, svg } from './dom';
+import { keepDockBelowRow, type StopDock } from './landing/dockRow';
+import { LandingBackdrop } from './landing/LandingBackdrop';
+import { livePreview, outfitOf } from './LivePreview';
+import { hasAmbientMotion } from './menuMotion';
 import { coinPill, levelBadge } from './progression';
+import './profileScreen.css';
 
 const MAX_NAME_LENGTH = 16;
-const CARD_STAGGER_MS = 70;
+const CARD_STAGGER_MS = 80;
 const CREATE_PANEL_KEY = 'create';
-
-interface FloatingKey {
-  char: string;
-  x: number;
-  y: number;
-  size: number;
-  tilt: number;
-  delay: number;
-  depth: number;
-}
-
-const FLOATING_KEYS: FloatingKey[] = [
-  { char: 'A', x: 9, y: 16, size: 2.4, tilt: -12, delay: 0, depth: 0 },
-  { char: 'Ł', x: 84, y: 12, size: 2.8, tilt: 10, delay: -2, depth: 0 },
-  { char: 'K', x: 13, y: 68, size: 2, tilt: 8, delay: -4, depth: 1 },
-  { char: 'Ż', x: 88, y: 62, size: 2.2, tilt: -8, delay: -1, depth: 1 },
-  { char: 'O', x: 3, y: 42, size: 1.4, tilt: 14, delay: -3, depth: 2 },
-  { char: 'Ś', x: 76, y: 86, size: 1.6, tilt: -14, delay: -5, depth: 2 },
-  { char: 'W', x: 24, y: 88, size: 1.3, tilt: 6, delay: -6, depth: 2 },
-  { char: 'Ę', x: 95, y: 36, size: 1.3, tilt: 12, delay: -2.5, depth: 2 },
-];
+const SELECTED_CARD_SELECTOR = '.profile-card.is-selected';
+const TILE_SELECTOR = ':scope > .profile-card';
+const PLAY_ICON_PATH =
+  'M8 5.6v12.8a1 1 0 0 0 1.5.86l10.4-6.4a1 1 0 0 0 0-1.72L9.5 4.74A1 1 0 0 0 8 5.6z';
 
 interface Actions {
   onPlay: (profile: Profile) => void;
@@ -47,23 +34,29 @@ interface Actions {
 
 export class ProfileScreen {
   readonly element = el('div', { class: 'screen profile-screen is-intro' });
-  private readonly backdrop = landingBackdrop();
+  private readonly backdrop = new LandingBackdrop(hasAmbientMotion());
+  private readonly view = el('div', { class: 'profile-view' });
   private selected: Profile | undefined;
   private creating = false;
   private rendered = false;
   private panelKey: string | undefined;
+  private stopDock: StopDock = noDock;
 
   constructor(
     private readonly store: ProfileStore,
     private readonly actions: Actions,
   ) {
     this.selected = store.active();
+    this.element.append(this.backdrop.element, this.view);
+    this.backdrop.followPointer(this.element);
     this.render();
   }
 
   dispose(): void {
+    this.stopDock();
     livePreview.stop();
     releasePortraits();
+    this.backdrop.dispose();
   }
 
   private render(): void {
@@ -71,38 +64,48 @@ export class ProfileScreen {
     if (this.rendered) this.element.classList.remove('is-intro');
     this.rendered = true;
     livePreview.hide();
-    this.element.replaceChildren(
-      this.backdrop,
+    const grid = el('div', { class: 'profile-grid' }, ...this.gridItems());
+    this.view.replaceChildren(
       this.languageSwitch(),
       el(
         'main',
         { class: 'landing' },
-        ...present(
-          el('h1', { class: 'logo', text: t.appName }),
+        el(
+          'header',
+          { class: 'landing-hero' },
+          el('h1', { class: 'landing-logo', text: t.appName }),
           el('p', { class: 'tagline', text: t.tagline }),
-          el('h2', { class: 'section-title', text: t.whoPlays }),
-          el(
-            'div',
-            { class: 'profile-grid' },
-            ...this.store.all().map((profile, index) => this.card(profile, index)),
-            this.newCard(this.store.all().length),
-          ),
-          this.panel(),
         ),
+        el('h2', { class: 'section-title', text: t.whoPlays }),
+        grid,
       ),
     );
+    this.dockBelowSelectedRow(grid);
   }
 
-  private panel(): HTMLElement | null {
+  private dockBelowSelectedRow(grid: HTMLElement): void {
+    this.stopDock();
+    const selected = grid.querySelector<HTMLElement>(SELECTED_CARD_SELECTOR);
+    const tiles = [...grid.querySelectorAll<HTMLElement>(TILE_SELECTOR)];
+    this.stopDock = selected ? keepDockBelowRow(grid, selected, tiles) : noDock;
+  }
+
+  private gridItems(): HTMLElement[] {
     const key = this.creating ? CREATE_PANEL_KEY : this.selected?.id;
-    const panel = this.creating
-      ? this.createForm()
-      : this.selected
-        ? this.setupPanel(this.selected)
-        : null;
-    panel?.classList.toggle('is-fresh', key !== this.panelKey);
+    const isFresh = key !== this.panelKey;
     this.panelKey = key;
-    return panel;
+    const profiles = this.store.all();
+    const cards = profiles.flatMap((profile, index) => {
+      const card = this.card(profile, index);
+      if (!this.isSelected(profile)) return [card];
+      return [card, dock(this.playPanel(profile), isFresh)];
+    });
+    const last = this.creating ? dock(this.createPanel(), isFresh) : this.newCard(profiles.length);
+    return [...cards, last];
+  }
+
+  private isSelected(profile: Profile): boolean {
+    return !this.creating && this.selected?.id === profile.id;
   }
 
   private languageSwitch(): HTMLElement {
@@ -126,9 +129,10 @@ export class ProfileScreen {
 
   private card(profile: Profile, index: number): HTMLElement {
     const t = i18n.t;
-    const isSelected = !this.creating && this.selected?.id === profile.id;
+    const isSelected = this.isSelected(profile);
     const avatar = characterAvatar(profile.avatar);
-    if (isSelected) livePreview.show(avatar, profile.avatar);
+    if (isSelected) livePreview.show(avatar, outfitOf(profile.avatar, profile.equipped));
+    const stars = totalStars(profile);
     return el(
       'button',
       {
@@ -137,20 +141,23 @@ export class ProfileScreen {
         'aria-pressed': String(isSelected),
         onClick: () => this.select(profile),
       },
-      el('span', { class: 'avatar-ring' }, avatar),
-      el('strong', { class: 'profile-name', text: profile.name }),
-      levelBadge(profile.xp, 'level-badge level-badge-card'),
+      heroStage(avatar),
       el(
         'span',
-        { class: 'profile-meta' },
+        { class: 'profile-info' },
+        el('strong', { class: 'profile-name', text: profile.name }),
+        levelBadge(profile.xp, 'level-badge profile-level'),
         el(
           'span',
-          { class: 'meta-pill', title: t.stars },
-          el('span', { class: 'meta-star', text: '★' }),
-          String(totalStars(profile)),
+          { class: 'profile-meta' },
+          el(
+            'span',
+            { class: 'meta-pill meta-stars', title: t.stars, 'aria-label': `${t.stars}: ${stars}` },
+            icon('star', 'meta-star'),
+            el('strong', { text: String(stars) }),
+          ),
+          coinPill(String(profile.coins), 'meta-pill meta-coins'),
         ),
-        el('span', { class: 'meta-pill', title: t.bestScore, text: `🏆 ${profile.totalScore}` }),
-        coinPill(String(profile.coins), 'meta-pill meta-coins'),
       ),
     );
   }
@@ -159,17 +166,23 @@ export class ProfileScreen {
     return el(
       'button',
       {
-        class: this.creating
-          ? 'profile-card profile-card-new is-selected'
-          : 'profile-card profile-card-new',
+        class: 'profile-card profile-card-new',
         style: staggerStyle(index),
         onClick: () => {
           this.creating = true;
           this.render();
         },
       },
-      el('span', { class: 'avatar-ring avatar-ring-new', text: '+' }),
-      el('strong', { class: 'profile-name', text: i18n.t.newProfile }),
+      el(
+        'span',
+        { class: 'hero-stage new-stage' },
+        el('span', { class: 'new-plus', 'aria-hidden': 'true', text: '+' }),
+      ),
+      el(
+        'span',
+        { class: 'profile-info' },
+        el('strong', { class: 'profile-name', text: i18n.t.newProfile }),
+      ),
     );
   }
 
@@ -180,9 +193,48 @@ export class ProfileScreen {
     this.render();
   }
 
-  private createForm(): HTMLElement {
+  private playPanel(profile: Profile): HTMLElement {
+    const t = i18n.t;
+    return el(
+      'section',
+      { class: 'panel profile-panel play-panel' },
+      el(
+        'div',
+        { class: 'play-panel-main' },
+        el('h3', { class: 'panel-title', text: profile.name }),
+        el(
+          'button',
+          {
+            class: 'button button-primary button-large play-button',
+            onClick: () => this.actions.onPlay(profile),
+          },
+          playIcon(),
+          t.play,
+        ),
+      ),
+      el(
+        'div',
+        { class: 'play-panel-settings' },
+        el('span', { class: 'field-label', text: t.wordLanguage }),
+        el(
+          'div',
+          { class: 'segmented word-language' },
+          this.languageChip(profile, 'pl', t.polish),
+          this.languageChip(profile, 'en', t.english),
+        ),
+        el('button', {
+          class: 'button button-danger',
+          text: t.deleteProfile,
+          onClick: () => this.remove(profile),
+        }),
+      ),
+    );
+  }
+
+  private createPanel(): HTMLElement {
     const t = i18n.t;
     let avatar = AVATARS[0];
+    const preview = el('span', { class: 'hero-stage create-preview' });
     const input = el('input', {
       class: 'input',
       type: 'text',
@@ -200,17 +252,29 @@ export class ProfileScreen {
       this.select(profile);
     };
     input.addEventListener('keydown', (event) => event.key === 'Enter' && submit());
-    queueMicrotask(() => input.focus());
-    return el(
+    const picker = avatarPicker(avatar, STARTER_SKINS, (picked) => {
+      avatar = picked;
+      showOnStage(preview, picked);
+    });
+    const panel = el(
       'section',
-      { class: 'panel profile-panel' },
+      { class: 'panel profile-panel create-panel' },
       el('h3', { class: 'panel-title', text: t.newProfile }),
-      input,
-      el('p', { class: 'field-label', text: t.chooseAvatar }),
-      avatarPicker(avatar, STARTER_SKINS, (picked) => (avatar = picked)),
       el(
         'div',
-        { class: 'actions actions-end' },
+        { class: 'create-layout' },
+        preview,
+        el(
+          'div',
+          { class: 'create-fields' },
+          input,
+          el('p', { class: 'field-label', text: t.chooseAvatar }),
+          picker,
+        ),
+      ),
+      el(
+        'div',
+        { class: 'actions create-actions' },
         el('button', {
           class: 'button button-ghost',
           text: t.cancel,
@@ -219,44 +283,18 @@ export class ProfileScreen {
             this.render();
           },
         }),
-        el('button', { class: 'button button-primary', text: t.create, onClick: submit }),
-      ),
-    );
-  }
-
-  private setupPanel(profile: Profile): HTMLElement {
-    const t = i18n.t;
-    return el(
-      'section',
-      { class: 'panel profile-panel' },
-      el(
-        'div',
-        { class: 'panel-head' },
-        el('span', { class: 'avatar-ring avatar-ring-small' }, characterAvatar(profile.avatar)),
-        el('h3', { class: 'panel-title', text: profile.name }),
-      ),
-      el('p', { class: 'field-label', text: t.wordLanguage }),
-      el(
-        'div',
-        { class: 'segmented segmented-wide' },
-        this.languageChip(profile, 'pl', t.polish),
-        this.languageChip(profile, 'en', t.english),
-      ),
-      el(
-        'div',
-        { class: 'actions actions-split' },
-        el('button', {
-          class: 'button button-danger',
-          text: t.deleteProfile,
-          onClick: () => this.remove(profile),
-        }),
         el('button', {
           class: 'button button-primary button-large',
-          text: `▶ ${t.play}`,
-          onClick: () => this.actions.onPlay(profile),
+          text: t.create,
+          onClick: submit,
         }),
       ),
     );
+    queueMicrotask(() => {
+      input.focus({ preventScroll: true });
+      panel.scrollIntoView({ block: 'nearest', behavior: scrollBehavior() });
+    });
+    return panel;
   }
 
   private languageChip(profile: Profile, language: WordLanguage, label: string): HTMLElement {
@@ -280,23 +318,39 @@ export class ProfileScreen {
   }
 }
 
+function noDock(): void {}
+
+function dock(panel: HTMLElement, isFresh: boolean): HTMLElement {
+  panel.classList.toggle('is-fresh', isFresh);
+  return el('div', { class: 'profile-dock' }, panel);
+}
+
 function staggerStyle(index: number): string {
   return `--delay: ${index * CARD_STAGGER_MS}ms`;
 }
 
-function landingBackdrop(): HTMLElement {
-  return el(
-    'div',
-    { class: 'landing-backdrop', 'aria-hidden': 'true' },
-    el('div', { class: 'landing-glow' }),
-    ...FLOATING_KEYS.map(floatingKey),
-  );
+function heroStage(avatar: HTMLElement): HTMLElement {
+  return el('span', { class: 'hero-stage' }, ...stageLights(), avatar);
 }
 
-function floatingKey(key: FloatingKey): HTMLElement {
-  return el('span', {
-    class: `floating-key depth-${key.depth}`,
-    text: key.char,
-    style: `--x: ${key.x}%; --y: ${key.y}%; --size: ${key.size}rem; --tilt: ${key.tilt}deg; --delay: ${key.delay}s`,
-  });
+function stageLights(): HTMLElement[] {
+  return [el('span', { class: 'hero-spotlight' }), el('span', { class: 'hero-floor' })];
+}
+
+function showOnStage(stage: HTMLElement, character: string): void {
+  const avatar = characterAvatar(character);
+  stage.replaceChildren(...stageLights(), avatar);
+  livePreview.show(avatar, outfitOf(character));
+}
+
+function scrollBehavior(): ScrollBehavior {
+  return prefersReducedMotion() ? 'auto' : 'smooth';
+}
+
+function playIcon(): SVGSVGElement {
+  return svg(
+    'svg',
+    { viewBox: '0 0 24 24', class: 'play-icon', 'aria-hidden': 'true' },
+    svg('path', { d: PLAY_ICON_PATH }),
+  );
 }

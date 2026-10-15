@@ -222,7 +222,7 @@ Coins are a separate counter. They are spent in the [shop](#shop).
 - During a level each completed word gives 1 coin. Mechanics add more with `addCoins(amount)`: 15 for a treasure chest, 5 for a thief caught with its loot. Run coins never go down. The run total is `GameResult.coins`.
 - After the level: the run coins, plus 10 for a won level, plus 5 per star.
 
-The result card fills the XP bar from the old progress to the new one. When a level is crossed it shows a "Nowy poziom!" / "Новий рівень!" banner with the rank name, confetti and the level complete and sparkle sounds. The coins earned sit in a pill next to the XP. The map header and the profile cards show the level, the rank, a thin XP bar and the coins.
+The result card fills the XP bar from the old progress to the new one. When a level is crossed it shows a "Nowy poziom!" / "Новий рівень!" banner with the rank name, confetti and the level complete and sparkle sounds. The coins earned sit in a pill next to the XP. The map header and the profile cards show the level, the rank, a thin XP bar, the stars and the coins.
 
 ## Key mastery
 
@@ -255,7 +255,7 @@ Mastery levels (`src/course/mastery.ts`):
 
 Where it shows:
 
-- Map: each region card has a mastery meter next to the stars, with the mastered keys out of all new keys of the region. Each unlocked key level shows a dot per new key in the colour of its level: grey none, orange learning, blue solid, green mastered.
+- Map: each region sign has a mastery meter next to the stars, with the mastered keys out of all new keys of the region. Each unlocked key level shows a dot per new key in the colour of its level: grey none, orange learning, blue solid, green mastered.
 - Learn card: under each keycap, the level of the key and its accuracy over the last 30 keystrokes when there is data.
 - Result card: a "Klawisze" / "Клавіші" row with the two least accurate keys of the run that had a mistake, or "Bez pomyłek" / "Без помилок". A key that became mastered in the run gets a green badge, the sparkle sound and the callout "Opanowany: F" / "Опановано: F".
 - Pause card: a heatmap of the keyboard, each key tinted by its accuracy over the last 30 keystrokes, from red at 70% or less to green at 100%, grey without data. A practised Polish letter shows as a small mark on its base key.
@@ -364,6 +364,29 @@ Owners: `src/game/themes.ts` for visuals, `src/game/environment/biomes/<theme>.t
 
 Each theme also sets enemy colours, sky, fog, light and a fixed random seed for the landscape. Island music has a swing of 0.2, the others have none.
 
+## Menus
+
+Owners: `src/ui/ProfileScreen.ts`, `src/ui/LivePreview.ts`, `src/ui/landing/LandingBackdrop.ts`, `src/ui/landing/dockRow.ts`, `src/ui/WorldMap.ts`, `src/ui/map/journeyLayout.ts`, `src/ui/map/regionArt.ts`.
+
+Profile screen:
+
+- Layered hills drift slowly behind the logo, and glowing letters float and twinkle over them. On devices that can hover, the hills lean a little toward the pointer.
+- With reduced motion or the low quality preset the hills stand still and there are no letters (`src/ui/menuMotion.ts`).
+- Each profile is a card with the rendered portrait under a spotlight, the name, the level, the rank, a thin XP bar, and pills for stars and coins.
+- The selected card lifts, glows and shows the hero in 3D with the equipped hat and pet, swaying slowly. It uses the same outfit view as the shop (`src/ui/portraits/OutfitView.ts`). The play panel opens right under the row of the selected card, and cards from later rows move below it. The panel has a big Play button, then the word language chips and the delete button in a quieter row.
+- The dashed new profile card opens the create panel in its place: a large live preview of the chosen character that switches with every pick, the name field, the 18 characters and a Create button.
+- Long names and rank names end with an ellipsis on the cards.
+
+Map:
+
+- The map is one tall scene. The regions are stacked from top to bottom as bands that blend into each other: meadow, forest, mountains, cave and island. Locked bands are dimmed.
+- One winding path runs through every level. The walked part, up to the first level without a star, is gold.
+- Each band starts with a sign: the chapter number, the region name, a short mood line (`src/i18n/features/worldMap.ts`), the stars earned out of the total and the mastery meter. Signs switch sides from band to band, and the path passes each sign on the other side.
+- Levels are round badges on the path with their new keys. Unlocked key levels show the key dots under the keys, see [Key mastery](#key-mastery). Bosses have a crown. Locked levels show a lock. Levels with stars glow in the region colour and show their stars. The current level pulses, has a Play tag, and the hero stands on it.
+- The header stays at the top: the avatar with the level number, the name, the rank and a thin XP bar, then stars, coins, the shop button and the sound toggle. A tap on the avatar goes back to the profiles. The shop button has the bag and the label "Sklep" / "Крамниця", only the bag on phones, and the green dot when something can be bought or claimed.
+- On open the map scrolls smoothly to the current level, or to the last open level when all levels have stars. Levels pop in as they scroll into view. With reduced motion the scroll is instant and nothing pops in.
+- The silhouettes of each band move at different speeds while scrolling, except in the low quality preset.
+
 ## Audio
 
 Owners: `src/audio/Sfx.ts`, `src/audio/Music.ts`, `src/audio/music/themes.ts`.
@@ -397,7 +420,8 @@ Layout:
 - Phones are screens up to 600 px wide or up to 480 px tall. Tablets are up to 1024 px wide.
 - On tablets and phones the HUD shows score, combo, hearts and progress. On a phone in portrait it takes two rows.
 - The keyboard hint is hidden on phones and smaller on tablets in portrait.
-- On a phone in portrait the map trail runs from top to bottom.
+- On phones each profile card takes a full row. The map is the same vertical scene on every screen, scaled down on phones.
+- On screens up to 480 px tall the profile screen shows a smaller logo and no tagline, so the Play button stays in view.
 - Touch targets are at least 44 px on touch screens. Hover effects apply only on devices that can hover.
 - The app is `100dvh` tall. The HUD, the keyboard hint, the map header and overlays stay inside the safe area insets.
 - The camera keeps a horizontal field of view of at least 62 degrees, so the whole spawn arc stays in frame on narrow and portrait screens. The vertical field of view grows when needed and never drops below 42 degrees (`src/game/arena.ts`).
@@ -414,7 +438,8 @@ Touch input:
 Performance:
 
 - In auto quality, touch screens get the low preset: pixel ratio at most 1, dynamic resolution down to 0.75, no MSAA, no bloom and a 512 px shadow map (`src/game/quality.ts`).
-- The live 3D portrait preview is off on touch screens. They show the static portrait (`src/ui/LivePreview.ts`).
+- On touch screens and with reduced motion, the 3D hero on the profile screen is a still frame (`src/ui/LivePreview.ts`). Until the model loads, the portrait shows.
+- In the low preset the profile screen backdrop and the map layers stand still (`src/ui/menuMotion.ts`).
 
 Install and offline:
 
