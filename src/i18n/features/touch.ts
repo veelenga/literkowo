@@ -4,6 +4,8 @@ interface TouchTexts {
   pause: string;
   resume: string;
   phoneKeyboard: string;
+  rotateHint: string;
+  closeHint: string;
 }
 
 const pl: TouchTexts = {
@@ -12,6 +14,8 @@ const pl: TouchTexts = {
   pause: 'Pauza',
   resume: 'Graj dalej',
   phoneKeyboard: 'Klawiatura telefonu',
+  rotateHint: 'Obróć telefon, będzie wygodniej',
+  closeHint: 'Zamknij podpowiedź',
 };
 
 const uk: TouchTexts = {
@@ -20,6 +24,8 @@ const uk: TouchTexts = {
   pause: 'Пауза',
   resume: 'Грати далі',
   phoneKeyboard: 'Клавіатура телефону',
+  rotateHint: 'Поверни телефон, буде зручніше',
+  closeHint: 'Закрити підказку',
 };
 
 export const touch = { pl, uk };

@@ -32,6 +32,7 @@ import { loadErrorOverlay } from '../ui/LoadErrorOverlay';
 import { OverlaySlot, type Overlay } from '../ui/overlay';
 import { pauseOverlay } from '../ui/PauseOverlay';
 import { ProfileScreen } from '../ui/ProfileScreen';
+import { rotateHint } from '../ui/RotateHint';
 import { ShopScreen } from '../ui/ShopScreen';
 import { watchStageInsets } from '../ui/stageInsets';
 import { storyCard } from '../ui/StoryCard';
@@ -150,8 +151,17 @@ export class App {
     const layout = usesBuiltInKeyboard() ? KEYBOARD_LAYOUTS.compact : KEYBOARD_LAYOUTS.full;
     const keyboard = new KeyboardHint(type, layout);
     const callouts = new Callouts();
+    const hint = courseFor(profile.wordLanguage).isFirst(level) ? rotateHint() : undefined;
     this.showScreen(
-      el('div', { class: 'level-screen' }, stage, callouts.element, hud.element, keyboard.element),
+      el(
+        'div',
+        { class: 'level-screen' },
+        stage,
+        callouts.element,
+        hud.element,
+        keyboard.element,
+        hint,
+      ),
     );
     if (hasCoarsePointer()) this.touch = new TouchTyping(stage, type);
 
