@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { sfx } from '../audio/Sfx';
-import type { Level } from '../course/regions';
+import { practiceDay, type KeyStats } from '../course/keyStats';
+import { allowedKeysFor, type Level } from '../course/regions';
 import { WordSource } from '../course/WordSource';
 import type { WordLanguage } from '../profiles/Profile';
 import { xpPop } from '../ui/progression';
@@ -16,6 +17,7 @@ import {
 import { Boss } from './Boss';
 import { CameraShake } from './CameraShake';
 import { Enemy, type EnemyLook } from './Enemy';
+import { KeyTracker, type KeyReport } from './KeyTracker';
 import { LabelLayer } from './LabelLayer';
 import { planFor, type Phase, type PhaseKind } from './LevelPlan';
 import { createMechanics } from './mechanics';
@@ -54,6 +56,7 @@ export interface GameConfig {
   level: Level;
   language: WordLanguage;
   theme: Theme;
+  keyStats: KeyStats;
 }
 
 export interface GameResult {
@@ -64,6 +67,7 @@ export interface GameResult {
   lettersFreed: number;
   xp: number;
   coins: number;
+  keys: KeyReport;
 }
 
 export interface Progress {
@@ -93,6 +97,7 @@ export class Game {
   private readonly words: WordSource;
   private readonly stats = new SessionStats();
   private readonly rewards = new RunRewards();
+  private readonly keys: KeyTracker;
   private readonly labels: LabelLayer;
   private readonly phases: Phase[];
   private readonly enemies: Enemy[] = [];
@@ -123,6 +128,11 @@ export class Game {
     private readonly events: GameEvents,
   ) {
     this.player = new Player(config.character);
+    this.keys = new KeyTracker(
+      config.keyStats,
+      allowedKeysFor(config.level, config.language),
+      practiceDay(new Date()),
+    );
     this.words = new WordSource(config.level, config.language);
     this.phases = planFor(config.level);
     const quality = currentQuality();
@@ -153,6 +163,10 @@ export class Game {
   wake(): void {
     this.suspended = false;
     this.syncFrames();
+  }
+
+  get keyStats(): KeyStats {
+    return this.keys.stats;
   }
 
   typeCharacter(char: string): void {
@@ -471,6 +485,7 @@ export class Game {
       lettersFreed: this.lettersFreed,
       xp: this.rewards.xp,
       coins: this.rewards.coins,
+      keys: this.keys.report(),
     });
   }
 
@@ -487,7 +502,8 @@ export class Game {
 
   private handleChar(char: string): void {
     const keystroke = this.targeting.type(char, nearestFirst(this.enemies));
-    if (keystroke.kind === 'miss') return this.mistake();
+    if (keystroke.kind === 'miss') return this.mistake(char);
+    this.keys.hit(char, performance.now());
     this.stats.recordHit();
     sfx.hit(this.stats.combo);
     this.mechanics.onHit();
@@ -495,7 +511,8 @@ export class Game {
     this.events.onStats(this.stats, this.lives);
   }
 
-  private mistake(): void {
+  private mistake(char: string): void {
+    this.keys.miss(this.focus?.expectedChar ?? char);
     this.recordMistake();
     this.targeting.candidates.forEach((enemy) => enemy.flashMistake());
     sfx.mistake();

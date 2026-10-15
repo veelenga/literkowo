@@ -139,6 +139,7 @@ export class App {
       level,
       language: profile.wordLanguage,
       theme: themeFor(regionOf(level).theme),
+      keyStats: profile.keyStats,
     };
     music.play(config.theme.id, level.isBoss ? 'boss' : 'calm');
     this.game = new Game(stage, config, {
@@ -294,5 +295,6 @@ function attemptOf(result: GameResult, stars: number, coins: number): Attempt {
     lettersFreed: result.lettersFreed,
     xp: result.xp,
     coins,
+    keyStats: result.keys.practised,
   };
 }

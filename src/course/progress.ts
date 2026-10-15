@@ -9,11 +9,13 @@ import {
 } from '../story/story';
 import type { Level } from './catalog';
 import { courseFor } from './course';
+import type { KeyStats } from './keyStats';
 
 export interface Attempt extends LevelResult {
   lettersFreed: number;
   xp: number;
   coins: number;
+  keyStats: KeyStats;
 }
 
 export function isBetterResult(candidate: LevelResult, previous: LevelResult | undefined): boolean {
@@ -37,6 +39,7 @@ export function recordResult(profile: Profile, level: Level, attempt: Attempt): 
     xp: profile.xp + attempt.xp,
     coins: profile.coins + attempt.coins,
     levelResults: improved ? { ...profile.levelResults, [level.id]: result } : profile.levelResults,
+    keyStats: { ...profile.keyStats, ...attempt.keyStats },
   };
 }
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createProfile, type Profile } from '../profiles/Profile';
 import { requireLevel as level } from '../testing/levels';
+import { EMPTY_KEY_STAT, recordHit, recordMiss } from './keyStats';
 import { markStorySeen, recordResult, storyAfter, storyBefore, type Attempt } from './progress';
 
 function attempt(overrides: Partial<Attempt> = {}): Attempt {
@@ -12,6 +13,7 @@ function attempt(overrides: Partial<Attempt> = {}): Attempt {
     lettersFreed: 20,
     xp: 30,
     coins: 12,
+    keyStats: {},
     ...overrides,
   };
 }
@@ -50,6 +52,14 @@ describe('recordResult', () => {
 
     const moreStars = recordResult(first, level('polana-1'), attempt({ stars: 3, score: 10 }));
     expect(moreStars.levelResults['polana-1'].stars).toBe(3);
+  });
+
+  it('merges the key statistics of the attempt', () => {
+    const f = recordHit(EMPTY_KEY_STAT);
+    const j = recordMiss(EMPTY_KEY_STAT);
+    const profile = profileWith({ keyStats: { f, j } });
+    const updated = recordResult(profile, level('polana-1'), attempt({ keyStats: { j: f } }));
+    expect(updated.keyStats).toEqual({ f, j: f });
   });
 
   it('does not change the original profile', () => {
