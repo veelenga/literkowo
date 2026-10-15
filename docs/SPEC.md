@@ -94,6 +94,25 @@ Owners: `src/game/SessionStats.ts`, `src/game/combo.ts`.
 
 A callout stays for 0.9 seconds and the fever banner for 1.4 seconds (`src/ui/Callouts.ts`).
 
+## Enemy types
+
+Owners: `src/game/mechanics/EnemyTypes.ts`, `src/game/mechanics/enemyTypes/kinds.ts`, `src/game/mechanics/enemyTypes/factory.ts`.
+
+- During the words phase, a fresh normal spawn turns into a special enemy with a chance of 25% (`SPECIAL_SHARE`). The chance is split by weight between the unlocked types: jumper 3, the others 2 each (`KIND_WEIGHTS`).
+- The special enemy takes the place of the spawn, so the word count of the phase stays the same. A balloon that floats away counts as done.
+- The boss, power words, merged enemies and minions are never replaced. Special enemies never merge.
+- At most 1 special enemy is on the board in Polana, and at most 3 in later regions.
+- The first time a type appears in a level, its name shows as a callout. Each type also has a short hint in `src/i18n/features/enemyTypes.ts`.
+
+| Type      | Name (pl / uk)       | From       | Word                        | Movement                                                     | Rule                                                                                                                                           |
+| --------- | -------------------- | ---------- | --------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `jumper`  | Skoczek / Стрибунець | `polana-3` | one new key, 4 to 7 times   | hops 1 unit at a time, at the normal word speed              | Each letter makes it hop in place and shrink.                                                                                                  |
+| `balloon` | Balonik / Кулька     | `polana-3` | 3 to 5 letters              | starts at distance 6, rises 0.42 per second, drifts sideways | Above height 7 it floats away, with no mistake and no lost life. Popped, it pays double word points.                                           |
+| `bat`     | Nietoperz / Кажан    | `las-1`    | 3 to 4 letters              | flies an arc at height 2.5, at 2.5 × the word speed          | At the far side it drops a bomb. When the bomb lands, the hero loses a life and the camera shakes. Typed before that, it tumbles and shatters. |
+| `swarm`   | Rój / Рій            | `gory-1`   | 5 to 7 letters, one per bug | walks at 1.25 × the word speed and jitters                   | Letters go in order and the next one glows. Each letter pops one bug.                                                                          |
+
+A type stays unlocked in every later region.
+
 ## Worlds
 
 Owners: `src/game/themes.ts` for visuals, `src/game/environment/biomes/<theme>.ts` for the landscape, `src/audio/music/themes.ts` for music.
