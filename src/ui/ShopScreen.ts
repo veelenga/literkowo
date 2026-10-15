@@ -62,7 +62,9 @@ export class ShopScreen {
   readonly element = el('div', { class: 'screen shop-screen' });
   private readonly hero = new ShopHero();
   private readonly coins = el('div', { class: 'shop-coins' });
-  private readonly catalogue = el('section', { class: 'shop-catalogue' });
+  private readonly tabBar = el('nav', { class: 'segmented shop-tabs' });
+  private readonly list = el('div', { class: 'shop-catalogue-list' });
+  private readonly catalogue = el('section', { class: 'shop-catalogue' }, this.tabBar, this.list);
 
   constructor(
     private profile: Profile,
@@ -105,28 +107,26 @@ export class ShopScreen {
     this.catalogue.classList.toggle(ENTERING_CLASS, entering);
     this.coins.replaceChildren(coinPill(String(this.profile.coins), 'stat-pill shop-coin-pill'));
     this.hero.show(this.profile);
-    this.catalogue.replaceChildren(this.tabs(), this.content());
+    this.tabBar.replaceChildren(...this.tabs());
+    this.list.replaceChildren(this.content());
   }
 
-  private tabs(): HTMLElement {
+  private tabs(): HTMLElement[] {
     const labels = i18n.t.features.shop.tabs;
-    return el(
-      'nav',
-      { class: 'segmented shop-tabs' },
-      ...SHOP_TABS.map((tab) =>
-        el('button', {
-          class: tab === this.tab ? 'chip is-active' : 'chip',
-          text: labels[tab],
-          'aria-pressed': String(tab === this.tab),
-          onClick: () => this.open(tab),
-        }),
-      ),
+    return SHOP_TABS.map((tab) =>
+      el('button', {
+        class: tab === this.tab ? 'chip is-active' : 'chip',
+        text: labels[tab],
+        'aria-pressed': String(tab === this.tab),
+        onClick: () => this.open(tab),
+      }),
     );
   }
 
   private open(tab: ShopTab): void {
     if (tab === this.tab) return;
     this.tab = tab;
+    this.list.scrollTop = 0;
     this.refresh(true);
   }
 

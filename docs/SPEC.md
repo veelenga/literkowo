@@ -477,6 +477,7 @@ Layout:
 - On the left, "Twój bohater" / "Твій герой" shows the hero in 3D with the equipped hat and pet, swaying slowly (`src/ui/portraits/OutfitView.ts`). Touch screens and reduced motion get a still frame. Until the model loads, the portrait shows.
 - Tabs: "Zwierzaki" / "Улюбленці", "Czapki" / "Шапки", "Postacie" / "Персонажі", "Trofea" / "Трофеї". The coins sit in the header.
 - Each item card shows a rendered preview, the name, for pets and hats a gold line with a bolt icon that says what the item does (see [Item powers](#item-powers)), and a short description. Pets and hats are rendered once per session in an offscreen studio, hats on a plain cube head (`src/ui/portraits/ItemStudio.ts`). Skins use the character portraits.
+- The shop fills the screen and never scrolls as a page. The hero shrinks to the height that is left, and only the item list under the tabs scrolls, when it does not fit. Screens up to 800 px tall get smaller cards. In portrait up to 900 px wide the hero is a strip above the tabs, and on phones in landscape it is a narrow column next to them.
 
 Item states and actions:
 
@@ -647,7 +648,8 @@ Arena screen (`src/ui/arena/ArenaScreen.ts`):
 
 - It copies the shop: a header with the back button "Mapa" / "Мапа", the title, a quiet shop link with the bag and "Sklep" / "Крамниця" (only the bag on phones) and the coins. On the left the hero in 3D with the equipped hat and pet, and under it the best wave and medal of the chosen key set for each open preset.
 - On the right: the key set chips with region names and the keys under them, the difficulty chips, and the mode card "Bez końca" / "Без кінця" with its rule line, the best wave of the chosen key set and preset ("Rekord: fala 9" / "Рекорд: хвиля 9", or "Jeszcze bez rekordu" / "Ще без рекорду") with its medal, and a gold Play button. The mode grid has room for the planned cards.
-- Phones: one column, the hero as a 64 px strip with record pills, the difficulty chips 2 by 2 and the mode card at full width.
+- The screen fills the window without scrolling, with the hero column and the setup side by side, also on phones in landscape. The hero shrinks to the height that is left.
+- Phones in portrait: one column, the hero as a 64 px strip with record pills, the difficulty chips 2 by 2 and the mode card at full width. On phones the mode card is a row: the icon, the name and the rule, then the record and Play. In landscape the labels sit next to their chips and Play sits at the right of the mode card.
 - Coming back from a run keeps the chosen key set and preset.
 
 Result card (`src/ui/arena/ArenaResult.ts`), in the result panel of a level:

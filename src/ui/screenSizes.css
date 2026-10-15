@@ -3,3 +3,4 @@
 @custom-media --phone-landscape (max-height: 480px);
 @custom-media --short-screen (max-height: 900px);
 @custom-media --low-screen (max-height: 800px);
+@custom-media --narrow-portrait (max-width: 900px) and (orientation: portrait);
