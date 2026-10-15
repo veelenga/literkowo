@@ -29,7 +29,7 @@ export interface KeyAccuracy {
 }
 
 export function hasMasteredAccuracy(accuracy: number): boolean {
-  return accuracyPercent(accuracy) >= accuracyPercent(MASTERED_ACCURACY);
+  return reachesAccuracy(accuracy, MASTERED_ACCURACY);
 }
 
 export function targetIntervalFor(key: string): number {
@@ -96,7 +96,11 @@ function isMastered(key: string, stat: KeyStat, accuracy: number): boolean {
 }
 
 function isSolid(stat: KeyStat, accuracy: number): boolean {
-  return stat.recentCount >= MIN_SOLID_KEYSTROKES && accuracy >= SOLID_ACCURACY;
+  return stat.recentCount >= MIN_SOLID_KEYSTROKES && reachesAccuracy(accuracy, SOLID_ACCURACY);
+}
+
+function reachesAccuracy(accuracy: number, threshold: number): boolean {
+  return accuracyPercent(accuracy) >= accuracyPercent(threshold);
 }
 
 function accuracyWeakness(stat: KeyStat): number {

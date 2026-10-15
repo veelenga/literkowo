@@ -48,6 +48,11 @@ describe('masteryOf', () => {
     expect(masteryOf('f', practised({ hits: 18, misses: 2 }))).toBe('solid');
   });
 
+  it('judges solid on the accuracy rounded to a whole percent', () => {
+    expect(masteryOf('f', practised({ hits: 26, misses: 3 }))).toBe('solid');
+    expect(masteryOf('f', practised({ hits: 25, misses: 3 }))).toBe('learning');
+  });
+
   it('is mastered when accurate, fast and practised on enough days', () => {
     expect(masteryOf('f', practised({ hits: RECENT_WINDOW }))).toBe('mastered');
   });
