@@ -60,6 +60,17 @@ describe('ShopScreen', () => {
     expect(card('pet:cube-cat').querySelector('.shop-tag')?.textContent).toBe('W użyciu');
   });
 
+  it('animates the cards when a tab opens and only the bought card after a purchase', () => {
+    const { shop, card, openTab } = setup(profileWith({ coins: 200 }));
+    const catalogue = shop.element.querySelector('.shop-catalogue');
+    expect(catalogue?.classList.contains('is-entering')).toBe(true);
+    card('pet:cube-cat').querySelector<HTMLButtonElement>('.shop-action')?.click();
+    expect(catalogue?.classList.contains('is-entering')).toBe(false);
+    expect(card('pet:cube-cat').classList.contains('is-fresh')).toBe(true);
+    openTab(1);
+    expect(catalogue?.classList.contains('is-entering')).toBe(true);
+  });
+
   it('shows how many coins are missing and offers no button', () => {
     const { card } = setup(profileWith({ coins: 100 }));
     const bee = card('pet:bee');

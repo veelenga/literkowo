@@ -36,6 +36,7 @@ export const SHOP_TABS: readonly ShopTab[] = ['pet', 'hat', 'skin', 'trophy'];
 const BUY_CHIMES = { midis: [72, 76, 79, 84], spacing: 0.08, decay: 0.5 } as const;
 const WEAR_CHIMES = { midis: [79, 84], spacing: 0.06, decay: 0.3 } as const;
 const FRESH_CLASS = 'is-fresh';
+const ENTERING_CLASS = 'is-entering';
 const CONFETTI_PIECES = 20;
 
 interface ShopActions {
@@ -58,7 +59,7 @@ export class ShopScreen {
       this.header(),
       el('main', { class: 'shop-layout' }, this.hero.element, this.catalogue),
     );
-    this.refresh();
+    this.refresh(true);
   }
 
   dispose(): void {
@@ -86,7 +87,8 @@ export class ShopScreen {
     );
   }
 
-  private refresh(): void {
+  private refresh(entering = false): void {
+    this.catalogue.classList.toggle(ENTERING_CLASS, entering);
     this.coins.replaceChildren(coinPill(String(this.profile.coins), 'stat-pill shop-coin-pill'));
     this.hero.show(this.profile);
     this.catalogue.replaceChildren(this.tabs(), this.content());
@@ -111,7 +113,7 @@ export class ShopScreen {
   private open(tab: ShopTab): void {
     if (tab === this.tab) return;
     this.tab = tab;
-    this.refresh();
+    this.refresh(true);
   }
 
   private content(): HTMLElement {
