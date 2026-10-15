@@ -1,6 +1,8 @@
-import { REGIONS, type Level } from '../../../course/regions';
+import { REGIONS, regionsFor, type Level } from '../../../course/regions';
+import type { WordLanguage } from '../../../profiles/Profile';
 
-export type EnemyKind = 'jumper' | 'balloon' | 'bat' | 'swarm' | 'splitter' | 'shield' | 'ghost';
+export type EnemyKind =
+  'jumper' | 'balloon' | 'bat' | 'swarm' | 'splitter' | 'shield' | 'ghost' | 'chameleon';
 export type Random = () => number;
 
 const ENEMY_KINDS: readonly EnemyKind[] = [
@@ -11,6 +13,7 @@ const ENEMY_KINDS: readonly EnemyKind[] = [
   'splitter',
   'shield',
   'ghost',
+  'chameleon',
 ];
 export const ENEMY_TYPE_TAG = 'enemy-type';
 export const SPECIAL_SHARE = 0.25;
@@ -22,6 +25,7 @@ export const KIND_WEIGHTS: Readonly<Record<EnemyKind, number>> = {
   splitter: 2,
   shield: 2,
   ghost: 2,
+  chameleon: 2,
 };
 export const BONUS_WORDS: Readonly<Record<EnemyKind, number>> = {
   jumper: 0,
@@ -31,11 +35,13 @@ export const BONUS_WORDS: Readonly<Record<EnemyKind, number>> = {
   splitter: 0,
   shield: 0,
   ghost: 0,
+  chameleon: 0,
 };
 
 interface Unlock {
-  region: string;
-  level: number;
+  readonly region: string;
+  readonly level: number;
+  readonly fallback?: Unlock;
 }
 
 const UNLOCKS: Readonly<Record<EnemyKind, Unlock>> = {
@@ -46,12 +52,13 @@ const UNLOCKS: Readonly<Record<EnemyKind, Unlock>> = {
   splitter: { region: 'gory', level: 2 },
   shield: { region: 'jaskinia', level: 1 },
   ghost: { region: 'las', level: 2 },
+  chameleon: { region: 'wyspa', level: 1, fallback: { region: 'jaskinia', level: 3 } },
 };
 const FIRST_REGION_CAP = 1;
 const LATER_REGION_CAP = 3;
 
-export function unlockedKinds(level: Level): EnemyKind[] {
-  return ENEMY_KINDS.filter((kind) => isUnlocked(UNLOCKS[kind], level));
+export function unlockedKinds(level: Level, language: WordLanguage): EnemyKind[] {
+  return ENEMY_KINDS.filter((kind) => isUnlocked(reachableUnlock(UNLOCKS[kind], language), level));
 }
 
 export function boardCap(level: Level): number {
@@ -78,6 +85,12 @@ function isUnlocked(unlock: Unlock, level: Level): boolean {
   const current = regionIndex(level.regionId);
   const required = regionIndex(unlock.region);
   return current > required || (current === required && level.index >= unlock.level);
+}
+
+function reachableUnlock(unlock: Unlock, language: WordLanguage): Unlock {
+  const visible = regionsFor(language).some((region) => region.id === unlock.region);
+  if (visible || !unlock.fallback) return unlock;
+  return reachableUnlock(unlock.fallback, language);
 }
 
 function regionIndex(regionId: string): number {

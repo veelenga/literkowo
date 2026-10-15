@@ -7,6 +7,7 @@ const pl = {
     splitter: 'Rozszczep',
     shield: 'Tarczownik',
     ghost: 'Duch',
+    chameleon: 'Kameleon',
   },
   hints: {
     jumper: 'Wpisuj tę samą literę',
@@ -16,6 +17,7 @@ const pl = {
     splitter: 'Trafiony pęka na dwie mniejsze połówki',
     shield: 'Wpisz klucz z tarczy, a zobaczysz słowo',
     ghost: 'Znika i wraca, więc zapamiętaj jego słowo',
+    chameleon: 'Zmienia słowo, dopóki nie wpiszesz pierwszej litery',
   },
 };
 
@@ -28,6 +30,7 @@ const uk: typeof pl = {
     splitter: 'Розщеп',
     shield: 'Щитоносець',
     ghost: 'Привид',
+    chameleon: 'Хамелеон',
   },
   hints: {
     jumper: 'Друкуй ту саму літеру',
@@ -37,6 +40,7 @@ const uk: typeof pl = {
     splitter: 'Після влучання розпадається на дві менші половинки',
     shield: 'Надрукуй ключ зі щита, і побачиш слово',
     ghost: 'Зникає і повертається, тож запам’ятай його слово',
+    chameleon: 'Змінює слово, поки не надрукуєш першу літеру',
   },
 };
 

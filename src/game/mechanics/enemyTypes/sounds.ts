@@ -16,7 +16,9 @@ export type SoundCue =
   | 'halfPop'
   | 'shieldBreak'
   | 'shieldDown'
-  | 'ghostPop';
+  | 'ghostPop'
+  | 'chameleonShift'
+  | 'chameleonPop';
 
 const CHIME_SPACING = 0.07;
 const SHORT_DECAY = 0.35;
@@ -74,6 +76,12 @@ export const SOUNDS: Readonly<Record<SoundCue, (sfx: Sfx) => void>> = {
   ghost: (sfx) => {
     sfx.sweep(67, 74, 0.7);
     sfx.sweep(74, 62, 0.9);
+  },
+  chameleon: (sfx) => sfx.chimes([64, 68, 71, 75], CHIME_SPACING, SHORT_DECAY),
+  chameleonShift: (sfx) => sfx.sweep(70, 77, 0.2),
+  chameleonPop: (sfx) => {
+    sfx.chimes([72, 76, 79, 84], CHIME_SPACING, SHORT_DECAY);
+    sfx.sparkle();
   },
   ghostPop: (sfx) => {
     sfx.chimes([79, 86, 91], CHIME_SPACING, LONG_DECAY);

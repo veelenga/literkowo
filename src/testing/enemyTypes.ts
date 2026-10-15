@@ -10,14 +10,15 @@ import {
   type EnemyKind,
 } from '../game/mechanics/enemyTypes/kinds';
 import type { MechanicContext } from '../game/mechanics/Mechanic';
+import type { WordLanguage } from '../profiles/Profile';
 import { fakeBoard } from './enemyBoard';
 import { requireLevel } from './levels';
 
 export const FRAME = 1 / 30;
 export const VIEWER = { x: 0, y: 15, z: 15.5 };
 
-export function rollFor(kind: EnemyKind, levelId: string): number {
-  const kinds = unlockedKinds(requireLevel(levelId));
+export function rollFor(kind: EnemyKind, levelId: string, language: WordLanguage = 'pl'): number {
+  const kinds = unlockedKinds(requireLevel(levelId), language);
   const index = kinds.indexOf(kind);
   const total = kinds.reduce((sum, each) => sum + KIND_WEIGHTS[each], 0);
   const before = kinds.slice(0, index).reduce((sum, each) => sum + KIND_WEIGHTS[each], 0);

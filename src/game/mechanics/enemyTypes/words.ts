@@ -35,6 +35,14 @@ export function letters(words: WordSource, count: number): string {
   return pool.slice(0, count);
 }
 
+export function sameLengthWord(words: WordSource, current: string): string {
+  for (let attempt = 0; attempt < WORD_ATTEMPTS; attempt += 1) {
+    const word = words.next();
+    if (word.length === current.length && word !== current) return word;
+  }
+  return letters(words, current.length);
+}
+
 export function wordPair(words: WordSource): readonly [string, string] {
   const first = words.shortWord();
   let second = words.shortWord();

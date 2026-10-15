@@ -25,6 +25,7 @@ const ACCENTS: Readonly<Record<EnemyKind, string>> = {
   splitter: '#9ad1ff',
   shield: '#ffb347',
   ghost: '#d8e8ff',
+  chameleon: '#5cf28a',
 };
 
 export class EnemyTypes implements Mechanic {
@@ -37,7 +38,7 @@ export class EnemyTypes implements Mechanic {
     private readonly context: MechanicContext,
     private readonly random: Random = Math.random,
   ) {
-    this.kinds = unlockedKinds(context.level);
+    this.kinds = unlockedKinds(context.level, context.language);
     this.cap = boardCap(context.level);
     this.stage = new Stage(context);
   }

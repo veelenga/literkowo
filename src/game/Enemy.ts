@@ -233,6 +233,12 @@ export class Enemy {
     disposeObject(this.object);
   }
 
+  protected recolor(color: THREE.ColorRepresentation): void {
+    this.color.set(color);
+    this.body.material.color.copy(this.color).multiplyScalar(this.shellGlowScale);
+    this.core.material.color.copy(this.color);
+  }
+
   protected setWord(word: string): void {
     this.currentWord = word;
     this.resetTyped();

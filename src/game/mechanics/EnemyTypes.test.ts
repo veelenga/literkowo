@@ -8,6 +8,8 @@ import {
   sequence,
   specialOf,
 } from '../../testing/enemyTypes';
+import { regionsFor } from '../../course/regions';
+import { WORD_LANGUAGES, type WordLanguage } from '../../profiles/Profile';
 import { requireLevel } from '../../testing/levels';
 import { SPAWN_RADIUS } from '../arena';
 import { Boss } from '../Boss';
@@ -18,7 +20,7 @@ import { MINION_TAG } from './bossPhases/Minions';
 import { BalloonEnemy, ESCAPE_HEIGHT } from './enemyTypes/BalloonEnemy';
 import { BatEnemy } from './enemyTypes/BatEnemy';
 import { JumperEnemy } from './enemyTypes/JumperEnemy';
-import { SPECIAL_SHARE, rollKind, unlockedKinds } from './enemyTypes/kinds';
+import { SPECIAL_SHARE, rollKind, unlockedKinds, type EnemyKind } from './enemyTypes/kinds';
 import { BOMB_SHAKE } from './enemyTypes/Stage';
 import { SwarmEnemy } from './enemyTypes/SwarmEnemy';
 import { DONE_CLASS, NEXT_CLASS } from './enemyTypes/swarmGlyphs';
@@ -31,29 +33,47 @@ const NO_SPECIAL = () => SPECIAL_SHARE;
 const WARMUP: Phase = { kind: 'warmup', count: 8, speed: 0.55, spawnInterval: 1.5 };
 const LOOK: EnemyLook = { shape: 'crystal', colors: [0x88ccff] };
 
+const FIRST_LEVELS: Readonly<Record<WordLanguage, readonly (readonly [EnemyKind, string])[]>> = {
+  pl: [
+    ['jumper', 'polana-3'],
+    ['balloon', 'polana-3'],
+    ['bat', 'las-1'],
+    ['ghost', 'las-2'],
+    ['swarm', 'gory-1'],
+    ['splitter', 'gory-2'],
+    ['shield', 'jaskinia-1'],
+    ['chameleon', 'wyspa-1'],
+  ],
+  en: [
+    ['jumper', 'polana-3'],
+    ['balloon', 'polana-3'],
+    ['bat', 'las-1'],
+    ['ghost', 'las-2'],
+    ['swarm', 'gory-1'],
+    ['splitter', 'gory-2'],
+    ['shield', 'jaskinia-1'],
+    ['chameleon', 'jaskinia-3'],
+  ],
+};
+
 describe('EnemyTypes unlocks', () => {
-  it('opens types region by region', () => {
-    const kindsAt = (id: string) => unlockedKinds(requireLevel(id));
-    expect(kindsAt('polana-1')).toEqual([]);
-    expect(kindsAt('polana-2')).toEqual([]);
-    expect(kindsAt('polana-3')).toEqual(['jumper', 'balloon']);
-    expect(kindsAt('las-1')).toEqual(['jumper', 'balloon', 'bat']);
-    expect(kindsAt('gory-1')).toEqual(['jumper', 'balloon', 'bat', 'swarm', 'ghost']);
-    expect(kindsAt('gory-2')).toEqual(['jumper', 'balloon', 'bat', 'swarm', 'splitter', 'ghost']);
-    expect(kindsAt('las-2')).toEqual(['jumper', 'balloon', 'bat', 'ghost']);
-    expect(kindsAt('jaskinia-1')).toEqual([
-      'jumper',
-      'balloon',
-      'bat',
-      'swarm',
-      'splitter',
-      'shield',
-      'ghost',
-    ]);
+  it('keeps the first two meadow levels free of types', () => {
+    expect(unlockedKinds(requireLevel('polana-1'), 'pl')).toEqual([]);
+    expect(unlockedKinds(requireLevel('polana-2'), 'pl')).toEqual([]);
+  });
+
+  it.each(WORD_LANGUAGES)('opens each type at its level and keeps it later in %s', (language) => {
+    const course = regionsFor(language).flatMap((region) => region.levels);
+    for (const [kind, levelId] of FIRST_LEVELS[language]) {
+      const first = course.findIndex((level) => level.id === levelId);
+      course.forEach((level, index) => {
+        expect(unlockedKinds(level, language).includes(kind)).toBe(index >= first);
+      });
+    }
   });
 
   it('turns about one spawn in four into a special enemy', () => {
-    const kinds = unlockedKinds(requireLevel('gory-1'));
+    const kinds = unlockedKinds(requireLevel('gory-1'), 'pl');
     expect(rollKind(kinds, () => SPECIAL_SHARE - 0.001)).toBe(kinds.at(-1));
     expect(rollKind(kinds, () => 0)).toBe('jumper');
     expect(rollKind(kinds, NO_SPECIAL)).toBeUndefined();

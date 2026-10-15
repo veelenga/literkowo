@@ -218,9 +218,34 @@
   border-style: solid;
 }
 
+.word-label.is-chameleon {
+  border: 3px solid var(--chameleon-color, #5cf28a);
+  background: rgba(8, 26, 20, 0.9);
+  box-shadow:
+    0 4px 0 rgba(0, 0, 0, 0.35),
+    0 0 18px color-mix(in srgb, var(--chameleon-color, #5cf28a) 55%, transparent);
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.word-label.is-chameleon .rest {
+  color: color-mix(in srgb, var(--chameleon-color, #5cf28a) 35%, #ffffff);
+}
+
+.word-label.is-chameleon.is-locked {
+  border-style: double;
+  border-width: 4px;
+}
+
+.word-label.is-chameleon.is-target {
+  border-color: var(--accent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .word-label.is-swarm .swarm-glyph,
-  .word-label.is-balloon {
+  .word-label.is-balloon,
+  .word-label.is-chameleon {
     transition: none;
   }
 
