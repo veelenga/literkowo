@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   z-index: var(--z-chrome);
-  display: none;
+  display: flex;
   align-items: center;
   gap: 10px;
   width: max-content;
@@ -34,8 +34,13 @@
   font-size: 0.75rem;
 }
 
-@media (pointer: coarse) and (max-width: 600px) and (orientation: portrait) {
-  .rotate-hint {
-    display: flex;
+.rotate-hint.is-leaving {
+  animation: rotate-hint-leave var(--duration-slow) ease-in forwards;
+}
+
+@keyframes rotate-hint-leave {
+  to {
+    opacity: 0;
+    transform: translateY(-14px);
   }
 }
