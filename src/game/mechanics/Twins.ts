@@ -2,7 +2,7 @@ import type * as THREE from 'three';
 import { format } from '../../i18n/format';
 import { i18n } from '../../i18n/i18n';
 import { Enemy } from '../Enemy';
-import type { PhaseKind } from '../LevelPlan';
+import type { PhaseKind } from '../RunPlan';
 import { isForestOrLater } from './actionEvents/regions';
 import type { Mechanic, MechanicContext } from './Mechanic';
 import { wordPoints } from './mergeEnemies/scoring';

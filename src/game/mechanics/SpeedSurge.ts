@@ -3,7 +3,7 @@ import { REGIONS, type Level } from '../../course/regions';
 import { i18n } from '../../i18n/i18n';
 import { Boss } from '../Boss';
 import type { Enemy } from '../Enemy';
-import type { PhaseKind } from '../LevelPlan';
+import type { PhaseKind } from '../RunPlan';
 import { regionIndexOf } from './actionEvents/regions';
 import { phaseFor } from './bossPhases/phases';
 import type { Mechanic, MechanicContext } from './Mechanic';

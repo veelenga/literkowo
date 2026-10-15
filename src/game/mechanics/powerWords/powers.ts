@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { WordLanguage } from '../../../profiles/Profile';
-import type { PhaseKind } from '../../LevelPlan';
+import type { PhaseKind } from '../../RunPlan';
 
 export const POWERS = ['freeze', 'storm', 'quake', 'shield'] as const;
 export type Power = (typeof POWERS)[number];

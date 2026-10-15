@@ -15,6 +15,7 @@ import { starsFor } from '../course/scoring';
 import { freshTrophies } from '../course/trophies';
 import { hasCoarsePointer } from '../game/deviceProbe';
 import type { Game, GameResult } from '../game/Game';
+import { levelPlan } from '../game/LevelPlan';
 import type { SessionStats } from '../game/SessionStats';
 import { i18n } from '../i18n/i18n';
 import type { Profile } from '../profiles/Profile';
@@ -167,6 +168,7 @@ export class App {
 
     const config = {
       character: profile.avatar,
+      plan: levelPlan(level, profile.wordLanguage),
       level,
       language: profile.wordLanguage,
       theme: themeFor(regionOf(level).theme),

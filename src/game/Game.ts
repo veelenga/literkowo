@@ -4,7 +4,6 @@ import { practiceDay, type KeyStats } from '../course/keyStats';
 import { keyWeight } from '../course/mastery';
 import { allowedKeysFor, type Level } from '../course/regions';
 import { hatSpec } from '../course/shop';
-import { levelWordRules } from '../course/wordRules';
 import { WordSource } from '../course/WordSource';
 import type { Equipped, WordLanguage } from '../profiles/Profile';
 import { xpPop } from '../ui/progression';
@@ -25,7 +24,6 @@ import { CameraShake } from './CameraShake';
 import { Enemy, type EnemyLook } from './Enemy';
 import { KeyTracker, type KeyReport } from './KeyTracker';
 import { LabelLayer } from './LabelLayer';
-import { planFor, type Phase, type PhaseKind } from './LevelPlan';
 import { createMechanics } from './mechanics';
 import type { AnnounceStyle, MechanicContext } from './mechanics/Mechanic';
 import { MechanicGroup } from './mechanics/MechanicGroup';
@@ -33,6 +31,7 @@ import { Particles } from './Particles';
 import { Player } from './Player';
 import { currentQuality } from './quality';
 import { renderHost, type Viewport } from './RenderHost';
+import type { Phase, PhaseKind, RunPhase, RunPlan } from './RunPlan';
 import { RunRewards, type Rewards } from './RunRewards';
 import { SessionStats } from './SessionStats';
 import { SpawnGroups } from './SpawnGroups';
@@ -50,7 +49,7 @@ const CAMERA_SWAY = 0.35;
 const CAMERA_SWAY_SPEED = 0.25;
 const SPAWN_ARC_MARGIN = 0.35;
 const MAX_FRAME_DELTA = 0.1;
-const INITIAL_LIVES = 3;
+const FIRST_PHASE = 0;
 const SHAKE_DURATION = 0.25;
 const SHAKE_AMPLITUDE = 0.18;
 const SHIELD_IMPACT = 0.5;
@@ -58,6 +57,7 @@ const FINISH_DELAY_MS = 1100;
 
 export interface GameConfig {
   character: string;
+  plan: RunPlan;
   level: Level;
   language: WordLanguage;
   theme: Theme;
@@ -105,7 +105,6 @@ export class Game {
   private readonly rewards = new RunRewards();
   private readonly keys: KeyTracker;
   private readonly labels: LabelLayer;
-  private readonly phases: Phase[];
   private readonly enemies: Enemy[] = [];
   private readonly mechanics = new MechanicGroup();
   private readonly spawnGroups = new SpawnGroups<Enemy>();
@@ -114,10 +113,11 @@ export class Game {
     enemy.setTargeted(isCandidate),
   );
   private insets: StageInsets = NO_INSETS;
-  private phaseIndex = 0;
+  private phase: RunPhase;
+  private phaseIndex = FIRST_PHASE;
   private spawned = 0;
   private boss: Boss | undefined;
-  private lives = INITIAL_LIVES;
+  private lives: number;
   private shields = 0;
   private timeScale = 1;
   private lettersFreed = 0;
@@ -141,10 +141,11 @@ export class Game {
       allowedKeysFor(config.level, config.language),
       practiceDay(new Date()),
     );
-    this.words = new WordSource(config.language, levelWordRules(config.level, config.language), {
+    this.phase = firstPhase(config.plan);
+    this.lives = config.plan.lives;
+    this.words = new WordSource(config.language, this.phase.words, {
       weightOf: (key) => keyWeight(key, this.keys.statOf(key)),
     });
-    this.phases = planFor(config.level);
     const quality = currentQuality();
     this.world = new World(this.scene, config.theme, quality);
     this.scene.add(this.player.object);
@@ -210,10 +211,6 @@ export class Game {
     this.scene.clear();
     renderHost.detach();
     this.labels.remove();
-  }
-
-  private get phase(): Phase {
-    return this.phases[Math.min(this.phaseIndex, this.phases.length - 1)];
   }
 
   private get focus(): Enemy | undefined {
@@ -474,9 +471,12 @@ export class Game {
     this.phaseIndex += 1;
     this.spawned = 0;
     this.sinceSpawn = Number.POSITIVE_INFINITY;
-    if (this.phaseIndex >= this.phases.length) return this.finish(true);
+    const next = this.config.plan.phaseAt(this.phaseIndex);
+    if (!next) return this.finish(true);
+    this.phase = next;
+    this.words.use(next.words);
     this.reportProgress();
-    this.mechanics.onPhaseChange(this.phase);
+    this.mechanics.onPhaseChange(next);
   }
 
   private reportProgress(): void {
@@ -594,6 +594,12 @@ export class Game {
   private nextExpectedChar(): string | undefined {
     return (this.focus ?? nearestEnemy(this.enemies))?.expectedChar;
   }
+}
+
+function firstPhase(plan: RunPlan): RunPhase {
+  const phase = plan.phaseAt(FIRST_PHASE);
+  if (!phase) throw new Error('A run plan needs at least one phase');
+  return phase;
 }
 
 function placeOnSpawnArc(enemy: Enemy, radius: number): void {

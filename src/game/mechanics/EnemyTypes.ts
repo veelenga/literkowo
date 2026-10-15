@@ -1,6 +1,6 @@
 import { i18n } from '../../i18n/i18n';
 import { Enemy } from '../Enemy';
-import type { PhaseKind } from '../LevelPlan';
+import type { PhaseKind } from '../RunPlan';
 import { createSpecial } from './enemyTypes/factory';
 import {
   BONUS_WORDS,

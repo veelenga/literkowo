@@ -1,5 +1,5 @@
 import type { WordSource } from '../../../course/WordSource';
-import type { Phase } from '../../LevelPlan';
+import type { Phase } from '../../RunPlan';
 import { BalloonEnemy } from './BalloonEnemy';
 import { BatEnemy } from './BatEnemy';
 import { BullEnemy } from './BullEnemy';

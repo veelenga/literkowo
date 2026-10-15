@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import { fakeBoard } from '../../testing/enemyBoard';
-import type { Phase } from '../LevelPlan';
+import type { Phase } from '../RunPlan';
 import { Companion, ZAP_DELAY } from './Companion';
 import { ZAP_MIN_COMBO } from './companion/zapRules';
 import type { MechanicContext } from './Mechanic';

@@ -81,7 +81,7 @@ All levels:
 
 ## Level flow
 
-Owners: `src/app/App.ts`, `src/course/progress.ts`, `src/game/LevelPlan.ts`, `src/game/Game.ts`.
+Owners: `src/app/App.ts`, `src/course/progress.ts`, `src/game/LevelPlan.ts`, `src/game/Game.ts`. The game runs a run plan (`src/game/RunPlan.ts`): its phases by index, its lives and the word rules of each phase. `src/game/LevelPlan.ts` builds the plan of a course level.
 
 1. Story card. The intro plays before the first level. A boss scene plays before each boss. An after scene plays when a boss is beaten with at least one star. The finale replaces the after scene for the last boss of the course. Each scene plays once per profile. Speakers are Sowa Klara, Felek and Mrok (`src/story/story.ts`).
 2. Learn card, for every level except bosses (`src/ui/LearnCard.ts`). Enter starts the level.
@@ -97,7 +97,7 @@ Owners: `src/app/App.ts`, `src/course/progress.ts`, `src/game/LevelPlan.ts`, `sr
 Rules during a level:
 
 - At most 6 enemies are on screen at once (`MAX_ENEMIES` in `src/game/board.ts`). The cap holds back the level's own spawns and event pieces. Enemies that other features add, such as twins, splitter halves, chicks, power words, bombers and minions, can join a full board.
-- The player has 3 lives (`INITIAL_LIVES` in `src/game/Game.ts`). Losing the last life ends the level as lost.
+- The player has 3 lives (`LEVEL_LIVES` in `src/game/LevelPlan.ts`). Losing the last life ends the level as lost.
 - The progress bar counts a spawn as done once every enemy it turned into has left the board, so a spawn that becomes twins or a special enemy still counts as one. Enemies that features add later, such as power words or bombers, do not change it (`src/game/SpawnGroups.ts`).
 - Typing follows every enemy whose word starts with the letters typed so far, a key that fits none of them is a mistake, and when a word is done every enemy with that same word is done too while the others go back to untyped (`src/game/Targeting.ts`).
 - Escape pauses and resumes. Pause also suspends audio. The pause card also has a resume button and the key heatmap, and touch screens get a pause button in the HUD.

@@ -6,7 +6,7 @@ import { levelWords, requireLevel } from '../../testing/levels';
 import { fakeMechanicContext } from '../../testing/mechanicContext';
 import { Boss } from '../Boss';
 import { Enemy } from '../Enemy';
-import type { Phase } from '../LevelPlan';
+import type { Phase } from '../RunPlan';
 import { themeFor } from '../themes';
 import { FIRST_STRIKE, STRIKE_INTERVAL, TELEGRAPH_LEAD } from './bossPhases/AttackSchedule';
 import { RAGE_SPEED } from './bossPhases/BossFight';

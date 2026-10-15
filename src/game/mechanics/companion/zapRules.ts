@@ -1,6 +1,6 @@
 import { Boss } from '../../Boss';
 import type { Enemy } from '../../Enemy';
-import type { Phase } from '../../LevelPlan';
+import type { Phase } from '../../RunPlan';
 
 export const ZAP_MIN_COMBO = 5;
 

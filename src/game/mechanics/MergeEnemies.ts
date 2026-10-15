@@ -1,7 +1,7 @@
 import { i18n } from '../../i18n/i18n';
 import '../../ui/mergeEnemies.css';
 import type { Enemy } from '../Enemy';
-import type { PhaseKind } from '../LevelPlan';
+import type { PhaseKind } from '../RunPlan';
 import type { Mechanic, MechanicContext } from './Mechanic';
 import { Fusion } from './mergeEnemies/Fusion';
 import { huddle } from './mergeEnemies/huddle';

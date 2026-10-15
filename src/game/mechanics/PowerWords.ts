@@ -1,7 +1,7 @@
 import { SPAWN_RADIUS } from '../board';
 import { allowedKeysFor } from '../../course/regions';
 import type { Enemy } from '../Enemy';
-import type { PhaseKind } from '../LevelPlan';
+import type { PhaseKind } from '../RunPlan';
 import type { Mechanic, MechanicContext } from './Mechanic';
 import { choosePower, choosePowerWord, type PowerWord, type Random } from './powerWords/choice';
 import { bannerFor, decoratePowerLabel } from './powerWords/label';

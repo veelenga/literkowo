@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Sfx } from '../audio/Sfx';
-import type { Phase } from '../game/LevelPlan';
+import type { Phase } from '../game/RunPlan';
 import type { MechanicContext } from '../game/mechanics/Mechanic';
 import { SessionStats } from '../game/SessionStats';
 import { themeFor } from '../game/themes';

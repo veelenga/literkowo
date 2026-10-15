@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fakeBoard } from '../../testing/enemyBoard';
 import { requireLevel } from '../../testing/levels';
 import { Boss } from '../Boss';
-import type { Phase } from '../LevelPlan';
+import type { Phase } from '../RunPlan';
 import type { MechanicContext } from './Mechanic';
 import {
   SURGE_CLASS,

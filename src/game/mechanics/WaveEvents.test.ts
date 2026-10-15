@@ -5,7 +5,7 @@ import { levelWords, requireLevel } from '../../testing/levels';
 import { MAX_ENEMIES, SPAWN_RADIUS } from '../board';
 import { Boss } from '../Boss';
 import type { Enemy } from '../Enemy';
-import type { Phase } from '../LevelPlan';
+import type { Phase } from '../RunPlan';
 import type { MechanicContext } from './Mechanic';
 import { CHEST_COINS, EVENT_WINDOW, WaveEvents, eventDelay } from './WaveEvents';
 import { CHEST_DEPTH, ChestEnemy } from './waveEvents/ChestEnemy';

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { fakeBoard } from '../../testing/enemyBoard';
 import { requireLevel } from '../../testing/levels';
 import { Enemy, type EnemyLook } from '../Enemy';
-import type { Phase } from '../LevelPlan';
+import type { Phase } from '../RunPlan';
 import { SessionStats } from '../SessionStats';
 import type { MechanicContext } from './Mechanic';
 import { isFusible } from './mergeEnemies/rules';
