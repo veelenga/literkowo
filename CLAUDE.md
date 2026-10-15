@@ -36,11 +36,11 @@ These instructions are for AI agents and for people.
 
 ## Pull requests
 
-The description is the minimum needed. `.github/pull_request_template.md` has the shape.
+The description follows `.github/pull_request_template.md` and has three sections:
 
-- One or two sentences on what changed and why.
-- A checklist of what you verified, and what you could not verify.
-- A screenshot whenever the change is visible in the game: a level, the map or an overlay.
+- What: one or two sentences on what changed.
+- Why: one sentence on why.
+- Screenshots: required when the change is visible in the game, such as a level, the map or an overlay. Otherwise write "none".
 
 Screenshots:
 
@@ -53,13 +53,14 @@ Screenshots:
 
 ## Verify before a pull request
 
+Run these checks yourself before you open the pull request. They do not go into the description.
+
 - `npm run lint`
 - `npm test`
 - `npm run build`
 - A manual check of the changed flow in the browser.
 
 CI runs lint, unit tests, the build and a browser smoke test on every pull request. The manual check of the changed flow is still on the author.
-Say in the pull request what you could not verify.
 
 ## Parallel development
 
