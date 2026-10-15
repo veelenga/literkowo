@@ -105,6 +105,6 @@ function generatedWithin(lengths: LetterRange, position: number): LetterRange {
   return { min: lengths.min, max: Math.max(lengths.min, Math.min(lengths.max, cap)) };
 }
 
-function valueAt(span: Span, position: number): number {
+export function valueAt(span: Span, position: number): number {
   return span.first + (span.last - span.first) * position;
 }

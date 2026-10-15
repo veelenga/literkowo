@@ -36,6 +36,10 @@ export function trophyCopy({ rule }: Trophy): TrophyCopy {
       return filled(copy.playerLevel, { level: rule.level });
     case 'region':
       return filled(copy.region, { region: regionName(rule.regionId) });
+    case 'arenaWave':
+      return filled(copy.arenaWave, { wave: rule.wave });
+    case 'arenaGold':
+      return copy.arenaGold;
   }
 }
 

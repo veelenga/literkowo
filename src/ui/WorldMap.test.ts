@@ -5,9 +5,16 @@ import { WorldMap } from './WorldMap';
 
 const DONE = { stars: 2, score: 1, accuracy: 1, wpm: 1 };
 
-function mapOf(profile: Profile): HTMLElement {
+function mapOf(profile: Profile, onArena: () => void = () => undefined): HTMLElement {
   const noop = () => undefined;
-  return new WorldMap(profile, { onPlay: noop, onSwitchPlayer: noop, onShop: noop }).element;
+  return new WorldMap(profile, { onPlay: noop, onSwitchPlayer: noop, onShop: noop, onArena })
+    .element;
+}
+
+function polanaDone(): Profile {
+  const profile = createProfile('Ola', 'a');
+  const polana = courseFor('pl').regions[0].levels;
+  return { ...profile, levelResults: Object.fromEntries(polana.map((level) => [level.id, DONE])) };
 }
 
 function nodes(map: HTMLElement): HTMLElement[] {
@@ -42,5 +49,29 @@ describe('WorldMap', () => {
       .slice(0, 3)
       .map((node) => node.querySelector('.node-kind')?.textContent ?? null);
     expect(badges).toEqual(['✨', null, '🔁']);
+  });
+
+  it('shows a dimmed arena gate and a locked header button before the Polana boss', () => {
+    const onArena = vi.fn();
+    const map = mapOf(createProfile('Ola', 'a'), onArena);
+    const gate = map.querySelector('.journey-gate');
+    expect(gate?.classList).toContain('is-locked');
+    expect(gate?.querySelector<HTMLButtonElement>('.gate-node')?.disabled).toBe(true);
+    expect(gate?.textContent).toBe('Pokonaj bossa Polany');
+    const button = map.querySelector<HTMLButtonElement>('.arena-button');
+    expect(button?.classList).toContain('is-locked');
+    expect(button?.title).toBe('Arena. Pokonaj bossa Polany');
+    button?.click();
+    expect(onArena).not.toHaveBeenCalled();
+  });
+
+  it('opens the arena from the gate and the header once the Polana boss is beaten', () => {
+    const onArena = vi.fn();
+    const map = mapOf(polanaDone(), onArena);
+    expect(map.querySelectorAll('.journey-gate')).toHaveLength(1);
+    map.querySelector<HTMLButtonElement>('.gate-node')?.click();
+    map.querySelector<HTMLButtonElement>('.arena-button')?.click();
+    expect(onArena).toHaveBeenCalledTimes(2);
+    expect(map.querySelector('.arena-button')?.classList).not.toContain('is-locked');
   });
 });

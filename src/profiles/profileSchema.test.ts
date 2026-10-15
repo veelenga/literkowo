@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { emptyArenaRecord } from '../arena/record';
 import { AVATARS, createProfile, PROFILE_SCHEMA_VERSION, STARTER_SKINS } from './Profile';
 import { normalizeProfile, parseProfiles } from './profileSchema';
 
@@ -18,6 +19,7 @@ describe('normalizeProfile', () => {
       keyStats: {},
       inventory: { pets: [], hats: [], skins: [...STARTER_SKINS], trophies: [] },
       equipped: {},
+      arena: emptyArenaRecord(),
     });
   });
 
@@ -209,6 +211,23 @@ describe('normalizeProfile', () => {
       inventory,
       equipped: { pet: 'bee' },
     });
+  });
+
+  it('gives a version 6 profile an empty arena record', () => {
+    const profile = normalizeProfile({ schemaVersion: 6, id: 'x', name: 'A', coins: 12 });
+    expect(profile).toMatchObject({ schemaVersion: 7, coins: 12, arena: emptyArenaRecord() });
+  });
+
+  it('keeps the arena record of a current profile', () => {
+    const best = { wave: 6, score: 1800, accuracy: 0.95, medal: 2, date: '2026-10-15', runs: 4 };
+    const profile = normalizeProfile({
+      schemaVersion: 7,
+      id: 'x',
+      name: 'A',
+      arena: { endless: { 'polana/normal': best }, medalsPaid: { 'polana/normal': 2 } },
+    });
+    expect(profile?.arena.endless).toEqual({ 'polana/normal': best });
+    expect(profile?.arena.medalsPaid).toEqual({ 'polana/normal': 2 });
   });
 
   it('rejects entries without an id or a name', () => {

@@ -1,6 +1,7 @@
 import { levelProgress } from '../../course/xp';
 import { i18n } from '../../i18n/i18n';
 import { totalStars, type Profile } from '../../profiles/Profile';
+import { arenaButton } from '../arena/arenaParts';
 import { characterAvatar } from '../CharacterAvatar';
 import { el, icon, svg } from '../dom';
 import { coinIcon, levelDisc, rankName, xpBar } from '../progression';
@@ -13,6 +14,7 @@ const BACK_ICON_PATH =
 interface HeaderActions {
   onSwitchPlayer: () => void;
   onShop: () => void;
+  onArena: () => void;
 }
 
 export function mapHeader(profile: Profile, actions: HeaderActions): HTMLElement {
@@ -27,6 +29,7 @@ export function mapHeader(profile: Profile, actions: HeaderActions): HTMLElement
       { class: 'map-stats' },
       statPill(icon('star', 'stat-icon stat-icon-star'), totalStars(profile), t.stars),
       statPill(coinIcon('stat-icon coin-icon'), profile.coins, t.features.progression.coins),
+      arenaButton(profile, actions.onArena),
       shopButton(profile, actions.onShop),
       soundToggle(),
     ),

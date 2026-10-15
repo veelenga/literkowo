@@ -54,6 +54,7 @@ const SHAKE_DURATION = 0.25;
 const SHAKE_AMPLITUDE = 0.18;
 const SHIELD_IMPACT = 0.5;
 const FINISH_DELAY_MS = 1100;
+const NO_CALM = 0;
 
 export interface GameConfig {
   character: string;
@@ -74,12 +75,14 @@ export interface GameResult {
   xp: number;
   coins: number;
   keys: KeyReport;
+  phasesCleared: number;
 }
 
 export interface Progress {
   kind: PhaseKind;
   done: number;
   total: number;
+  wave?: number;
 }
 
 export interface GameEvents {
@@ -116,6 +119,7 @@ export class Game {
   private phase: RunPhase;
   private phaseIndex = FIRST_PHASE;
   private spawned = 0;
+  private calm: number;
   private boss: Boss | undefined;
   private lives: number;
   private shields = 0;
@@ -142,8 +146,9 @@ export class Game {
       practiceDay(new Date()),
     );
     this.phase = firstPhase(config.plan);
+    this.calm = this.phase.calmSeconds ?? NO_CALM;
     this.lives = config.plan.lives;
-    this.rewards = new RunRewards(config.plan.xpFactor);
+    this.rewards = new RunRewards(config.plan);
     this.words = new WordSource(config.language, this.phase.words, {
       weightOf: (key) => keyWeight(key, this.keys.statOf(key)),
     });
@@ -240,6 +245,7 @@ export class Game {
       sfx,
       words: this.words,
       level: this.config.level,
+      allMechanicsUnlocked: this.config.plan.allMechanicsUnlocked,
       language: this.config.language,
       equipped: this.config.equipped,
       get phase() {
@@ -347,6 +353,7 @@ export class Game {
   }
 
   private spawnIfDue(delta: number): void {
+    if (this.restsInCalm(delta)) return;
     if (this.phase.kind === 'boss') return this.spawnBossOnce();
     this.sinceSpawn += delta;
     if (!this.isSpawnDue()) return;
@@ -354,6 +361,12 @@ export class Game {
     const word = this.nextSpawnWord();
     this.spawned += 1;
     this.spawnGroups.spawn(() => this.spawnWord(word));
+  }
+
+  private restsInCalm(delta: number): boolean {
+    if (this.calm <= 0) return false;
+    this.calm -= delta;
+    return true;
   }
 
   private isSpawnDue(): boolean {
@@ -475,6 +488,7 @@ export class Game {
     const next = this.config.plan.phaseAt(this.phaseIndex);
     if (!next) return this.finish(true);
     this.phase = next;
+    this.calm = next.calmSeconds ?? NO_CALM;
     this.words.use(next.words);
     this.reportProgress();
     this.mechanics.onPhaseChange(next);
@@ -485,7 +499,7 @@ export class Game {
     const done = this.boss
       ? total - Math.round(this.boss.health * total)
       : THREE.MathUtils.clamp(this.spawned - this.spawnGroups.pending, 0, total);
-    this.events.onProgress({ kind: this.phase.kind, done, total });
+    this.events.onProgress({ kind: this.phase.kind, done, total, wave: this.phase.wave });
   }
 
   private finish(won: boolean): void {
@@ -509,6 +523,7 @@ export class Game {
       xp: this.rewards.xp,
       coins: this.rewards.coins,
       keys: this.keys.report(),
+      phasesCleared: this.phaseIndex,
     });
   }
 

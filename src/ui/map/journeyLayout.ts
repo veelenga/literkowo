@@ -26,6 +26,7 @@ export const JOURNEY_SPACING = {
 
 const CENTER = 50;
 const SWING = 25;
+const GATE_DROP = 0.4;
 
 export function journeyLayout(stopCounts: readonly number[]): JourneyLayout {
   let top = 0;
@@ -35,6 +36,11 @@ export function journeyLayout(stopCounts: readonly number[]): JourneyLayout {
     return band;
   });
   return { height: top, bands, stops: bands.flatMap((band) => band.stops) };
+}
+
+export function gatePoint(band: BandLayout): JourneyPoint {
+  const last = band.stops.at(-1) ?? { x: CENTER, y: band.top + JOURNEY_SPACING.header };
+  return { x: CENTER * 2 - last.x, y: last.y + JOURNEY_SPACING.footer * GATE_DROP };
 }
 
 export function journeyPath(points: readonly JourneyPoint[]): string {

@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { GOLD, SILVER } from '../arena/medals';
+import { emptyArenaRecord } from '../arena/record';
 import { createProfile, type LevelResult, type Profile } from '../profiles/Profile';
 import { REGIONS } from './catalog';
 import { RECENT_WINDOW, type KeyStat } from './keyStats';
@@ -48,6 +50,18 @@ describe('earnedTrophies', () => {
 
   it('awards player level milestones', () => {
     expect(earnedTrophies(profileWith({ xp: xpForLevel(25) }))).toEqual(['level-10', 'level-25']);
+  });
+
+  it('awards arena waves and the first arena gold', () => {
+    const best = { wave: 12, score: 1, accuracy: 0.96, medal: SILVER, date: '2026-10-15', runs: 1 };
+    const arena = { ...emptyArenaRecord(), endless: { 'las/normal': best } };
+    expect(earnedTrophies(profileWith({ arena }))).toEqual(['arena-wave-10']);
+    const gold = { ...arena, endless: { 'las/normal': { ...best, wave: 20, medal: GOLD } } };
+    expect(earnedTrophies(profileWith({ arena: gold }))).toEqual([
+      'arena-wave-10',
+      'arena-wave-20',
+      'arena-gold',
+    ]);
   });
 
   it('awards a region with every key mastered', () => {

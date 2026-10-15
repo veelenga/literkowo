@@ -3,7 +3,7 @@ import type { Unlock } from '../course/shop';
 import { rankStartLevel } from '../course/xp';
 import { i18n } from '../i18n/i18n';
 import type { Profile } from '../profiles/Profile';
-import { el, icon, svg } from './dom';
+import { el, icon, svg, type Child } from './dom';
 import { coinIcon } from './progression';
 import { unlockHint } from './shopCopy';
 import './shop.css';
@@ -29,14 +29,21 @@ export function shopIcon(name: ShopIconName, className: string): SVGSVGElement {
 
 export function lockBadge(unlock: Unlock): HTMLElement | null {
   if (unlock.by === 'free') return null;
-  const hint = unlockHint(unlock);
   const value =
     unlock.by === 'coins'
       ? [coinIcon('lock-badge-coin'), String(unlock.price)]
       : [el('span', { class: 'lock-badge-level', text: String(rankStartLevel(unlock.rank)) })];
+  return badge(`lock-badge is-${unlock.by}`, unlockHint(unlock), ...value);
+}
+
+export function hintedLockBadge(hint: string): HTMLElement {
+  return badge('lock-badge', hint);
+}
+
+function badge(className: string, hint: string | undefined, ...value: Child[]): HTMLElement {
   return el(
     'span',
-    { class: `lock-badge is-${unlock.by}`, title: hint, 'aria-label': hint },
+    { class: className, title: hint, 'aria-label': hint },
     icon('lock', 'lock-badge-icon'),
     ...value,
   );

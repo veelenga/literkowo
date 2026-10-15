@@ -15,10 +15,16 @@ const WON: GameResult = {
   lettersFreed: 30,
   xp: 20,
   coins: 5,
+  phasesCleared: 2,
   keys: { practised: {}, weakest: [], mastered: [] },
 };
 const LOST: GameResult = { ...WON, won: false };
-const REWARDS = { xpBefore: 0, xp: 20, coins: 5, treasures: { trophies: [], newItems: false } };
+const REWARDS = {
+  xpBefore: 0,
+  xp: 20,
+  coins: 5,
+  treasures: { trophies: [], newItems: false, arenaOpened: false },
+};
 
 function actions() {
   return { onNext: vi.fn(), onRetry: vi.fn(), onMap: vi.fn() };

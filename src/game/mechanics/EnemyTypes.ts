@@ -5,10 +5,10 @@ import { createSpecial } from './enemyTypes/factory';
 import {
   BONUS_WORDS,
   ENEMY_TYPE_TAG,
-  boardCap,
+  availableKinds,
   kindLimit,
   rollKind,
-  unlockedKinds,
+  specialCap,
   type EnemyKind,
   type Random,
 } from './enemyTypes/kinds';
@@ -42,8 +42,8 @@ export class EnemyTypes implements Mechanic {
     private readonly context: MechanicContext,
     private readonly random: Random = Math.random,
   ) {
-    this.kinds = unlockedKinds(context.level, context.language);
-    this.cap = boardCap(context.level);
+    this.kinds = availableKinds(context);
+    this.cap = specialCap(context);
     this.stage = new Stage(context);
   }
 
@@ -56,6 +56,7 @@ export class EnemyTypes implements Mechanic {
     const kind = rollKind(
       this.kinds.filter((each) => this.hasRoomFor(each)),
       this.random,
+      this.context.phase.specialShare,
     );
     if (kind) this.replace(enemy, kind);
   }

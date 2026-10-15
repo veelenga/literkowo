@@ -1,3 +1,4 @@
+import { arenaRecordOf, emptyArenaRecord } from '../arena/record';
 import {
   MAX_PRACTICE_DAYS,
   RECENT_WINDOW,
@@ -21,7 +22,7 @@ import {
   type Profile,
 } from './Profile';
 import { gradualCourseResults } from './courseMigration';
-import { isRecord, type RawRecord } from './raw';
+import { countOf, isCount, isNonEmptyString, isRecord, stringsOf, type RawRecord } from './raw';
 
 type Migration = (raw: RawRecord) => RawRecord;
 
@@ -35,6 +36,7 @@ const SCORE_SCHEMA_VERSION = 2;
 const XP_SCHEMA_VERSION = 3;
 const KEY_STATS_SCHEMA_VERSION = 4;
 const INVENTORY_SCHEMA_VERSION = 5;
+const GRADUAL_COURSE_SCHEMA_VERSION = 6;
 const SCORE_PER_SEEDED_XP = 10;
 const KNOWN_PETS = PETS.map((pet) => pet.id);
 const KNOWN_HATS = HATS.map((hat) => hat.id);
@@ -57,6 +59,7 @@ const MIGRATIONS: Partial<Record<number, Migration>> = {
     ...raw,
     levelResults: gradualCourseResults(raw.levelResults),
   }),
+  [GRADUAL_COURSE_SCHEMA_VERSION]: (raw) => ({ ...raw, arena: emptyArenaRecord() }),
 };
 
 export function parseProfiles(json: string): ParsedProfiles {
@@ -88,6 +91,7 @@ export function normalizeProfile(value: unknown): Profile | undefined {
     keyStats: keyStatsOf(raw.keyStats),
     inventory,
     equipped: equippedOf(raw.equipped, inventory),
+    arena: arenaRecordOf(raw.arena),
   };
   return predatesShop(value) ? awardTrophies(profile) : profile;
 }
@@ -207,20 +211,4 @@ function wholeOf(value: unknown): number {
 
 function isSingleChar(value: string): boolean {
   return [...value].length === 1;
-}
-
-function stringsOf(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((item) => typeof item === 'string') : [];
-}
-
-function countOf(value: unknown): number {
-  return isCount(value) ? value : 0;
-}
-
-function isCount(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
-}
-
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === 'string' && value.length > 0;
 }

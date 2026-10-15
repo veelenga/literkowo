@@ -112,6 +112,12 @@ describe('Twins', () => {
     expect(enemies).toContain(original);
   });
 
+  it('replaces in the meadow when the run unlocks every mechanic', () => {
+    const meadow = setup(countAndShape(2, 'line'), { level: MEADOW, allMechanicsUnlocked: true });
+    meadow.spawn();
+    expect(meadow.twinsOnBoard()).toHaveLength(2);
+  });
+
   it('never replaces in the meadow, in the warm up, or a tagged enemy', () => {
     const meadow = setup([ROLL_TWINS], { level: MEADOW });
     meadow.spawn();

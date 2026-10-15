@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { JOURNEY_SPACING, journeyLayout, journeyPath } from './journeyLayout';
+import { JOURNEY_SPACING, gatePoint, journeyLayout, journeyPath } from './journeyLayout';
 
 const POLISH_COURSE = [5, 4, 4, 5, 4];
 const PRECISION = 6;
@@ -19,6 +19,15 @@ describe('journeyLayout', () => {
     const { stops } = journeyLayout(POLISH_COURSE);
     expect(stops).toHaveLength(22);
     stops.slice(1).forEach((stop, index) => expect(stop.y).toBeGreaterThan(stops[index].y));
+  });
+
+  it('puts the gate in the footer of a band, across from its last stop', () => {
+    const [band, next] = journeyLayout(POLISH_COURSE).bands;
+    const last = band.stops[band.stops.length - 1];
+    const gate = gatePoint(band);
+    expect(gate.x).toBeCloseTo(100 - last.x, PRECISION);
+    expect(gate.y).toBeGreaterThan(last.y);
+    expect(gate.y).toBeLessThan(next.top);
   });
 
   it('alternates the side of the region headers', () => {

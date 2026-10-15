@@ -1,10 +1,13 @@
+import { arenaGateLevel, isArenaOpen } from '../arena/keySets';
 import type { Level, LevelKind, Region } from '../course/catalog';
 import { courseFor, type Course } from '../course/course';
 import { MAX_STARS } from '../course/scoring';
 import { i18n } from '../i18n/i18n';
 import type { Profile } from '../profiles/Profile';
-import { el, icon, prefersReducedMotion, svg } from './dom';
+import { arenaIcon } from './arena/arenaParts';
+import { el, icon, prefersReducedMotion, restartAnimation, svg } from './dom';
 import {
+  gatePoint,
   journeyLayout,
   journeyPath,
   type BandLayout,
@@ -18,6 +21,7 @@ import { keyDots, masteryMeter } from './mastery';
 import { hasAmbientMotion } from './menuMotion';
 import './courseMap.css';
 import { outfitAvatar, releaseOutfitAvatars } from './OutfitAvatar';
+import { hintedLockBadge } from './shopParts';
 import './worldMap.css';
 
 const STAR_BASE_DELAY_MS = 260;
@@ -30,6 +34,8 @@ const STOP_SELECTOR = `.${STOP_CLASS}`;
 const REVEAL_CLASS = 'has-reveal';
 const AMBIENT_CLASS = 'has-ambient';
 const PATH_WIDTH = 100;
+const GATE_SELECTOR = '.journey-gate';
+const NUDGE_CLASS = 'is-nudged';
 
 type NodeState = 'locked' | 'current' | 'done';
 
@@ -37,6 +43,7 @@ interface Actions {
   onPlay: (level: Level) => void;
   onSwitchPlayer: () => void;
   onShop: () => void;
+  onArena: () => void;
 }
 
 export class WorldMap {
@@ -62,8 +69,9 @@ export class WorldMap {
 
   private render(): void {
     const scene = this.scene();
+    const { onSwitchPlayer, onShop } = this.actions;
     this.element.replaceChildren(
-      mapHeader(this.profile, this.actions),
+      mapHeader(this.profile, { onSwitchPlayer, onShop, onArena: () => this.openArena() }),
       el('main', { class: 'map-journey' }, scene),
     );
     queueMicrotask(() => this.startMotion(scene));
@@ -83,6 +91,14 @@ export class WorldMap {
   private addParallax(scene: HTMLElement): void {
     scene.classList.add(AMBIENT_CLASS);
     this.effects.push(followScroll(this.element, scene));
+  }
+
+  private openArena(): void {
+    if (isArenaOpen(this.profile)) return this.actions.onArena();
+    const gate = this.element.querySelector(GATE_SELECTOR);
+    if (!gate) return;
+    gate.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    restartAnimation(gate, NUDGE_CLASS);
   }
 
   private scrollToFocus(): void {
@@ -128,6 +144,7 @@ export class WorldMap {
         { class: 'journey-track region-track' },
         this.regionHeader(region, index, band),
         ...region.levels.map((level, stop) => this.stop(level, band, stop)),
+        this.hasGate(region) ? this.gate(band) : null,
       ),
     );
   }
@@ -163,6 +180,37 @@ export class WorldMap {
         ),
         masteryMeter(region, this.profile.keyStats),
       ),
+    );
+  }
+
+  private hasGate(region: Region): boolean {
+    return arenaGateLevel(this.profile.wordLanguage).regionId === region.id;
+  }
+
+  private gate(band: BandLayout): HTMLElement {
+    const copy = i18n.t.features.arena;
+    const open = isArenaOpen(this.profile);
+    const point = gatePoint(band);
+    const title = open ? copy.title : `${copy.title}. ${copy.locked}`;
+    return el(
+      'div',
+      {
+        class: open ? 'journey-gate' : 'journey-gate is-locked',
+        style: `--x: ${point.x.toFixed(2)}; --y: ${point.y - band.top}`,
+      },
+      el(
+        'button',
+        {
+          class: 'gate-node',
+          disabled: !open,
+          title,
+          'aria-label': title,
+          onClick: () => this.actions.onArena(),
+        },
+        arenaIcon('gate-icon'),
+        open ? null : hintedLockBadge(copy.locked),
+      ),
+      el('span', { class: 'gate-label', text: open ? copy.title : copy.locked }),
     );
   }
 

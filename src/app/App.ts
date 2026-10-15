@@ -1,4 +1,7 @@
+import type { ArenaChoice } from '../arena/endlessPlan';
+import { isArenaOpen } from '../arena/keySets';
 import { music } from '../audio/Music';
+import type { MusicMood } from '../audio/music/specs';
 import { sfx } from '../audio/Sfx';
 import { regionOf, type Level } from '../course/catalog';
 import { levelCoins } from '../course/coins';
@@ -16,6 +19,7 @@ import { freshTrophies } from '../course/trophies';
 import { hasCoarsePointer } from '../game/deviceProbe';
 import type { Game, GameResult } from '../game/Game';
 import { levelPlan } from '../game/LevelPlan';
+import type { PhaseKind } from '../game/RunPlan';
 import type { SessionStats } from '../game/SessionStats';
 import { i18n } from '../i18n/i18n';
 import type { Profile } from '../profiles/Profile';
@@ -39,7 +43,14 @@ import { watchStageInsets } from '../ui/stageInsets';
 import { storyCard } from '../ui/StoryCard';
 import { TouchTyping } from '../ui/TouchTyping';
 import { WorldMap } from '../ui/WorldMap';
-import { devLevelFromUrl, devProfile, unlockAudioOnFirstInput } from './devShortcut';
+import {
+  devArenaFromUrl,
+  devLevelFromUrl,
+  devProfile,
+  unlockAudioOnFirstInput,
+} from './devShortcut';
+import { ArenaFlow, type Screen } from './ArenaFlow';
+import type { GameRun } from './GameRun';
 import { loadGameModule, prefetchGameModule, type GameModule } from './gameModule';
 import { PageAttention } from './PageAttention';
 
@@ -51,6 +62,14 @@ export class App {
   private readonly screen = el('div', { class: 'app-screen' });
   private readonly overlays: OverlaySlot;
   private readonly attention = new PageAttention((away) => this.onAttentionChange(away));
+  private readonly arena = new ArenaFlow({
+    showMenu: (create) => this.showMenu(create),
+    showMap: (profile) => this.showMap(profile),
+    startRun: (profile, run) => this.startRun(profile, run),
+    openOverlay: (overlay) => this.overlays.open(overlay),
+    dismissThen: (next) => this.dismissThen(next),
+    save: (profile) => this.save(profile),
+  });
   private game: Game | undefined;
   private touch: TouchTyping | undefined;
   private pause: Overlay | undefined;
@@ -67,6 +86,8 @@ export class App {
     if (import.meta.env.DEV) {
       const level = devLevelFromUrl();
       if (level) return this.startDevLevel(level);
+      const arena = devArenaFromUrl();
+      if (arena) return this.startDevArena(arena);
     }
     this.showProfiles();
   }
@@ -74,6 +95,11 @@ export class App {
   private startDevLevel(level: Level): void {
     unlockAudioOnFirstInput();
     this.startLevel(devProfile(this.store.active()), level);
+  }
+
+  private startDevArena(choice: ArenaChoice): void {
+    unlockAudioOnFirstInput();
+    this.arena.start(devProfile(this.store.active()), choice);
   }
 
   private showProfiles(): void {
@@ -89,16 +115,24 @@ export class App {
   }
 
   private showMap(profile: Profile): void {
+    this.showMenu(
+      () =>
+        new WorldMap(profile, {
+          onPlay: (level) => this.openLevel(profile, level),
+          onSwitchPlayer: () => this.showProfiles(),
+          onShop: () => this.showShop(profile),
+          onArena: () => this.arena.show(profile),
+        }),
+    );
+  }
+
+  private showMenu(create: () => Screen): void {
     this.leaveScreen();
     music.stop();
     prefetchGameModule();
-    const map = new WorldMap(profile, {
-      onPlay: (level) => this.openLevel(profile, level),
-      onSwitchPlayer: () => this.showProfiles(),
-      onShop: () => this.showShop(profile),
-    });
-    this.showScreen(map.element);
-    this.disposeScreen = () => map.dispose();
+    const screen = create();
+    this.showScreen(screen.element);
+    this.disposeScreen = () => screen.dispose();
   }
 
   private showShop(profile: Profile): void {
@@ -130,29 +164,43 @@ export class App {
   }
 
   private startLevel(profile: Profile, level: Level): void {
+    this.startRun(profile, {
+      level,
+      plan: levelPlan(level, profile.wordLanguage),
+      rotateHint: courseFor(profile.wordLanguage).isFirst(level),
+      onFinished: (result) => this.finishLevel(profile, level, result),
+      restart: () => this.startLevel(profile, level),
+    });
+  }
+
+  private startRun(profile: Profile, run: GameRun): void {
     this.leaveScreen();
     const token = this.levelToken;
     loadGameModule()
       .then((module) => {
-        if (this.isCurrent(token)) this.runLevel(module, profile, level);
+        if (this.isCurrent(token)) this.runGame(module, profile, run);
       })
       .catch((error: unknown) => {
-        if (this.isCurrent(token)) this.showLoadError(profile, level, error);
+        if (this.isCurrent(token)) this.showLoadError(profile, run, error);
       });
   }
 
-  private runLevel({ Game, themeFor }: GameModule, profile: Profile, level: Level): void {
+  private runGame({ Game, themeFor }: GameModule, profile: Profile, run: GameRun): void {
     const stage = el('div', { class: 'stage' });
     const type = (char: string) => this.game?.typeCharacter(char);
-    const hud = new Hud(profile, {
-      onMap: () => this.showMap(profile),
-      onPause: () => this.game?.togglePause(),
-      onKeyboard: () => this.touch?.toggleNativeKeyboard(),
-    });
+    const hud = new Hud(
+      profile,
+      {
+        onMap: () => this.showMap(profile),
+        onPause: () => this.game?.togglePause(),
+        onKeyboard: () => this.touch?.toggleNativeKeyboard(),
+      },
+      run.plan.lives,
+    );
     const layout = usesBuiltInKeyboard() ? KEYBOARD_LAYOUTS.compact : KEYBOARD_LAYOUTS.full;
     const keyboard = new KeyboardHint(type, layout);
     const callouts = new Callouts();
-    const hint = courseFor(profile.wordLanguage).isFirst(level) ? rotateHint() : undefined;
+    const hint = run.rotateHint ? rotateHint() : undefined;
     this.showScreen(
       el(
         'div',
@@ -168,14 +216,13 @@ export class App {
 
     const config = {
       character: profile.avatar,
-      plan: levelPlan(level, profile.wordLanguage),
-      level,
+      plan: run.plan,
+      level: run.level,
       language: profile.wordLanguage,
-      theme: themeFor(regionOf(level).theme),
+      theme: themeFor(regionOf(run.level).theme),
       keyStats: profile.keyStats,
       equipped: profile.equipped,
     };
-    music.play(config.theme.id, level.isBoss ? 'boss' : 'calm');
     this.game = new Game(stage, config, {
       onStats: (stats, lives) => {
         hud.update(stats, lives);
@@ -184,10 +231,13 @@ export class App {
       },
       onRewards: (rewards) => hud.setRewards(rewards),
       onNextKey: (char) => keyboard.show(char),
-      onProgress: (progress) => hud.progress(progress),
+      onProgress: (progress) => {
+        hud.progress(progress);
+        music.play(config.theme.id, musicMood(progress.kind));
+      },
       onAnnounce: (text, style, accent) => callouts.show(text, style, accent),
       onPause: (paused) => this.setPaused(paused),
-      onFinished: (result) => this.finishLevel(profile, level, result),
+      onFinished: run.onFinished,
     });
     this.disposeScreen = watchStageInsets(stage, hud.element, (insets) =>
       this.game?.setInsets(insets),
@@ -225,11 +275,11 @@ export class App {
     this.touch?.refocus();
   }
 
-  private showLoadError(profile: Profile, level: Level, error: unknown): void {
+  private showLoadError(profile: Profile, run: GameRun, error: unknown): void {
     reportError(error);
     this.overlays.open(
       loadErrorOverlay({
-        onRetry: this.dismissThen(() => this.startLevel(profile, level)),
+        onRetry: this.dismissThen(run.restart),
         onMap: this.dismissThen(() => this.showMap(profile)),
       }),
     );
@@ -242,6 +292,7 @@ export class App {
     const treasures = {
       trophies: freshTrophies(profile, updated),
       newItems: hasNewItems(profile, updated),
+      arenaOpened: !isArenaOpen(profile) && isArenaOpen(updated),
     };
     const next = courseFor(updated.wordLanguage).next(level);
     const leave = (then: (current: Profile) => void) =>
@@ -320,6 +371,10 @@ export class App {
     this.pause = undefined;
     this.syncAudio();
   }
+}
+
+function musicMood(kind: PhaseKind): MusicMood {
+  return kind === 'boss' ? 'boss' : 'calm';
 }
 
 function musicIntensity(stats: SessionStats): number {
