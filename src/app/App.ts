@@ -1,3 +1,4 @@
+import { isArenaOpen } from '../arena/keySets';
 import { music } from '../audio/Music';
 import { sfx } from '../audio/Sfx';
 import { regionOf, type Level } from '../course/catalog';
@@ -268,6 +269,7 @@ export class App {
     const treasures = {
       trophies: freshTrophies(profile, updated),
       newItems: hasNewItems(profile, updated),
+      arenaOpened: !isArenaOpen(profile) && isArenaOpen(updated),
     };
     const next = courseFor(updated.wordLanguage).next(level);
     const leave = (then: (current: Profile) => void) =>
