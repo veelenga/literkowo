@@ -8,6 +8,7 @@ import type { Phase } from '../LevelPlan';
 import type { MechanicContext } from './Mechanic';
 import { MergeEnemies } from './MergeEnemies';
 import { MergedEnemy } from './mergeEnemies/MergedEnemy';
+import { PowerEnemy } from './powerWords/PowerEnemy';
 import { wordPoints } from './mergeEnemies/scoring';
 
 const FRAME = 1 / 60;
@@ -126,14 +127,20 @@ describe('MergeEnemies', () => {
     expect(board).toHaveLength(2);
   });
 
-  it('leaves frozen and power enemies alone', () => {
+  it('leaves frozen enemies alone', () => {
     const frozen = enemyAt('kot', 0);
     frozen.freeze(10);
-    const powered = enemyAt('las', 1);
-    powered.tags.add('power');
-    const { board, run } = setup([frozen, enemyAt('dom', -1), powered]);
+    const { board, run } = setup([frozen, enemyAt('dom', -1), enemyAt('las', 1)]);
     run(1);
     expect(board).toHaveLength(3);
+  });
+
+  it('fuses only plain enemies, never ones made by other features', () => {
+    const powered = new PowerEnemy('las', document.createElement('div'), 1, 'crystal');
+    powered.object.position.set(1, 0, DEPTH);
+    const { board, run } = setup([enemyAt('kot', 0), powered]);
+    run();
+    expect(board).toHaveLength(2);
   });
 
   it('merges only while playing the words phase', () => {

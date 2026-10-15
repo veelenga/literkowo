@@ -1,24 +1,20 @@
-import { Boss } from '../../Boss';
-import type { Enemy } from '../../Enemy';
+import { Enemy } from '../../Enemy';
 
 export const MERGED_TAG = 'merged';
 
 const MERGE_DISTANCE = 1.3;
 const MAX_MERGED_LENGTH = 10;
 const HERO_CLEARANCE = 4;
-const POWER_TAG = 'power';
 const TARGET_CLASS = 'is-target';
 
 export type EnemyPair = readonly [Enemy, Enemy];
 
 export function isFusible(enemy: Enemy): boolean {
-  return (
-    !(enemy instanceof Boss) &&
-    !enemy.isFrozen &&
-    !enemy.tags.has(POWER_TAG) &&
-    !enemy.tags.has(MERGED_TAG) &&
-    !isTargeted(enemy)
-  );
+  return isPlainEnemy(enemy) && !enemy.isFrozen && !isTargeted(enemy);
+}
+
+function isPlainEnemy(enemy: Enemy): boolean {
+  return Object.getPrototypeOf(enemy) === Enemy.prototype;
 }
 
 export function isClearOfHero(enemy: Enemy): boolean {
