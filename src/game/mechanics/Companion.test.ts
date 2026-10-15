@@ -4,14 +4,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { fakeBoard } from '../../testing/enemyBoard';
 import type { Phase } from '../LevelPlan';
 import { Companion, ZAP_DELAY } from './Companion';
-import { ZAP_MIN_COMBO, ZAP_RANGE } from './companion/zapRules';
+import { ZAP_MIN_COMBO } from './companion/zapRules';
 import type { MechanicContext } from './Mechanic';
 import { wordPoints } from './mergeEnemies/scoring';
 
 const FRAME = 1 / 60;
 const SETTLE_SECONDS = 3;
-const NEAR = ZAP_RANGE - 0.5;
-const FAR = ZAP_RANGE + 2;
+const NEAR = 2.5;
+const FAR = 12;
 const WARMUP: Phase = { kind: 'warmup', count: 8, speed: 0.5, spawnInterval: 1.5 };
 const HERO_REACH = 2;
 
@@ -66,7 +66,7 @@ describe('Companion', () => {
     expect(moved).toBeLessThan(pet.position.distanceTo(before) / 2);
   });
 
-  it('zaps a close enemy once per level with its word points', () => {
+  it('zaps an enemy once per level with its word points', () => {
     const { context, enemies, enemyAt, buildCombo, run, announce, burst } = setup();
     const first = enemyAt(NEAR, 'fjfj');
     buildCombo();
@@ -90,12 +90,22 @@ describe('Companion', () => {
     expect(enemies).toHaveLength(1);
   });
 
-  it('ignores enemies beyond its range and during the warm up', () => {
-    const far = setup();
-    far.enemyAt(FAR);
-    far.buildCombo();
-    far.run(1);
-    expect(far.enemies).toHaveLength(1);
+  it('zaps the nearest enemy as soon as the combo reaches five', () => {
+    const { enemies, enemyAt, buildCombo, run } = setup();
+    const far = enemyAt(FAR);
+    enemyAt(NEAR);
+    buildCombo();
+    run(ZAP_DELAY * 2);
+    expect(enemies).toEqual([far]);
+  });
+
+  it('leaves the word the player is typing and rests during the warm up', () => {
+    const typing = setup();
+    const started = typing.enemyAt(NEAR);
+    started.advance();
+    typing.buildCombo();
+    typing.run(1);
+    expect(typing.enemies).toEqual([started]);
 
     const warmup = setup({ phase: WARMUP });
     warmup.enemyAt(NEAR);
