@@ -709,6 +709,11 @@ svg.stat-icon {
     inset 0 -7px 0 rgba(0, 0, 0, 0.12);
 }
 
+.level-node:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 5px;
+}
+
 .level-node.is-current::before {
   content: '';
   position: absolute;

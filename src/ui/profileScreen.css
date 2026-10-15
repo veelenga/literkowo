@@ -626,6 +626,21 @@
   transform: translateY(-3px);
 }
 
+.profile-card.is-selected:focus-visible,
+.avatar-option.is-active:focus-visible,
+.profile-screen .chip.is-active:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.profile-card.is-selected:focus-visible {
+  outline-offset: 9px;
+}
+
+.avatar-option.is-active:focus-visible {
+  outline-offset: 7px;
+}
+
 @keyframes hills-drift {
   to {
     transform: translateX(-50%);
