@@ -1,7 +1,13 @@
 import type { LevelResult, WordLanguage } from '../profiles/Profile';
-import { regionsFor, type Level, type Region } from './catalog';
+import { regionsFor, type Level, type LevelKind, type Region } from './catalog';
 
 export type LevelResults = Readonly<Partial<Record<string, LevelResult>>>;
+
+export const OPEN_AHEAD = 3;
+
+const GATE_KINDS: ReadonlySet<LevelKind> = new Set(['review', 'boss']);
+const FIRST_POSITION = 0;
+const NOT_FOUND = -1;
 
 export interface Course {
   readonly regions: readonly Region[];
@@ -10,6 +16,7 @@ export interface Course {
   previous(level: Level): Level | undefined;
   isFirst(level: Level): boolean;
   isUnlocked(level: Level, results: LevelResults): boolean;
+  current(results: LevelResults): Level | undefined;
   allowedKeys(level: Level): string;
 }
 
@@ -37,9 +44,14 @@ class LanguageCourse implements Course {
   }
 
   isUnlocked(level: Level, results: LevelResults): boolean {
-    if (this.isFirst(level)) return true;
-    const previous = this.previous(level);
-    return previous !== undefined && (results[previous.id]?.stars ?? 0) > 0;
+    const position = this.positionOf(level);
+    return position !== NOT_FOUND && position <= this.lastOpenPosition(results);
+  }
+
+  current(results: LevelResults): Level | undefined {
+    const open = this.levels.slice(FIRST_POSITION, this.lastOpenPosition(results) + 1);
+    const ahead = open.slice(this.furthestWon(results) + 1).find((level) => !isWon(level, results));
+    return ahead ?? open.find((level) => !isWon(level, results));
   }
 
   allowedKeys(level: Level): string {
@@ -52,6 +64,39 @@ class LanguageCourse implements Course {
   private positionOf(level: Level): number {
     return this.levels.findIndex((candidate) => candidate.id === level.id);
   }
+
+  private furthestWon(results: LevelResults): number {
+    return this.levels.findLastIndex((level) => isWon(level, results));
+  }
+
+  private lastOpenPosition(results: LevelResults): number {
+    const furthest = this.furthestWon(results);
+    if (furthest === NOT_FOUND) return FIRST_POSITION;
+    const limit = Math.min(furthest + OPEN_AHEAD, this.levels.length - 1);
+    for (let position = furthest + 1; position <= limit; position += 1) {
+      const level = this.levels[position];
+      if (!GATE_KINDS.has(level.kind)) continue;
+      return this.isGateOpen(level, results) ? position : position - 1;
+    }
+    return limit;
+  }
+
+  private isGateOpen(gate: Level, results: LevelResults): boolean {
+    const before = this.levels.filter(
+      (level) => level.regionId === gate.regionId && level.order < gate.order,
+    );
+    if (gate.kind === 'review') {
+      return before
+        .filter((level) => level.kind === 'practice')
+        .every((level) => isWon(level, results));
+    }
+    const review = before.findLast((level) => level.kind === 'review');
+    return review === undefined || isWon(review, results);
+  }
+}
+
+function isWon(level: Level, results: LevelResults): boolean {
+  return (results[level.id]?.stars ?? 0) > 0;
 }
 
 const COURSES: Record<WordLanguage, Course> = {

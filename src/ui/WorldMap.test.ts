@@ -55,6 +55,23 @@ describe('WorldMap', () => {
     expect(badges).toEqual(['✨', null, '👑']);
   });
 
+  it('shows the levels of the window as open with the hero on the first one', () => {
+    const profile = createProfile('Ola', 'a');
+    const results = { 'polana-1': DONE, 'polana-2': DONE, 'polana-3': DONE };
+    const map = mapOf({ ...profile, levelResults: results });
+    const looks = nodes(map)
+      .slice(0, 8)
+      .map((node) =>
+        node.matches(':disabled') ? 'locked' : node.classList.contains('is-current'),
+      );
+    expect(looks).toEqual([false, false, false, true, true, true, 'locked', 'locked']);
+    const current = map.querySelectorAll('.journey-stop.is-current');
+    expect(current).toHaveLength(1);
+    expect(current[0].querySelector('.level-node')?.getAttribute('title')).toBe('Nowy klawisz D');
+    expect(current[0].querySelector('.journey-hero')).not.toBeNull();
+    expect(map.querySelectorAll('.journey-stop.is-open .journey-hero')).toHaveLength(0);
+  });
+
   it('shows a dimmed arena gate and a locked header button before the Polana boss', () => {
     const onArena = vi.fn();
     const map = mapOf(createProfile('Ola', 'a'), onArena);
