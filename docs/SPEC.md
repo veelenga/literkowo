@@ -383,7 +383,7 @@ Map:
 - One winding path runs through every level. The walked part, up to the first level without a star, is gold.
 - Each band starts with a sign: the chapter number, the region name, a short mood line (`src/i18n/features/worldMap.ts`), the stars earned out of the total and the mastery meter. Signs switch sides from band to band, and the path passes each sign on the other side.
 - Levels are round badges on the path with their new keys. Unlocked key levels show the key dots under the keys, see [Key mastery](#key-mastery). Bosses have a crown. Locked levels show a lock. Levels with stars glow in the region colour and show their stars. The current level pulses, has a Play tag, and the hero stands on it.
-- The header stays at the top: the avatar with the level number, the name, the rank and a thin XP bar, then stars, coins and the sound toggle. A tap on the avatar goes back to the profiles.
+- The header stays at the top: the avatar with the level number, the name, the rank and a thin XP bar, then stars, coins, the shop button and the sound toggle. A tap on the avatar goes back to the profiles. The shop button has the bag and the label "Sklep" / "Крамниця", only the bag on phones, and the green dot when something can be bought or claimed.
 - On open the map scrolls smoothly to the current level, or to the last open level when all levels have stars. Levels pop in as they scroll into view. With reduced motion the scroll is instant and nothing pops in.
 - The silhouettes of each band move at different speeds while scrolling, except in the low quality preset.
 

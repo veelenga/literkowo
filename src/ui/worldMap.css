@@ -190,6 +190,58 @@ svg.stat-icon {
   filter: drop-shadow(0 0 6px var(--accent-glow));
 }
 
+.shop-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 16px 0 11px;
+  border-radius: 15px;
+  border: 2px solid rgba(255, 207, 63, 0.42);
+  background: linear-gradient(180deg, rgba(58, 72, 150, 0.95), rgba(28, 38, 92, 0.95));
+  box-shadow:
+    0 3px 0 var(--surface-edge),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  color: var(--accent-light);
+  font-weight: 900;
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) ease;
+}
+
+@media (hover: hover) {
+  .shop-button:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+  }
+}
+
+.shop-button:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--surface-edge);
+}
+
+.shop-button-icon {
+  width: 22px;
+  height: 22px;
+  fill: var(--accent);
+  filter: drop-shadow(0 0 6px var(--accent-glow));
+}
+
+.shop-button-dot {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-deep);
+  background: var(--success);
+  box-shadow: 0 0 10px var(--success-glow);
+  animation: shop-dot-pulse 1.6s ease-in-out infinite;
+}
+
 .map-journey {
   padding-bottom: calc(140px + var(--safe-bottom));
 }
@@ -961,6 +1013,12 @@ svg.stat-icon {
   translate: -50% 1px;
 }
 
+@keyframes shop-dot-pulse {
+  50% {
+    scale: 1.25;
+  }
+}
+
 @keyframes node-ring {
   from {
     opacity: 0.9;
@@ -1082,6 +1140,17 @@ svg.stat-icon {
     height: 17px;
   }
 
+  .shop-button {
+    justify-content: center;
+    width: var(--touch-target);
+    height: var(--touch-target);
+    padding: 0;
+  }
+
+  .shop-button-label {
+    display: none;
+  }
+
   .region-header {
     top: calc(34 * var(--unit));
     width: min(260px, 58%);
@@ -1152,5 +1221,12 @@ svg.stat-icon {
   .map-xp,
   .profile-chip-rank {
     display: none;
+  }
+}
+
+@media (pointer: coarse) {
+  .shop-button {
+    min-width: var(--touch-target);
+    height: var(--touch-target);
   }
 }
