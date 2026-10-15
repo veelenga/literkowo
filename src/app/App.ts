@@ -41,6 +41,7 @@ export class App {
   private game: Game | undefined;
   private pause: Overlay | undefined;
   private levelToken = 0;
+  private disposeScreen: (() => void) | undefined;
 
   constructor(private readonly root: HTMLElement) {
     this.overlays = new OverlaySlot(root, this.screen);
@@ -62,7 +63,7 @@ export class App {
   }
 
   private showProfiles(): void {
-    this.teardownGame();
+    this.leaveScreen();
     const screen = new ProfileScreen(this.store, {
       onPlay: (profile) => {
         sfx.unlock();
@@ -70,10 +71,11 @@ export class App {
       },
     });
     this.showScreen(screen.element);
+    this.disposeScreen = () => screen.dispose();
   }
 
   private showMap(profile: Profile): void {
-    this.teardownGame();
+    this.leaveScreen();
     music.stop();
     prefetchGameModule();
     const map = new WorldMap(profile, {
@@ -101,7 +103,7 @@ export class App {
   }
 
   private startLevel(profile: Profile, level: Level): void {
-    this.teardownGame();
+    this.leaveScreen();
     const token = this.levelToken;
     loadGameModule()
       .then((module) => {
@@ -207,7 +209,7 @@ export class App {
   }
 
   private showStory(scene: StoryScene, then: () => void): void {
-    this.teardownGame();
+    this.leaveScreen();
     this.overlays.open(storyCard(scene, this.dismissThen(then)));
   }
 
@@ -232,7 +234,9 @@ export class App {
     return token === this.levelToken;
   }
 
-  private teardownGame(): void {
+  private leaveScreen(): void {
+    this.disposeScreen?.();
+    this.disposeScreen = undefined;
     this.levelToken += 1;
     music.resume();
     this.game?.destroy();

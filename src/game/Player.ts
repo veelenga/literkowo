@@ -1,35 +1,29 @@
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
+import {
+  CHARACTER_HEIGHT,
+  characterModelUrl,
+  createContactShadow,
+  findClip,
+  fitToCharacterHeight,
+  IDLE_CLIP,
+  prepareMeshes,
+} from './characterModel';
 import { disposeObject } from './disposal';
 
 const MODEL_LOAD_ERROR = 'Could not load the character model, keeping the placeholder';
-const MISSING_CLIP_ERROR = 'Character model has no animation clip named';
-const CHARACTER_HEIGHT = 1.9;
 
-const IDLE_CLIP = 'idle';
 const PUNCH_CLIP = 'attack-melee-right';
 const REFUSE_CLIP = 'emote-no';
 const BLEND_DURATION = 0.12;
 const TURN_SHARPNESS = 8;
 const FULL_TURN = Math.PI * 2;
 
-const LIT_ROUGHNESS = 0.85;
 const PLACEHOLDER_COLOR = 0x8fb8de;
 const PLACEHOLDER_RADIUS = 0.3;
 const PLACEHOLDER_LENGTH = CHARACTER_HEIGHT - PLACEHOLDER_RADIUS * 2;
 const PLACEHOLDER_CAP_SEGMENTS = 4;
 const PLACEHOLDER_RADIAL_SEGMENTS = 8;
-
-const SHADOW_COLOR = 0x000000;
-const SHADOW_DIAMETER = 1;
-const SHADOW_LIFT = 0.01;
-const SHADOW_OPACITY = 0.35;
-const SHADOW_TEXTURE_SIZE = 64;
-const SHADOW_SOFT_CORE = 0.15;
-const PIXEL_CENTER = 0.5;
-const RGBA_CHANNELS = 4;
-const ALPHA_CHANNEL = 3;
-const MAX_BYTE = 255;
 
 type GestureClip = typeof PUNCH_CLIP | typeof REFUSE_CLIP;
 type ActionPair = [THREE.AnimationAction, THREE.AnimationAction];
@@ -44,7 +38,7 @@ export class Player {
 
   constructor(character: string) {
     this.object.add(this.placeholder, createContactShadow());
-    this.loadModel(modelUrlFor(character));
+    this.loadModel(characterModelUrl(character));
   }
 
   update(delta: number, elapsed: number): void {
@@ -175,50 +169,6 @@ class CharacterAnimator {
   }
 }
 
-function modelUrlFor(character: string): string {
-  return `${import.meta.env.BASE_URL}models/characters/character-${character}.glb`;
-}
-
-function findClip(clips: THREE.AnimationClip[], name: string): THREE.AnimationClip {
-  const clip = THREE.AnimationClip.findByName(clips, name);
-  if (!clip) throw new Error(`${MISSING_CLIP_ERROR} ${name}`);
-  return clip;
-}
-
-function fitToCharacterHeight(model: THREE.Object3D): void {
-  model.updateMatrixWorld(true);
-  const bounds = new THREE.Box3().setFromObject(model);
-  const center = bounds.getCenter(new THREE.Vector3());
-  const scale = CHARACTER_HEIGHT / (bounds.max.y - bounds.min.y);
-  model.scale.setScalar(scale);
-  model.position.set(-center.x * scale, -bounds.min.y * scale, -center.z * scale);
-}
-
-function prepareMeshes(model: THREE.Object3D): void {
-  model.traverse((child) => {
-    if (!(child instanceof THREE.Mesh)) return;
-    child.castShadow = true;
-    child.receiveShadow = true;
-    child.material = Array.isArray(child.material)
-      ? child.material.map(litMaterial)
-      : litMaterial(child.material);
-  });
-}
-
-function litMaterial(source: THREE.Material): THREE.MeshStandardMaterial {
-  const map = 'map' in source && source.map instanceof THREE.Texture ? source.map : null;
-  if (map) keepPixelsCrisp(map);
-  const material = new THREE.MeshStandardMaterial({ map, roughness: LIT_ROUGHNESS, metalness: 0 });
-  source.dispose();
-  return material;
-}
-
-function keepPixelsCrisp(texture: THREE.Texture): void {
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.magFilter = THREE.NearestFilter;
-  texture.needsUpdate = true;
-}
-
 function moveToward(current: number, target: number, step: number): number {
   return current < target ? Math.min(target, current + step) : Math.max(target, current - step);
 }
@@ -239,43 +189,4 @@ function createPlaceholder(): THREE.Mesh<THREE.CapsuleGeometry, THREE.MeshStanda
   placeholder.position.y = CHARACTER_HEIGHT / 2;
   placeholder.castShadow = true;
   return placeholder;
-}
-
-function createContactShadow(): THREE.Mesh {
-  const geometry = new THREE.CircleGeometry(SHADOW_DIAMETER / 2);
-  geometry.rotateX(-Math.PI / 2);
-  const material = new THREE.MeshBasicMaterial({
-    color: SHADOW_COLOR,
-    map: createShadowTexture(),
-    transparent: true,
-    opacity: SHADOW_OPACITY,
-    depthWrite: false,
-  });
-  const shadow = new THREE.Mesh(geometry, material);
-  shadow.position.y = SHADOW_LIFT;
-  return shadow;
-}
-
-function createShadowTexture(): THREE.DataTexture {
-  const size = SHADOW_TEXTURE_SIZE;
-  const pixels = new Uint8Array(size * size * RGBA_CHANNELS);
-  for (let row = 0; row < size; row += 1) {
-    for (let column = 0; column < size; column += 1) {
-      const alphaIndex = (row * size + column) * RGBA_CHANNELS + ALPHA_CHANNEL;
-      pixels[alphaIndex] = shadowAlphaAt(column, row, size) * MAX_BYTE;
-    }
-  }
-  const texture = new THREE.DataTexture(pixels, size, size);
-  texture.magFilter = THREE.LinearFilter;
-  texture.minFilter = THREE.LinearFilter;
-  texture.needsUpdate = true;
-  return texture;
-}
-
-function shadowAlphaAt(column: number, row: number, size: number): number {
-  const half = size / 2;
-  const offsetX = column + PIXEL_CENTER - half;
-  const offsetY = row + PIXEL_CENTER - half;
-  const distanceFromCenter = Math.hypot(offsetX, offsetY) / half;
-  return 1 - THREE.MathUtils.smoothstep(distanceFromCenter, SHADOW_SOFT_CORE, 1);
 }

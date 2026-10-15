@@ -8,7 +8,11 @@ import {
   type WordLanguage,
 } from '../profiles/Profile';
 import type { ProfileStore } from '../profiles/ProfileStore';
-import { avatarImg, el, present } from './dom';
+import { characterAvatar } from './CharacterAvatar';
+import { avatarPicker } from './AvatarPicker';
+import { releasePortraits } from './CharacterPortraits';
+import { el, present } from './dom';
+import { livePreview } from './LivePreview';
 
 const MAX_NAME_LENGTH = 16;
 const CARD_STAGGER_MS = 70;
@@ -55,10 +59,16 @@ export class ProfileScreen {
     this.render();
   }
 
+  dispose(): void {
+    livePreview.stop();
+    releasePortraits();
+  }
+
   private render(): void {
     const t = i18n.t;
     if (this.rendered) this.element.classList.remove('is-intro');
     this.rendered = true;
+    livePreview.hide();
     this.element.replaceChildren(
       this.backdrop,
       this.languageSwitch(),
@@ -115,6 +125,8 @@ export class ProfileScreen {
   private card(profile: Profile, index: number): HTMLElement {
     const t = i18n.t;
     const isSelected = !this.creating && this.selected?.id === profile.id;
+    const avatar = characterAvatar(profile.avatar);
+    if (isSelected) livePreview.show(avatar, profile.avatar);
     return el(
       'button',
       {
@@ -123,7 +135,7 @@ export class ProfileScreen {
         'aria-pressed': String(isSelected),
         onClick: () => this.select(profile),
       },
-      el('span', { class: 'avatar-ring' }, avatarImg(profile.avatar, 'avatar-img')),
+      el('span', { class: 'avatar-ring' }, avatar),
       el('strong', { class: 'profile-name', text: profile.name }),
       el(
         'span',
@@ -176,24 +188,6 @@ export class ProfileScreen {
       'data-1p-ignore': 'true',
       'aria-label': t.profileName,
     });
-    const avatarButtons = AVATARS.map((candidate) =>
-      el(
-        'button',
-        {
-          class: candidate === avatar ? 'avatar-option is-active' : 'avatar-option',
-          'aria-pressed': String(candidate === avatar),
-          onClick: (event) => {
-            avatar = candidate;
-            avatarButtons.forEach((button) => {
-              const isActive = button === event.currentTarget;
-              button.classList.toggle('is-active', isActive);
-              button.setAttribute('aria-pressed', String(isActive));
-            });
-          },
-        },
-        avatarImg(candidate, 'avatar-img'),
-      ),
-    );
     const submit = () => {
       const name = input.value.trim();
       if (!name) return input.focus();
@@ -209,7 +203,7 @@ export class ProfileScreen {
       el('h3', { class: 'panel-title', text: t.newProfile }),
       input,
       el('p', { class: 'field-label', text: t.chooseAvatar }),
-      el('div', { class: 'avatar-options' }, ...avatarButtons),
+      avatarPicker(avatar, (picked) => (avatar = picked)),
       el(
         'div',
         { class: 'actions actions-end' },
@@ -234,11 +228,7 @@ export class ProfileScreen {
       el(
         'div',
         { class: 'panel-head' },
-        el(
-          'span',
-          { class: 'avatar-ring avatar-ring-small' },
-          avatarImg(profile.avatar, 'avatar-img'),
-        ),
+        el('span', { class: 'avatar-ring avatar-ring-small' }, characterAvatar(profile.avatar)),
         el('h3', { class: 'panel-title', text: profile.name }),
       ),
       el('p', { class: 'field-label', text: t.wordLanguage }),

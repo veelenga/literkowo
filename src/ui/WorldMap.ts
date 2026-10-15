@@ -3,7 +3,8 @@ import { courseFor, type Course } from '../course/course';
 import { MAX_STARS } from '../course/scoring';
 import { i18n } from '../i18n/i18n';
 import { totalStars, type Profile } from '../profiles/Profile';
-import { avatarImg, el, icon, svg } from './dom';
+import { characterAvatar } from './CharacterAvatar';
+import { el, icon, svg } from './dom';
 import { soundToggle } from './SoundToggle';
 
 const TRAIL_EDGE = 8;
@@ -62,11 +63,7 @@ export class WorldMap {
       el(
         'button',
         { class: 'profile-chip', title: t.switchPlayer, onClick: this.actions.onSwitchPlayer },
-        el(
-          'span',
-          { class: 'avatar-ring avatar-ring-tiny' },
-          avatarImg(this.profile.avatar, 'avatar-img'),
-        ),
+        el('span', { class: 'avatar-ring avatar-ring-tiny' }, characterAvatar(this.profile.avatar)),
         el(
           'span',
           { class: 'profile-chip-text' },
