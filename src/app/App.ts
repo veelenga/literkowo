@@ -31,6 +31,7 @@ import { OverlaySlot, type Overlay } from '../ui/overlay';
 import { pauseOverlay } from '../ui/PauseOverlay';
 import { ProfileScreen } from '../ui/ProfileScreen';
 import { ShopScreen } from '../ui/ShopScreen';
+import { watchStageInsets } from '../ui/stageInsets';
 import { storyCard } from '../ui/StoryCard';
 import { TouchTyping } from '../ui/TouchTyping';
 import { WorldMap } from '../ui/WorldMap';
@@ -172,6 +173,9 @@ export class App {
       onPause: (paused) => this.setPaused(paused),
       onFinished: (result) => this.finishLevel(profile, level, result),
     });
+    this.disposeScreen = watchStageInsets(stage, hud.element, (insets) =>
+      this.game?.setInsets(insets),
+    );
     this.game.start();
     if (this.attention.away) this.game.suspend();
   }
