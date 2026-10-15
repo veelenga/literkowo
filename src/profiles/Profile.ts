@@ -1,9 +1,10 @@
 export type WordLanguage = 'pl' | 'en';
 
-export interface LessonResult {
+export interface LevelResult {
+  stars: number;
+  score: number;
   accuracy: number;
   wpm: number;
-  score: number;
 }
 
 export interface Profile {
@@ -11,14 +12,13 @@ export interface Profile {
   name: string;
   avatar: string;
   wordLanguage: WordLanguage;
-  bestScore: number;
-  gamesPlayed: number;
-  lessonResults: Record<number, LessonResult>;
+  totalScore: number;
+  lettersFreed: number;
+  seenStories: string[];
+  levelResults: Record<string, LevelResult>;
 }
 
 export const AVATARS = ['🦊', '🐺', '🦉', '🐉', '🦄', '🐸', '🐧', '🦋'];
-
-export const LESSON_PASS_ACCURACY = 0.9;
 
 export function createProfile(name: string, avatar: string): Profile {
   return {
@@ -26,14 +26,24 @@ export function createProfile(name: string, avatar: string): Profile {
     name,
     avatar,
     wordLanguage: 'pl',
-    bestScore: 0,
-    gamesPlayed: 0,
-    lessonResults: {},
+    totalScore: 0,
+    lettersFreed: 0,
+    seenStories: [],
+    levelResults: {},
   };
 }
 
-export function highestUnlockedLesson(profile: Profile): number {
-  let lesson = 1;
-  while (profile.lessonResults[lesson]?.accuracy >= LESSON_PASS_ACCURACY) lesson += 1;
-  return lesson;
+export function normalizeProfile(raw: Partial<Profile>): Profile {
+  return {
+    ...createProfile(raw.name ?? '?', raw.avatar ?? AVATARS[0]),
+    ...raw,
+    seenStories: raw.seenStories ?? [],
+    levelResults: raw.levelResults ?? {},
+    totalScore: raw.totalScore ?? 0,
+    lettersFreed: raw.lettersFreed ?? 0,
+  } as Profile;
+}
+
+export function totalStars(profile: Profile): number {
+  return Object.values(profile.levelResults).reduce((sum, result) => sum + result.stars, 0);
 }

@@ -1,10 +1,12 @@
 import type { WordLanguage } from '../profiles/Profile';
-import { allowedKeysUpTo, lessonById } from './lessons';
+import { allowedKeysFor, previousLevel, type Level } from './regions';
 import { WORD_LISTS } from './wordLists';
 
 const MIN_REAL_WORDS = 12;
 const GENERATED_MIN_LENGTH = 2;
 const GENERATED_MAX_LENGTH = 5;
+const BOSS_MIN_LENGTH = 4;
+const BOSS_GENERATED_LENGTH: [number, number] = [5, 7];
 const NEW_KEY_BIAS = 0.5;
 
 export class WordSource {
@@ -12,17 +14,29 @@ export class WordSource {
   private readonly fresh: string;
   private readonly realWords: string[];
 
-  constructor(lessonId: number, language: WordLanguage) {
-    this.allowed = allowedKeysUpTo(lessonId);
-    this.fresh = lessonById(lessonId).newKeys;
+  constructor(level: Level, language: WordLanguage) {
+    this.allowed = allowedKeysFor(level);
+    this.fresh = level.isBoss
+      ? (previousLevel(level, language)?.newKeys ?? this.allowed)
+      : level.newKeys;
     this.realWords = WORD_LISTS[language].filter((word) => this.fitsAllowed(word));
+  }
+
+  singleLetter(): string {
+    return randomChar(this.fresh);
   }
 
   next(): string {
     if (this.realWords.length >= MIN_REAL_WORDS && Math.random() > NEW_KEY_BIAS) {
       return pick(this.realWords.filter((word) => this.usesFresh(word))) ?? pick(this.realWords)!;
     }
-    return this.generate();
+    return this.generate(GENERATED_MIN_LENGTH, GENERATED_MAX_LENGTH);
+  }
+
+  bossWord(): string {
+    const long = this.realWords.filter((word) => word.length >= BOSS_MIN_LENGTH);
+    if (long.length >= MIN_REAL_WORDS) return pick(long)!;
+    return this.generate(...BOSS_GENERATED_LENGTH);
   }
 
   private fitsAllowed(word: string): boolean {
@@ -33,8 +47,8 @@ export class WordSource {
     return [...word].some((char) => this.fresh.includes(char));
   }
 
-  private generate(): string {
-    const length = randomInt(GENERATED_MIN_LENGTH, GENERATED_MAX_LENGTH);
+  private generate(min: number, max: number): string {
+    const length = randomInt(min, max);
     return Array.from({ length }, () =>
       Math.random() < NEW_KEY_BIAS ? randomChar(this.fresh) : randomChar(this.allowed),
     ).join('');

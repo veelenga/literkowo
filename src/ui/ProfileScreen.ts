@@ -1,10 +1,9 @@
-import { LESSONS } from '../course/lessons';
 import { i18n } from '../i18n/i18n';
 import type { UiLanguage } from '../i18n/translations';
 import {
   AVATARS,
   createProfile,
-  highestUnlockedLesson,
+  totalStars,
   type Profile,
   type WordLanguage,
 } from '../profiles/Profile';
@@ -14,7 +13,7 @@ import { el, present } from './dom';
 const MAX_NAME_LENGTH = 16;
 
 interface Actions {
-  onPlay: (profile: Profile, lessonId: number) => void;
+  onPlay: (profile: Profile) => void;
 }
 
 export class ProfileScreen {
@@ -74,9 +73,7 @@ export class ProfileScreen {
       },
       el('span', { class: 'avatar avatar-large', text: profile.avatar }),
       el('strong', { text: profile.name }),
-      el('small', {
-        text: `${t.bestScore}: ${profile.bestScore} · ${t.gamesPlayed}: ${profile.gamesPlayed}`,
-      }),
+      el('small', { text: `★ ${totalStars(profile)} · ${t.bestScore}: ${profile.totalScore}` }),
     );
   }
 
@@ -157,26 +154,6 @@ export class ProfileScreen {
 
   private setupPanel(profile: Profile): HTMLElement {
     const t = i18n.t;
-    let lessonId = highestUnlockedLesson(profile);
-    const unlocked = lessonId;
-    const lessonButtons = LESSONS.map((lesson) =>
-      el(
-        'button',
-        {
-          class: lesson.id === lessonId ? 'lesson is-active' : 'lesson',
-          disabled: lesson.id > unlocked ? 'true' : undefined,
-          title: lesson.id > unlocked ? t.locked : undefined,
-          onClick: (event: Event) => {
-            lessonId = lesson.id;
-            lessonButtons.forEach((button) =>
-              button.classList.toggle('is-active', button === event.currentTarget),
-            );
-          },
-        },
-        el('small', { text: `${lesson.id}` }),
-        el('span', { text: lesson.title[profile.wordLanguage] }),
-      ),
-    );
     return el(
       'div',
       { class: 'panel' },
@@ -188,15 +165,13 @@ export class ProfileScreen {
         this.languageChip(profile, 'pl', t.polish),
         this.languageChip(profile, 'en', t.english),
       ),
-      el('p', { class: 'muted', text: t.chooseLesson }),
-      el('div', { class: 'lesson-grid' }, ...lessonButtons),
       el(
         'div',
         { class: 'actions' },
         el('button', {
           class: 'button button-primary button-large',
           text: `▶ ${t.play}`,
-          onClick: () => this.actions.onPlay(profile, lessonId),
+          onClick: () => this.actions.onPlay(profile),
         }),
         el('button', {
           class: 'button button-danger',

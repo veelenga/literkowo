@@ -1,4 +1,4 @@
-import type { Profile } from './Profile';
+import { normalizeProfile, type Profile } from './Profile';
 
 const PROFILES_KEY = 'literkowo.profiles';
 const ACTIVE_KEY = 'literkowo.activeProfile';
@@ -40,7 +40,7 @@ export class ProfileStore {
   private load(): Profile[] {
     try {
       const raw = localStorage.getItem(PROFILES_KEY);
-      return raw ? (JSON.parse(raw) as Profile[]) : [];
+      return raw ? (JSON.parse(raw) as Partial<Profile>[]).map(normalizeProfile) : [];
     } catch {
       return [];
     }

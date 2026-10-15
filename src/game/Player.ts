@@ -5,10 +5,13 @@ const CREAM = 0xfff0dc;
 const DARK = 0x2b2117;
 const BOB_SPEED = 3;
 const BOB_HEIGHT = 0.06;
+const HOP_DURATION = 0.35;
+const HOP_HEIGHT = 0.6;
 
 export class Player {
   readonly object = new THREE.Group();
   private readonly body: THREE.Group;
+  private hop = 0;
 
   constructor() {
     this.body = this.buildFox();
@@ -16,8 +19,15 @@ export class Player {
     this.object.position.y = 0.05;
   }
 
-  update(elapsed: number): void {
-    this.body.position.y = Math.sin(elapsed * BOB_SPEED) * BOB_HEIGHT;
+  update(delta: number, elapsed: number): void {
+    this.hop = Math.max(0, this.hop - delta);
+    const hopPhase = this.hop / HOP_DURATION;
+    const hopHeight = Math.sin(hopPhase * Math.PI) * HOP_HEIGHT;
+    this.body.position.y = Math.sin(elapsed * BOB_SPEED) * BOB_HEIGHT + hopHeight;
+  }
+
+  jump(): void {
+    this.hop = HOP_DURATION;
   }
 
   lookAt(target: THREE.Vector3): void {
