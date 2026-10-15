@@ -1,3 +1,5 @@
+import { AVATARS } from '../profiles/Profile';
+
 export interface PortraitRenderer {
   render(character: string): Promise<string>;
   dispose(): void;
@@ -6,7 +8,15 @@ export interface PortraitRenderer {
 export type PortraitRendererFactory = () => Promise<PortraitRenderer>;
 export type FrameScheduler = (callback: () => void) => void;
 
+export interface PortraitCacheOptions {
+  createRenderer: PortraitRendererFactory;
+  scheduleFrame: FrameScheduler;
+  rosterSize: number;
+  idleReleaseMs: number;
+}
+
 const CANCELLED_ERROR = 'Portrait request was cancelled';
+const IDLE_RELEASE_MS = 4000;
 
 function ignore(): void {}
 
@@ -29,12 +39,10 @@ export class PortraitCache {
   private readonly jobs = new Map<string, PortraitJob>();
   private readonly queue: PortraitJob[] = [];
   private renderer: Promise<PortraitRenderer> | undefined;
+  private idleRelease: ReturnType<typeof setTimeout> | undefined;
   private draining = false;
 
-  constructor(
-    private readonly createRenderer: PortraitRendererFactory,
-    private readonly scheduleFrame: FrameScheduler,
-  ) {}
+  constructor(private readonly options: PortraitCacheOptions) {}
 
   cached(character: string): string | undefined {
     return this.portraits.get(character);
@@ -58,6 +66,7 @@ export class PortraitCache {
     const job = new PortraitJob(character);
     this.jobs.set(character, job);
     this.queue.push(job);
+    this.cancelIdleRelease();
     if (!this.draining) void this.drain();
     return job;
   }
@@ -70,11 +79,11 @@ export class PortraitCache {
       if (job) await this.run(job);
     }
     this.draining = false;
-    this.disposeRenderer();
+    this.releaseRendererWhenIdle();
   }
 
   private nextFrame(): Promise<void> {
-    return new Promise((resolve) => this.scheduleFrame(resolve));
+    return new Promise((resolve) => this.options.scheduleFrame(resolve));
   }
 
   private async run(job: PortraitJob): Promise<void> {
@@ -107,7 +116,7 @@ export class PortraitCache {
   }
 
   private acquireRenderer(): Promise<PortraitRenderer> {
-    this.renderer ??= this.createRenderer();
+    this.renderer ??= this.options.createRenderer();
     return this.renderer;
   }
 
@@ -118,7 +127,19 @@ export class PortraitCache {
     this.disposeRenderer();
   }
 
+  private releaseRendererWhenIdle(): void {
+    if (this.portraits.size >= this.options.rosterSize) return this.disposeRenderer();
+    this.cancelIdleRelease();
+    this.idleRelease = setTimeout(() => this.disposeRenderer(), this.options.idleReleaseMs);
+  }
+
+  private cancelIdleRelease(): void {
+    clearTimeout(this.idleRelease);
+    this.idleRelease = undefined;
+  }
+
   private disposeRenderer(): void {
+    this.cancelIdleRelease();
     const pending = this.renderer;
     this.renderer = undefined;
     pending?.then((renderer) => renderer.dispose(), ignore);
@@ -133,7 +154,12 @@ function onNextAnimationFrame(callback: () => void): void {
   requestAnimationFrame(() => callback());
 }
 
-const portraits = new PortraitCache(loadStudio, onNextAnimationFrame);
+const portraits = new PortraitCache({
+  createRenderer: loadStudio,
+  scheduleFrame: onNextAnimationFrame,
+  rosterSize: AVATARS.length,
+  idleReleaseMs: IDLE_RELEASE_MS,
+});
 
 export function portraitFor(character: string): Promise<string> {
   return portraits.portraitFor(character);

@@ -1,13 +1,17 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PortraitCache, type PortraitRenderer } from './CharacterPortraits';
 
-function settle(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 0));
-}
+const MICROTASK_TICKS = 20;
+const IDLE_RELEASE_MS = 1000;
+const ROSTER_SIZE = 18;
 
 interface FakeRenderer extends PortraitRenderer {
   rendered: string[];
   disposed: boolean;
+}
+
+async function settle(): Promise<void> {
+  for (let tick = 0; tick < MICROTASK_TICKS; tick += 1) await Promise.resolve();
 }
 
 function fakeRenderer(): FakeRenderer {
@@ -25,7 +29,7 @@ function fakeRenderer(): FakeRenderer {
   return renderer;
 }
 
-function setup(options: { failToStart?: boolean } = {}) {
+function setup(options: { failToStart?: boolean; rosterSize?: number } = {}) {
   const frames: Array<() => void> = [];
   const renderers: FakeRenderer[] = [];
   const createRenderer = vi.fn(() => {
@@ -34,7 +38,12 @@ function setup(options: { failToStart?: boolean } = {}) {
     renderers.push(renderer);
     return Promise.resolve<PortraitRenderer>(renderer);
   });
-  const cache = new PortraitCache(createRenderer, (callback) => frames.push(callback));
+  const cache = new PortraitCache({
+    createRenderer,
+    scheduleFrame: (callback) => frames.push(callback),
+    rosterSize: options.rosterSize ?? ROSTER_SIZE,
+    idleReleaseMs: IDLE_RELEASE_MS,
+  });
   const nextFrame = async () => {
     frames.shift()?.();
     await settle();
@@ -43,6 +52,10 @@ function setup(options: { failToStart?: boolean } = {}) {
 }
 
 describe('PortraitCache', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('waits for a request before creating the renderer', async () => {
     const { createRenderer, frames } = setup();
     await settle();
@@ -77,17 +90,45 @@ describe('PortraitCache', () => {
     expect(renderers.flatMap((renderer) => renderer.rendered)).toEqual(['d']);
   });
 
-  it('disposes the renderer once the queue is empty and starts a new one later', async () => {
+  it('keeps the renderer for the next request that comes soon after the queue empties', async () => {
+    vi.useFakeTimers();
     const { cache, createRenderer, renderers, nextFrame } = setup();
     void cache.portraitFor('a');
     await nextFrame();
+    vi.advanceTimersByTime(IDLE_RELEASE_MS / 2);
+
+    void cache.portraitFor('b');
+    await nextFrame();
+
+    expect(createRenderer).toHaveBeenCalledTimes(1);
+    expect(renderers[0].rendered).toEqual(['a', 'b']);
+    expect(renderers[0].disposed).toBe(false);
+  });
+
+  it('disposes the renderer once it has been idle for a while', async () => {
+    vi.useFakeTimers();
+    const { cache, createRenderer, renderers, nextFrame } = setup();
+    void cache.portraitFor('a');
+    await nextFrame();
+
+    vi.advanceTimersByTime(IDLE_RELEASE_MS);
+    await settle();
     expect(renderers[0].disposed).toBe(true);
 
     void cache.portraitFor('b');
     await nextFrame();
     expect(createRenderer).toHaveBeenCalledTimes(2);
     expect(renderers[1].rendered).toEqual(['b']);
-    expect(renderers[1].disposed).toBe(true);
+  });
+
+  it('disposes the renderer right away once every character is cached', async () => {
+    const { cache, renderers, nextFrame } = setup({ rosterSize: 2 });
+    cache.preload(['a', 'b']);
+    await nextFrame();
+    expect(renderers[0].disposed).toBe(false);
+
+    await nextFrame();
+    expect(renderers[0].disposed).toBe(true);
   });
 
   it('cancels waiting requests and disposes the renderer on release', async () => {

@@ -10,6 +10,7 @@ const ENCODE_ERROR = 'Could not encode the character portrait';
 export class PortraitStudio implements PortraitRenderer {
   private readonly renderer = createCharacterRenderer({ preserveDrawingBuffer: true });
   private readonly stage = new CharacterStage();
+  private posed: IdleCharacter | undefined;
   private closed = false;
 
   constructor() {
@@ -18,25 +19,28 @@ export class PortraitStudio implements PortraitRenderer {
   }
 
   async render(character: string): Promise<string> {
-    const model = await IdleCharacter.load(character);
-    try {
-      if (this.closed) throw new Error(STUDIO_CLOSED_ERROR);
-      return await this.capture(model);
-    } finally {
-      model.dispose();
+    const next = await IdleCharacter.load(character);
+    if (this.closed) {
+      next.dispose();
+      throw new Error(STUDIO_CLOSED_ERROR);
     }
+    return this.capture(next);
   }
 
   dispose(): void {
     this.closed = true;
+    this.posed?.dispose();
     this.stage.dispose();
     this.renderer.dispose();
     this.renderer.forceContextLoss();
   }
 
-  private capture(character: IdleCharacter): Promise<string> {
-    this.stage.turntable.add(character.model);
+  private capture(next: IdleCharacter): Promise<string> {
+    const previous = this.posed;
+    this.posed = next;
+    this.stage.show(next);
     this.renderer.render(this.stage.scene, this.stage.camera);
+    previous?.dispose();
     return canvasToDataUrl(this.renderer.domElement);
   }
 }

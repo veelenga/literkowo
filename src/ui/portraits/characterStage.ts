@@ -54,6 +54,11 @@ export class CharacterStage {
     this.camera.updateProjectionMatrix();
   }
 
+  show(character: IdleCharacter): void {
+    this.turntable.clear();
+    this.turntable.add(character.model);
+  }
+
   dispose(): void {
     disposeObject(this.scene);
   }

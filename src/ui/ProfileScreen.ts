@@ -68,7 +68,7 @@ export class ProfileScreen {
     const t = i18n.t;
     if (this.rendered) this.element.classList.remove('is-intro');
     this.rendered = true;
-    livePreview.stop();
+    livePreview.hide();
     this.element.replaceChildren(
       this.backdrop,
       this.languageSwitch(),
