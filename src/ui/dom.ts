@@ -28,6 +28,10 @@ type AttributeProps = {
   disabled?: boolean;
   maxlength?: number;
   autocomplete?: string;
+  autocapitalize?: string;
+  autocorrect?: string;
+  inputmode?: string;
+  spellcheck?: 'true' | 'false';
   [aria: `aria-${string}`]: string | undefined;
   [data: `data-${string}`]: string | undefined;
 };

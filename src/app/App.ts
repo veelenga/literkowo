@@ -10,6 +10,7 @@ import {
   type Attempt,
 } from '../course/progress';
 import { starsFor } from '../course/scoring';
+import { hasCoarsePointer } from '../game/deviceProbe';
 import type { Game, GameResult } from '../game/Game';
 import type { SessionStats } from '../game/SessionStats';
 import { i18n } from '../i18n/i18n';
@@ -27,6 +28,7 @@ import { OverlaySlot, type Overlay } from '../ui/overlay';
 import { pauseOverlay } from '../ui/PauseOverlay';
 import { ProfileScreen } from '../ui/ProfileScreen';
 import { storyCard } from '../ui/StoryCard';
+import { TouchTyping } from '../ui/TouchTyping';
 import { WorldMap } from '../ui/WorldMap';
 import { devLevelFromUrl, devProfile, unlockAudioOnFirstInput } from './devShortcut';
 import { loadGameModule, prefetchGameModule, type GameModule } from './gameModule';
@@ -41,6 +43,7 @@ export class App {
   private readonly overlays: OverlaySlot;
   private readonly attention = new PageAttention((away) => this.onAttentionChange(away));
   private game: Game | undefined;
+  private touch: TouchTyping | undefined;
   private pause: Overlay | undefined;
   private levelToken = 0;
   private disposeScreen: (() => void) | undefined;
@@ -118,10 +121,17 @@ export class App {
 
   private runLevel({ Game, themeFor }: GameModule, profile: Profile, level: Level): void {
     const stage = el('div', { class: 'stage' });
-    const hud = new Hud(profile, () => this.showMap(profile));
-    const keyboard = new KeyboardHint();
+    const type = (char: string) => this.game?.typeCharacter(char);
+    const hud = new Hud(profile, {
+      onMap: () => this.showMap(profile),
+      onPause: () => this.game?.togglePause(),
+    });
+    const keyboard = new KeyboardHint(type);
     const callouts = new Callouts();
-    this.showScreen(stage, callouts.element, hud.element, keyboard.element);
+    this.showScreen(
+      el('div', { class: 'level-screen' }, stage, callouts.element, hud.element, keyboard.element),
+    );
+    if (hasCoarsePointer()) this.touch = new TouchTyping(stage, type);
 
     const config = {
       character: profile.avatar,
@@ -164,7 +174,7 @@ export class App {
 
   private pauseLevel(): void {
     music.pause();
-    this.pause = pauseOverlay();
+    this.pause = pauseOverlay(() => this.game?.togglePause());
     this.overlays.open(this.pause);
   }
 
@@ -172,6 +182,7 @@ export class App {
     music.resume();
     if (this.pause) this.overlays.release(this.pause);
     this.pause = undefined;
+    this.touch?.focus();
   }
 
   private showLoadError(profile: Profile, level: Level, error: unknown): void {
@@ -254,6 +265,8 @@ export class App {
     this.levelToken += 1;
     this.game?.destroy();
     this.game = undefined;
+    this.touch?.dispose();
+    this.touch = undefined;
     this.pause = undefined;
     this.syncAudio();
   }

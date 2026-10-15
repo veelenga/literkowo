@@ -1820,6 +1820,7 @@ svg.stat-icon {
     0 6px 0 rgba(3, 6, 20, 0.45),
     var(--shadow-lg);
   backdrop-filter: blur(6px);
+  touch-action: manipulation;
   animation: slide-up var(--duration-slow) var(--ease-out) backwards;
 }
 
@@ -1926,6 +1927,23 @@ svg.stat-icon {
   opacity: 0.7;
 }
 
+.key.is-pressed {
+  animation: key-press 180ms var(--ease-out);
+}
+
+.key-alt.is-latched {
+  color: var(--accent-ink);
+  background: linear-gradient(180deg, var(--accent-light), var(--accent));
+  border-style: solid;
+  border-color: var(--accent-light);
+}
+
+@keyframes key-press {
+  50% {
+    scale: 0.9;
+  }
+}
+
 .key.is-next {
   z-index: 1;
   color: #0b1130;
@@ -1957,6 +1975,18 @@ svg.stat-icon {
   font-size: 0.62em;
   font-weight: 800;
   opacity: 0.75;
+}
+
+.level-screen {
+  position: absolute;
+  top: var(--visible-top, 0px);
+  left: 0;
+  width: 100%;
+  height: var(--visible-height, 100%);
+  overflow: hidden;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .stage {
@@ -2446,7 +2476,8 @@ svg.stat-icon {
   }
 }
 
-.sound-toggle {
+.sound-toggle,
+.hud-pause {
   display: grid;
   place-items: center;
   width: 42px;
@@ -2462,12 +2493,14 @@ svg.stat-icon {
 }
 
 @media (hover: hover) {
-  .sound-toggle:hover {
+  .sound-toggle:hover,
+  .hud-pause:hover {
     background: var(--surface-hover);
   }
 }
 
-.sound-toggle:active {
+.sound-toggle:active,
+.hud-pause:active {
   transform: translateY(2px);
   box-shadow: 0 1px 0 var(--surface-edge);
 }
@@ -2476,10 +2509,15 @@ svg.stat-icon {
   color: var(--muted);
 }
 
-.sound-toggle-icon {
+.sound-toggle-icon,
+.hud-pause-icon {
   width: 22px;
   height: 22px;
   fill: currentColor;
+}
+
+.hud-pause {
+  display: none;
 }
 
 @media (pointer: coarse) {
@@ -2490,9 +2528,14 @@ svg.stat-icon {
   }
 
   .hud-map,
+  .hud-pause,
   .sound-toggle {
     min-width: var(--touch-target);
     height: var(--touch-target);
+  }
+
+  .hud-pause {
+    display: grid;
   }
 }
 
@@ -2519,7 +2562,8 @@ svg.stat-icon {
   }
 
   .keyboard,
-  .kbd {
+  .kbd,
+  .pause-hint {
     display: none;
   }
 

@@ -5,6 +5,7 @@ import { fever } from './fever';
 import { mergeEnemies } from './mergeEnemies';
 import { powerWords } from './powerWords';
 import { quality } from './quality';
+import { touch } from './touch';
 
 export function featureTexts(language: UiLanguage) {
   return {
@@ -14,5 +15,6 @@ export function featureTexts(language: UiLanguage) {
     bossPhases: bossPhases[language],
     enemyTypes: enemyTypes[language],
     quality: quality[language],
+    touch: touch[language],
   };
 }

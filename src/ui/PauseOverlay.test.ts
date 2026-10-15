@@ -1,11 +1,15 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readQualityChoice, saveQualityChoice } from '../game/quality';
 import { pauseOverlay } from './PauseOverlay';
 
 const STORAGE_KEY = 'literkowo.quality';
 
 function chips(): HTMLButtonElement[] {
-  return [...pauseOverlay().element.querySelectorAll<HTMLButtonElement>('.quality-options .chip')];
+  return [
+    ...pauseOverlay(() => undefined).element.querySelectorAll<HTMLButtonElement>(
+      '.quality-options .chip',
+    ),
+  ];
 }
 
 function activeLabels(buttons: HTMLButtonElement[]): string[] {
@@ -37,5 +41,14 @@ describe('pauseOverlay quality picker', () => {
     expect(activeLabels(buttons)).toEqual(['Niska']);
     expect(buttons[3].getAttribute('aria-pressed')).toBe('true');
     expect(buttons[0].getAttribute('aria-pressed')).toBe('false');
+  });
+});
+
+describe('pauseOverlay resume button', () => {
+  it('resumes the level when tapped', () => {
+    const onResume = vi.fn();
+    const overlay = pauseOverlay(onResume);
+    overlay.element.querySelector<HTMLButtonElement>('.button-primary')?.click();
+    expect(onResume).toHaveBeenCalledOnce();
   });
 });

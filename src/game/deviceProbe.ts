@@ -15,8 +15,12 @@ export function readDeviceProbe(): DeviceProbe {
     cores: navigator.hardwareConcurrency || undefined,
     memoryGb: readDeviceMemory(),
     gpu: readGpuName(),
-    coarsePointer: window.matchMedia(COARSE_POINTER_QUERY).matches,
+    coarsePointer: hasCoarsePointer(),
   };
+}
+
+export function hasCoarsePointer(): boolean {
+  return window.matchMedia(COARSE_POINTER_QUERY).matches;
 }
 
 function readDeviceMemory(): number | undefined {

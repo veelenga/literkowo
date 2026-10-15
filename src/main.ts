@@ -9,6 +9,7 @@ import './styles.css';
 import { App } from './app/App';
 import { reloadOnceOnPreloadError } from './app/preloadRecovery';
 import { FINGER_COLORS } from './course/fingers';
+import { fitAboveKeyboard } from './ui/keyboardFit';
 
 const root = document.querySelector<HTMLDivElement>('#app');
 if (!root) throw new Error('Missing #app root');
@@ -18,4 +19,5 @@ for (const [finger, color] of Object.entries(FINGER_COLORS)) {
 }
 
 reloadOnceOnPreloadError();
+fitAboveKeyboard();
 new App(root).start();

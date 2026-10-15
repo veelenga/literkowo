@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { baseKey, fingerFor, needsRightAlt } from './fingers';
+import { baseKey, fingerFor, needsRightAlt, withRightAlt } from './fingers';
 
 describe('fingers', () => {
   it('maps ź to the x key', () => {
@@ -18,5 +18,16 @@ describe('fingers', () => {
     expect(fingerFor('j')).toBe('rightIndex');
     expect(fingerFor('ą')).toBe('leftPinky');
     expect(fingerFor(' ')).toBe('thumb');
+  });
+
+  it('turns a base key into its Polish letter with the right Alt', () => {
+    expect(withRightAlt('a')).toBe('ą');
+    expect(withRightAlt('x')).toBe('ź');
+    expect(withRightAlt('z')).toBe('ż');
+  });
+
+  it('keeps keys without a Polish letter as they are with the right Alt', () => {
+    expect(withRightAlt('f')).toBe('f');
+    expect(withRightAlt(' ')).toBe(' ');
   });
 });

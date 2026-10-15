@@ -1,0 +1,52 @@
+.touch-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  font-size: 16px;
+  caret-color: transparent;
+  pointer-events: none;
+}
+
+.type-pill {
+  position: absolute;
+  top: 62%;
+  left: 50%;
+  translate: -50% -50%;
+  z-index: var(--z-chrome);
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  padding: 0 22px;
+  border-radius: var(--radius-pill);
+  border: 2px solid rgba(255, 240, 200, 0.55);
+  background: linear-gradient(180deg, var(--accent-light), var(--accent) 50%, var(--accent-strong));
+  color: var(--accent-ink);
+  font-size: 1.05rem;
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow:
+    0 4px 0 var(--accent-edge),
+    0 12px 28px rgba(255, 138, 31, 0.4);
+  touch-action: manipulation;
+  animation: type-pill-pulse 1.8s ease-in-out infinite;
+}
+
+:root[data-keyboard-open] .type-pill,
+:root[data-physical-keyboard] .type-pill {
+  display: none;
+}
+
+@keyframes type-pill-pulse {
+  0%,
+  100% {
+    scale: 1;
+  }
+  50% {
+    scale: 1.06;
+  }
+}

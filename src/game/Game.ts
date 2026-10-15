@@ -147,6 +147,17 @@ export class Game {
     this.syncFrames();
   }
 
+  typeCharacter(char: string): void {
+    if (this.acceptsTyping) this.handleChar(char.toLowerCase());
+  }
+
+  togglePause(): void {
+    if (this.finished) return;
+    this.paused = !this.paused;
+    this.syncFrames();
+    this.events.onPause(this.paused);
+  }
+
   destroy(): void {
     this.running = false;
     cancelAnimationFrame(this.frame);
@@ -445,18 +456,14 @@ export class Game {
   }
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
-    if (this.finished) return;
     if (event.key === 'Escape') return this.togglePause();
-    if (this.paused || this.inIntro || isShortcut(event) || event.key.length !== 1) return;
+    if (!this.acceptsTyping || isShortcut(event) || event.key.length !== 1) return;
     event.preventDefault();
-    this.handleChar(event.key.toLowerCase());
+    this.typeCharacter(event.key);
   };
 
-  private togglePause(): void {
-    this.paused = !this.paused;
-    this.timer.reset();
-    this.syncFrames();
-    this.events.onPause(this.paused);
+  private get acceptsTyping(): boolean {
+    return !this.finished && !this.paused && !this.inIntro;
   }
 
   private handleChar(char: string): void {
