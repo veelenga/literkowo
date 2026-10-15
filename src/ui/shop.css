@@ -445,6 +445,25 @@
   filter: drop-shadow(0 0 6px var(--trophy));
 }
 
+@media (--short-screen) {
+  .result-treasures {
+    gap: 5px;
+    margin-top: 8px;
+  }
+
+  .treasure-chip {
+    gap: 4px;
+    padding: 3px 9px 3px 5px;
+    border-width: 1.5px;
+    font-size: 0.78rem;
+  }
+
+  .treasure-icon {
+    width: 15px;
+    height: 15px;
+  }
+}
+
 @media (--low-screen) {
   .shop-header {
     padding-block: calc(8px + var(--safe-top)) 8px;

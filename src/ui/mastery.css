@@ -266,6 +266,24 @@
   background: rgba(255, 255, 255, 0.16);
 }
 
+@media (--short-screen) {
+  .result-keys-list {
+    gap: 6px;
+  }
+
+  .key-chip {
+    gap: 5px;
+    padding: 2px 9px 2px 3px;
+    font-size: 0.9rem;
+  }
+
+  .key-chip-cap {
+    min-width: 22px;
+    height: 20px;
+    font-size: 0.8rem;
+  }
+}
+
 @media (--phone-narrow) {
   .result-keys {
     flex-wrap: wrap;
