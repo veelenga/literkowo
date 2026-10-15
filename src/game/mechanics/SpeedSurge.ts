@@ -82,6 +82,7 @@ export class SpeedSurge implements Mechanic {
   }
 
   private get pace(): number {
+    if (this.context.phase.miniBoss) return CALM_PACE;
     const boss = this.context.enemies.find((enemy) => enemy instanceof Boss);
     return boss && phaseFor(boss.health) === 'rage' ? RAGE_PACE : CALM_PACE;
   }

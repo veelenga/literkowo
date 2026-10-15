@@ -5,6 +5,7 @@ export type PhaseKind = 'warmup' | 'learn' | 'words' | 'boss';
 
 export interface Phase extends Pace {
   readonly kind: PhaseKind;
+  readonly miniBoss?: boolean;
   readonly wave?: number;
   readonly specialShare?: number;
   readonly events?: number;

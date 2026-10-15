@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { LevelKind } from '../course/catalog';
 import { COINS_PER_WORD } from '../course/coins';
-import { KIND_RULES } from '../course/difficulty';
+import { KIND_RULES, MINI_BOSS_HITS } from '../course/difficulty';
 import { LEVELS, REGIONS, type Level } from '../course/regions';
 import { requireLevel } from '../testing/levels';
 import { LEVEL_LIVES, LEVEL_XP_FACTOR, levelPhases, levelPlan } from './LevelPlan';
@@ -14,7 +14,8 @@ const bossLevel = (regionIndex: number): Level =>
 
 const phasesOf = (level: Level): RunPhase[] => levelPhases(level, 'pl');
 
-const mainPhase = (level: Level): Phase => phasesOf(level).at(-1)!;
+const mainPhase = (level: Level): Phase =>
+  phasesOf(level).find((phase) => phase.kind !== 'warmup')!;
 
 const levelsOf = (kind: LevelKind): Level[] => LEVELS.filter((level) => level.kind === kind);
 
@@ -95,7 +96,7 @@ describe('levelPlan', () => {
     });
   });
 
-  it('runs a review level as a warmup and a longer words phase', () => {
+  it('runs a review level as a warmup, a longer words phase and a mini boss', () => {
     const plan = levelPlan(requireLevel('polana-8'), 'pl');
     expectSteady(plan.phaseAt(0), {
       kind: 'warmup',
@@ -110,7 +111,10 @@ describe('levelPlan', () => {
       spawnInterval: 4.349196,
       rampTo: { speed: 0.439366, spawnInterval: 4.33793 },
     });
-    expect(plan.phaseAt(2)).toBeUndefined();
+    expectSteady(plan.phaseAt(2), { kind: 'boss', count: 3, speed: 0.351493, spawnInterval: 0 });
+    expect(plan.phaseAt(2)?.miniBoss).toBe(true);
+    expect(plan.phaseAt(2)?.words).toBe(plan.phaseAt(1)?.words);
+    expect(plan.phaseAt(3)).toBeUndefined();
     expect(plan.phaseAt(1)?.words).toEqual({
       allowedKeys: 'fjdk',
       focusKeys: 'dk',
@@ -124,6 +128,7 @@ describe('levelPlan', () => {
     const plan = levelPlan(requireLevel('polana-19'), 'pl');
     expectSteady(plan.phaseAt(0), { kind: 'boss', count: 6, speed: 0.340408, spawnInterval: 0 });
     expect(plan.phaseAt(1)).toBeUndefined();
+    expect(plan.phaseAt(0)?.miniBoss).toBeUndefined();
     expect(plan.phaseAt(0)?.words).toEqual({
       allowedKeys: 'fjdksla;',
       focusKeys: 'fjdksla;',
@@ -157,7 +162,7 @@ describe('levelPhases', () => {
     const kinds = (id: string) => phasesOf(requireLevel(id)).map((phase) => phase.kind);
     expect(kinds('polana-1')).toEqual(['warmup', 'learn']);
     expect(kinds('polana-2')).toEqual(['warmup', 'words']);
-    expect(kinds('polana-3')).toEqual(['warmup', 'words']);
+    expect(kinds('polana-3')).toEqual(['warmup', 'words', 'boss']);
     expect(kinds('polana-19')).toEqual(['boss']);
   });
 
@@ -202,6 +207,23 @@ describe('levelPhases', () => {
       }
     },
   );
+
+  it('ends only review levels with a mini boss a little slower than their last words', () => {
+    for (const level of LEVELS) {
+      const miniBoss = phasesOf(level).find((phase) => phase.miniBoss);
+      expect(miniBoss !== undefined).toBe(level.kind === 'review');
+      if (!miniBoss) continue;
+      expect(miniBoss.kind).toBe('boss');
+      expect(miniBoss.count).toBeGreaterThanOrEqual(MINI_BOSS_HITS.first);
+      expect(miniBoss.count).toBeLessThanOrEqual(MINI_BOSS_HITS.last);
+      expect(miniBoss.speed).toBeLessThan(mainPhase(level).rampTo?.speed ?? 0);
+    }
+  });
+
+  it('gives later mini bosses more hits', () => {
+    const hits = (id: string) => phasesOf(requireLevel(id)).at(-1)?.count;
+    expect([hits('polana-3'), hits('gory-10'), hits('wyspa-23')]).toEqual([3, 4, 5]);
+  });
 
   it('plans a single boss phase that gets tougher with each region', () => {
     const bosses = REGIONS.map((_, index) => phasesOf(bossLevel(index)));

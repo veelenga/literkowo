@@ -37,6 +37,7 @@ export interface WordStage {
 export interface Difficulty {
   readonly warmup: Pace | undefined;
   readonly main: Pace;
+  readonly miniBoss: Pace | undefined;
   readonly lengths: LetterRange;
   readonly generatedLengths: LetterRange;
   readonly stages: readonly WordStage[];
@@ -73,6 +74,8 @@ export const GENERATED_MAX_LENGTH: Span = { first: 3, last: 5 };
 export const BOSS_HITS: Span = { first: 4, last: 14 };
 export const BOSS_SPEED: Span = { first: 0.3, last: 0.52 };
 export const BOSS_LENGTHS: LetterRange = { min: 2, max: 5 };
+export const MINI_BOSS_HITS: Span = { first: 3, last: 5 };
+export const MINI_BOSS_SPEED_SHARE = 0.8;
 export const COMBO_LENGTHS: LetterRange = { min: 1, max: 3 };
 export const FOCUS_WORD_LENGTHS: LetterRange = { min: 2, max: 3 };
 export const PRACTICE_LENGTHS: LetterRange = { min: 2, max: 4 };
@@ -115,6 +118,7 @@ export function difficultyFor(level: Level): Difficulty {
   return {
     warmup: { ...rules.warmup, speed: start.speed },
     main: { count: Math.round(valueAt(rules.wordCount, position)), ...start, rampTo: end },
+    miniBoss: level.kind === 'review' ? miniBossPace(end, position) : undefined,
     lengths,
     generatedLengths: generatedWithin(lengths, position),
     stages: rules.stages,
@@ -130,6 +134,14 @@ export function levelTempo(level: Level): LevelTempo {
 export function courseTempo(progress: number): Tempo {
   const eased = progress ** PACE_EASING;
   return { speed: valueAt(WORD_SPEED, eased), spawnInterval: valueAt(SPAWN_INTERVAL, eased) };
+}
+
+function miniBossPace(end: Tempo, position: number): Pace {
+  return {
+    count: Math.round(valueAt(MINI_BOSS_HITS, position)),
+    speed: end.speed * MINI_BOSS_SPEED_SHARE,
+    spawnInterval: NO_SPAWN_INTERVAL,
+  };
 }
 
 function paceSpans(levels: readonly Level[]): Map<string, PaceSpan> {
@@ -152,6 +164,7 @@ function bossDifficulty(position: number): Difficulty {
       speed: valueAt(BOSS_SPEED, position),
       spawnInterval: NO_SPAWN_INTERVAL,
     },
+    miniBoss: undefined,
     lengths: BOSS_LENGTHS,
     generatedLengths: generatedWithin(BOSS_LENGTHS, position),
     stages: NO_STAGES,

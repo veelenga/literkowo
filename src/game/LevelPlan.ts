@@ -17,10 +17,13 @@ const MAIN_PHASE: Readonly<Record<LevelKind, PhaseKind>> = {
 };
 
 export function levelPhases(level: Level, language: WordLanguage): RunPhase[] {
-  const { warmup, main } = difficultyFor(level);
+  const { warmup, main, miniBoss } = difficultyFor(level);
   const words = levelWordRules(level, language);
-  const mainPhase: RunPhase = { kind: MAIN_PHASE[level.kind], ...main, words };
-  return warmup ? [{ kind: 'warmup', ...warmup, words }, mainPhase] : [mainPhase];
+  const opening: RunPhase[] = warmup ? [{ kind: 'warmup', ...warmup, words }] : [];
+  const closing: RunPhase[] = miniBoss
+    ? [{ kind: 'boss', ...miniBoss, miniBoss: true, words }]
+    : [];
+  return [...opening, { kind: MAIN_PHASE[level.kind], ...main, words }, ...closing];
 }
 
 export function levelPlan(level: Level, language: WordLanguage): RunPlan {

@@ -19,7 +19,7 @@ import {
   frameBoard,
   type StageInsets,
 } from './board';
-import { Boss } from './Boss';
+import { BOSS_SCALE, Boss, MINI_BOSS_SCALE } from './Boss';
 import { CameraShake } from './CameraShake';
 import { Enemy, type EnemyLook } from './Enemy';
 import type { Tally } from '../course/counters';
@@ -420,12 +420,14 @@ export class Game {
 
   private spawnBossOnce(): void {
     if (this.boss) return;
+    const isMini = this.phase.miniBoss === true;
     this.boss = new Boss(
       this.labels.createLabel(),
       this.phase.speed,
       this.look(),
-      () => this.words.bossWord(),
+      isMini ? () => this.words.next() : () => this.words.bossWord(),
       this.phase.count,
+      isMini ? MINI_BOSS_SCALE : BOSS_SCALE,
     );
     this.addEnemy(this.boss, BOSS_SPAWN_RADIUS);
   }

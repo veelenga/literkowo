@@ -5,6 +5,8 @@ import {
   difficultyFor,
   FOCUS_WORD_LENGTHS,
   levelTempo,
+  MINI_BOSS_HITS,
+  MINI_BOSS_SPEED_SHARE,
   PRACTICE_LENGTHS,
   REVIEW_LENGTHS,
   WORD_SPEED,
@@ -92,6 +94,25 @@ describe('difficultyFor', () => {
       expect(generatedLengths.max).toBeLessThanOrEqual(lengths.max);
       expect(generatedLengths.max).toBeGreaterThanOrEqual(generatedLengths.min);
     }
+  });
+
+  it('closes only review levels with a mini boss of 3 to 5 hits', () => {
+    for (const level of LEVELS) {
+      const { miniBoss } = difficultyFor(level);
+      expect(miniBoss !== undefined).toBe(level.kind === 'review');
+    }
+    expect(difficultyFor(requireLevel('polana-3')).miniBoss?.count).toBe(MINI_BOSS_HITS.first);
+    expect(difficultyFor(requireLevel('wyspa-23')).miniBoss?.count).toBe(MINI_BOSS_HITS.last);
+  });
+
+  it('sends the mini boss a little slower than the last words of the review', () => {
+    const level = requireLevel('las-10');
+    const { miniBoss } = difficultyFor(level);
+    expect(miniBoss?.speed).toBeCloseTo(
+      levelTempo(level).end.speed * MINI_BOSS_SPEED_SHARE,
+      PRECISION,
+    );
+    expect(miniBoss?.spawnInterval).toBe(0);
   });
 
   it('skips the warmup for bosses', () => {

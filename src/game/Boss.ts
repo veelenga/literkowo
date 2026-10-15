@@ -6,7 +6,8 @@ import { BOSS_FACE, bossBodyGeometry, bossCoreGeometry } from './effects/bossPar
 import { SHAPE_STYLES } from './effects/enemyStyles';
 import type { EnemyShape } from './themes';
 
-const BOSS_SCALE = 2.4;
+export const BOSS_SCALE = 2.4;
+export const MINI_BOSS_SCALE = 1.7;
 const BOSS_HEIGHT = 2.4;
 const LABEL_GAP = 2.2;
 const KNOCKBACK = 2.6;
@@ -51,8 +52,9 @@ export class Boss extends Enemy {
     look: EnemyLook,
     private readonly nextWord: () => string,
     hitsNeeded: number,
+    scale = BOSS_SCALE,
   ) {
-    super(nextWord(), label, speed, { ...look, scale: BOSS_SCALE }, bossBody(look.shape));
+    super(nextWord(), label, speed, { ...look, scale }, bossBody(look.shape));
     this.hitsNeeded = hitsNeeded;
     this.wordsLeft = hitsNeeded;
     this.armor = new BossArmor(this.color);
@@ -64,6 +66,10 @@ export class Boss extends Enemy {
 
   get health(): number {
     return this.wordsLeft / this.hitsNeeded;
+  }
+
+  get hitsLeft(): number {
+    return this.wordsLeft;
   }
 
   get isDefeated(): boolean {

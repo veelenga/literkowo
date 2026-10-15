@@ -25,7 +25,7 @@ The levels of a region are built from its keys, so the catalog lists keys and no
 
 - `learn`: introduces one new key. Its focus key is the new key. The warm-up shows only that key, see [Difficulty](#difficulty).
 - `practice`: comes right after the learn level of the same key, with real words of all known keys and a bias to the new key.
-- `review`: comes after every two new keys of a region (`KEYS_PER_REVIEW`) and mixes all known keys. Its focus keys are the keys since the previous review. A key left over at the end of a region gets its own review, so a review always comes right before the boss.
+- `review`: comes after every two new keys of a region (`KEYS_PER_REVIEW`) and mixes all known keys. Its focus keys are the keys since the previous review. A key left over at the end of a region gets its own review, so a review always comes right before the boss. Every review ends with a mini boss, see [Boss phases](#boss-phases).
 - `boss`: the last level of each region. It adds no keys, and its focus keys are all keys of the region.
 
 More rules:
@@ -38,6 +38,8 @@ More rules:
 - Polish letters are typed with right Alt. Ctrl with Alt also counts as right Alt, so AltGr works on Windows (`src/game/Game.ts`, `src/course/fingers.ts`).
 
 All levels:
+
+Every review in the table ends with a mini boss.
 
 | Region     | Key     | Learn         | Practice      | Then                                     |
 | ---------- | ------- | ------------- | ------------- | ---------------------------------------- |
@@ -93,7 +95,7 @@ The game runs a run plan: its phases by index, its lives, its XP factor, and the
 3. Camera intro of 1.8 seconds. Typing is ignored until it ends.
 4. Warm-up. Single letters from the level's focus keys. A letter that reaches the player is removed and costs nothing.
 5. Main phase. A learn level runs a learn phase, practice and review levels run a words phase. A word that reaches the player costs a life and counts as a mistake. Counts, the pace and the word stages are in [Difficulty](#difficulty).
-6. Boss, for boss levels only, with no learn card and no warm-up. One boss that needs the number of words in [Difficulty](#difficulty). Each hit knocks it back and makes it 12% faster. When it reaches the player, it jumps back to distance 9 and the player loses a life (`src/game/Boss.ts`).
+6. Boss. A boss level has only the region boss, with no learn card and no warm-up. A review level ends with a mini boss once its words are cleared. A boss needs the number of words in [Difficulty](#difficulty). Each hit knocks it back and makes it 12% faster. When it reaches the player, it jumps back to distance 9 and the player loses a life (`src/game/Boss.ts`). The HUD shows its health in the progress bar.
 7. Result card. It shows stars, score, accuracy, words per minute and letters freed, the XP bar with the XP and coins earned, the keys row (see [Key mastery](#key-mastery)), the treasure chips (see [Shop](#shop)), and buttons for the next level when there is one, retry and map (`src/ui/LevelResult.ts`, `src/ui/ResultProgress.ts`). Enter presses the main button, marked with ⏎: the next level when there is one, retry after a run without stars and the map otherwise, and, like Enter on the learn card, it is ignored for the first 600 ms so keys pressed at the end of the level do not skip either card.
 
 Rules during a level:
@@ -150,6 +152,7 @@ More rules:
 - Word counts are rounded.
 - Generated words of a `words` stage have at most `round(3 to 5)` letters (`GENERATED_MAX_LENGTH`) and never more than the stage allows, so early levels get generated strings of at most 3 letters. Real words and combos use the full length of the stage.
 - Boss: `round(4 to 14)` words (`BOSS_HITS`), so 6, 7, 9, 12 and 14 for the five bosses, at speed 0.3 to 0.52 (`BOSS_SPEED`). Other enemies in a boss fight use 2 to 5 letters.
+- Mini boss of a review: `round(3 to 5)` words (`MINI_BOSS_HITS`), so 3 in Polana and `las-5`, 4 from `las-10` to `jaskinia-23` and 5 in Wyspa Ogonków, at 0.8 times the speed the review ends with (`MINI_BOSS_SPEED_SHARE`). Its words are the review's own words.
 - Apart from warm-ups and the rush and meteor events, single letters show only in learn levels.
 
 ## Action events
@@ -277,7 +280,7 @@ Owners: `src/game/mechanics/MergeEnemies.ts`, `src/game/mechanics/mergeEnemies`,
 
 Owners: `src/game/mechanics/BossPhases.ts`, `src/game/mechanics/bossPhases`, copy in `src/i18n/features/bossPhases.ts`, darkness styles in `src/ui/bossPhases.css`.
 
-The boss fight has three phases by the boss's health: the words left out of the words needed (`src/game/mechanics/bossPhases/phases.ts`). Each phase shows its banner the first time a hit lands in it.
+The region boss fight has three phases by the boss's health: the words left out of the words needed (`src/game/mechanics/bossPhases/phases.ts`). Each phase shows its banner the first time a hit lands in it.
 
 | Phase       | Health          | Banner (pl / uk)               | Rule                                                                                                                                                                                                                                                                                          |
 | ----------- | --------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -297,10 +300,18 @@ Signature attacks (`src/game/mechanics/bossPhases/SignatureAttacks.ts`, `AttackS
 | `fog`        | Góry, Wyspa Ogonków     | For 8 seconds every label, also on new enemies, shows only the next letter of its word and dots for the rest (`FOG_SECONDS`).   |
 | `earthquake` | Jaskinia, Wyspa Ogonków | The camera shakes, and every enemy except the boss jumps to a random place at the same distance from the hero, with dust puffs. |
 
+Mini boss (`src/game/mechanics/bossPhases/MiniBossFight.ts`):
+
+- Every review level ends with a mini boss: a `boss` phase with `miniBoss` set in the plan (`src/game/LevelPlan.ts`). It starts once the review's words are cleared.
+- It is the region's boss model at 1.7 times the size of an enemy instead of 2.4 (`MINI_BOSS_SCALE` in `src/game/Boss.ts`), with the hits and speed in [Difficulty](#difficulty).
+- As it arrives, the banner "Mały Strażnik!" / "Малий Вартовий!" shows. The last hit plays a short fanfare and the callout "Mały Strażnik pokonany!" / "Малого Вартового переможено!" shows, then the level ends.
+- It fights in one phase: no armour, weak point or rage banners, no stun, no minions and no signature attacks. Speed surges keep their calm pace next to it.
+- Stars of a review still come from accuracy. A mini boss that reaches the hero jumps back and costs a life like the region boss.
+
 Score, XP and accuracy:
 
 - Attacks never cost a life and never count as a mistake.
-- A boss hit gives XP with tag factor 3 and a minion with factor 1, see [Progression](#progression). Minions score and pay coins like any word, and cost a life when they reach the hero.
+- A boss hit, also of a mini boss, gives XP with tag factor 3 and a minion with factor 1, see [Progression](#progression). Minions score and pay coins like any word, and cost a life when they reach the hero.
 
 ## Enemy types
 
@@ -308,7 +319,7 @@ Owners: `src/game/mechanics/EnemyTypes.ts`, `src/game/mechanics/enemyTypes/kinds
 
 - During the words phase, a fresh normal spawn turns into a special enemy with a chance of 25% (`SPECIAL_SHARE`). The chance is split by weight between the unlocked types: jumper 3, nest 1, the others 2 each (`KIND_WEIGHTS`).
 - The special enemy takes the place of the spawn, so the word count of the phase stays the same. A balloon that floats away or a thief that escapes counts as done.
-- Only plain spawns without a tag are replaced. The boss, power words, merged enemies, minions, twins, bombers, chicks, splitter halves and event pieces stay as they are. Special enemies never merge.
+- Only plain spawns without a tag are replaced. The boss, the mini boss, power words, merged enemies, minions, twins, bombers, chicks, splitter halves and event pieces stay as they are. Special enemies never merge.
 - At most 1 special enemy is on the board in Polana, and at most 3 in later regions. Bull, nest and thief also come one at a time (`KIND_LIMITS`).
 - The first time a type appears in a level, its name shows as a callout. Each type also has a short hint in `src/i18n/features/enemyTypes.ts`.
 - In an arena run every type is unlocked and up to 3 special enemies can be on the board, see [Arena](#arena). In a course level a type unlocks with the learn level of its key, see the table. Special enemies only replace spawns in the words phase, so the first one shows in the practice level of that key. When a profile's course never teaches that key, the type unlocks with its fallback key instead. English word profiles never see Wyspa Ogonków, so they meet the chameleon with `x` in `jaskinia-11` and the nest with `b` in `jaskinia-16` (`src/game/mechanics/enemyTypes/kinds.ts`).

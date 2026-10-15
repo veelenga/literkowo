@@ -5,6 +5,10 @@ const pl = {
     rage: 'Furia!',
   },
   telegraph: 'Mrok szykuje atak',
+  miniBoss: {
+    banner: 'Mały Strażnik!',
+    victory: 'Mały Strażnik pokonany!',
+  },
 };
 
 const uk: typeof pl = {
@@ -14,6 +18,10 @@ const uk: typeof pl = {
     rage: 'Лють!',
   },
   telegraph: 'Морок готує атаку',
+  miniBoss: {
+    banner: 'Малий Вартовий!',
+    victory: 'Малого Вартового переможено!',
+  },
 };
 
 export const bossPhases = { pl, uk };

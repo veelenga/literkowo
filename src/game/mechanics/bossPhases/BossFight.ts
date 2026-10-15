@@ -2,6 +2,7 @@ import { i18n } from '../../../i18n/i18n';
 import type { Boss } from '../../Boss';
 import type { Enemy } from '../../Enemy';
 import type { MechanicContext } from '../Mechanic';
+import type { Fight } from './Fight';
 import { Minions } from './Minions';
 import { phaseFor, type BossPhase } from './phases';
 import { SignatureAttacks } from './SignatureAttacks';
@@ -15,7 +16,7 @@ const PHASE_ACCENTS: Record<BossPhase, string> = {
   rage: '#ff5a4f',
 };
 
-export class BossFight {
+export class BossFight implements Fight {
   private phase: BossPhase;
   private health: number;
   private readonly announced = new Set<BossPhase>();
