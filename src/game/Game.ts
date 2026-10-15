@@ -32,7 +32,7 @@ import { Player } from './Player';
 import { currentQuality } from './quality';
 import { renderHost, type Viewport } from './RenderHost';
 import type { Phase, PhaseKind, RunPhase, RunPlan } from './RunPlan';
-import { RunRewards, type Rewards } from './RunRewards';
+import { RunRewards, type RewardBoost, type Rewards } from './RunRewards';
 import { SessionStats } from './SessionStats';
 import { SpawnGroups } from './SpawnGroups';
 import { Targeting } from './Targeting';
@@ -123,6 +123,7 @@ export class Game {
   private boss: Boss | undefined;
   private lives: number;
   private shields = 0;
+  private guards = 0;
   private timeScale = 1;
   private lettersFreed = 0;
   private elapsed = 0;
@@ -235,6 +236,7 @@ export class Game {
     const phase = (): Phase => this.phase;
     const playing = (): boolean => this.isPlaying;
     const shields = (): number => this.shields;
+    const guards = (): number => this.guards;
     return {
       enemies: this.enemies,
       player: this.player,
@@ -257,6 +259,9 @@ export class Game {
       get shields() {
         return shields();
       },
+      get guards() {
+        return guards();
+      },
       createLabel: () => this.labels.createLabel(),
       addEnemy: (enemy, radius) => this.addEnemy(enemy, radius),
       removeEnemy: (enemy) => this.clearEnemy(enemy),
@@ -266,7 +271,10 @@ export class Game {
       announce: (text, style, accent) => this.events.onAnnounce(text, style, accent),
       loseLife: () => this.loseLife(),
       absorbNextHit: () => this.addShield(),
+      guardNextHit: () => this.addGuard(),
+      restoreLife: () => this.restoreLife(),
       addCoins: (amount) => this.addCoins(amount),
+      boostRewards: (boost) => this.boostRewards(boost),
     };
   }
 
@@ -439,7 +447,7 @@ export class Game {
   }
 
   private loseLife(): void {
-    if (this.finished || this.absorbHit()) return;
+    if (this.finished || this.guardHit() || this.absorbHit()) return;
     this.lives -= 1;
     this.shake.start(SHAKE_AMPLITUDE, SHAKE_DURATION);
     this.player.hurt();
@@ -460,8 +468,33 @@ export class Game {
     return true;
   }
 
+  private addGuard(): void {
+    this.guards += 1;
+  }
+
+  private guardHit(): boolean {
+    if (this.guards <= 0) return false;
+    this.guards -= 1;
+    sfx.impact(SHIELD_IMPACT);
+    this.recordMistake();
+    this.events.onStats(this.stats, this.lives);
+    return true;
+  }
+
+  private restoreLife(): boolean {
+    if (this.finished || this.lives >= this.config.plan.lives) return false;
+    this.lives += 1;
+    this.events.onStats(this.stats, this.lives);
+    return true;
+  }
+
   private addCoins(amount: number): void {
     this.rewards.addCoins(amount);
+    this.events.onRewards(this.rewards);
+  }
+
+  private boostRewards(boost: RewardBoost): void {
+    this.rewards.boost(boost);
     this.events.onRewards(this.rewards);
   }
 

@@ -20,4 +20,23 @@ describe('SessionStats', () => {
     expect(stats.multiplier).toBe(1);
     expect(stats.accuracy).toBeCloseTo(10 / 11);
   });
+
+  it('keeps the fever through the allowed slips while each mistake still counts', () => {
+    const stats = new SessionStats();
+    stats.keepFeverOnSlips(1);
+    for (let i = 0; i < 15; i += 1) stats.recordHit();
+    stats.recordMistake();
+    expect(stats).toMatchObject({ fever: true, combo: 0, mistakes: 1 });
+    stats.recordMistake();
+    expect(stats).toMatchObject({ fever: false, mistakes: 2 });
+  });
+
+  it('spends no slip outside the fever', () => {
+    const stats = new SessionStats();
+    stats.keepFeverOnSlips(1);
+    stats.recordMistake();
+    for (let i = 0; i < 15; i += 1) stats.recordHit();
+    stats.recordMistake();
+    expect(stats.fever).toBe(true);
+  });
 });

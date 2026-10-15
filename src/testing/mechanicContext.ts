@@ -27,6 +27,7 @@ export function fakeMechanicContext(overrides: Partial<MechanicContext> = {}): M
     phase: FAKE_PHASE,
     playing: true,
     shields: 0,
+    guards: 0,
     theme: themeFor('meadow'),
     sfx: new Sfx(),
     words: levelWords(requireLevel(FAKE_LEVEL), 'pl'),
@@ -43,7 +44,10 @@ export function fakeMechanicContext(overrides: Partial<MechanicContext> = {}): M
     announce: noop,
     loseLife: noop,
     absorbNextHit: noop,
+    guardNextHit: noop,
+    restoreLife: () => false,
     addCoins: noop,
+    boostRewards: noop,
     ...overrides,
   };
 }

@@ -4,6 +4,7 @@ import type { Level } from '../../course/regions';
 import type { WordSource } from '../../course/WordSource';
 import type { Equipped, WordLanguage } from '../../profiles/Profile';
 import type { Enemy } from '../Enemy';
+import type { RewardBoost } from '../RunRewards';
 import type { Phase } from '../RunPlan';
 import type { Particles } from '../Particles';
 import type { Player } from '../Player';
@@ -32,6 +33,7 @@ export interface MechanicContext {
   readonly phase: Phase;
   readonly playing: boolean;
   readonly shields: number;
+  readonly guards: number;
   readonly theme: Theme;
   readonly sfx: Sfx;
   readonly words: WordSource;
@@ -48,7 +50,10 @@ export interface MechanicContext {
   announce(text: string, style: AnnounceStyle, accent?: string): void;
   loseLife(): void;
   absorbNextHit(): void;
+  guardNextHit(): void;
+  restoreLife(): boolean;
   addCoins(amount: number): void;
+  boostRewards(boost: RewardBoost): void;
 }
 
 export type MechanicType = new (context: MechanicContext) => Mechanic;
