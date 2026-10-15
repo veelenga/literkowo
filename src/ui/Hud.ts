@@ -1,3 +1,4 @@
+import { accuracyPercent } from '../course/scoring';
 import { i18n } from '../i18n/i18n';
 import type { Progress } from '../game/Game';
 import type { Rewards } from '../game/RunRewards';
@@ -90,7 +91,7 @@ export class Hud {
     this.score.set(stats.score);
     this.combo.textContent = String(stats.combo);
     this.wpm.textContent = String(stats.wpm);
-    this.accuracy.textContent = `${Math.round(stats.accuracy * PERCENT)}%`;
+    this.accuracy.textContent = `${accuracyPercent(stats.accuracy)}%`;
     this.updateMultiplier(stats.multiplier);
     this.updateHearts(lives);
   }

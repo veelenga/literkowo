@@ -106,7 +106,7 @@ Rules during a level:
 - The learn phase teaches the new key in two halves. In the first half every enemy is a combo of 1 or 2 letters with the new key and maybe a known key, for example `f` `j` `fj` `jf` `ff` `jj`. In the second half the words have 2 or 3 letters with the new key: a real word about half of the time when at least 3 such words fit, otherwise a generated one.
 - The learn phase is calm. Special enemies, mid-wave events, speed surges, bombers, twins, power words and merging run only in the words phase and in boss fights, so learn levels have none of them.
 
-Stars, with the current thresholds (`src/course/scoring.ts`):
+Stars, with the current thresholds (`src/course/scoring.ts`). They are judged on the accuracy rounded to a whole percent, the same number the result card and the HUD show, so 92.5% shows as 93% and earns 2 stars:
 
 | Accuracy         | Stars |
 | ---------------- | ----- |
@@ -406,7 +406,8 @@ Mastery levels (`src/course/mastery.ts`):
 | `mastered` | Opanowany    | Опановано    | 30 recent keystrokes, 97% accuracy, speed on target, 3 different days |
 
 - Speed target: at most 900 ms between keys, or 1400 ms for Polish letters typed with right Alt.
-- 97% of 30 keystrokes means the last 30 keystrokes of a mastered key have no mistake. One mistake drops it to `solid` until its last 30 keystrokes are clean again.
+- The solid and mastered checks use the accuracy rounded to a whole percent, the same number the learn card, the result card and the heatmap show, so a key showing 90% always has solid accuracy and a key showing 97% always has mastered accuracy.
+- 97% of 30 keystrokes means at most one mistake in the last 30 keystrokes, since 29 of 30 rounds to 97%. A second mistake drops the key to `solid` until its last 30 keystrokes have at most one mistake again.
 - A region's mastery share is the part of its new keys that are mastered.
 
 Where it shows:

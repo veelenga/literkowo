@@ -7,6 +7,7 @@ import {
   MAX_KEY_WEIGHT,
   RIGHT_ALT_TARGET_INTERVAL_MS,
   TARGET_INTERVAL_MS,
+  hasMasteredAccuracy,
   keyWeight,
   masteredShare,
   masteryOf,
@@ -47,6 +48,11 @@ describe('masteryOf', () => {
     expect(masteryOf('f', practised({ hits: 18, misses: 2 }))).toBe('solid');
   });
 
+  it('judges solid on the accuracy rounded to a whole percent', () => {
+    expect(masteryOf('f', practised({ hits: 26, misses: 3 }))).toBe('solid');
+    expect(masteryOf('f', practised({ hits: 25, misses: 3 }))).toBe('learning');
+  });
+
   it('is mastered when accurate, fast and practised on enough days', () => {
     expect(masteryOf('f', practised({ hits: RECENT_WINDOW }))).toBe('mastered');
   });
@@ -71,8 +77,22 @@ describe('masteryOf', () => {
     expect(masteryOf('a', practised({ hits: RECENT_WINDOW, intervalMs }))).toBe('solid');
   });
 
-  it('drops below mastered after a recent miss', () => {
-    expect(masteryOf('f', recordMiss(practised({ hits: RECENT_WINDOW })))).toBe('solid');
+  it('stays mastered with one miss in the window, shown as 97%', () => {
+    expect(masteryOf('f', practised({ hits: RECENT_WINDOW - 1, misses: 1 }))).toBe('mastered');
+    expect(masteryOf('f', recordMiss(practised({ hits: RECENT_WINDOW })))).toBe('mastered');
+  });
+
+  it('drops below mastered after two recent misses', () => {
+    expect(masteryOf('f', practised({ hits: RECENT_WINDOW - 2, misses: 2 }))).toBe('solid');
+  });
+});
+
+describe('hasMasteredAccuracy', () => {
+  it('judges the accuracy rounded to a whole percent', () => {
+    expect(hasMasteredAccuracy(29 / 30)).toBe(true);
+    expect(hasMasteredAccuracy(0.965)).toBe(true);
+    expect(hasMasteredAccuracy(0.964)).toBe(false);
+    expect(hasMasteredAccuracy(0.96)).toBe(false);
   });
 });
 

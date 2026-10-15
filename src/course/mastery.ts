@@ -1,6 +1,7 @@
 import type { Region } from './catalog';
 import { needsRightAlt } from './fingers';
 import { RECENT_WINDOW, recentAccuracy, type KeyStat, type KeyStats } from './keyStats';
+import { accuracyPercent } from './scoring';
 
 export const MASTERY_LEVELS = ['none', 'learning', 'solid', 'mastered'] as const;
 
@@ -25,6 +26,10 @@ export interface KeyTally {
 export interface KeyAccuracy {
   key: string;
   accuracy: number;
+}
+
+export function hasMasteredAccuracy(accuracy: number): boolean {
+  return reachesAccuracy(accuracy, MASTERED_ACCURACY);
 }
 
 export function targetIntervalFor(key: string): number {
@@ -83,7 +88,7 @@ export function tallyAccuracy({ hits, misses }: KeyTally): number {
 function isMastered(key: string, stat: KeyStat, accuracy: number): boolean {
   return (
     stat.recentCount >= RECENT_WINDOW &&
-    accuracy >= MASTERED_ACCURACY &&
+    hasMasteredAccuracy(accuracy) &&
     stat.speedSamples > 0 &&
     stat.speedMs <= targetIntervalFor(key) &&
     stat.days.length >= MASTERED_DAYS
@@ -91,7 +96,11 @@ function isMastered(key: string, stat: KeyStat, accuracy: number): boolean {
 }
 
 function isSolid(stat: KeyStat, accuracy: number): boolean {
-  return stat.recentCount >= MIN_SOLID_KEYSTROKES && accuracy >= SOLID_ACCURACY;
+  return stat.recentCount >= MIN_SOLID_KEYSTROKES && reachesAccuracy(accuracy, SOLID_ACCURACY);
+}
+
+function reachesAccuracy(accuracy: number, threshold: number): boolean {
+  return accuracyPercent(accuracy) >= accuracyPercent(threshold);
 }
 
 function accuracyWeakness(stat: KeyStat): number {
