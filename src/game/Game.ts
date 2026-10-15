@@ -27,6 +27,7 @@ import { currentQuality } from './quality';
 import { renderHost } from './RenderHost';
 import { RunRewards, type Rewards } from './RunRewards';
 import { SessionStats } from './SessionStats';
+import { SpawnGroups } from './SpawnGroups';
 import { Targeting } from './Targeting';
 import type { Theme } from './themes';
 import { World } from './World';
@@ -96,6 +97,7 @@ export class Game {
   private readonly phases: Phase[];
   private readonly enemies: Enemy[] = [];
   private readonly mechanics = new MechanicGroup();
+  private readonly spawnGroups = new SpawnGroups<Enemy>();
   private readonly shake = new CameraShake();
   private readonly targeting = new Targeting<Enemy>((enemy, isCandidate) =>
     enemy.setTargeted(isCandidate),
@@ -321,7 +323,8 @@ export class Game {
     if (!this.isSpawnDue()) return;
     this.sinceSpawn = 0;
     this.spawned += 1;
-    this.spawnWord(this.phase.kind === 'warmup' ? this.nextLetter() : this.nextWord());
+    const word = this.phase.kind === 'warmup' ? this.nextLetter() : this.nextWord();
+    this.spawnGroups.spawn(() => this.spawnWord(word));
   }
 
   private isSpawnDue(): boolean {
@@ -370,6 +373,7 @@ export class Game {
     if (radius !== undefined) placeOnSpawnArc(enemy, radius);
     this.scene.add(enemy.object);
     this.enemies.push(enemy);
+    this.spawnGroups.join(enemy);
     this.mechanics.onSpawn(enemy);
   }
 
@@ -443,7 +447,7 @@ export class Game {
     const total = this.phase.count;
     const done = this.boss
       ? total - Math.round(this.boss.health * total)
-      : THREE.MathUtils.clamp(this.spawned - this.enemies.length, 0, total);
+      : THREE.MathUtils.clamp(this.spawned - this.spawnGroups.pending, 0, total);
     this.events.onProgress({ kind: this.phase.kind, done, total });
   }
 
@@ -544,6 +548,7 @@ export class Game {
     this.scene.remove(enemy.object);
     enemy.dispose();
     this.enemies.splice(index, 1);
+    this.spawnGroups.leave(enemy);
     return true;
   }
 

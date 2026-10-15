@@ -2,7 +2,6 @@ import { i18n } from '../../i18n/i18n';
 import { Boss } from '../Boss';
 import type { Enemy } from '../Enemy';
 import type { PhaseKind } from '../LevelPlan';
-import { MINION_TAG } from './bossPhases/Minions';
 import { createSpecial } from './enemyTypes/factory';
 import {
   BONUS_WORDS,
@@ -16,12 +15,9 @@ import {
 import { SpecialEnemy } from './enemyTypes/SpecialEnemy';
 import { Stage } from './enemyTypes/Stage';
 import type { Mechanic, MechanicContext } from './Mechanic';
-import { MERGED_TAG } from './mergeEnemies/rules';
 import { wordPoints } from './mergeEnemies/scoring';
-import { POWER_TAG } from './powerWords/PowerEnemy';
 
 const REPLACING_PHASE: PhaseKind = 'words';
-const KEPT_TAGS = [POWER_TAG, MERGED_TAG, MINION_TAG, ENEMY_TYPE_TAG];
 const ACCENTS: Readonly<Record<EnemyKind, string>> = {
   jumper: '#7dff4f',
   balloon: '#ff7ad9',
@@ -98,5 +94,5 @@ export class EnemyTypes implements Mechanic {
 }
 
 function isReplaceable(enemy: Enemy): boolean {
-  return !(enemy instanceof Boss) && !KEPT_TAGS.some((tag) => enemy.tags.has(tag));
+  return !(enemy instanceof Boss) && enemy.tags.size === 0;
 }

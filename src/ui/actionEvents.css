@@ -1,0 +1,60 @@
+body.is-speed-surge::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-label);
+  pointer-events: none;
+  box-shadow: inset 0 0 110px 18px rgba(255, 40, 30, 0.42);
+  animation: speed-surge-throb 0.55s ease-in-out infinite alternate;
+}
+
+@keyframes speed-surge-throb {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.is-speed-surge::before {
+    animation: none;
+  }
+}
+
+.word-label.is-bomber {
+  --bomber-edge: #ff8a3d;
+  --bomber-edge-dark: #7a2600;
+  font-size: 1.75rem;
+  padding: 9px 18px 10px;
+  border-radius: 16px;
+  border: 3px solid var(--bomber-edge);
+  background: rgba(40, 12, 2, 0.92);
+  box-shadow:
+    0 5px 0 var(--bomber-edge-dark),
+    0 0 0 4px rgba(255, 138, 61, 0.22),
+    0 0 30px rgba(255, 106, 42, 0.55);
+}
+
+.word-label.is-bomber.is-target {
+  font-size: 1.85rem;
+  border-color: var(--bomber-edge);
+  box-shadow:
+    0 5px 0 var(--bomber-edge-dark),
+    0 0 0 5px rgba(255, 190, 46, 0.3),
+    0 0 36px var(--accent-glow);
+}
+
+.word-label.is-twin {
+  font-size: 1.2rem;
+  padding: 5px 11px 6px;
+  border-color: rgba(94, 242, 224, 0.75);
+  box-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.35),
+    0 0 18px rgba(94, 242, 224, 0.35);
+}
+
+.word-label.is-twin.is-target {
+  font-size: 1.3rem;
+}

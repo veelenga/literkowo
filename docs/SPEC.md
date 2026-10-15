@@ -45,6 +45,7 @@ Region index counts from 0 for `polana`. Level order counts every level of the c
 Rules during a level:
 
 - At most 6 enemies are on screen at once. The player has 3 lives. Losing the last life ends the level as lost.
+- The progress bar counts a spawn as done once every enemy it turned into has left the board, so a spawn that becomes twins or a special enemy still counts as one. Enemies that features add later, such as power words or bombers, do not change it (`src/game/SpawnGroups.ts`).
 - Typing follows every enemy whose word starts with the letters typed so far, a key that fits none of them is a mistake, and when a word is done every enemy with that same word is done too while the others go back to untyped (`src/game/Targeting.ts`).
 - Escape pauses and resumes. Pause also suspends audio. The pause card also has a resume button, and touch screens get a pause button in the HUD.
 - Words (`src/course/WordSource.ts`): when at least 12 words from `src/course/wordLists.ts` fit the allowed keys, about half of the words are real words. The rest are generated strings of 2 to 5 letters, where about half of the letters come from the new keys. Boss words are real words of 4 or more letters when at least 12 fit, otherwise generated strings of 5 to 7 letters. New words and warm-up letters prefer a first letter that no enemy on the board is waiting for.
@@ -61,6 +62,31 @@ Stars, with the current thresholds (`src/course/scoring.ts`):
 
 - Accuracy is `hits / (hits + mistakes)`. Words per minute is correct letters divided by 5, per active minute (`src/game/SessionStats.ts`).
 - The best result per level is kept, compared by stars first and score second. Total score and letters freed add up on every attempt (`src/course/progress.ts`).
+
+## Action events
+
+Owners: `src/game/mechanics/SpeedSurge.ts`, `src/game/mechanics/Bombers.ts`, `src/game/mechanics/Twins.ts`.
+
+Speed surges:
+
+- They run in the words phase and in boss fights. The first one comes 20 seconds after the phase starts. The next ones follow every 40 seconds in Polana, 25 seconds in Wyspa Ogonków, and evenly in between for the other regions. During the boss rage the countdown runs twice as fast.
+- A warning, "Przyspieszenie!" / "Прискорення!", and a rising sweep come 1.5 seconds before the surge.
+- For 7 seconds every enemy except the boss moves 1.8 times faster, also enemies that appear during the surge. Short cube trails follow the enemies and the screen edges glow red. Then every speed goes back to normal.
+- A surge is skipped while any enemy is frozen, and it ends early when a freeze lands.
+
+Bombers:
+
+- From Las on, in the words phase and in boss fights. One comes about every 40 to 50 seconds while enemies are on the board, and at most one is on the board at a time.
+- A bomber is 1.7 times bigger and moves at 0.55 times the phase speed. Its word has 6 to 9 letters: a boss word when one fits, otherwise letters from the allowed keys. A lit fuse sparks on top and ticks faster and faster from 7 units away.
+- Typing its word detonates it: slow motion at 0.3 for 0.6 seconds, a camera shake and a shockwave. Every enemy within 4.5 units shatters and scores its normal word points. The boss never shatters. Other bombers in range go off 0.25 seconds later. When 3 or more enemies go down, a banner shows "Bum! x3" / "Бум! x3".
+- A bomber that reaches the player costs a life and knocks every other enemy 4 units back.
+
+Twins:
+
+- From Las on, in the words phase, about one spawn in eight becomes 2 to 4 smaller twins in a line or a V. They share one word and bob in step.
+- They finish together on the same key. Each twin after the first adds the points of one more word, and a callout shows "Bliźniaki x3!" / "Близнюки x3!" with a spark arc between them.
+- Twins that reach the player cost at most one life per group.
+- Twins can briefly put more than 6 enemies on the board.
 
 ## Profiles
 
@@ -103,7 +129,7 @@ Owners: `src/game/mechanics/EnemyTypes.ts`, `src/game/mechanics/enemyTypes/kinds
 
 - During the words phase, a fresh normal spawn turns into a special enemy with a chance of 25% (`SPECIAL_SHARE`). The chance is split by weight between the unlocked types: jumper 3, the others 2 each (`KIND_WEIGHTS`).
 - The special enemy takes the place of the spawn, so the word count of the phase stays the same. A balloon that floats away counts as done.
-- The boss, power words, merged enemies and minions are never replaced. Special enemies never merge.
+- The boss and every enemy that another feature has tagged, such as power words, merged enemies, minions, twins and bombers, are never replaced. Special enemies never merge.
 - At most 1 special enemy is on the board in Polana, and at most 3 in later regions.
 - The first time a type appears in a level, its name shows as a callout. Each type also has a short hint in `src/i18n/features/enemyTypes.ts`.
 
