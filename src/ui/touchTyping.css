@@ -41,6 +41,12 @@
   display: none;
 }
 
+@media (max-width: 600px), (max-height: 480px) {
+  .type-pill {
+    display: none;
+  }
+}
+
 @keyframes type-pill-pulse {
   0%,
   100% {

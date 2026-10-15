@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { StageInsets } from './arena';
 import type { Viewport } from './RenderHost';
 
 const LAYER_CLASS = 'label-layer';
@@ -60,8 +61,15 @@ export class LabelLayer {
     window.setTimeout(() => floating.remove(), lifetimeMs);
   }
 
-  position(targets: readonly LabelTarget[], camera: THREE.Camera, viewport: Viewport): void {
+  position(
+    targets: readonly LabelTarget[],
+    camera: THREE.Camera,
+    viewport: Viewport,
+    insets: StageInsets,
+  ): void {
     const { width, height } = viewport;
+    const top = Math.max(this.safeTop, insets.top + LABEL_CLEARANCE);
+    const bottom = Math.max(top, height - insets.bottom);
     for (const target of targets) {
       this.anchor.copy(target.object.position).setY(target.labelHeight).project(camera);
       const x = THREE.MathUtils.clamp(
@@ -69,7 +77,7 @@ export class LabelLayer {
         SAFE_SIDE,
         width - SAFE_SIDE,
       );
-      const y = Math.max(((1 - this.anchor.y) / 2) * height, this.safeTop);
+      const y = THREE.MathUtils.clamp(((1 - this.anchor.y) / 2) * height, top, bottom);
       target.label.style.transform = `translate(-50%, -100%) translate(${x}px, ${y}px)`;
     }
   }

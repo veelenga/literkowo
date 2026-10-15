@@ -5,11 +5,11 @@ import { TouchTyping } from './TouchTyping';
 const PHYSICAL_KEYBOARD_ATTRIBUTE = 'data-physical-keyboard';
 const created: TouchTyping[] = [];
 
-function setup() {
+function setup({ builtInKeyboard = false } = {}) {
   const stage = document.createElement('div');
   document.body.append(stage);
   const onChar = vi.fn();
-  const touch = new TouchTyping(stage, onChar);
+  const touch = new TouchTyping(stage, onChar, () => builtInKeyboard);
   created.push(touch);
   const input = stage.querySelector('input');
   if (!input) throw new Error('Missing touch input');
@@ -36,6 +36,8 @@ describe('TouchTyping', () => {
     expect(input.getAttribute('autocapitalize')).toBe('off');
     expect(input.getAttribute('autocorrect')).toBe('off');
     expect(input.getAttribute('spellcheck')).toBe('false');
+    expect(input.getAttribute('enterkeyhint')).toBe('done');
+    expect(input.closest('form')).toBeNull();
   });
 
   it('types each inserted character and clears the field', () => {
@@ -67,6 +69,30 @@ describe('TouchTyping', () => {
     const { stage, input } = setup();
     stage.click();
     expect(document.activeElement).toBe(input);
+  });
+
+  it('leaves the native keyboard closed on a stage tap while the built in keyboard is on', () => {
+    const { stage, input } = setup({ builtInKeyboard: true });
+    stage.click();
+    expect(document.activeElement).not.toBe(input);
+  });
+
+  it('opens and closes the native keyboard on request', () => {
+    const { touch, input } = setup({ builtInKeyboard: true });
+    touch.toggleNativeKeyboard();
+    expect(document.activeElement).toBe(input);
+    document.documentElement.setAttribute(KEYBOARD_OPEN_ATTRIBUTE, '');
+    touch.toggleNativeKeyboard();
+    expect(document.activeElement).not.toBe(input);
+  });
+
+  it('focuses the field again on resume only without the built in keyboard', () => {
+    const tablet = setup();
+    tablet.touch.refocus();
+    expect(document.activeElement).toBe(tablet.input);
+    const phone = setup({ builtInKeyboard: true });
+    phone.touch.refocus();
+    expect(document.activeElement).not.toBe(phone.input);
   });
 
   it('notices a physical keyboard while the native keyboard is closed', () => {

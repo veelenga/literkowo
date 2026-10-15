@@ -23,14 +23,18 @@ import type { StoryScene } from '../story/story';
 import { el } from '../ui/dom';
 import { Callouts } from '../ui/Callouts';
 import { Hud } from '../ui/Hud';
+import { usesBuiltInKeyboard } from '../ui/formFactor';
 import { KeyboardHint } from '../ui/KeyboardHint';
+import { KEYBOARD_LAYOUTS } from '../ui/keyboardLayout';
 import { learnCard } from '../ui/LearnCard';
 import { levelResult } from '../ui/LevelResult';
 import { loadErrorOverlay } from '../ui/LoadErrorOverlay';
 import { OverlaySlot, type Overlay } from '../ui/overlay';
 import { pauseOverlay } from '../ui/PauseOverlay';
 import { ProfileScreen } from '../ui/ProfileScreen';
+import { rotateHint } from '../ui/RotateHint';
 import { ShopScreen } from '../ui/ShopScreen';
+import { watchStageInsets } from '../ui/stageInsets';
 import { storyCard } from '../ui/StoryCard';
 import { TouchTyping } from '../ui/TouchTyping';
 import { WorldMap } from '../ui/WorldMap';
@@ -142,11 +146,22 @@ export class App {
     const hud = new Hud(profile, {
       onMap: () => this.showMap(profile),
       onPause: () => this.game?.togglePause(),
+      onKeyboard: () => this.touch?.toggleNativeKeyboard(),
     });
-    const keyboard = new KeyboardHint(type);
+    const layout = usesBuiltInKeyboard() ? KEYBOARD_LAYOUTS.compact : KEYBOARD_LAYOUTS.full;
+    const keyboard = new KeyboardHint(type, layout);
     const callouts = new Callouts();
+    const hint = courseFor(profile.wordLanguage).isFirst(level) ? rotateHint() : undefined;
     this.showScreen(
-      el('div', { class: 'level-screen' }, stage, callouts.element, hud.element, keyboard.element),
+      el(
+        'div',
+        { class: 'level-screen' },
+        stage,
+        callouts.element,
+        hud.element,
+        keyboard.element,
+        hint,
+      ),
     );
     if (hasCoarsePointer()) this.touch = new TouchTyping(stage, type);
 
@@ -172,6 +187,9 @@ export class App {
       onPause: (paused) => this.setPaused(paused),
       onFinished: (result) => this.finishLevel(profile, level, result),
     });
+    this.disposeScreen = watchStageInsets(stage, hud.element, (insets) =>
+      this.game?.setInsets(insets),
+    );
     this.game.start();
     if (this.attention.away) this.game.suspend();
   }
@@ -202,7 +220,7 @@ export class App {
     music.resume();
     if (this.pause) this.overlays.release(this.pause);
     this.pause = undefined;
-    this.touch?.focus();
+    this.touch?.refocus();
   }
 
   private showLoadError(profile: Profile, level: Level, error: unknown): void {

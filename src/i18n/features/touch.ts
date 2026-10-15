@@ -3,6 +3,9 @@ interface TouchTexts {
   typingField: string;
   pause: string;
   resume: string;
+  phoneKeyboard: string;
+  rotateHint: string;
+  closeHint: string;
 }
 
 const pl: TouchTexts = {
@@ -10,6 +13,9 @@ const pl: TouchTexts = {
   typingField: 'Pole do pisania',
   pause: 'Pauza',
   resume: 'Graj dalej',
+  phoneKeyboard: 'Klawiatura telefonu',
+  rotateHint: 'Obróć telefon, będzie wygodniej',
+  closeHint: 'Zamknij podpowiedź',
 };
 
 const uk: TouchTexts = {
@@ -17,6 +23,9 @@ const uk: TouchTexts = {
   typingField: 'Поле для друку',
   pause: 'Пауза',
   resume: 'Грати далі',
+  phoneKeyboard: 'Клавіатура телефону',
+  rotateHint: 'Поверни телефон, буде зручніше',
+  closeHint: 'Закрити підказку',
 };
 
 export const touch = { pl, uk };

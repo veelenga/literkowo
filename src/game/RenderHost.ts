@@ -24,9 +24,11 @@ interface Pipeline {
   readonly scenePass: RenderPass;
 }
 
+export type CameraFraming = (viewport: Viewport) => void;
+
 interface Stage {
   container: HTMLElement;
-  camera: THREE.PerspectiveCamera;
+  frame: CameraFraming;
 }
 
 class ScaledBloomPass extends UnrealBloomPass {
@@ -96,10 +98,11 @@ class RenderHost {
     scene: THREE.Scene,
     camera: THREE.PerspectiveCamera,
     preset: QualityPreset,
+    frame: CameraFraming,
   ): void {
     const renderer = (this.renderer ??= createRenderer());
     this.usePreset(renderer, preset, scene, camera);
-    this.stage = { container, camera };
+    this.stage = { container, frame };
     this.resolution = new DynamicResolution(pixelRatioCap(preset));
     container.append(renderer.domElement);
     this.resizer.observe(container);
@@ -138,11 +141,10 @@ class RenderHost {
 
   private resize(): void {
     if (!this.renderer || !this.pipeline || !this.stage) return;
-    const { container, camera } = this.stage;
+    const { container, frame } = this.stage;
     this.size = { width: container.clientWidth, height: container.clientHeight };
     const { width, height } = this.size;
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
+    frame(this.size);
     this.applyPixelRatio();
     this.renderer.setSize(width, height);
     this.pipeline.composer.setSize(width, height);

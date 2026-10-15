@@ -1,12 +1,10 @@
 import { baseKey, fingerFor, needsRightAlt } from '../course/fingers';
 import { i18n } from '../i18n/i18n';
 import { el, fingerColor, restartAnimation, type Child } from './dom';
-import { KEY_ROWS, type KeyRow } from './keyboardLayout';
+import { KEYBOARD_LAYOUTS, SPACE_KEY, type KeyboardLayout, type KeyRow } from './keyboardLayout';
 import { RIGHT_ALT_KEY, RightAltLatch } from './rightAltLatch';
 
-const SPACE_ROW_OFFSET = 2.7;
 const HOME_BUMP_KEYS = new Set(['f', 'j']);
-const SPACE = ' ';
 const ALT_LABEL = 'Alt';
 const PRESSED_CLASS = 'is-pressed';
 const LATCHED_CLASS = 'is-latched';
@@ -29,13 +27,18 @@ export class KeyboardHint {
   private highlighted: HTMLElement[] = [];
   private current: string | undefined;
 
-  constructor(private readonly onKey: (char: string) => void) {
+  constructor(
+    private readonly onKey: (char: string) => void,
+    private readonly layout: KeyboardLayout = KEYBOARD_LAYOUTS.full,
+  ) {
     this.element = el(
       'div',
-      { class: 'keyboard', onPointerdown: (event) => this.press(event) },
+      {
+        class: `keyboard keyboard-${layout.name}`,
+        onPointerdown: (event) => this.press(event),
+      },
       this.hint,
-      ...KEY_ROWS.map((row) => this.row(row)),
-      this.bottomRow(),
+      ...layout.rows.map((row) => this.row(row)),
     );
   }
 
@@ -87,12 +90,17 @@ export class KeyboardHint {
     return el(
       'div',
       { class: 'key-row', style: `--offset: ${offset}` },
-      ...[...keys].map((char) => this.key(char, 'key', char.toUpperCase())),
+      ...keys.map((id) => this.keyFor(id)),
     );
   }
 
-  private bottomRow(): HTMLElement {
-    const space = this.key(SPACE, 'key key-space', '');
+  private keyFor(id: string): HTMLElement {
+    if (id === SPACE_KEY) return this.key(SPACE_KEY, 'key key-space');
+    if (id === RIGHT_ALT_KEY) return this.altKey();
+    return this.key(id, 'key', this.layout.capitals ? id.toUpperCase() : id);
+  }
+
+  private altKey(): HTMLElement {
     const alt = this.key(
       RIGHT_ALT_KEY,
       'key key-alt',
@@ -100,7 +108,7 @@ export class KeyboardHint {
       el('span', { text: ALT_LABEL }),
     );
     alt.title = i18n.t.rightAlt;
-    return el('div', { class: 'key-row', style: `--offset: ${SPACE_ROW_OFFSET}` }, space, alt);
+    return alt;
   }
 
   private key(id: string, className: string, ...label: Child[]): HTMLElement {

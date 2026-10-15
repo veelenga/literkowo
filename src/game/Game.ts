@@ -13,9 +13,11 @@ import {
   CAMERA_POSITION,
   CAMERA_TARGET,
   MAX_ENEMIES,
+  NO_INSETS,
   REACH_DISTANCE,
   SPAWN_RADIUS,
-  cameraFovFor,
+  frameArena,
+  type StageInsets,
 } from './arena';
 import { Boss } from './Boss';
 import { CameraShake } from './CameraShake';
@@ -29,7 +31,7 @@ import { MechanicGroup } from './mechanics/MechanicGroup';
 import { Particles } from './Particles';
 import { Player } from './Player';
 import { currentQuality } from './quality';
-import { renderHost } from './RenderHost';
+import { renderHost, type Viewport } from './RenderHost';
 import { RunRewards, type Rewards } from './RunRewards';
 import { SessionStats } from './SessionStats';
 import { SpawnGroups } from './SpawnGroups';
@@ -110,6 +112,7 @@ export class Game {
   private readonly targeting = new Targeting<Enemy>((enemy, isCandidate) =>
     enemy.setTargeted(isCandidate),
   );
+  private insets: StageInsets = NO_INSETS;
   private phaseIndex = 0;
   private spawned = 0;
   private boss: Boss | undefined;
@@ -145,7 +148,9 @@ export class Game {
     this.world = new World(this.scene, config.theme, quality);
     this.scene.add(this.player.object);
     this.placeCameraForIntro();
-    renderHost.attach(container, this.scene, this.camera, quality);
+    renderHost.attach(container, this.scene, this.camera, quality, (viewport) =>
+      this.fitCamera(viewport),
+    );
     this.labels = new LabelLayer(container);
     this.mechanics.register(createMechanics(this.createMechanicContext()));
   }
@@ -177,6 +182,11 @@ export class Game {
 
   typeCharacter(char: string): void {
     if (this.acceptsTyping) this.handleChar(char.toLowerCase());
+  }
+
+  setInsets(insets: StageInsets): void {
+    this.insets = insets;
+    this.fitCamera(renderHost.viewport);
   }
 
   togglePause(): void {
@@ -288,7 +298,7 @@ export class Game {
     this.timer.update();
     const delta = Math.min(this.timer.getDelta(), MAX_FRAME_DELTA);
     this.tick(delta);
-    this.labels.position(this.enemies, this.camera, renderHost.viewport);
+    this.labels.position(this.enemies, this.camera, renderHost.viewport, this.insets);
     renderHost.render();
     if (this.isPlaying) renderHost.recordFrame(delta);
   };
@@ -328,14 +338,13 @@ export class Game {
     this.camera.position.x += sway;
     this.shake.apply(this.camera.position, delta);
     this.camera.lookAt(this.cameraTarget);
-    this.frameArena();
   }
 
-  private frameArena(): void {
-    const fov = cameraFovFor(this.camera.aspect);
-    if (fov === this.camera.fov) return;
-    this.camera.fov = fov;
-    this.camera.updateProjectionMatrix();
+  private fitCamera({ width, height }: Viewport): void {
+    if (width <= 0 || height <= 0) return;
+    const framing = frameArena({ width, height, ...this.insets });
+    this.camera.fov = framing.fov;
+    this.camera.setViewOffset(width, framing.fullHeight, 0, framing.offsetY, width, height);
   }
 
   private spawnIfDue(delta: number): void {
