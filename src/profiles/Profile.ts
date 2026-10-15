@@ -1,10 +1,12 @@
+import type { KeyStat } from '../course/keyStats';
+
 export const WORD_LANGUAGES = ['pl', 'en'] as const;
 
 export type WordLanguage = (typeof WORD_LANGUAGES)[number];
 
 export const DEFAULT_WORD_LANGUAGE: WordLanguage = 'pl';
 
-export const PROFILE_SCHEMA_VERSION = 3;
+export const PROFILE_SCHEMA_VERSION = 4;
 
 export interface LevelResult {
   stars: number;
@@ -25,6 +27,7 @@ export interface Profile {
   coins: number;
   seenStories: string[];
   levelResults: Record<string, LevelResult>;
+  keyStats: Record<string, KeyStat>;
 }
 
 export const AVATARS = 'abcdefghijklmnopqr'.split('');
@@ -46,6 +49,7 @@ export function createProfile(name: string, avatar: string): Profile {
     coins: 0,
     seenStories: [],
     levelResults: {},
+    keyStats: {},
   };
 }
 

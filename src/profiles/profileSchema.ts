@@ -1,4 +1,12 @@
 import {
+  MAX_PRACTICE_DAYS,
+  RECENT_WINDOW,
+  SPEED_WINDOW,
+  isPracticeDay,
+  recentMissesWithin,
+  type KeyStat,
+} from '../course/keyStats';
+import {
   AVATARS,
   DEFAULT_WORD_LANGUAGE,
   PROFILE_SCHEMA_VERSION,
@@ -17,6 +25,7 @@ export interface ParsedProfiles {
 
 const LEGACY_SCHEMA_VERSION = 1;
 const SCORE_SCHEMA_VERSION = 2;
+const XP_SCHEMA_VERSION = 3;
 const SCORE_PER_SEEDED_XP = 10;
 
 const MIGRATIONS: Partial<Record<number, Migration>> = {
@@ -25,6 +34,7 @@ const MIGRATIONS: Partial<Record<number, Migration>> = {
     ...raw,
     xp: raw.xp ?? Math.round(countOf(raw.totalScore) / SCORE_PER_SEEDED_XP),
   }),
+  [XP_SCHEMA_VERSION]: (raw) => ({ ...raw, keyStats: {} }),
 };
 
 export function parseProfiles(json: string): ParsedProfiles {
@@ -51,6 +61,7 @@ export function normalizeProfile(value: unknown): Profile | undefined {
     coins: countOf(raw.coins),
     seenStories: stringsOf(raw.seenStories),
     levelResults: levelResultsOf(raw.levelResults),
+    keyStats: keyStatsOf(raw.keyStats),
   };
 }
 
@@ -91,6 +102,50 @@ function levelResultOf(value: unknown): LevelResult | undefined {
   const { stars, score, accuracy, wpm } = value;
   if (!isCount(stars) || !isCount(score) || !isCount(accuracy) || !isCount(wpm)) return undefined;
   return { stars, score, accuracy, wpm };
+}
+
+function keyStatsOf(value: unknown): Record<string, KeyStat> {
+  if (!isRecord(value)) return {};
+  const stats: Record<string, KeyStat> = {};
+  for (const [key, entry] of Object.entries(value)) {
+    const stat = keyStatOf(entry);
+    if (stat && isSingleChar(key)) stats[key] = stat;
+  }
+  return stats;
+}
+
+function keyStatOf(value: unknown): KeyStat | undefined {
+  if (!isRecord(value)) return undefined;
+  const { hits, misses, recentMisses, recentCount, speedMs, speedSamples, days } = value;
+  if (!isCount(hits) || !isCount(misses)) return undefined;
+  const recent = wholeUpTo(recentCount, RECENT_WINDOW);
+  const samples = wholeUpTo(speedSamples, SPEED_WINDOW);
+  return {
+    hits,
+    misses,
+    recentMisses: recentMissesWithin(wholeOf(recentMisses), recent),
+    recentCount: recent,
+    speedMs: samples > 0 ? countOf(speedMs) : 0,
+    speedSamples: samples,
+    days: practiceDaysOf(days),
+  };
+}
+
+function practiceDaysOf(value: unknown): string[] {
+  const days = new Set(stringsOf(value).filter(isPracticeDay));
+  return [...days].sort().slice(-MAX_PRACTICE_DAYS);
+}
+
+function wholeUpTo(value: unknown, limit: number): number {
+  return Math.min(limit, wholeOf(value));
+}
+
+function wholeOf(value: unknown): number {
+  return Number.isInteger(value) ? countOf(value) : 0;
+}
+
+function isSingleChar(value: string): boolean {
+  return [...value].length === 1;
 }
 
 function stringsOf(value: unknown): string[] {
