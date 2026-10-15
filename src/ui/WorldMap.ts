@@ -22,8 +22,10 @@ import { ART_HEIGHT, ART_WIDTH, CEILING_HEIGHT, regionArt, type ArtLayer } from 
 import { keyLabel, levelTitle } from './levelKind';
 import { keyDots, masteryMeter } from './mastery';
 import { hasAmbientMotion } from './menuMotion';
+import { onShortcutKeys } from './overlay';
 import './courseMap.css';
 import { outfitAvatar, releaseOutfitAvatars } from './OutfitAvatar';
+import { primaryHint } from './shortcutHint';
 import { hintedLockBadge } from './shopParts';
 import './worldMap.css';
 
@@ -40,6 +42,11 @@ const AMBIENT_CLASS = 'has-ambient';
 const PATH_WIDTH = 100;
 const GATE_SELECTOR = '.journey-gate';
 const NUDGE_CLASS = 'is-nudged';
+const OPEN_NODE_SELECTOR = '.level-node:not(:disabled)';
+const NODE_SELECTOR = '.level-node';
+const NOT_FOUND = -1;
+const PREVIOUS = -1;
+const NEXT = 1;
 
 type NodeState = 'locked' | 'open' | 'current' | 'done';
 
@@ -64,6 +71,7 @@ export class WorldMap {
   private readonly layout: JourneyLayout;
   private readonly current: Level | undefined;
   private effects: StopEffect[] = [];
+  private readonly stopKeys: () => void;
 
   constructor(
     private readonly profile: Profile,
@@ -72,10 +80,19 @@ export class WorldMap {
     this.course = courseFor(profile.wordLanguage);
     this.current = this.course.current(profile.levelResults);
     this.layout = journeyLayout(this.bandSpecs(), this.currentIndex());
+    this.stopKeys = onShortcutKeys(this.element, {
+      Enter: () => this.playFocusLevel(),
+      ArrowRight: () => this.moveFocus(NEXT),
+      ArrowDown: () => this.moveFocus(NEXT),
+      ArrowLeft: () => this.moveFocus(PREVIOUS),
+      ArrowUp: () => this.moveFocus(PREVIOUS),
+      Escape: () => this.actions.onSwitchPlayer(),
+    });
     this.render();
   }
 
   dispose(): void {
+    this.stopKeys();
     this.effects.forEach((stop) => stop());
     this.effects = [];
     releaseOutfitAvatars();
@@ -123,13 +140,34 @@ export class WorldMap {
     if (isArenaOpen(this.profile)) return this.actions.onArena();
     const gate = this.element.querySelector(GATE_SELECTOR);
     if (!gate) return;
-    gate.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    gate.scrollIntoView({ block: 'center', behavior: scrollBehavior() });
     restartAnimation(gate, NUDGE_CLASS);
   }
 
   private scrollToFocus(): void {
-    const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
-    this.focusStop()?.scrollIntoView({ block: 'center', behavior });
+    this.focusStop()?.scrollIntoView({ block: 'center', behavior: scrollBehavior() });
+  }
+
+  private playFocusLevel(): void {
+    const level = this.focusLevel();
+    if (level) this.actions.onPlay(level);
+  }
+
+  private focusLevel(): Level | undefined {
+    const levels = this.course.levels;
+    const current = levels.find((level) => this.stateOf(level) === 'current');
+    return current ?? levels.filter((level) => this.isUnlocked(level)).at(-1);
+  }
+
+  private moveFocus(direction: number): void {
+    const nodes = [...this.element.querySelectorAll<HTMLButtonElement>(OPEN_NODE_SELECTOR)];
+    const index = nodes.findIndex((node) => node === document.activeElement);
+    const target =
+      index === NOT_FOUND
+        ? this.focusStop()?.querySelector<HTMLButtonElement>(NODE_SELECTOR)
+        : nodes[Math.min(Math.max(index + direction, 0), nodes.length - 1)];
+    target?.focus({ preventScroll: true });
+    target?.scrollIntoView({ block: 'center', behavior: scrollBehavior() });
   }
 
   private focusStop(): HTMLElement | null {
@@ -271,7 +309,7 @@ export class WorldMap {
       isSatellite ? el('span', { class: 'stop-link', 'aria-hidden': 'true' }) : null,
       state === 'current' ? this.hero() : null,
       this.node(level, state),
-      state === 'current' ? el('span', { class: 'node-tag', text: i18n.t.play }) : null,
+      state === 'current' ? el('span', { class: 'node-tag' }, i18n.t.play, primaryHint()) : null,
       state === 'done' ? this.stars(level) : null,
     );
   }
@@ -336,6 +374,10 @@ export class WorldMap {
   private isUnlocked(level: Level): boolean {
     return this.course.isUnlocked(level, this.profile.levelResults);
   }
+}
+
+function scrollBehavior(): ScrollBehavior {
+  return prefersReducedMotion() ? 'auto' : 'smooth';
 }
 
 function stopStyle(point: JourneyStop, band: BandLayout): string {

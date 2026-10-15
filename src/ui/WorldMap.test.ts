@@ -1,4 +1,5 @@
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import type { Level } from '../course/catalog';
 import { courseFor } from '../course/course';
 import { createProfile, type Profile } from '../profiles/Profile';
 import { levelTitle } from './levelKind';
@@ -135,5 +136,65 @@ describe('WorldMap', () => {
     expect(gear?.getAttribute('aria-label')).toBe('Ustawienia');
     gear?.click();
     expect(onSettings).toHaveBeenCalledOnce();
+  });
+});
+
+describe('WorldMap keys', () => {
+  function setup(profile: Profile) {
+    const actions = {
+      onPlay: vi.fn<(level: Level) => void>(),
+      onSwitchPlayer: vi.fn(),
+      onShop: vi.fn(),
+      onArena: vi.fn(),
+      onSettings: vi.fn(),
+    };
+    const map = new WorldMap(profile, actions);
+    document.body.append(map.element);
+    const press = (key: string) =>
+      window.dispatchEvent(new KeyboardEvent('keydown', { key, cancelable: true }));
+    const focusedTitle = () =>
+      document.activeElement instanceof HTMLElement ? document.activeElement.title : undefined;
+    return { map, actions, press, focusedTitle };
+  }
+
+  beforeAll(() => {
+    vi.stubGlobal('matchMedia', () => ({ matches: true }));
+    Element.prototype.scrollIntoView = () => undefined;
+  });
+
+  afterEach(() => {
+    document.body.replaceChildren();
+  });
+
+  it('plays the current level with Enter', () => {
+    const { actions, press } = setup(polanaDone());
+    press('Enter');
+    expect(actions.onPlay.mock.lastCall?.[0].id).toBe('las-1');
+  });
+
+  it('moves the focus along the path with the arrow keys', () => {
+    const { map, press, focusedTitle } = setup(polanaDone());
+    const open = [...map.element.querySelectorAll<HTMLElement>('.level-node:not([disabled])')];
+    press('ArrowRight');
+    expect(focusedTitle()).toBe('Nowy klawisz G');
+    press('ArrowUp');
+    expect(focusedTitle()).toBe('Strażnik regionu');
+    press('ArrowLeft');
+    press('ArrowDown');
+    expect(focusedTitle()).toBe('Strażnik regionu');
+    press('ArrowRight');
+    press('ArrowRight');
+    expect(focusedTitle()).toBe('Trening G');
+    open.forEach(() => press('ArrowRight'));
+    expect(focusedTitle()).toBe(open.at(-1)?.title);
+  });
+
+  it('goes back to the profiles with Escape and stops listening once disposed', () => {
+    const { map, actions, press } = setup(createProfile('Ola', 'a'));
+    press('Escape');
+    expect(actions.onSwitchPlayer).toHaveBeenCalledOnce();
+    map.dispose();
+    press('Escape');
+    expect(actions.onSwitchPlayer).toHaveBeenCalledOnce();
   });
 });

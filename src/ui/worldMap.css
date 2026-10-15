@@ -1046,6 +1046,9 @@ svg.stat-icon {
 
 .node-tag {
   position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   top: calc(100% + 4px);
   left: 50%;
   z-index: 1;
@@ -1062,6 +1065,11 @@ svg.stat-icon {
   translate: -50% 0;
   pointer-events: none;
   animation: tag-bob 1.6s ease-in-out infinite;
+}
+
+.node-tag .kbd {
+  height: 1.5em;
+  font-size: 0.72em;
 }
 
 .node-tag::before {
