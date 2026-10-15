@@ -1,0 +1,53 @@
+.word-label.is-merged,
+.word-label.is-fusing {
+  --merged-edge: #ff4632;
+  --merged-edge-dark: #6e0c08;
+  --merged-ring: rgba(255, 70, 50, 0.22);
+  --merged-glow: rgba(255, 70, 50, 0.5);
+}
+
+.word-label.is-merged {
+  font-size: 1.9rem;
+  padding: 9px 18px 10px;
+  border-radius: 16px;
+  border: 3px solid var(--merged-edge);
+  background: rgba(34, 6, 8, 0.92);
+  box-shadow:
+    0 5px 0 var(--merged-edge-dark),
+    0 0 0 4px var(--merged-ring),
+    0 0 30px var(--merged-glow);
+}
+
+.word-label.is-merged.is-target {
+  font-size: 2rem;
+  border-color: var(--merged-edge);
+  background: rgba(46, 14, 4, 0.94);
+  box-shadow:
+    0 5px 0 var(--merged-edge-dark),
+    0 0 0 5px rgba(255, 190, 46, 0.3),
+    0 0 36px var(--accent-glow);
+}
+
+.word-label.is-fusing {
+  border-color: var(--merged-edge);
+  animation: merged-fuse 0.35s ease-in-out both;
+}
+
+@keyframes merged-fuse {
+  0%,
+  50%,
+  100% {
+    scale: 1;
+  }
+  25%,
+  75% {
+    scale: 1.15;
+    box-shadow: 0 0 26px var(--merged-glow);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word-label.is-fusing {
+    animation: none;
+  }
+}
