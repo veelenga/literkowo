@@ -12,6 +12,7 @@ function loadStudio(): Promise<PortraitRenderer> {
 
 const previews = new PortraitCache({
   createRenderer: loadStudio,
+  keyOf: (key) => key,
   scheduleFrame: (callback) => requestAnimationFrame(() => callback()),
   rosterSize: PETS.length + HATS.length,
   idleReleaseMs: IDLE_RELEASE_MS,
