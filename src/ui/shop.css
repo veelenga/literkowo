@@ -1,0 +1,65 @@
+:root {
+  --lock: #c9d2e3;
+}
+
+.lock-badge {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px 2px 4px;
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--bg-deep);
+  background: linear-gradient(180deg, #3b4675, #232b52);
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+}
+
+.lock-badge-icon {
+  width: 13px;
+  height: 13px;
+  fill: var(--lock);
+}
+
+.lock-badge .lock-badge-coin {
+  width: 13px;
+  height: 13px;
+}
+
+.lock-badge-level {
+  display: grid;
+  place-items: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, var(--xp-light), var(--xp));
+  color: var(--xp-edge);
+  font-size: 0.68rem;
+}
+
+.avatar-option.is-locked {
+  cursor: not-allowed;
+  filter: saturate(0.35) brightness(0.8);
+}
+
+.avatar-option.is-locked .lock-badge {
+  right: -4px;
+  bottom: -4px;
+  filter: saturate(2.5) brightness(1.25);
+}
+
+@media (hover: hover) {
+  .avatar-option.is-locked:hover {
+    transform: none;
+    border-color: var(--border);
+  }
+}

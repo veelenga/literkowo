@@ -1,20 +1,31 @@
+import { isSkinLocked } from '../course/inventory';
+import { skinSpec } from '../course/shop';
 import { AVATARS } from '../profiles/Profile';
 import { characterAvatar } from './CharacterAvatar';
 import { preloadPortraits } from './CharacterPortraits';
 import { el } from './dom';
 import { livePreview } from './LivePreview';
+import { unlockHint } from './shopCopy';
+import { lockBadge } from './shopParts';
 
 const ACTIVE_CLASS = 'is-active';
+const LOCKED_CLASS = 'avatar-option is-locked';
+const OPEN_CLASS = 'avatar-option';
 
 interface AvatarTile {
   character: string;
   button: HTMLButtonElement;
   portrait: HTMLElement;
+  locked: boolean;
 }
 
-export function avatarPicker(initial: string, onPick: (character: string) => void): HTMLElement {
+export function avatarPicker(
+  initial: string,
+  owned: readonly string[],
+  onPick: (character: string) => void,
+): HTMLElement {
   preloadPortraits(AVATARS);
-  const tiles = AVATARS.map(createTile);
+  const tiles = AVATARS.map((character) => createTile(character, owned));
   let current: AvatarTile | undefined;
   const pick = (chosen: AvatarTile) => {
     if (chosen === current) return;
@@ -23,16 +34,29 @@ export function avatarPicker(initial: string, onPick: (character: string) => voi
     livePreview.show(chosen.portrait, chosen.character);
     onPick(chosen.character);
   };
-  tiles.forEach((tile) => tile.button.addEventListener('click', () => pick(tile)));
+  tiles
+    .filter((tile) => !tile.locked)
+    .forEach((tile) => tile.button.addEventListener('click', () => pick(tile)));
   const initialTile = tiles.find((tile) => tile.character === initial);
   if (initialTile) pick(initialTile);
   return el('div', { class: 'avatar-options' }, ...tiles.map((tile) => tile.button));
 }
 
-function createTile(character: string): AvatarTile {
+function createTile(character: string, owned: readonly string[]): AvatarTile {
   const portrait = characterAvatar(character);
-  const button = el('button', { class: 'avatar-option', 'aria-pressed': 'false' }, portrait);
-  return { character, button, portrait };
+  const unlock = isSkinLocked(character, owned) ? skinSpec(character)?.unlock : undefined;
+  const button = el(
+    'button',
+    {
+      class: unlock ? LOCKED_CLASS : OPEN_CLASS,
+      'aria-pressed': 'false',
+      'aria-disabled': unlock ? 'true' : undefined,
+      title: unlock ? unlockHint(unlock) : undefined,
+    },
+    portrait,
+    unlock ? lockBadge(unlock) : null,
+  );
+  return { character, button, portrait, locked: unlock !== undefined };
 }
 
 function markActive(button: HTMLButtonElement, isActive: boolean): void {
