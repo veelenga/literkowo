@@ -123,14 +123,39 @@ h3 {
   font-weight: 900;
 }
 
-img.avatar-img {
+.avatar {
+  position: relative;
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  image-rendering: pixelated;
   user-select: none;
+  pointer-events: none;
+}
+
+.avatar > * {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: opacity var(--duration-slow) ease;
+}
+
+.avatar-placeholder {
+  image-rendering: pixelated;
   scale: var(--avatar-zoom);
+}
+
+.avatar-portrait {
+  opacity: 0;
+}
+
+.avatar.is-ready .avatar-portrait {
+  opacity: 1;
+}
+
+.avatar.is-ready .avatar-placeholder {
+  opacity: 0;
 }
 
 .eyebrow {

@@ -8,7 +8,9 @@ import {
   type WordLanguage,
 } from '../profiles/Profile';
 import type { ProfileStore } from '../profiles/ProfileStore';
-import { avatarImg, el, present } from './dom';
+import { characterAvatar } from './CharacterAvatar';
+import { preloadPortraits, releasePortraits } from './CharacterPortraits';
+import { el, present } from './dom';
 
 const MAX_NAME_LENGTH = 16;
 const CARD_STAGGER_MS = 70;
@@ -53,6 +55,10 @@ export class ProfileScreen {
   ) {
     this.selected = store.active();
     this.render();
+  }
+
+  dispose(): void {
+    releasePortraits();
   }
 
   private render(): void {
@@ -123,7 +129,7 @@ export class ProfileScreen {
         'aria-pressed': String(isSelected),
         onClick: () => this.select(profile),
       },
-      el('span', { class: 'avatar-ring' }, avatarImg(profile.avatar, 'avatar-img')),
+      el('span', { class: 'avatar-ring' }, characterAvatar(profile.avatar)),
       el('strong', { class: 'profile-name', text: profile.name }),
       el(
         'span',
@@ -167,6 +173,7 @@ export class ProfileScreen {
   private createForm(): HTMLElement {
     const t = i18n.t;
     let avatar = AVATARS[0];
+    preloadPortraits(AVATARS);
     const input = el('input', {
       class: 'input',
       type: 'text',
@@ -191,7 +198,7 @@ export class ProfileScreen {
             });
           },
         },
-        avatarImg(candidate, 'avatar-img'),
+        characterAvatar(candidate),
       ),
     );
     const submit = () => {
@@ -234,11 +241,7 @@ export class ProfileScreen {
       el(
         'div',
         { class: 'panel-head' },
-        el(
-          'span',
-          { class: 'avatar-ring avatar-ring-small' },
-          avatarImg(profile.avatar, 'avatar-img'),
-        ),
+        el('span', { class: 'avatar-ring avatar-ring-small' }, characterAvatar(profile.avatar)),
         el('h3', { class: 'panel-title', text: profile.name }),
       ),
       el('p', { class: 'field-label', text: t.wordLanguage }),

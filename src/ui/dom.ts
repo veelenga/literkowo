@@ -1,5 +1,3 @@
-import { avatarImage } from '../profiles/Profile';
-
 export type Child = Node | string | null | undefined | false;
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -155,13 +153,4 @@ export function icon(name: IconName, className: string): SVGSVGElement {
 
 export function fingerColor(finger: string | undefined): string {
   return `var(--finger-${finger ?? 'thumb'})`;
-}
-
-export function avatarImg(avatar: string, className: string): HTMLImageElement {
-  return el('img', {
-    src: avatarImage(avatar),
-    alt: '',
-    class: className,
-    draggable: 'false',
-  });
 }

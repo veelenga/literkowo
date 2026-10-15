@@ -2,7 +2,8 @@ import { i18n } from '../i18n/i18n';
 import type { Progress } from '../game/Game';
 import type { SessionStats } from '../game/SessionStats';
 import type { Profile } from '../profiles/Profile';
-import { avatarImg, Counter, el, icon, releaseFocus, restartAnimation } from './dom';
+import { characterAvatar } from './CharacterAvatar';
+import { Counter, el, icon, releaseFocus, restartAnimation } from './dom';
 import { soundToggle } from './SoundToggle';
 
 const MAX_LIVES = 3;
@@ -41,7 +42,7 @@ export class Hud {
             onMap();
           },
         },
-        avatarImg(profile.avatar, 'avatar-img hud-avatar'),
+        characterAvatar(profile.avatar, 'hud-avatar'),
         el('span', { text: t.map }),
       ),
       el(
