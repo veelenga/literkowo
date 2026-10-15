@@ -3,6 +3,7 @@ import { MAX_STARS } from '../course/scoring';
 import { i18n } from '../i18n/i18n';
 import { totalStars, type Profile } from '../profiles/Profile';
 import { avatarImg, el, icon, svg } from './dom';
+import { soundToggle } from './SoundToggle';
 
 const TRAIL_EDGE = 8;
 const TRAIL_LOW = 64;
@@ -78,6 +79,7 @@ export class WorldMap {
         this.stat(icon('star', 'stat-icon stat-icon-star'), totalStars(this.profile), t.stars),
         this.stat('🔤', this.profile.lettersFreed, t.lettersFreed),
         this.stat('🏆', this.profile.totalScore, t.score),
+        soundToggle(),
       ),
     );
   }

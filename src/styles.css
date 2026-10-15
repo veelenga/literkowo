@@ -2355,3 +2355,37 @@ svg.stat-icon {
     transition-duration: 1ms !important;
   }
 }
+
+.sound-toggle {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 15px;
+  border: 2px solid var(--border);
+  background: var(--surface-raised);
+  box-shadow: 0 3px 0 var(--surface-edge);
+  color: var(--text);
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) ease;
+}
+
+.sound-toggle:hover {
+  background: var(--surface-hover);
+}
+
+.sound-toggle:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--surface-edge);
+}
+
+.sound-toggle.is-muted {
+  color: var(--muted);
+}
+
+.sound-toggle-icon {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}

@@ -3,6 +3,7 @@ import type { Progress } from '../game/Game';
 import type { SessionStats } from '../game/SessionStats';
 import type { Profile } from '../profiles/Profile';
 import { avatarImg, Counter, el, icon, restartAnimation } from './dom';
+import { soundToggle } from './SoundToggle';
 
 const MAX_LIVES = 3;
 const PERCENT = 100;
@@ -51,6 +52,7 @@ export class Hud {
         el('div', { class: 'progress-bar' }, this.progressFill),
       ),
       this.heartRow,
+      soundToggle(),
     );
   }
 
