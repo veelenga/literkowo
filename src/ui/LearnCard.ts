@@ -4,6 +4,7 @@ import type { Level } from '../course/regions';
 import { i18n } from '../i18n/i18n';
 import { el, fingerColor } from './dom';
 import { handsDiagram } from './HandsDiagram';
+import { levelKindLabel } from './levelKind';
 import { keyStatus } from './mastery';
 import { createOverlay, onWindowKey, type Overlay } from './overlay';
 
@@ -19,14 +20,13 @@ export function learnCard(level: Level, keyStats: KeyStats, onStart: () => void)
     el(
       'div',
       { class: 'panel panel-center learn-panel' },
-      el('span', { class: 'eyebrow', text: t.newKeys }),
+      el('span', { class: 'eyebrow', text: levelKindLabel(level) }),
       el(
         'div',
         { class: 'keycaps' },
         ...[...level.focusKeys].map((char, index) => keycap(char, index, keyStats[char])),
       ),
-      handsDiagram(level.focusKeys),
-      el('p', { class: 'learn-hint', text: t.placeFingers }),
+      ...guidance(level),
       el(
         'div',
         { class: 'actions' },
@@ -45,6 +45,16 @@ export function learnCard(level: Level, keyStats: KeyStats, onStart: () => void)
     onStart();
   });
   return createOverlay(element, stopListening);
+}
+
+function guidance(level: Level): Element[] {
+  if (level.kind === 'learn') return [handsDiagram(level.newKeys), hint(i18n.t.placeFingers)];
+  if (level.kind === 'boss') return [];
+  return [hint(i18n.t.features.course.hints[level.kind])];
+}
+
+function hint(text: string): HTMLElement {
+  return el('p', { class: 'learn-hint', text });
 }
 
 function keycap(char: string, index: number, stat: KeyStat | undefined): HTMLElement {
