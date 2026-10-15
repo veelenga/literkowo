@@ -158,7 +158,7 @@ More rules:
 - Word counts are rounded.
 - Generated words of a `words` stage have at most `round(3 to 5)` letters (`GENERATED_MAX_LENGTH`) and never more than the stage allows, so early levels get generated strings of at most 3 letters. Real words and combos use the full length of the stage.
 - Boss: `round(4 to 14)` words (`BOSS_HITS`), so 6, 7, 9, 12 and 14 for the five bosses, at speed 0.3 to 0.52 (`BOSS_SPEED`). Other enemies in a boss fight use 2 to 5 letters.
-- Mini boss of a review: `round(3 to 5)` words (`MINI_BOSS_HITS`), so 3 in Polana and `las-5`, 4 from `las-10` to `jaskinia-23` and 5 in Wyspa Ogonków, at 0.8 times the speed the review ends with (`MINI_BOSS_SPEED_SHARE`). Its words are the review's own words.
+- Mini boss of a review: `round(3 to 5)` words (`MINI_BOSS_HITS`), so 3 in Polana and `las-5`, 4 from `las-10` to `jaskinia-23` and 5 in Wyspa Ogonków, at 0.8 times the speed the review ends with (`MINI_BOSS_SPEED_SHARE`), but never faster than the boss of its region (`BOSS_SPEED` at the boss level). So the `polana-3` mini boss runs at 0.34, just below the Polana boss, and every later mini boss runs at the speed of its region boss. Its words are the review's own words.
 - Apart from warm-ups and the rush and meteor events, single letters show only in learn levels.
 
 ## Action events

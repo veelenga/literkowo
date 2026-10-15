@@ -1,4 +1,4 @@
-import { coursePosition, LEVELS, type Level, type LevelKind } from './catalog';
+import { coursePosition, LEVELS, regionOf, type Level, type LevelKind } from './catalog';
 import { stagesSpan } from './wordStages';
 
 export interface Span {
@@ -118,7 +118,7 @@ export function difficultyFor(level: Level): Difficulty {
   return {
     warmup: { ...rules.warmup, speed: start.speed },
     main: { count: Math.round(valueAt(rules.wordCount, position)), ...start, rampTo: end },
-    miniBoss: level.kind === 'review' ? miniBossPace(end, position) : undefined,
+    miniBoss: level.kind === 'review' ? miniBossPace(level, end, position) : undefined,
     lengths,
     generatedLengths: generatedWithin(lengths, position),
     stages: rules.stages,
@@ -136,12 +136,18 @@ export function courseTempo(progress: number): Tempo {
   return { speed: valueAt(WORD_SPEED, eased), spawnInterval: valueAt(SPAWN_INTERVAL, eased) };
 }
 
-function miniBossPace(end: Tempo, position: number): Pace {
+function miniBossPace(level: Level, end: Tempo, position: number): Pace {
   return {
     count: Math.round(valueAt(MINI_BOSS_HITS, position)),
-    speed: end.speed * MINI_BOSS_SPEED_SHARE,
+    speed: Math.min(end.speed * MINI_BOSS_SPEED_SHARE, regionBossSpeed(level)),
     spawnInterval: NO_SPAWN_INTERVAL,
   };
+}
+
+function regionBossSpeed(level: Level): number {
+  const boss = regionOf(level).levels.find((candidate) => candidate.isBoss);
+  if (!boss) throw new Error(`Region without a boss: ${level.regionId}`);
+  return valueAt(BOSS_SPEED, coursePosition(boss));
 }
 
 function paceSpans(levels: readonly Level[]): Map<string, PaceSpan> {

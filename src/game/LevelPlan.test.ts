@@ -111,7 +111,7 @@ describe('levelPlan', () => {
       spawnInterval: 4.349196,
       rampTo: { speed: 0.439366, spawnInterval: 4.33793 },
     });
-    expectSteady(plan.phaseAt(2), { kind: 'boss', count: 3, speed: 0.351493, spawnInterval: 0 });
+    expectSteady(plan.phaseAt(2), { kind: 'boss', count: 3, speed: 0.340408, spawnInterval: 0 });
     expect(plan.phaseAt(2)?.miniBoss).toBe(true);
     expect(plan.phaseAt(2)?.words).toBe(plan.phaseAt(1)?.words);
     expect(plan.phaseAt(3)).toBeUndefined();

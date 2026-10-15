@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { requireLevel } from '../testing/levels';
-import { LEVELS, REGIONS, type Region } from './catalog';
+import { LEVELS, REGIONS, regionOf, type Region } from './catalog';
 import {
   difficultyFor,
   FOCUS_WORD_LENGTHS,
@@ -18,6 +18,7 @@ const FIRST_LEVEL_SECONDS = 22;
 const SECONDS_PRECISION = 0;
 const SMALL_STEP = 1.02;
 const PRECISION = 6;
+const POLANA_BOSS_SPEED = 0.340408;
 
 function regionGrowth(region: Region): number {
   const teaching = region.levels.filter((level) => !level.isBoss);
@@ -106,13 +107,29 @@ describe('difficultyFor', () => {
   });
 
   it('sends the mini boss a little slower than the last words of the review', () => {
-    const level = requireLevel('las-10');
+    const level = requireLevel('polana-3');
     const { miniBoss } = difficultyFor(level);
     expect(miniBoss?.speed).toBeCloseTo(
       levelTempo(level).end.speed * MINI_BOSS_SPEED_SHARE,
       PRECISION,
     );
     expect(miniBoss?.spawnInterval).toBe(0);
+  });
+
+  it('never sends a mini boss faster than the boss of its region', () => {
+    for (const level of LEVELS.filter((candidate) => candidate.kind === 'review')) {
+      const boss = regionOf(level).levels.find((candidate) => candidate.isBoss);
+      const bossSpeed = boss ? difficultyFor(boss).main.speed : 0;
+      expect(difficultyFor(level).miniBoss?.speed).toBeLessThanOrEqual(bossSpeed);
+    }
+    expect(difficultyFor(requireLevel('polana-8')).miniBoss?.speed).toBeCloseTo(
+      POLANA_BOSS_SPEED,
+      PRECISION,
+    );
+    expect(difficultyFor(requireLevel('las-10')).miniBoss?.speed).toBeCloseTo(
+      difficultyFor(requireLevel('las-16')).main.speed,
+      PRECISION,
+    );
   });
 
   it('skips the warmup for bosses', () => {
