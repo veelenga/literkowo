@@ -155,14 +155,14 @@ Speed surges:
 
 Bombers:
 
-- From Las on, in the words phase and in boss fights. One comes about every 40 to 50 seconds while enemies are on the board, and at most one is on the board at a time.
+- From Las on, and in every arena run, in the words phase and in boss fights. One comes about every 40 to 50 seconds while enemies are on the board, and at most one is on the board at a time.
 - A bomber is 1.7 times bigger and moves at 0.55 times the phase speed. Its word has 6 to 9 letters: a boss word when one fits, otherwise letters from the allowed keys. A lit fuse sparks on top and ticks faster and faster from 7 units away.
 - Typing its word detonates it: slow motion at 0.3 for 0.6 seconds, a camera shake and a shockwave. Every enemy within 4.5 units shatters and scores its normal word points. The boss never shatters. Other bombers in range go off 0.25 seconds later. When 3 or more enemies go down, a banner shows "Bum! x3" / "Бум! x3".
 - A bomber that reaches the player costs a life and knocks every other enemy 4 units back.
 
 Twins:
 
-- From Las on, in the words phase, about one spawn in eight becomes 2 to 4 smaller twins in a line or a V. They share one word and bob in step.
+- From Las on, and in every arena run, in the words phase, about one spawn in eight becomes 2 to 4 smaller twins in a line or a V. They share one word and bob in step.
 - They finish together on the same key. Each twin after the first adds the points of one more word, and a callout shows "Bliźniaki x3!" / "Близнюки x3!" with a spark arc between them.
 - Twins that reach the player cost at most one life per group.
 - Twins can briefly put more than 6 enemies on the board.
@@ -172,7 +172,7 @@ Twins:
 Owners: `src/profiles/Profile.ts`, `src/profiles/profileSchema.ts`, `src/profiles/ProfileStore.ts`.
 
 - Several profiles per device, stored as a JSON array in localStorage under `literkowo.profiles`.
-- Schema version is 6 (`PROFILE_SCHEMA_VERSION`). Older profiles are migrated on load: version 1 moves the best score into the total score, version 2 seeds XP with `round(totalScore / 10)`, version 3 starts with empty key statistics, version 4 gets the starter inventory, nothing equipped and every trophy it already earned, version 5 moves level results onto the course with one key per level (`src/profiles/courseMigration.ts`). A shape change bumps the version and adds a migration.
+- Schema version is 7 (`PROFILE_SCHEMA_VERSION`). Older profiles are migrated on load: version 1 moves the best score into the total score, version 2 seeds XP with `round(totalScore / 10)`, version 3 starts with empty key statistics, version 4 gets the starter inventory, nothing equipped and every trophy it already earned, version 5 moves level results onto the course with one key per level (`src/profiles/courseMigration.ts`), version 6 gets an empty arena record. A shape change bumps the version and adds a migration.
 - Version 5 and older had one level per two or three keys. Each old result moves to the new level that completes the same keys: the practice level of the last key of the old level, or the boss for an old boss. When the old result has at least one star, the new levels between the previous target and this one get the same result, so a finished region stays finished and the next open level is the first one the child has not played. A result without stars only moves to its target. XP, coins, scores, stories, key statistics, items and trophies stay as they are.
 
 | Old level    | New target    | Also marked done               |
@@ -201,7 +201,7 @@ Owners: `src/profiles/Profile.ts`, `src/profiles/profileSchema.ts`, `src/profile
 | `wyspa-4`    | `wyspa-24`    | `wyspa-23`                     |
 
 - Entries that cannot be read are dropped, and the raw value is copied to `literkowo.profiles.backup` first.
-- Fields: id, name (up to 16 characters, `src/ui/ProfileScreen.ts`), avatar, word language, total score, letters freed, XP, coins, seen stories, the best result per level, the key statistics, the inventory and the equipped items.
+- Fields: id, name (up to 16 characters, `src/ui/ProfileScreen.ts`), avatar, word language, total score, letters freed, XP, coins, seen stories, the best result per level, the key statistics, the inventory, the equipped items and the arena record (see [Arena](#arena)).
 - Inventory: owned pets, hats, skins and earned trophies, as id lists. Unknown ids are dropped on load. Every profile owns the 6 starter skins and its current avatar.
 - Equipped: at most one pet and one hat. An id the inventory does not own is dropped on load.
 - Word language is set per profile. Today the choices are Polish (default) and English (`WORD_LANGUAGES` in `src/profiles/Profile.ts`).
@@ -300,7 +300,7 @@ Owners: `src/game/mechanics/EnemyTypes.ts`, `src/game/mechanics/enemyTypes/kinds
 - Only plain spawns without a tag are replaced. The boss, power words, merged enemies, minions, twins, bombers, chicks, splitter halves and event pieces stay as they are. Special enemies never merge.
 - At most 1 special enemy is on the board in Polana, and at most 3 in later regions. Bull, nest and thief also come one at a time (`KIND_LIMITS`).
 - The first time a type appears in a level, its name shows as a callout. Each type also has a short hint in `src/i18n/features/enemyTypes.ts`.
-- A type unlocks with the learn level of its key, see the table. Special enemies only replace spawns in the words phase, so the first one shows in the practice level of that key. When a profile's course never teaches that key, the type unlocks with its fallback key instead. English word profiles never see Wyspa Ogonków, so they meet the chameleon with `x` in `jaskinia-11` and the nest with `b` in `jaskinia-16` (`src/game/mechanics/enemyTypes/kinds.ts`).
+- In an arena run every type is unlocked and up to 3 special enemies can be on the board, see [Arena](#arena). In a course level a type unlocks with the learn level of its key, see the table. Special enemies only replace spawns in the words phase, so the first one shows in the practice level of that key. When a profile's course never teaches that key, the type unlocks with its fallback key instead. English word profiles never see Wyspa Ogonków, so they meet the chameleon with `x` in `jaskinia-11` and the nest with `b` in `jaskinia-16` (`src/game/mechanics/enemyTypes/kinds.ts`).
 
 | Type        | Name (pl / uk)          | From                        | Word                                     | Movement                                                                    | Rule                                                                                                                                                                   |
 | ----------- | ----------------------- | --------------------------- | ---------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -323,6 +323,7 @@ A type stays unlocked in every later region.
 Owners: `src/game/mechanics/WaveEvents.ts`, `src/game/mechanics/waveEvents/events.ts`.
 
 - Once in each words phase, one event starts with a banner. A course level has one words phase. It starts at a random moment between one third and two thirds of `count × spawnInterval` of the phase. Each event is equally likely.
+- A phase can ask for another number of events (`events` in `src/game/RunPlan.ts`). Several events split the middle third of the phase evenly, and each one waits until the one before has sent all its pieces. Arena waves use this, see [Arena](#arena).
 - Event pieces join the board only while fewer than 6 enemies are on it, so a full board delays them. They stop when the phase changes, and no event runs next to a boss.
 - Event pieces are never replaced by special enemies and never merge.
 
@@ -340,7 +341,7 @@ XP only grows. It drives the player level and the rank. A child never loses XP, 
 
 - Each completed word gives `letters × multiplier × fever bonus × tag factor` XP, rounded. The multiplier and the fever bonus are the ones from scoring, so XP follows the combo.
 - Tag factor: a boss hit 3, `merged` 3, `power-word` 2, `minion` 1. Any other or unknown tag is 1. With several tags the highest factor counts.
-- The XP of each word is then scaled by the XP factor of the run plan and rounded again. Course levels use 1 (`LEVEL_XP_FACTOR` in `src/game/LevelPlan.ts`).
+- The XP of each word is then scaled by the XP factor of the run plan and rounded again. Course levels use 1 (`LEVEL_XP_FACTOR` in `src/game/LevelPlan.ts`), the arena 0.4 to 0.25 by preset.
 - A floating "+12 XP" rises from the enemy on each completed word, and the HUD shows the XP of the run next to the score. The level number sits on the avatar button of the HUD.
 - XP of the run is added to the profile after every attempt, won or lost.
 
@@ -378,7 +379,7 @@ Ranks by level band, names in `src/i18n/features/progression.ts`:
 
 Coins are a separate counter. They are spent in the [shop](#shop).
 
-- During a level each completed word gives 1 coin. Mechanics add more with `addCoins(amount)`: 15 for a treasure chest, 5 for a thief caught with its loot. Run coins never go down. The run total is `GameResult.coins`.
+- During a level each completed word gives 1 coin, the coins per word of the run plan. The arena pays less per word, see [Arena](#arena). Mechanics add more with `addCoins(amount)`: 15 for a treasure chest, 5 for a thief caught with its loot. Run coins never go down. The run total is `GameResult.coins`.
 - After the level: the run coins, plus 10 for a won level, plus 5 per star.
 
 The result card fills the XP bar from the old progress to the new one. When a level is crossed it shows a "Nowy poziom!" / "Новий рівень!" banner with the rank name, confetti that stays inside the card, and the level complete and sparkle sounds. The coins earned sit in a pill next to the XP. The map header and the profile cards show the level, the rank, a thin XP bar and the coins.
@@ -496,10 +497,114 @@ Trophies are awarded after every attempt and when an older profile is migrated. 
 | `region-<id>`                      | the region's name | the region's name | at least one star on every level of that region |
 | `level-10`, `level-25`, `level-50` | Poziom 10         | Рівень 10         | the player level reached                        |
 | `mastered-region`                  | Mistrz klawiszy   | Майстер клавіш    | every new key of one region mastered            |
+| `arena-wave-10`, `arena-wave-20`   | Fala 10           | Хвиля 10          | the waves cleared in one arena run              |
+| `arena-gold`                       | Złoty medal       | Золота медаль     | a gold medal in the arena                       |
 
-The trophy tab shows "Trofea: 3 z 10" / "Трофеї: 3 з 10", earned trophies in their colour and the others in grey with their hint.
+The trophy tab shows "Trofea: 3 z 13" / "Трофеї: 3 з 13", earned trophies in their colour and the others in grey with their hint.
 
 The result card adds a chip "Nowy skarb: Polana" / "Новий скарб: Галявина" for each trophy of the attempt, and "Nowość w sklepie" / "Новинка в крамниці" when an item became affordable or claimable.
+
+## Arena
+
+Owners: `src/arena` (`keySets.ts`, `difficulty.ts`, `endlessPlan.ts`, `medals.ts`, `economy.ts`, `record.ts`, `progress.ts`), `src/game/mechanics/ArenaWaves.ts`, `src/app/ArenaFlow.ts`, `src/ui/arena/ArenaScreen.ts`, `src/ui/arena/ArenaResult.ts`, `src/ui/arena/arenaParts.ts`, `src/ui/arena.css`, copy in `src/i18n/features/arena.ts`.
+
+The arena, "Arena" / "Арена", is extra play next to the course. Its first mode is "Bez końca" / "Без кінця": waves that never end, until the last heart is gone. The course stays the only place to learn new keys.
+
+Opening:
+
+- The arena opens with at least one star on the Polana boss (`polana-19`), or with a placement in the profile's arena record. The placement test that writes it is planned (`isArenaOpen` in `src/arena/keySets.ts`).
+- Map header: the "Arena" / "Арена" button sits next to the shop button in the same style, only the icon on phones. While the arena is closed it is dimmed, has a lock badge and the hint "Pokonaj bossa Polany" / "Переможи боса Галявини", and a tap scrolls the map to the gate.
+- Map gate: a round badge as big as a boss node in the footer of the Polana band, across from the boss (`gatePoint` in `src/ui/map/journeyLayout.ts`). While closed it is dimmed with a lock and shows the same hint. Once open it shows "Arena" and opens the arena screen.
+- The result card of the attempt that opens the arena shows the chip "Arena otwarta!" / "Арену відкрито!".
+
+Key sets:
+
+- One key set per region whose keys the course has taught: a region counts once its boss level is open, which means every key of the region was introduced. A placement also opens every region up to the placed one.
+- A key set holds the allowed keys of its region's boss level, so every key up to and including that region. English word profiles never get Wyspa Ogonków.
+- The screen starts on the highest key set. The theme, the music and the boss of a run are those of the key set's region. The game runs the run with that boss level as its level.
+
+Difficulty presets (`src/arena/difficulty.ts`):
+
+| Level | Id       | Name (pl / uk)         | Speed  | Spawn gap | Hearts | Special share | Events per wave | Boss           | Coins  | XP factor |
+| ----- | -------- | ---------------------- | ------ | --------- | ------ | ------------- | --------------- | -------------- | ------ | --------- |
+| 1     | `calm`   | Spokojnie / Спокійно   | × 0.8  | × 1.2     | 3      | 10%           | 1               | none           | × 1    | 0.4       |
+| 2     | `normal` | Normalnie / Звичайно   | × 1    | × 1       | 3      | 25%           | 1               | none           | × 1.25 | 0.4       |
+| 3     | `fast`   | Szybko / Швидко        | × 1.2  | × 0.85    | 3      | 35%           | 1               | every 5th wave | × 1.5  | 0.3       |
+| 4     | `frenzy` | Szaleństwo / Шаленство | × 1.35 | × 0.75    | 1      | 50%           | 2               | every 5th wave | × 2    | 0.25      |
+
+- Spokojnie and Normalnie are open with the arena. Szybko opens with a silver medal on Normalnie with any key set, and Szaleństwo with a silver on Szybko.
+- A locked chip shows a lock badge, and a hint under the chips names what opens the first locked preset: "Srebro na poziomie Normalnie otworzy Szybko" / "Срібло на рівні Звичайно відкриє Швидко".
+
+Endless waves (`src/arena/endlessPlan.ts`):
+
+- Wave 1 starts at the practice pace of the key set's boss level: the word speed and the spawn interval at its course position (see [Difficulty](#difficulty)), times the preset's speed and spawn gap.
+- Wave `n` has `8 + 2n` words, at most 30.
+- Each wave is 5% faster than the one before, up to 1.8 times wave 1.
+- The spawn interval shrinks 5% per wave, down to 85% of wave 1 (`SPAWN_GAP`). The floor keeps the XP rule below.
+- Words have at least 2 letters. The longest word has 3 letters in waves 1 to 3 and grows by one letter every three waves, up to 8 from wave 16. Generated words use the same lengths.
+- Every key of the key set is a focus key, and weak keys get more weight as in the course.
+- Every mechanic runs from wave 1, whatever the course progress: every enemy type with up to 3 special enemies at once, bombers, twins, speed surges, power words and merging. The run plan says so with `allMechanicsUnlocked`. Special enemies replace a spawn at the preset's share.
+- Mid-wave events start at wave 3, with the preset's number of events per wave. Two events in one wave share the middle third of it, one after the other.
+- On presets with a boss, every fifth wave is the key set region's boss with its phases and signature attacks, with the region boss's number of words and its speed times the preset speed. A beaten boss wave grants a shield, the same bubble as the power word Tarcza, with the callout "Tarcza za bossa!" / "Щит за боса!".
+- Each wave after the first starts with 4 calm seconds without spawns (`CALM_SECONDS`).
+- Each wave starts with a chime and the banner "Fala 4" / "Хвиля 4". The HUD progress label shows the wave, the HUD has as many hearts as the preset, and the music switches to the boss mood during a boss wave.
+- Pause works as in a level. The run ends when the last heart is gone. Waves cleared count every wave that was finished, boss waves included.
+
+Medals (`src/arena/medals.ts`):
+
+- A medal is the lower of two grades. Waves cleared: 3 for bronze, 6 for silver, 10 for gold. Accuracy: the star thresholds on the rounded percent, 85, 93 and 97. Rushing never earns gold.
+- Bronze is `#d08a4a`, silver `#c9d4ea` and gold the accent colour (`.medal` in `src/ui/arena.css`).
+
+Coins and XP (`src/arena/economy.ts`):
+
+- Each word pays half a coin times the preset's coin factor, and the run's word coins are rounded down. Chests and caught thieves pay as in a level.
+- Each medal pays once per key set and difficulty: bronze 20, silver 40, gold 80. A run that skips a medal pays every medal up to the new one.
+- A new best wave, more waves cleared than before on that key set and difficulty, pays 15.
+- XP is word XP times the preset's XP factor. Faster presets pay less XP per word, so they never pay more XP per minute.
+- Rule: arena XP per minute stays within 1.25 times the course practice XP per minute at the same accuracy and course position (`XP_RATE_CAP`). `src/arena/xpPerMinute.test.ts` simulates the real XP formulas at 93, 95 and 97% accuracy, for every key set, preset and run length up to 60 waves, against the last practice level of the key set's region.
+- XP, score, letters freed and key statistics are added to the profile after every run, and trophies are awarded, as after a level (`src/arena/progress.ts`).
+
+Arena screen (`src/ui/arena/ArenaScreen.ts`):
+
+- It copies the shop: a header with the back button "Mapa" / "Мапа", the title and the coins. On the left the hero in 3D with the equipped hat and pet, and under it the best wave and medal of the chosen key set for each open preset.
+- On the right: the key set chips with region names and the keys under them, the difficulty chips, and the mode card "Bez końca" / "Без кінця" with its rule line, the best wave of the chosen key set and preset ("Rekord: fala 9" / "Рекорд: хвиля 9", or "Jeszcze bez rekordu" / "Ще без рекорду") with its medal, and a gold Play button. The mode grid has room for the planned cards.
+- Phones: one column, the hero as a 64 px strip with record pills, the difficulty chips 2 by 2 and the mode card at full width.
+- Coming back from a run keeps the chosen key set and preset.
+
+Result card (`src/ui/arena/ArenaResult.ts`), in the result panel of a level:
+
+- The title is "Nowy rekord!" / "Новий рекорд!" on a new best wave, with confetti and a sparkle. Otherwise it is "Dobra robota!" / "Гарна робота!" with a medal and "Mrok był szybszy" / "Морок був швидший" without one.
+- The medal takes the place of the stars, with a hint naming what the next medal needs: "Srebro. Złoto: fala 10 i 97%" / "Срібло. Золото: хвиля 10 і 97%", or "Złoto! To najlepszy medal" / "Золото! Це найкраща медаль".
+- Tiles for "Fale" / "Хвилі" (waves cleared), points and accuracy. The XP bar and the coins of the run with every payout, trophy chips, then "Jeszcze raz" / "Ще раз" as the main button and "Arena" back to the arena screen. Enter presses the main button 600 ms after the card opens (`KEY_READY_MS` in `src/ui/overlay.ts`).
+
+Record, part of profile schema 7 (`src/arena/record.ts`):
+
+```ts
+type Medal = 0 | 1 | 2 | 3; // none, bronze, silver, gold
+
+interface ArenaRecord {
+  placement?: { regionId: string; date: string };
+  endless: Record<string, EndlessBest>; // "<key set>/<difficulty>", for example "las/normal"
+  medalsPaid: Record<string, Medal>; // same keys, the highest medal already paid
+  daily?: DailyRecord;
+  tracks: Record<string, TrackBest>;
+  shadowWins: Record<string, string>;
+  modifierWins: Record<string, number>;
+}
+
+interface EndlessBest {
+  wave: number; // waves cleared in the best run
+  score: number;
+  accuracy: number;
+  medal: Medal; // the best medal of any run
+  date: string; // local ISO date of the best run
+  runs: number;
+}
+```
+
+- The best run has the most waves cleared, then the most points.
+- `daily`, `tracks`, `shadowWins` and `modifierWins` stay empty until the planned modes fill them. Their shapes (`DailyRecord`, `TrackBest` with its `GhostRun`) are read and checked on load already, so those modes need no new schema version.
+- Broken entries are dropped on load.
 
 ## Companion
 
@@ -544,7 +649,7 @@ Map:
 - Each band starts with a sign: the chapter number, the region name, a short mood line (`src/i18n/features/worldMap.ts`), the stars earned out of the total and the mastery meter. Signs switch sides from band to band, and the path passes each sign on the other side.
 - Levels are round badges on the path with their focus keys. Learn levels carry a ✨ badge and review levels a 🔁 badge, and the title names the kind and the keys, for example "Trening D" / "Тренування D" (`src/ui/levelKind.ts`). Unlocked learn, practice and review levels show the key dots under the keys, see [Key mastery](#key-mastery). Bosses have a crown. Locked levels show a lock. Levels with stars glow in the region colour and show their stars. The current level pulses, has a Play tag, and the hero stands on it.
 - The hero on the current level wears the equipped hat and has the equipped pet in front of its hip, a little larger than in the game. The hero is framed like the plain portrait, so it keeps the same size, and a hat rises above the marker. It is a rendered image, not a live 3D view, so the map stays light on phones (`src/ui/OutfitAvatar.ts`, `src/ui/portraits/OutfitStudio.ts`). Until the image is ready, and when it cannot be rendered, the plain portrait shows. Each outfit is rendered once per session and kept in memory, so reopening the map shows it at once. With nothing equipped the hero is the plain portrait.
-- The header stays at the top: the avatar with the level number, the name, the rank and a thin XP bar, then stars, coins, the shop button and the sound toggle. A tap on the avatar goes back to the profiles. The shop button has the bag and the label "Sklep" / "Крамниця", only the bag on phones, and the green dot when something can be bought or claimed.
+- The header stays at the top: the avatar with the level number, the name, the rank and a thin XP bar, then stars, coins, the arena button, the shop button and the sound toggle. A tap on the avatar goes back to the profiles. The shop button has the bag and the label "Sklep" / "Крамниця", only the bag on phones, and the green dot when something can be bought or claimed.
 - On open the map scrolls smoothly to the current level, or to the last open level when all levels have stars. Levels pop in as they scroll into view. With reduced motion the scroll is instant and nothing pops in.
 - The silhouettes of each band move at different speeds while scrolling, except in the low quality preset.
 
@@ -555,7 +660,7 @@ Owners: `src/audio/Sfx.ts`, `src/audio/Music.ts`, `src/audio/music/themes.ts`.
 - All sound is generated live with Web Audio. There are no audio files.
 - Audio unlocks when the player presses Play on the profile screen, because browsers need a user gesture (`src/app/App.ts`).
 - Music has one arrangement per theme, built from bass, drum, pad, motif, noise bed and sporadic layers. It plays during levels and stops on the map.
-- Learn, practice and review levels use the calm mood. Boss levels use the boss mood: tempo × 1.15, the boss mode, and extra kick, tom and ostinato layers.
+- The mood follows the phase: boss phases use the boss mood, everything else the calm mood. So learn, practice and review levels are calm, boss levels and arena boss waves use the boss mood: tempo × 1.15, the boss mode, and extra kick, tom and ostinato layers.
 - Up to 8 music voices play at once. Tracks crossfade over 1.5 seconds.
 - Intensity runs from 0 to 1. It follows `combo / 20` and is 1 during fever (`src/app/App.ts`). Higher intensity brightens the mix and brings in a sparkle layer.
 - Sound effects: hit (pitch climbs a pentatonic scale with the combo), mistake, word, callout, fever, life lost, boss hit, level complete and level failed.
@@ -623,13 +728,14 @@ Owners: `src/app/devShortcut.ts`, `src/app/App.ts`.
 
 - In development only, `?level=<id>` starts a level directly, for example `http://localhost:5173/?level=jaskinia-24` for the cave boss. Every level id is in the table under [Regions and levels](#regions-and-levels).
 - It uses a temporary profile named Test with Polish words. It takes the character, the inventory and the equipped pet and hat of the active profile, or the first character without items when there is none. Story and learn cards are skipped. Results are not saved.
-- An unknown id opens the profile screen. Production builds ignore the parameter.
+- In development only, `?arena=<key set>-<difficulty>` starts an endless arena run directly, for example `http://localhost:5173/?arena=las-2` for Las on Normalnie. The key set is a region id and the difficulty is the preset level from 1 to 4, see [Arena](#arena). It uses the same temporary profile, so the arena does not need to be open and results are not saved.
+- An unknown id or arena value opens the profile screen. Production builds ignore the parameters.
 
 ## Planned
 
 Not built yet. In this order:
 
-1. Endless arena, a daily challenge and a ghost race against a sibling, for players who can already type.
+1. More arena modes: a daily challenge, a race against a shadow, modifiers and a placement test.
 2. Daily training: short sessions built from weak keys, with spaced repetition and streaks.
 3. Typing test with certificates.
 4. New chapters after the letters: capitals, numbers, punctuation, sentences and speed.
