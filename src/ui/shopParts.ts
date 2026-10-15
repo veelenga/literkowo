@@ -49,13 +49,13 @@ export function shopButton(profile: Profile, onOpen: () => void): HTMLElement {
   return el(
     'button',
     {
-      class: hasNews ? 'shop-button has-news' : 'shop-button',
+      class: hasNews ? 'header-button has-news' : 'header-button',
       title: label,
       'aria-label': label,
       onClick: onOpen,
     },
-    shopIcon('bag', 'shop-button-icon'),
-    el('span', { class: 'shop-button-label', text: copy.open }),
-    hasNews ? el('span', { class: 'shop-button-dot', 'aria-hidden': 'true' }) : null,
+    shopIcon('bag', 'header-button-icon'),
+    el('span', { class: 'header-button-label', text: copy.open }),
+    hasNews ? el('span', { class: 'header-button-dot', 'aria-hidden': 'true' }) : null,
   );
 }
