@@ -18,9 +18,22 @@ export function createOverlay(element: HTMLElement, ...cleanups: Cleanup[]): Ove
   };
 }
 
-export function onWindowKey(handler: (event: KeyboardEvent) => void): Cleanup {
+type KeyHandler = (event: KeyboardEvent) => void;
+
+export function onWindowKey(handler: KeyHandler): Cleanup {
   window.addEventListener('keydown', handler);
   return () => window.removeEventListener('keydown', handler);
+}
+
+export function onWindowKeyAfter(delayMs: number, handler: KeyHandler): Cleanup {
+  let stopListening: Cleanup | undefined;
+  const timer = window.setTimeout(() => {
+    stopListening = onWindowKey(handler);
+  }, delayMs);
+  return () => {
+    window.clearTimeout(timer);
+    stopListening?.();
+  };
 }
 
 export class OverlaySlot {

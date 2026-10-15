@@ -1,5 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
-import { createOverlay, onWindowKey, OverlaySlot } from './overlay';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { createOverlay, onWindowKey, onWindowKeyAfter, OverlaySlot } from './overlay';
+
+const DELAY_MS = 600;
+
+function pressEnter(): void {
+  window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+}
 
 function setup() {
   const host = document.createElement('div');
@@ -73,5 +79,32 @@ describe('onWindowKey', () => {
     stop();
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     expect(handler).toHaveBeenCalledOnce();
+  });
+});
+
+describe('onWindowKeyAfter', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('ignores keys until the delay has passed', () => {
+    vi.useFakeTimers();
+    const handler = vi.fn();
+    const stop = onWindowKeyAfter(DELAY_MS, handler);
+    pressEnter();
+    vi.advanceTimersByTime(DELAY_MS);
+    pressEnter();
+    stop();
+    expect(handler).toHaveBeenCalledOnce();
+  });
+
+  it('never listens when stopped before the delay', () => {
+    vi.useFakeTimers();
+    const handler = vi.fn();
+    const stop = onWindowKeyAfter(DELAY_MS, handler);
+    stop();
+    vi.advanceTimersByTime(DELAY_MS);
+    pressEnter();
+    expect(handler).not.toHaveBeenCalled();
   });
 });
