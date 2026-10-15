@@ -21,7 +21,6 @@ export interface BloomSetting {
 
 export interface ShadowSetting {
   readonly mapSize: number;
-  readonly soft: boolean;
 }
 
 export interface QualityPreset {
@@ -39,7 +38,7 @@ export const QUALITY_PRESETS: Readonly<Record<QualityLevel, QualityPreset>> = {
     maxPixelRatio: 1.5,
     msaaSamples: 4,
     bloom: { enabled: true, scale: 0.5 },
-    shadow: { mapSize: 2048, soft: true },
+    shadow: { mapSize: 2048 },
     detail: { particles: 1, props: 1, extras: true },
   },
   medium: {
@@ -47,7 +46,7 @@ export const QUALITY_PRESETS: Readonly<Record<QualityLevel, QualityPreset>> = {
     maxPixelRatio: 1.25,
     msaaSamples: 2,
     bloom: { enabled: true, scale: 0.5 },
-    shadow: { mapSize: 1024, soft: false },
+    shadow: { mapSize: 1024 },
     detail: { particles: 0.6, props: 0.75, extras: true },
   },
   low: {
@@ -55,7 +54,7 @@ export const QUALITY_PRESETS: Readonly<Record<QualityLevel, QualityPreset>> = {
     maxPixelRatio: 1,
     msaaSamples: 0,
     bloom: { enabled: false, scale: 0.5 },
-    shadow: { mapSize: 512, soft: false },
+    shadow: { mapSize: 512 },
     detail: { particles: 0.35, props: 0.5, extras: false },
   },
 };

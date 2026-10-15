@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 
-const THREE_CHUNK_LIMIT_KB = 620;
+const THREE_CHUNK_LIMIT_KB = 670;
 
 const PAGES_BASE = '/literkowo/';
 

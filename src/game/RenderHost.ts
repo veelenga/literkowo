@@ -130,7 +130,7 @@ class RenderHost {
       if (this.pipeline) disposePipeline(this.pipeline);
       this.pipeline = createPipeline(renderer, preset, scene, camera);
     }
-    renderer.shadowMap.type = preset.shadow.soft ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     this.pipeline.scenePass.scene = scene;
     this.pipeline.scenePass.camera = camera;
   }
