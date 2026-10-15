@@ -103,7 +103,7 @@ Owners: `src/profiles/Profile.ts`, `src/profiles/profileSchema.ts`, `src/profile
 - Equipped: at most one pet and one hat. An id the inventory does not own is dropped on load.
 - Word language is set per profile. Today the choices are Polish (default) and English (`WORD_LANGUAGES` in `src/profiles/Profile.ts`).
 - Avatars are character skins: 18 Kenney Blocky Characters with ids `a` to `r`. Portraits are in `public/characters`, 3D models in `public/models/characters` (`src/game/Player.ts`). The skins `a` to `f` are free. The new profile picker shows the other 12 with a lock badge: the price in coins, or the level where the rank opens them. Locked skins cannot be picked there, they come from the shop.
-- Other keys: `literkowo.activeProfile`, `literkowo.uiLanguage`, `literkowo.sound`, `literkowo.music`, `literkowo.reloadedAfterPreloadError`.
+- Other keys: `literkowo.activeProfile`, `literkowo.uiLanguage`, `literkowo.sound`, `literkowo.music`, `literkowo.reloadedAfterPreloadError`, `literkowo.rotateHintSeen`.
 - When localStorage is blocked, storage falls back to memory for the session (`src/storage.ts`).
 
 ## Scoring
@@ -222,7 +222,7 @@ Coins are a separate counter. They are spent in the [shop](#shop).
 - During a level each completed word gives 1 coin. Mechanics add more with `addCoins(amount)`: 15 for a treasure chest, 5 for a thief caught with its loot. Run coins never go down. The run total is `GameResult.coins`.
 - After the level: the run coins, plus 10 for a won level, plus 5 per star.
 
-The result card fills the XP bar from the old progress to the new one. When a level is crossed it shows a "Nowy poziom!" / "Новий рівень!" banner with the rank name, confetti and the level complete and sparkle sounds. The coins earned sit in a pill next to the XP. The map header and the profile cards show the level, the rank, a thin XP bar, the stars and the coins.
+The result card fills the XP bar from the old progress to the new one. When a level is crossed it shows a "Nowy poziom!" / "Новий рівень!" banner with the rank name, confetti that stays inside the card, and the level complete and sparkle sounds. The coins earned sit in a pill next to the XP. The map header and the profile cards show the level, the rank, a thin XP bar and the coins.
 
 ## Key mastery
 
@@ -419,9 +419,11 @@ Layout:
 
 - Phones are screens up to 600 px wide or up to 480 px tall. Tablets are up to 1024 px wide. `src/ui/formFactor.ts` mirrors the phone query for code.
 - On tablets the HUD shows score, combo, hearts and progress.
-- On phones the HUD is one translucent strip 44 px tall at the top: avatar with the player level, score, combo, hearts, and small buttons for the native keyboard, pause and sound. The progress bar is a 3 px line along the bottom edge of the strip. The phase name is hidden, and the count shows when the screen is at least 400 px wide. Buttons in the strip are 36 px wide and as tall as the strip.
+- On phones the HUD is one translucent strip 44 px tall at the top: avatar with the player level, score, combo, hearts, and small buttons for the native keyboard, pause and sound. The progress bar is a 3 px line along the bottom edge of the strip. The phase name is hidden, the count shows when the screen is at least 400 px wide, and the XP of the run shows next to the score when it is wider than 600 px. Buttons in the strip are 36 px wide and as tall as the strip.
 - The keyboard hint is smaller on tablets in portrait.
-- On a phone the learn card and the result card fit 390 by 660 px without scrolling: smaller keycaps, a smaller hands diagram and full width buttons. In landscape the result hides the stars hint and uses a smaller level up banner.
+- On a phone the learn card and the result card fit without scrolling, at 390 by 660 px in portrait and 750 by 342 px in landscape, also with landscape safe area insets of 47 px at the sides and 21 px at the bottom.
+- In portrait both cards use smaller keycaps, a smaller hands diagram and full width buttons. When the rank, the XP and the coins do not fit in one row of the result, the XP and the coins move to a second row.
+- In landscape the learn card puts the hands diagram next to the keycaps. The result card puts the stars next to the title, the four results in one row, the XP bar in one row with the level and the rewards, and the buttons side by side. It hides the stars hint and shows the level up banner on one line. Overlays keep an 8 px margin above and below.
 - On screens up to 480 px tall the profile screen shows a smaller logo and no tagline, so the Play button stays in view.
 - Touch targets are at least 44 px on touch screens, except the 36 px wide HUD buttons on phones. Hover effects apply only on devices that can hover.
 - The app is `100dvh` tall. The HUD, the keyboard hint, the map header and overlays stay inside the safe area insets.
@@ -432,14 +434,14 @@ Touch input:
 
 - With a coarse pointer, a level adds a hidden input to the stage. It has `enterkeyhint="done"` and sits outside any form.
 - Characters from its `input` events go to `Game.typeCharacter`, the same path that `keydown` uses. During a composition only the new characters count. Backspace does nothing.
-- Phones with a coarse pointer type on the built-in keyboard by default: a compact QWERTY with three rows (`qwertyuiop`, `asdfghjkl;`, `zxcvbnm,.` and a right Alt), lower case labels, keys at least 32 px tall, fixed at the bottom above the safe area and at most 40% of the screen height, or 34% in landscape. The stage sits above it. The next expected key glows as on the keyboard hint.
+- Phones with a coarse pointer type on the built-in keyboard by default: a compact QWERTY with three rows (`qwertyuiop`, `asdfghjkl;`, `zxcvbnm,.` and a right Alt), lower case labels, fixed at the bottom above the safe area. Keys are 32 to 46 px tall, 40 px at most in landscape, and the keyboard takes at most 40% of the screen height, or 34% in landscape, unless that would make the keys shorter than 32 px. The stage sits above it. The next expected key glows as on the keyboard hint.
 - The keyboard button in the phone HUD opens the native keyboard and closes it on the second tap. While the native keyboard is open the built-in one hides, the level screen reaches down to the bottom of the page so the scene shows behind the keyboard accessory bar, and the arena is framed above the keyboard.
 - On tablets the keyboard hint is tappable, and a tap on the stage or on the "Stuknij, aby pisać" pill focuses the hidden input and opens the native keyboard. Phones have no pill and stage taps do nothing.
 - Right Alt is sticky on both keyboards: tap it, then a letter, to type the Polish letter.
 - While the native keyboard is open, the level screen follows the visual viewport, so the scene and the keyboard hint stay above it. The keyboard counts as open when the visual viewport is at least 150 px shorter than the page and the page is not zoomed (`src/ui/keyboardFit.ts`).
 - The pill hides while the native keyboard is open. It hides for the rest of the session once a key arrives while the native keyboard is closed, which means a physical keyboard.
 - Resuming from the pause card focuses the hidden input again on tablets.
-- During the first level of the course, a phone in portrait shows a small pill: "Obróć telefon, będzie wygodniej". A tap hides it for good, stored under `literkowo.rotateHintDismissed`.
+- The first time the first level of the course starts on a phone held in portrait, a small pill below the HUD says "Obróć telefon, będzie wygodniej" / "Поверни телефон, буде зручніше". It is stored as seen under `literkowo.rotateHintSeen` as soon as it shows, so it never comes back. It fades out after 8 seconds, on a tap, or when the phone turns. A tablet or a phone held sideways does not show it and does not use it up.
 
 Performance:
 
