@@ -10,8 +10,10 @@ export function devLevelFromUrl(): Level | undefined {
   return id ? levelById(id) : undefined;
 }
 
-export function devProfile(): Profile {
-  return createProfile(DEV_PROFILE_NAME, AVATARS[0]);
+export function devProfile(active?: Profile): Profile {
+  const profile = createProfile(DEV_PROFILE_NAME, active?.avatar ?? AVATARS[0]);
+  if (!active) return profile;
+  return { ...profile, inventory: active.inventory, equipped: active.equipped };
 }
 
 export function unlockAudioOnFirstInput(): void {

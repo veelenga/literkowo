@@ -65,7 +65,7 @@ export class App {
 
   private startDevLevel(level: Level): void {
     unlockAudioOnFirstInput();
-    this.startLevel(devProfile(), level);
+    this.startLevel(devProfile(this.store.active()), level);
   }
 
   private showProfiles(): void {
@@ -141,6 +141,7 @@ export class App {
       language: profile.wordLanguage,
       theme: themeFor(regionOf(level).theme),
       keyStats: profile.keyStats,
+      equipped: profile.equipped,
     };
     music.play(config.theme.id, level.isBoss ? 'boss' : 'calm');
     this.game = new Game(stage, config, {

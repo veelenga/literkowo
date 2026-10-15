@@ -33,6 +33,7 @@ export function fakeMechanicContext(overrides: Partial<MechanicContext> = {}): M
     words: new WordSource(requireLevel(FAKE_LEVEL), 'pl'),
     level: requireLevel(FAKE_LEVEL),
     language: 'pl',
+    equipped: {},
     createLabel: unavailable('createLabel'),
     addEnemy: noop,
     removeEnemy: noop,
