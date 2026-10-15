@@ -45,6 +45,7 @@ Region index counts from 0 for `polana`. Level order counts every level of the c
 Rules during a level:
 
 - At most 6 enemies are on screen at once. The player has 3 lives. Losing the last life ends the level as lost.
+- The progress bar counts a spawn as done once every enemy it turned into has left the board, so a spawn that becomes twins or a special enemy still counts as one. Enemies that features add later, such as power words or bombers, do not change it (`src/game/SpawnGroups.ts`).
 - Typing follows every enemy whose word starts with the letters typed so far, a key that fits none of them is a mistake, and when a word is done every enemy with that same word is done too while the others go back to untyped (`src/game/Targeting.ts`).
 - Escape pauses and resumes. Pause also suspends audio. The pause card also has a resume button, and touch screens get a pause button in the HUD.
 - Words (`src/course/WordSource.ts`): when at least 12 words from `src/course/wordLists.ts` fit the allowed keys, about half of the words are real words. The rest are generated strings of 2 to 5 letters, where about half of the letters come from the new keys. Boss words are real words of 4 or more letters when at least 12 fit, otherwise generated strings of 5 to 7 letters. New words and warm-up letters prefer a first letter that no enemy on the board is waiting for.
