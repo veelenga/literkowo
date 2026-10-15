@@ -129,6 +129,18 @@
   fill: currentColor;
 }
 
+@media (max-width: 1100px) {
+  .settings-button {
+    justify-content: center;
+    width: 42px;
+    padding: 0;
+  }
+
+  .settings-button .header-button-label {
+    display: none;
+  }
+}
+
 @media (max-width: 600px) {
   .settings-row:not(.is-inline) {
     grid-template-columns: minmax(0, 1fr);
