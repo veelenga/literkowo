@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import { WordSource } from '../course/WordSource';
-import { SPAWN_RADIUS } from '../game/arena';
+import { SPAWN_RADIUS } from '../game/board';
 import type { Enemy } from '../game/Enemy';
 import { EnemyTypes } from '../game/mechanics/EnemyTypes';
 import {

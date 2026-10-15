@@ -1,4 +1,4 @@
-import { SPAWN_RADIUS } from '../arena';
+import { SPAWN_RADIUS } from '../board';
 import { allowedKeysFor } from '../../course/regions';
 import type { Enemy } from '../Enemy';
 import type { PhaseKind } from '../LevelPlan';

@@ -11,7 +11,7 @@ import {
 import { REGIONS, regionsFor } from '../../course/regions';
 import { WORD_LANGUAGES, type WordLanguage } from '../../profiles/Profile';
 import { requireLevel } from '../../testing/levels';
-import { SPAWN_RADIUS } from '../arena';
+import { SPAWN_RADIUS } from '../board';
 import { Boss } from '../Boss';
 import { Enemy, type EnemyLook } from '../Enemy';
 import type { Phase } from '../LevelPlan';

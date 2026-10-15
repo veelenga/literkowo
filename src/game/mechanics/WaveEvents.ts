@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { allowedKeysFor } from '../../course/regions';
 import { i18n } from '../../i18n/i18n';
-import { MAX_ENEMIES } from '../arena';
+import { MAX_ENEMIES } from '../board';
 import { Boss } from '../Boss';
 import type { Enemy } from '../Enemy';
 import type { Phase, PhaseKind } from '../LevelPlan';

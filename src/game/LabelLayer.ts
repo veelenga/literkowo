@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { StageInsets } from './arena';
+import type { StageInsets } from './board';
 import type { Viewport } from './RenderHost';
 
 const LAYER_CLASS = 'label-layer';

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { SPAWN_RADIUS } from '../../arena';
+import { SPAWN_RADIUS } from '../../board';
 import { FRAME, VIEWER, enemyTypesBoard, rollFor, specialOf } from '../../../testing/enemyTypes';
 import { HATCHLING_TAG, HatchlingEnemy } from './HatchlingEnemy';
 import { HATCH_SECONDS, MAX_BROOD, NEST_RADIUS, NestEnemy } from './NestEnemy';

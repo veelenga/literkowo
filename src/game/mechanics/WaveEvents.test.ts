@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { WordSource } from '../../course/WordSource';
 import { fakeBoard } from '../../testing/enemyBoard';
 import { requireLevel } from '../../testing/levels';
-import { MAX_ENEMIES, SPAWN_RADIUS } from '../arena';
+import { MAX_ENEMIES, SPAWN_RADIUS } from '../board';
 import { Boss } from '../Boss';
 import type { Enemy } from '../Enemy';
 import type { Phase } from '../LevelPlan';

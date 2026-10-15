@@ -16,9 +16,9 @@ import {
   NO_INSETS,
   REACH_DISTANCE,
   SPAWN_RADIUS,
-  frameArena,
+  frameBoard,
   type StageInsets,
-} from './arena';
+} from './board';
 import { Boss } from './Boss';
 import { CameraShake } from './CameraShake';
 import { Enemy, type EnemyLook } from './Enemy';
@@ -342,7 +342,7 @@ export class Game {
 
   private fitCamera({ width, height }: Viewport): void {
     if (width <= 0 || height <= 0) return;
-    const framing = frameArena({ width, height, ...this.insets });
+    const framing = frameBoard({ width, height, ...this.insets });
     this.camera.fov = framing.fov;
     this.camera.setViewOffset(width, framing.fullHeight, 0, framing.offsetY, width, height);
   }

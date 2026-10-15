@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { SPAWN_RADIUS } from '../../arena';
+import { SPAWN_RADIUS } from '../../board';
 import { withLuminance } from '../../effects/luminance';
 import type { GlowBatch } from './GlowBatch';
 import type { GlowBursts, GlowStyle } from './GlowBursts';

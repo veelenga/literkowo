@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CAMERA_POSITION } from '../arena';
+import { CAMERA_POSITION } from '../board';
 import type { MaterialKit } from './materials';
 import { hash2 } from './noise';
 import type { Region } from './scatter';

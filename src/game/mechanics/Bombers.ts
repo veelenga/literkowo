@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { allowedKeysFor } from '../../course/regions';
-import { SPAWN_RADIUS } from '../arena';
+import { SPAWN_RADIUS } from '../board';
 import type { Enemy } from '../Enemy';
 import type { PhaseKind } from '../LevelPlan';
 import { isForestOrLater } from './actionEvents/regions';

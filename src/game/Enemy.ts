@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { REACH_DISTANCE, SPAWN_RADIUS } from './arena';
+import { REACH_DISTANCE, SPAWN_RADIUS } from './board';
 import { disposeObject } from './disposal';
 import { Envelope } from './effects/Envelope';
 import { GlowingFace, type FaceSpec } from './effects/GlowingFace';

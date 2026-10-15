@@ -1,4 +1,4 @@
-import { NO_INSETS, type StageInsets } from '../game/arena';
+import { NO_INSETS, type StageInsets } from '../game/board';
 import { PHONE_LAYOUT_QUERY } from './formFactor';
 import { KEYBOARD_OPEN_ATTRIBUTE } from './keyboardFit';
 

@@ -96,7 +96,7 @@ Owners: `src/app/App.ts`, `src/course/progress.ts`, `src/game/LevelPlan.ts`, `sr
 
 Rules during a level:
 
-- At most 6 enemies are on screen at once (`MAX_ENEMIES` in `src/game/arena.ts`). The cap holds back the level's own spawns and event pieces. Enemies that other features add, such as twins, splitter halves, chicks, power words, bombers and minions, can join a full board.
+- At most 6 enemies are on screen at once (`MAX_ENEMIES` in `src/game/board.ts`). The cap holds back the level's own spawns and event pieces. Enemies that other features add, such as twins, splitter halves, chicks, power words, bombers and minions, can join a full board.
 - The player has 3 lives (`INITIAL_LIVES` in `src/game/Game.ts`). Losing the last life ends the level as lost.
 - The progress bar counts a spawn as done once every enemy it turned into has left the board, so a spawn that becomes twins or a special enemy still counts as one. Enemies that features add later, such as power words or bombers, do not change it (`src/game/SpawnGroups.ts`).
 - Typing follows every enemy whose word starts with the letters typed so far, a key that fits none of them is a mistake, and when a word is done every enemy with that same word is done too while the others go back to untyped (`src/game/Targeting.ts`).
@@ -569,7 +569,7 @@ Owners: `src/i18n/translations.ts`, `src/i18n/i18n.ts`.
 
 ## Mobile and tablets
 
-Owners: `src/styles.css`, `src/ui/TouchTyping.ts`, `src/ui/keyboardFit.ts`, `src/ui/KeyboardHint.ts`, `src/ui/keyboardLayout.ts`, `src/ui/stageInsets.ts`, `src/ui/formFactor.ts`, `src/ui/RotateHint.ts`, `src/game/arena.ts`, `vite.config.ts`.
+Owners: `src/styles.css`, `src/ui/TouchTyping.ts`, `src/ui/keyboardFit.ts`, `src/ui/KeyboardHint.ts`, `src/ui/keyboardLayout.ts`, `src/ui/stageInsets.ts`, `src/ui/formFactor.ts`, `src/ui/RotateHint.ts`, `src/game/board.ts`, `vite.config.ts`.
 
 The course still assumes a physical keyboard. A tablet with a Bluetooth keyboard is the main target. A phone plays the game with a built-in keyboard on the screen.
 
@@ -585,8 +585,8 @@ Layout:
 - On screens up to 480 px tall the profile screen shows a smaller logo and no tagline, so the Play button stays in view.
 - Touch targets are at least 44 px on touch screens, except the 36 px wide HUD buttons on phones. Hover effects apply only on devices that can hover.
 - The app is `100dvh` tall. The HUD, the keyboard hint, the map header and overlays stay inside the safe area insets.
-- The camera keeps a horizontal field of view of at least 62 degrees, so the whole spawn arc stays in frame on narrow and portrait screens. The vertical field of view grows when needed and never drops below 42 degrees (`src/game/arena.ts`).
-- On phones the camera frames the arena in the band of the stage that the HUD and the native keyboard do not cover, with a 16 px gutter at the sides so whole enemies stay in frame. The view is offset so the arena centre sits in the middle of that band, and the band keeps at least 40% of the stage (`frameArena`). Word labels stay below the HUD by the label height and above the covered bottom.
+- The camera keeps a horizontal field of view of at least 62 degrees, so the whole spawn arc stays in frame on narrow and portrait screens. The vertical field of view grows when needed and never drops below 42 degrees (`src/game/board.ts`).
+- On phones the camera frames the arena in the band of the stage that the HUD and the native keyboard do not cover, with a 16 px gutter at the sides so whole enemies stay in frame. The view is offset so the arena centre sits in the middle of that band, and the band keeps at least 40% of the stage (`frameBoard`). Word labels stay below the HUD by the label height and above the covered bottom.
 
 Touch input:
 

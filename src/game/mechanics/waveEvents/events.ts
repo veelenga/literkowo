@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { WordSource } from '../../../course/WordSource';
-import { SPAWN_RADIUS } from '../../arena';
+import { SPAWN_RADIUS } from '../../board';
 import type { Enemy, EnemyLook } from '../../Enemy';
 import type { Phase } from '../../LevelPlan';
 import { wordWithin } from '../enemyTypes/words';
