@@ -29,6 +29,15 @@ const BUS_COMPRESSOR: CompressorSettings = {
 const HIT_BASE_MIDI = 67;
 const HIT_MAX_STEP = 12;
 const WORD_ARPEGGIO = [72, 76, 79, 84] as const;
+const CALLOUT_BASE_MIDI = 79;
+const CALLOUT_STEP_PER_COMBO = 0.2;
+const CALLOUT_MAX_STEP = 7;
+const CALLOUT_INTERVAL = 7;
+const CALLOUT_SPACING = 0.09;
+const CALLOUT_DECAY = 0.45;
+const FEVER_ARPEGGIO = [72, 76, 79, 84, 88, 91] as const;
+const FEVER_SPACING = 0.055;
+const FEVER_DECAY = 0.7;
 const WORD_NOTE_SPACING = 0.05;
 const LIFE_LOST_MOTIF = [74, 70, 67] as const;
 const LIFE_LOST_SPACING = 0.12;
@@ -190,6 +199,16 @@ export class Sfx {
       const decay = index === lastIndex ? CHIME_LAST_DECAY : CHIME.decay;
       this.chime(midi, index * WORD_NOTE_SPACING, decay);
     });
+  }
+
+  callout(combo: number): void {
+    const step = Math.min(CALLOUT_MAX_STEP, Math.round(combo * CALLOUT_STEP_PER_COMBO));
+    this.chime(CALLOUT_BASE_MIDI + step, 0, CALLOUT_DECAY);
+    this.chime(CALLOUT_BASE_MIDI + step + CALLOUT_INTERVAL, CALLOUT_SPACING, CALLOUT_DECAY);
+  }
+
+  fever(): void {
+    FEVER_ARPEGGIO.forEach((midi, index) => this.chime(midi, index * FEVER_SPACING, FEVER_DECAY));
   }
 
   lifeLost(): void {

@@ -1,3 +1,5 @@
+import { FEVER_COMBO, FEVER_MULTIPLIER } from './combo';
+
 const SECONDS_PER_MINUTE = 60;
 const CHARS_PER_WORD = 5;
 const BASE_POINTS_PER_CHAR = 10;
@@ -9,6 +11,7 @@ export class SessionStats {
   combo = 0;
   hits = 0;
   mistakes = 0;
+  fever = false;
   private activeSeconds = 0;
   private frozen = false;
 
@@ -37,14 +40,17 @@ export class SessionStats {
   recordHit(): void {
     this.hits += 1;
     this.combo += 1;
+    if (this.combo >= FEVER_COMBO) this.fever = true;
   }
 
   recordMistake(): void {
     this.mistakes += 1;
     this.combo = 0;
+    this.fever = false;
   }
 
   recordWord(word: string): void {
-    this.score += word.length * BASE_POINTS_PER_CHAR * this.multiplier;
+    const feverBonus = this.fever ? FEVER_MULTIPLIER : 1;
+    this.score += word.length * BASE_POINTS_PER_CHAR * this.multiplier * feverBonus;
   }
 }

@@ -11,6 +11,8 @@ import {
   SPAWN_RADIUS,
 } from './arena';
 import { Boss } from './Boss';
+import { calloutFor, type CalloutKind } from './combo';
+import { disposeObject } from './disposal';
 import { Enemy, type EnemyLook } from './Enemy';
 import { LabelLayer } from './LabelLayer';
 import { planFor, type Phase, type PhaseKind } from './LevelPlan';
@@ -65,8 +67,16 @@ export interface GameEvents {
   onNextKey(char: string | undefined): void;
   onPause(paused: boolean): void;
   onProgress(progress: Progress): void;
+  onCallout(kind: CalloutKind): void;
+  onFever(active: boolean): void;
   onFinished(result: GameResult): void;
 }
+
+const FEVER_RING = { inner: 1.1, outer: 1.5, segments: 48, color: 0xffb020, opacity: 0.75 };
+const FEVER_RING_HEIGHT = 0.04;
+const FEVER_RING_SPIN = 1.6;
+const FEVER_RING_PULSE = { speed: 6, amount: 0.08 };
+const FEVER_BURST_LIFT = 0.6;
 
 export class Game {
   private readonly scene = new THREE.Scene();
@@ -91,6 +101,8 @@ export class Game {
   private elapsed = 0;
   private sinceSpawn = Number.POSITIVE_INFINITY;
   private shake = 0;
+  private readonly feverRing = createFeverRing();
+  private feverActive = false;
   private paused = false;
   private finished = false;
   private running = false;
@@ -105,7 +117,7 @@ export class Game {
     this.words = new WordSource(config.level, config.language);
     this.phases = planFor(config.level);
     this.world = new World(this.scene, config.theme);
-    this.scene.add(this.player.object);
+    this.scene.add(this.player.object, this.feverRing);
     this.placeCameraForIntro();
     renderHost.attach(container, this.scene, this.camera);
     this.labels = new LabelLayer(container);
@@ -126,6 +138,7 @@ export class Game {
     this.releaseEnemies();
     this.world.dispose();
     this.particles.dispose();
+    disposeObject(this.feverRing);
     this.player.dispose();
     this.scene.clear();
     renderHost.detach();
@@ -167,6 +180,7 @@ export class Game {
     this.world.update(delta, this.elapsed);
     this.player.update(delta, this.elapsed);
     this.particles.update(delta);
+    this.animateFeverRing(delta);
     this.updateCamera(delta);
     if (this.finished) return;
     if (!this.inIntro) this.spawnIfDue(delta);
@@ -248,6 +262,7 @@ export class Game {
     this.shake = SHAKE_DURATION;
     this.player.hurt();
     this.stats.recordMistake();
+    this.syncFever();
     sfx.lifeLost();
     this.events.onStats(this.stats, this.lives);
     if (this.lives <= 0) this.finish(false);
@@ -316,8 +331,33 @@ export class Game {
     this.target.advance();
     this.stats.recordHit();
     sfx.hit(this.stats.combo);
+    this.announceCombo();
     if (this.target.isComplete) this.completeWord(this.target);
     this.events.onStats(this.stats, this.lives);
+  }
+
+  private announceCombo(): void {
+    const kind = calloutFor(this.stats.combo);
+    if (kind) {
+      sfx.callout(this.stats.combo);
+      this.events.onCallout(kind);
+    }
+    this.syncFever();
+  }
+
+  private syncFever(): void {
+    if (this.stats.fever === this.feverActive) return;
+    this.feverActive = this.stats.fever;
+    this.feverRing.visible = this.feverActive;
+    if (this.feverActive) sfx.fever();
+    this.events.onFever(this.feverActive);
+  }
+
+  private animateFeverRing(delta: number): void {
+    if (!this.feverActive) return;
+    this.feverRing.rotation.z += FEVER_RING_SPIN * delta;
+    const pulse = 1 + Math.sin(this.elapsed * FEVER_RING_PULSE.speed) * FEVER_RING_PULSE.amount;
+    this.feverRing.scale.setScalar(pulse);
   }
 
   private acquireTarget(char: string): void {
@@ -327,6 +367,7 @@ export class Game {
 
   private mistake(): void {
     this.stats.recordMistake();
+    this.syncFever();
     this.target?.flashMistake();
     sfx.mistake();
     this.events.onStats(this.stats, this.lives);
@@ -338,6 +379,8 @@ export class Game {
     this.player.jump();
     const burstAt = enemy.object.position.clone().setY(enemy.labelHeight - BURST_DROP);
     this.particles.burst(burstAt, enemy.color);
+    if (this.feverActive)
+      this.particles.burst(burstAt.clone().setY(burstAt.y + FEVER_BURST_LIFT), enemy.color);
     if (enemy instanceof Boss) return this.hitBoss(enemy);
     sfx.word();
     this.clearEnemy(enemy);
@@ -390,4 +433,19 @@ function nearestEnemy(
 function isShortcut(event: KeyboardEvent): boolean {
   const altGraph = event.getModifierState('AltGraph') || (event.ctrlKey && event.altKey);
   return event.metaKey || (event.ctrlKey && !altGraph);
+}
+
+function createFeverRing(): THREE.Mesh {
+  const geometry = new THREE.RingGeometry(FEVER_RING.inner, FEVER_RING.outer, FEVER_RING.segments);
+  geometry.rotateX(-Math.PI / 2);
+  const material = new THREE.MeshBasicMaterial({
+    color: FEVER_RING.color,
+    transparent: true,
+    opacity: FEVER_RING.opacity,
+    depthWrite: false,
+  });
+  const ring = new THREE.Mesh(geometry, material);
+  ring.position.y = FEVER_RING_HEIGHT;
+  ring.visible = false;
+  return ring;
 }

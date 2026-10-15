@@ -16,6 +16,7 @@ import type { Profile } from '../profiles/Profile';
 import { ProfileStore } from '../profiles/ProfileStore';
 import type { StoryScene } from '../story/story';
 import { el } from '../ui/dom';
+import { Callouts } from '../ui/Callouts';
 import { Hud } from '../ui/Hud';
 import { KeyboardHint } from '../ui/KeyboardHint';
 import { learnCard } from '../ui/LearnCard';
@@ -113,7 +114,8 @@ export class App {
     const stage = el('div', { class: 'stage' });
     const hud = new Hud(profile, () => this.showMap(profile));
     const keyboard = new KeyboardHint();
-    this.showScreen(stage, hud.element, keyboard.element);
+    const callouts = new Callouts();
+    this.showScreen(stage, callouts.element, hud.element, keyboard.element);
 
     const config = {
       character: profile.avatar,
@@ -129,6 +131,11 @@ export class App {
       },
       onNextKey: (char) => keyboard.show(char),
       onProgress: (progress) => hud.progress(progress),
+      onCallout: (kind) => callouts.show(kind),
+      onFever: (active) => {
+        callouts.setFever(active);
+        if (active) music.setIntensity(1);
+      },
       onPause: (paused) => this.setPaused(paused),
       onFinished: (result) => this.finishLevel(profile, level, result),
     });

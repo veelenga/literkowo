@@ -53,6 +53,14 @@ const pl = {
   sound: 'Dźwięk',
   chapter: 'Rozdział',
   rightShort: 'prawy',
+  fever: 'Szał!',
+  callouts: {
+    super: 'Super!',
+    mega: 'Mega!',
+    ultra: 'Ultra!',
+    legend: 'Legenda!',
+    master: 'Mistrz!',
+  },
   fingers: {
     leftPinky: 'lewy mały',
     leftRing: 'lewy serdeczny',
@@ -121,6 +129,14 @@ const uk: Translation = {
   sound: 'Звук',
   chapter: 'Розділ',
   rightShort: 'правий',
+  fever: 'Шал!',
+  callouts: {
+    super: 'Супер!',
+    mega: 'Мега!',
+    ultra: 'Ультра!',
+    legend: 'Легенда!',
+    master: 'Майстер!',
+  },
   fingers: {
     leftPinky: 'лівий мізинець',
     leftRing: 'лівий підмізинний',
