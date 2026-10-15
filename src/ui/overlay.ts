@@ -5,6 +5,8 @@ export interface Overlay {
 
 type Cleanup = () => void;
 
+export const KEY_READY_MS = 600;
+
 export function createOverlay(element: HTMLElement, ...cleanups: Cleanup[]): Overlay {
   let disposed = false;
   return {

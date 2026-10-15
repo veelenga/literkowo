@@ -4,7 +4,7 @@ import { format } from '../i18n/format';
 import { i18n } from '../i18n/i18n';
 import { Counter, el, icon, prefersReducedMotion } from './dom';
 import { ResultKeys } from './mastery';
-import { createOverlay, onWindowKeyAfter, type Overlay } from './overlay';
+import { createOverlay, KEY_READY_MS, onWindowKeyAfter, type Overlay } from './overlay';
 import { ResultProgress, type EarnedRewards } from './ResultProgress';
 import { treasuresNote, type Treasures } from './resultTreasures';
 
@@ -14,7 +14,6 @@ const COUNTER_START_MS = STAR_INTRO_MS + MAX_STARS * STAR_STAGGER_MS;
 const COUNTER_DURATION_MS = 900;
 const PRIMARY_KEY = 'Enter';
 const PRIMARY_KEY_LABEL = '⏎';
-const PRIMARY_KEY_READY_MS = 600;
 const PRIMARY_BUTTON_CLASS = 'button button-primary button-large';
 
 export interface LevelRewards extends EarnedRewards {
@@ -160,7 +159,7 @@ function actionButton(action: ResultAction, isPrimary: boolean): HTMLElement {
 }
 
 function runOnPrimaryKey(action: ResultAction): () => void {
-  const stopListening = onWindowKeyAfter(PRIMARY_KEY_READY_MS, (event) => {
+  const stopListening = onWindowKeyAfter(KEY_READY_MS, (event) => {
     if (event.key !== PRIMARY_KEY || event.repeat) return;
     event.preventDefault();
     stopListening();

@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { i18n } from '../i18n/i18n';
 import { requireLevel } from '../testing/levels';
 import { learnCard } from './LearnCard';
+import { KEY_READY_MS, type Overlay } from './overlay';
 
 function card(levelId: string): HTMLElement {
   const overlay = learnCard(requireLevel(levelId), {}, () => undefined);
@@ -44,5 +45,46 @@ describe('learnCard', () => {
       i18n.t.features.course.hints.review,
     );
     expect(keys(element)).toEqual(['D', 'K']);
+  });
+});
+
+describe('learnCard Enter', () => {
+  let overlay: Overlay | undefined;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    overlay?.dispose();
+    overlay = undefined;
+    vi.useRealTimers();
+  });
+
+  function pressEnter(): void {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+  }
+
+  it('ignores Enter right after the card opens', () => {
+    const onStart = vi.fn();
+    overlay = learnCard(requireLevel('polana-2'), {}, onStart);
+    vi.advanceTimersByTime(KEY_READY_MS - 1);
+    pressEnter();
+    expect(onStart).not.toHaveBeenCalled();
+  });
+
+  it('starts the level on Enter once the card is ready', () => {
+    const onStart = vi.fn();
+    overlay = learnCard(requireLevel('polana-2'), {}, onStart);
+    vi.advanceTimersByTime(KEY_READY_MS);
+    pressEnter();
+    expect(onStart).toHaveBeenCalledOnce();
+  });
+
+  it('starts the level on click right away', () => {
+    const onStart = vi.fn();
+    overlay = learnCard(requireLevel('polana-2'), {}, onStart);
+    overlay.element.querySelector('button')?.click();
+    expect(onStart).toHaveBeenCalledOnce();
   });
 });
