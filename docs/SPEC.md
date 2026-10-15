@@ -467,8 +467,10 @@ Owners: `src/app/devShortcut.ts`, `src/app/App.ts`.
 
 Not built yet. In this order:
 
-1. Power words
-2. Merging enemies
-3. Boss phases and attacks
-4. Runner segments
-5. Sibling race and arena
+1. Gradual course: one new key per level, with learn, practice and review levels and a slow early speed (in progress on a branch).
+2. Daily training: short sessions built from weak keys, with spaced repetition and streaks.
+3. Typing test with certificates.
+4. New chapters after the letters: capitals, numbers, punctuation, sentences and speed.
+5. Endless arena, a daily challenge and a ghost race against a sibling.
+6. Runner segments.
+7. Own avatars from Ready Player Me, deferred.
