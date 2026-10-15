@@ -58,7 +58,7 @@ Screenshots:
 - `npm run build`
 - A manual check of the changed flow in the browser.
 
-The deploy workflow runs lint, tests and build only after a merge to `main`. Nothing checks a pull request for you.
+CI runs lint, unit tests, the build and a browser smoke test on every pull request. The manual check of the changed flow is still on the author.
 Say in the pull request what you could not verify.
 
 ## Parallel development
