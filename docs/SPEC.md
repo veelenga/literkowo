@@ -94,6 +94,8 @@ Owners: `src/game/SessionStats.ts`, `src/game/combo.ts`.
 
 A callout stays for 0.9 seconds and the fever banner for 1.4 seconds (`src/ui/Callouts.ts`).
 
+Announcements never overlap. Callouts stack downwards with the newest on top, and at most three of each style show at once: a fourth makes the oldest fade early. Banners take the centre slot and push callouts below them. Warnings sit above the banner slot.
+
 ## Enemy types
 
 Owners: `src/game/mechanics/EnemyTypes.ts`, `src/game/mechanics/enemyTypes/kinds.ts`, `src/game/mechanics/enemyTypes/factory.ts`.

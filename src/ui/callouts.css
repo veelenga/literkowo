@@ -16,7 +16,11 @@
 }
 
 .callout {
-  position: absolute;
+  --callout-motion: callout-pop 0.9s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  grid-area: 1 / 1;
+  position: relative;
+  top: 0;
+  transition: top 0.2s ease-out;
   font-size: 4rem;
   font-weight: 900;
   color: var(--callout-accent, #fff);
@@ -24,27 +28,33 @@
   text-shadow:
     0 4px 0 rgba(0, 0, 0, 0.35),
     0 0 30px rgba(255, 200, 80, 0.8);
-  animation: callout-pop 0.9s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  animation: var(--callout-motion);
   transform-origin: center;
   translate: 0 -120px;
 }
 
 .callout-banner {
+  --callout-motion: banner-slam 1.4s ease-out both;
   font-size: 6rem;
   color: var(--callout-accent, #ffb020);
-  animation: banner-slam 1.4s ease-out both;
   text-shadow:
     0 6px 0 rgba(0, 0, 0, 0.4),
     0 0 50px rgba(255, 140, 0, 0.9);
 }
 
 .callout-warning {
+  --callout-motion: warning-throb 1.8s ease-in-out both;
   font-size: 4.5rem;
   color: var(--callout-accent, #ff5a4f);
-  animation: warning-throb 1.8s ease-in-out both;
   text-shadow:
     0 5px 0 rgba(0, 0, 0, 0.45),
     0 0 40px rgba(255, 40, 40, 0.85);
+}
+
+.callout.is-leaving {
+  animation:
+    var(--callout-motion),
+    callout-leave 0.2s ease-in forwards;
 }
 
 @keyframes callout-pop {
@@ -117,6 +127,12 @@
   }
 }
 
+@keyframes callout-leave {
+  to {
+    opacity: 0;
+  }
+}
+
 @keyframes fever-pulse {
   from {
     opacity: 0.55;
@@ -128,7 +144,16 @@
 
 @media (prefers-reduced-motion: reduce) {
   .callout,
+  .callout.is-leaving,
   .callouts.is-fever::before {
     animation: none;
+  }
+
+  .callout {
+    transition: none;
+  }
+
+  .callout.is-leaving {
+    visibility: hidden;
   }
 }
