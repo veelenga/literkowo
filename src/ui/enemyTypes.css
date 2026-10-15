@@ -136,3 +136,28 @@
     transition: none;
   }
 }
+
+.word-label.is-splitter {
+  font-size: 1.7rem;
+  letter-spacing: 0.08em;
+  padding: 7px 16px 9px;
+  border-radius: 8px;
+  color: #eaf6ff;
+  background: rgba(12, 26, 44, 0.92);
+  border: 3px double #9ad1ff;
+  box-shadow:
+    0 4px 0 #3a6a96,
+    0 0 20px rgba(154, 209, 255, 0.4);
+}
+
+.word-label.is-splitter.is-half {
+  font-size: 1.2rem;
+  padding: 5px 10px 6px;
+  border-style: solid;
+  border-width: 2px;
+}
+
+.word-label.is-splitter.is-target {
+  border-color: var(--accent);
+  background: rgba(30, 30, 18, 0.94);
+}

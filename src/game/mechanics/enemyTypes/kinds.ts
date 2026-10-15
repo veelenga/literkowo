@@ -1,9 +1,9 @@
 import { REGIONS, type Level } from '../../../course/regions';
 
-export type EnemyKind = 'jumper' | 'balloon' | 'bat' | 'swarm';
+export type EnemyKind = 'jumper' | 'balloon' | 'bat' | 'swarm' | 'splitter';
 export type Random = () => number;
 
-const ENEMY_KINDS: readonly EnemyKind[] = ['jumper', 'balloon', 'bat', 'swarm'];
+const ENEMY_KINDS: readonly EnemyKind[] = ['jumper', 'balloon', 'bat', 'swarm', 'splitter'];
 export const ENEMY_TYPE_TAG = 'enemy-type';
 export const SPECIAL_SHARE = 0.25;
 export const KIND_WEIGHTS: Readonly<Record<EnemyKind, number>> = {
@@ -11,12 +11,14 @@ export const KIND_WEIGHTS: Readonly<Record<EnemyKind, number>> = {
   balloon: 2,
   bat: 2,
   swarm: 2,
+  splitter: 2,
 };
 export const BONUS_WORDS: Readonly<Record<EnemyKind, number>> = {
   jumper: 0,
   balloon: 1,
   bat: 0,
   swarm: 0,
+  splitter: 0,
 };
 
 interface Unlock {
@@ -29,6 +31,7 @@ const UNLOCKS: Readonly<Record<EnemyKind, Unlock>> = {
   balloon: { region: 'polana', level: 3 },
   bat: { region: 'las', level: 1 },
   swarm: { region: 'gory', level: 1 },
+  splitter: { region: 'gory', level: 2 },
 };
 const FIRST_REGION_CAP = 1;
 const LATER_REGION_CAP = 3;

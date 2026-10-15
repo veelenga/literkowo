@@ -11,7 +11,9 @@ export type SoundCue =
   | 'bombDrop'
   | 'bombBlast'
   | 'batTumble'
-  | 'batCrash';
+  | 'batCrash'
+  | 'splitterSplit'
+  | 'halfPop';
 
 const CHIME_SPACING = 0.07;
 const SHORT_DECAY = 0.35;
@@ -19,6 +21,8 @@ const LONG_DECAY = 0.6;
 const BOMB_IMPACT = 1;
 const CRASH_IMPACT = 0.45;
 const BLAST_RUMBLE = { from: 45, to: 30, seconds: 0.6 };
+const ROCK_IMPACT = 0.3;
+const SPLIT_IMPACT = 0.6;
 
 export const SOUNDS: Readonly<Record<SoundCue, (sfx: Sfx) => void>> = {
   jumper: (sfx) => sfx.chimes([67, 74, 67, 79], CHIME_SPACING, SHORT_DECAY),
@@ -43,4 +47,13 @@ export const SOUNDS: Readonly<Record<SoundCue, (sfx: Sfx) => void>> = {
   },
   batTumble: (sfx) => sfx.sweep(79, 55, 0.5),
   batCrash: (sfx) => sfx.impact(CRASH_IMPACT),
+  splitter: (sfx) => {
+    sfx.impact(ROCK_IMPACT);
+    sfx.sweep(52, 64, 0.4);
+  },
+  splitterSplit: (sfx) => {
+    sfx.impact(SPLIT_IMPACT);
+    sfx.chimes([64, 71, 76], CHIME_SPACING, SHORT_DECAY);
+  },
+  halfPop: (sfx) => sfx.chimes([76, 83], CHIME_SPACING, SHORT_DECAY),
 };

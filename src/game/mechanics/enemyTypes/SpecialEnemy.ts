@@ -11,6 +11,8 @@ export interface SpecialHost {
   tumble(body: THREE.Object3D, color: THREE.Color): void;
   bomb(position: THREE.Vector3): void;
   dismiss(enemy: Enemy): void;
+  spawn(enemy: Enemy): void;
+  createLabel(): HTMLElement;
   play(cue: SoundCue): void;
 }
 

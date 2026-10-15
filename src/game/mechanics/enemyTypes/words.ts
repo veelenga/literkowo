@@ -1,4 +1,5 @@
 import type { WordSource } from '../../../course/WordSource';
+import { randomInt, type Random } from './kinds';
 
 export interface LetterRange {
   readonly min: number;
@@ -15,8 +16,25 @@ export function wordWithin(words: WordSource, range: LetterRange): string {
   return words.shortWord();
 }
 
+export function repeatedKey(words: WordSource, range: LetterRange, random: Random): string {
+  return words.singleLetter().repeat(randomInt(range.min, range.max, random));
+}
+
+export function lettersWithin(words: WordSource, range: LetterRange, random: Random): string {
+  return letters(words, randomInt(range.min, range.max, random));
+}
+
 export function letters(words: WordSource, count: number): string {
   let pool = '';
   while (pool.length < count) pool += words.next();
   return pool.slice(0, count);
+}
+
+export function wordPair(words: WordSource): readonly [string, string] {
+  const first = words.shortWord();
+  let second = words.shortWord();
+  for (let attempt = 1; attempt < WORD_ATTEMPTS && second === first; attempt += 1) {
+    second = words.shortWord();
+  }
+  return [first, second];
 }

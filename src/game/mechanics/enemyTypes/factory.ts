@@ -3,15 +3,16 @@ import type { Phase } from '../../LevelPlan';
 import { BalloonEnemy } from './BalloonEnemy';
 import { BatEnemy } from './BatEnemy';
 import { JumperEnemy } from './JumperEnemy';
-import { randomInt, type EnemyKind, type Random } from './kinds';
+import type { EnemyKind, Random } from './kinds';
 import type { SpecialEnemy, SpecialHost, SpecialSpec } from './SpecialEnemy';
+import { SplitterEnemy } from './SplitterEnemy';
 import { SwarmEnemy } from './SwarmEnemy';
-import { letters, wordWithin } from './words';
+import { lettersWithin, repeatedKey, wordPair, wordWithin } from './words';
 
 const JUMPER_LETTERS = { min: 4, max: 7 };
 const BALLOON_LETTERS = { min: 3, max: 5 };
 const SWARM_LETTERS = { min: 5, max: 7 };
-const SPEED_SHARES = { jumper: 1, bat: 2.5, swarm: 1.25 };
+const SPEED_SHARES = { jumper: 1, bat: 2.5, swarm: 1.25, splitter: 0.8 };
 
 const HALF = 0.5;
 
@@ -32,11 +33,7 @@ const RECIPES: Readonly<Record<EnemyKind, Recipe>> = {
   jumper: {
     speedShare: SPEED_SHARES.jumper,
     create: (spec, words, random) =>
-      new JumperEnemy(
-        spec(
-          words.singleLetter().repeat(randomInt(JUMPER_LETTERS.min, JUMPER_LETTERS.max, random)),
-        ),
-      ),
+      new JumperEnemy(spec(repeatedKey(words, JUMPER_LETTERS, random))),
   },
   balloon: {
     speedShare: 0,
@@ -50,7 +47,14 @@ const RECIPES: Readonly<Record<EnemyKind, Recipe>> = {
   swarm: {
     speedShare: SPEED_SHARES.swarm,
     create: (spec, words, random) =>
-      new SwarmEnemy(spec(letters(words, randomInt(SWARM_LETTERS.min, SWARM_LETTERS.max, random)))),
+      new SwarmEnemy(spec(lettersWithin(words, SWARM_LETTERS, random))),
+  },
+  splitter: {
+    speedShare: SPEED_SHARES.splitter,
+    create: (spec, words) => {
+      const halves = wordPair(words);
+      return new SplitterEnemy(spec(halves.join('')), { part: 'whole', halves });
+    },
   },
 };
 

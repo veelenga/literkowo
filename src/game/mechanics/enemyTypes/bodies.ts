@@ -67,14 +67,17 @@ const BAT_FACE: FaceSpec = {
 
 const geometries = createAssetCache<THREE.BufferGeometry>();
 
-function cached(key: string, build: () => THREE.BufferGeometry): THREE.BufferGeometry {
+export function cachedGeometry(
+  key: string,
+  build: () => THREE.BufferGeometry,
+): THREE.BufferGeometry {
   return geometries.get(key, build);
 }
 
 export function jumperBody(): EnemyBody {
   return {
-    shell: cached('jumper-shell', () => blockAssembly(SLIME)),
-    core: cached('jumper-core', () => chunkyBlock(0.3, 0.22, 0.3)),
+    shell: cachedGeometry('jumper-shell', () => blockAssembly(SLIME)),
+    core: cachedGeometry('jumper-core', () => chunkyBlock(0.3, 0.22, 0.3)),
     shellShade: 0.95,
     shellOpacity: 0.74,
     motion: { hoverHeight: JUMPER_HOVER, bob: STILL, facesViewer: true },
@@ -86,8 +89,8 @@ export function jumperBody(): EnemyBody {
 
 export function balloonBody(): EnemyBody {
   return {
-    shell: cached('balloon-shell', () => blockAssembly(BALLOON)),
-    core: cached('balloon-core', () => chunkyBlock(0.2, 0.2, 0.2)),
+    shell: cachedGeometry('balloon-shell', () => blockAssembly(BALLOON)),
+    core: cachedGeometry('balloon-core', () => chunkyBlock(0.2, 0.2, 0.2)),
     shellShade: 1,
     shellOpacity: 0.94,
     motion: { hoverHeight: BALLOON_HOVER, bob: BALLOON_BOB, facesViewer: true },
@@ -98,8 +101,8 @@ export function balloonBody(): EnemyBody {
 
 export function batBody(): EnemyBody {
   return {
-    shell: cached('bat-shell', () => blockAssembly(BAT_TORSO)),
-    core: cached('bat-core', () => chunkyBlock(0.16, 0.16, 0.16)),
+    shell: cachedGeometry('bat-shell', () => blockAssembly(BAT_TORSO)),
+    core: cachedGeometry('bat-core', () => chunkyBlock(0.16, 0.16, 0.16)),
     shellShade: 0.32,
     shellOpacity: 0.96,
     motion: { hoverHeight: BAT_HEIGHT, bob: BAT_BOB, facesViewer: true },
@@ -111,8 +114,8 @@ export function batBody(): EnemyBody {
 
 export function swarmBody(): EnemyBody {
   return {
-    shell: cached('swarm-shell', () => chunkyBlock(0.26, 0.26, 0.26)),
-    core: cached('swarm-core', () => chunkyBlock(0.12, 0.12, 0.12)),
+    shell: cachedGeometry('swarm-shell', () => chunkyBlock(0.26, 0.26, 0.26)),
+    core: cachedGeometry('swarm-core', () => chunkyBlock(0.12, 0.12, 0.12)),
     shellShade: 1,
     shellOpacity: 0.4,
     motion: { hoverHeight: SWARM_HOVER, bob: SWARM_BOB, facesViewer: false },
@@ -122,19 +125,21 @@ export function swarmBody(): EnemyBody {
 }
 
 export function batWingGeometry(): THREE.BufferGeometry {
-  return cached('bat-wing', () => blockAssembly(BAT_WING));
+  return cachedGeometry('bat-wing', () => blockAssembly(BAT_WING));
 }
 
 export function bugGeometry(): THREE.BufferGeometry {
-  return cached('swarm-bug', () => chunkyBlock(SWARM_BUG_SIZE, SWARM_BUG_SIZE, SWARM_BUG_SIZE));
+  return cachedGeometry('swarm-bug', () =>
+    chunkyBlock(SWARM_BUG_SIZE, SWARM_BUG_SIZE, SWARM_BUG_SIZE),
+  );
 }
 
 export function stringGeometry(length: number): THREE.BufferGeometry {
-  return cached(`balloon-string:${length}`, () =>
+  return cachedGeometry(`balloon-string:${length}`, () =>
     chunkyBlock(STRING_THICKNESS, length, STRING_THICKNESS).translate(0, -length / 2, 0),
   );
 }
 
 export function bombGeometry(size: number): THREE.BufferGeometry {
-  return cached(`bomb:${size}`, () => chunkyBlock(size, size, size));
+  return cachedGeometry(`bomb:${size}`, () => chunkyBlock(size, size, size));
 }

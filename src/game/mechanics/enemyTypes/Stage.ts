@@ -12,7 +12,14 @@ export const BOMB_SHAKE = { strength: 0.5, seconds: 0.8 };
 
 export type StageContext = Pick<
   MechanicContext,
-  'scene' | 'particles' | 'sfx' | 'shakeCamera' | 'loseLife' | 'removeEnemy'
+  | 'scene'
+  | 'particles'
+  | 'sfx'
+  | 'shakeCamera'
+  | 'loseLife'
+  | 'removeEnemy'
+  | 'addEnemy'
+  | 'createLabel'
 >;
 
 const DUST_COLOR = new THREE.Color(0xe8dcc0);
@@ -98,6 +105,14 @@ export class Stage implements SpecialHost {
 
   dismiss(enemy: Enemy): void {
     this.context.removeEnemy(enemy);
+  }
+
+  spawn(enemy: Enemy): void {
+    this.context.addEnemy(enemy);
+  }
+
+  createLabel(): HTMLElement {
+    return this.context.createLabel();
   }
 
   play(cue: SoundCue): void {
