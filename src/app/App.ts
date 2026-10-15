@@ -98,6 +98,8 @@ export class App {
       onNextKey: (char) => keyboard.show(char),
       onProgress: (progress) => hud.progress(progress),
       onPause: (paused) => {
+        if (paused) music.pause();
+        else music.resume();
         pause?.remove();
         pause = paused ? pauseOverlay() : undefined;
         if (pause) this.root.append(pause);

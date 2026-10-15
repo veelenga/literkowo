@@ -54,6 +54,14 @@ export class Music {
     this.fadeOutPlayback(STOP_FADE_SECONDS);
   }
 
+  pause(): void {
+    void peekAudioContext()?.suspend();
+  }
+
+  resume(): void {
+    void peekAudioContext()?.resume();
+  }
+
   setIntensity(value: number): void {
     const intensity = Math.min(1, Math.max(0, value));
     if (Math.abs(intensity - this.intensity) < INTENSITY_EPSILON) return;
