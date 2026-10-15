@@ -75,7 +75,7 @@ function placementFor(context: BiomeContext, options: PlantOptions, spot: Spot):
   };
 }
 
-export function thin<T>(items: T[], density: number): T[] {
+function thin<T>(items: T[], density: number): T[] {
   return items.filter(
     (_, index) => Math.floor((index + 1) * density) > Math.floor(index * density),
   );
