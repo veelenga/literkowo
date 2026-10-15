@@ -196,7 +196,8 @@ export class App {
       },
       run.plan.lives,
     );
-    const layout = usesBuiltInKeyboard() ? KEYBOARD_LAYOUTS.compact : KEYBOARD_LAYOUTS.full;
+    const builtInKeyboard = usesBuiltInKeyboard();
+    const layout = builtInKeyboard ? KEYBOARD_LAYOUTS.compact : KEYBOARD_LAYOUTS.full;
     const keyboard = new KeyboardHint(type, layout);
     const callouts = new Callouts();
     const hint = run.rotateHint ? rotateHint() : undefined;
@@ -211,7 +212,7 @@ export class App {
         hint,
       ),
     );
-    if (hasCoarsePointer()) this.touch = new TouchTyping(stage, type);
+    if (hasCoarsePointer()) this.touch = new TouchTyping(stage, type, () => builtInKeyboard);
 
     const config = {
       character: profile.avatar,
