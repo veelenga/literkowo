@@ -1,6 +1,7 @@
 # Literkowo
 
-A browser typing game for kids. TypeScript, Vite, three.js and Web Audio, with a Polish and Ukrainian interface.
+A browser typing game for children. TypeScript, Vite, three.js and Web Audio.
+Today the interface is in Polish and Ukrainian, and the typing words are in Polish and English.
 `main` deploys to GitHub Pages on every push.
 These instructions are for AI agents and for people.
 
@@ -8,7 +9,7 @@ These instructions are for AI agents and for people.
 
 - Read `docs/INTENT.md` and `docs/SPEC.md` before you change gameplay.
 - When behaviour changes, update `docs/SPEC.md` in the same pull request.
-- Accuracy stays the thing the game rewards. A mechanic must never pay more for speed than for care.
+- Accuracy comes before speed. A new mechanic must keep careful typing as the best way to win.
 
 ## Commands
 
@@ -66,7 +67,7 @@ This is the agreed structure, so that feature branches rarely touch the same fil
 The `src/game/mechanics` folder arrives with an in-flight foundation branch. Follow this layout once it lands.
 
 - A gameplay feature is one mechanics module in `src/game/mechanics`, registered with one line in `src/game/mechanics/index.ts`.
-- Feature text goes in `src/i18n/features/<feature>.ts`, with Polish and Ukrainian side by side.
+- Feature text goes in `src/i18n/features/<feature>.ts`, with every interface language side by side.
 - Feature CSS goes in its own file, imported by the feature's UI module.
 - Feature sounds are built from the generic `Sfx` helpers. Do not add feature methods to `Sfx.ts`.
 - Shared files change only in foundation work: `src/game/Game.ts`, `src/i18n/translations.ts`, `src/styles.css`, `src/audio/Sfx.ts`.
@@ -88,8 +89,8 @@ These mirror the global rules in brief.
 Copy rules:
 
 - No words in all capitals. Use sentence case, for example "Next level".
-- No dashes in Polish or Ukrainian copy.
-- Update Polish and Ukrainian together, in the same commit.
+- No dashes in interface copy, in any language.
+- Update every interface language together, in the same commit. Today that is Polish and Ukrainian.
 - Only words that are safe for kids, in copy, stories and word lists.
 
 ## Assets
