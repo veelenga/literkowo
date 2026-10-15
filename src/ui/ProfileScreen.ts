@@ -19,6 +19,7 @@ import { livePreview, outfitOf } from './LivePreview';
 import { hasAmbientMotion } from './menuMotion';
 import { coinPill, levelBadge } from './progression';
 import { settingsGearButton } from './settingsParts';
+import { shopLink } from './shopLink';
 import './profileScreen.css';
 
 const MAX_NAME_LENGTH = 16;
@@ -32,6 +33,7 @@ const PLAY_ICON_PATH =
 interface Actions {
   onPlay: (profile: Profile) => void;
   onSettings: () => void;
+  onShop: (profile: Profile) => void;
 }
 
 export class ProfileScreen {
@@ -209,6 +211,7 @@ export class ProfileScreen {
         'div',
         { class: 'play-panel-main' },
         el('h3', { class: 'panel-title', text: profile.name }),
+        shopLink(() => this.actions.onShop(profile)),
         el(
           'button',
           {

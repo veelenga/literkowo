@@ -112,6 +112,13 @@ export class App {
         this.showMap(profile);
       },
       onSettings: () => this.showSettings(() => this.showProfiles()),
+      onShop: (profile) => {
+        sfx.unlock();
+        this.showShop(profile, {
+          onBack: () => this.showProfiles(),
+          backLabel: i18n.t.features.shop.backToProfiles,
+        });
+      },
     });
     this.showScreen(screen.element);
     this.disposeScreen = () => screen.dispose();

@@ -531,6 +531,11 @@
   font-size: 1.7rem;
 }
 
+.play-panel-main .shop-link {
+  flex: none;
+  margin-left: auto;
+}
+
 .play-button {
   flex: none;
   min-width: 210px;

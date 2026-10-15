@@ -15,7 +15,7 @@ function setup(profiles: Profile[] = []) {
   const store = new ProfileStore();
   profiles.forEach((profile) => store.add(profile));
   if (profiles[0]) store.setActive(profiles[0]);
-  const actions = { onPlay: vi.fn(), onSettings: vi.fn() };
+  const actions = { onPlay: vi.fn(), onSettings: vi.fn(), onShop: vi.fn() };
   const screen = new ProfileScreen(store, actions);
   return { screen, ...actions };
 }
@@ -63,5 +63,17 @@ describe('ProfileScreen', () => {
     const { screen, onPlay } = open([ola]);
     screen.element.querySelector<HTMLButtonElement>('.play-panel .button-primary')?.click();
     expect(onPlay).toHaveBeenCalledWith(ola);
+  });
+
+  it('opens the shop for the selected profile from a quiet link next to Play', () => {
+    const ola = createProfile('Ola', 'a');
+    const { screen, onShop, onPlay } = open([ola]);
+    const link = screen.element.querySelector<HTMLButtonElement>('.play-panel-main .shop-link');
+    expect(link?.textContent).toBe('Sklep');
+    expect(link?.classList).toContain('button-ghost');
+    expect(link?.nextElementSibling?.classList).toContain('play-button');
+    link?.click();
+    expect(onShop).toHaveBeenCalledWith(ola);
+    expect(onPlay).not.toHaveBeenCalled();
   });
 });
