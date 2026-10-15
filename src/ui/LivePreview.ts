@@ -1,3 +1,4 @@
+import { hasCoarsePointer } from '../game/deviceProbe';
 import { prefersReducedMotion } from './dom';
 
 const LIVE_CLASS = 'is-live';
@@ -16,7 +17,7 @@ class LivePreview {
 
   show(host: HTMLElement, character: string): void {
     this.hide();
-    if (prefersReducedMotion()) return;
+    if (prefersReducedMotion() || hasCoarsePointer()) return;
     const request = this.request;
     this.host = host;
     void this.loadView().then((view) => {
