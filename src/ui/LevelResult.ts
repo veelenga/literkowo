@@ -6,12 +6,17 @@ import { Counter, el, icon, prefersReducedMotion } from './dom';
 import { ResultKeys } from './mastery';
 import { createOverlay, type Overlay } from './overlay';
 import { ResultProgress, type EarnedRewards } from './ResultProgress';
+import { treasuresNote, type Treasures } from './resultTreasures';
 
 const PERCENT = 100;
 const STAR_INTRO_MS = 240;
 const STAR_STAGGER_MS = 220;
 const COUNTER_START_MS = STAR_INTRO_MS + MAX_STARS * STAR_STAGGER_MS;
 const COUNTER_DURATION_MS = 900;
+
+export interface LevelRewards extends EarnedRewards {
+  readonly treasures: Treasures;
+}
 
 interface Actions {
   onNext?: () => void;
@@ -28,7 +33,7 @@ interface StatTile {
 export function levelResult(
   result: GameResult,
   stars: number,
-  earned: EarnedRewards,
+  earned: LevelRewards,
   actions: Actions,
 ): Overlay {
   const t = i18n.t;
@@ -57,6 +62,7 @@ export function levelResult(
       el('p', { class: 'result-hint', text: result.won ? starsHint() : t.retryHint }),
       el('div', { class: 'result-stats' }, ...tiles.map((tile) => tile.element)),
       progress.element,
+      treasuresNote(earned.treasures),
       keys.element,
       actionsRow(stars, actions),
     ),

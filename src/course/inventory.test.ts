@@ -3,7 +3,7 @@ import { createProfile, STARTER_SKINS, type Profile } from '../profiles/Profile'
 import {
   buy,
   equip,
-  hasNewInShop,
+  hasNewItems,
   isSkinLocked,
   itemState,
   unequip,
@@ -100,23 +100,23 @@ describe('itemState', () => {
   });
 });
 
-describe('hasNewInShop', () => {
+describe('hasNewItems', () => {
   it('spots an item that just became affordable', () => {
-    expect(hasNewInShop(profileWith({ coins: 50 }), profileWith({ coins: 80 }))).toBe(true);
-    expect(hasNewInShop(profileWith({ coins: 80 }), profileWith({ coins: 90 }))).toBe(false);
+    expect(hasNewItems(profileWith({ coins: 50 }), profileWith({ coins: 80 }))).toBe(true);
+    expect(hasNewItems(profileWith({ coins: 80 }), profileWith({ coins: 90 }))).toBe(false);
   });
 
   it('spots an item unlocked by a new rank', () => {
     const before = profileWith({ xp: xpForLevel(APPRENTICE_LEVEL) - 1 });
-    expect(hasNewInShop(before, profileWith({ xp: xpForLevel(APPRENTICE_LEVEL) }))).toBe(true);
+    expect(hasNewItems(before, profileWith({ xp: xpForLevel(APPRENTICE_LEVEL) }))).toBe(true);
   });
 
-  it('spots a new trophy', () => {
+  it('leaves trophies to the trophy note', () => {
     const before = profileWith();
     const after = profileWith({
       inventory: { ...before.inventory, trophies: ['first-boss'] },
     });
-    expect(hasNewInShop(before, after)).toBe(true);
+    expect(hasNewItems(before, after)).toBe(false);
   });
 });
 

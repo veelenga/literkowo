@@ -1,7 +1,7 @@
 import type { Profile } from '../profiles/Profile';
 import { LEVELS, REGIONS, type Level } from './catalog';
 import { masteredShare, regionKeys } from './mastery';
-import { TROPHIES, type TrophyRule } from './shop';
+import { TROPHIES, type Trophy, type TrophyRule } from './shop';
 import { levelProgress } from './xp';
 
 const FULL_SHARE = 1;
@@ -18,6 +18,12 @@ export function awardTrophies(profile: Profile): Profile {
     ...profile,
     inventory: { ...profile.inventory, trophies: [...profile.inventory.trophies, ...fresh] },
   };
+}
+
+export function freshTrophies(before: Profile, after: Profile): Trophy[] {
+  const earlier = new Set(before.inventory.trophies);
+  const fresh = new Set(after.inventory.trophies.filter((id) => !earlier.has(id)));
+  return TROPHIES.filter((trophy) => fresh.has(trophy.id));
 }
 
 function isEarned(profile: Profile, rule: TrophyRule): boolean {

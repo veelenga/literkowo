@@ -3,7 +3,7 @@ import { createProfile, type LevelResult, type Profile } from '../profiles/Profi
 import { REGIONS } from './catalog';
 import { RECENT_WINDOW, type KeyStat } from './keyStats';
 import { MASTERED_DAYS, regionKeys } from './mastery';
-import { awardTrophies, earnedTrophies } from './trophies';
+import { awardTrophies, earnedTrophies, freshTrophies } from './trophies';
 import { xpForLevel } from './xp';
 
 const ONE_STAR: LevelResult = { stars: 1, score: 100, accuracy: 0.9, wpm: 10 };
@@ -63,5 +63,19 @@ describe('awardTrophies', () => {
     const awarded = awardTrophies(profile);
     expect(awarded.inventory.trophies).toEqual(['first-boss', 'region-polana', 'level-10']);
     expect(awardTrophies(awarded)).toBe(awarded);
+  });
+});
+
+describe('freshTrophies', () => {
+  it('lists only the trophies the second profile adds, in catalogue order', () => {
+    const before = profileWith({
+      inventory: { ...profileWith().inventory, trophies: ['level-10'] },
+    });
+    const after = awardTrophies({ ...before, xp: xpForLevel(10), levelResults: starsOn('polana') });
+    expect(freshTrophies(before, after).map((trophy) => trophy.id)).toEqual([
+      'first-boss',
+      'region-polana',
+    ]);
+    expect(freshTrophies(after, after)).toEqual([]);
   });
 });

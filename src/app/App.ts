@@ -3,6 +3,7 @@ import { sfx } from '../audio/Sfx';
 import { regionOf, type Level } from '../course/catalog';
 import { levelCoins } from '../course/coins';
 import { courseFor } from '../course/course';
+import { hasNewItems } from '../course/inventory';
 import {
   markStorySeen,
   recordResult,
@@ -11,6 +12,7 @@ import {
   type Attempt,
 } from '../course/progress';
 import { starsFor } from '../course/scoring';
+import { freshTrophies } from '../course/trophies';
 import { hasCoarsePointer } from '../game/deviceProbe';
 import type { Game, GameResult } from '../game/Game';
 import type { SessionStats } from '../game/SessionStats';
@@ -216,6 +218,10 @@ export class App {
     const stars = starsFor(result.accuracy, result.won);
     const coins = levelCoins({ runCoins: result.coins, won: result.won, stars });
     const updated = this.recordAttempt(profile, level, attemptOf(result, stars, coins));
+    const treasures = {
+      trophies: freshTrophies(profile, updated),
+      newItems: hasNewItems(profile, updated),
+    };
     const next = courseFor(updated.wordLanguage).next(level);
     const leave = (then: (current: Profile) => void) =>
       this.dismissThen(() => this.afterLevel(updated, level, stars, then));
@@ -223,7 +229,7 @@ export class App {
       levelResult(
         result,
         stars,
-        { xpBefore: profile.xp, xp: result.xp, coins },
+        { xpBefore: profile.xp, xp: result.xp, coins, treasures },
         {
           onNext: next ? leave((current) => this.openLevel(current, next)) : undefined,
           onRetry: this.dismissThen(() => this.openLevel(updated, level)),

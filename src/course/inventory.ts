@@ -88,13 +88,9 @@ export function availableItems(profile: Profile): ShopItem[] {
   return SHOP_ITEMS.filter((item) => AVAILABLE_STATES.includes(itemState(profile, item)));
 }
 
-export function hasNewInShop(before: Profile, after: Profile): boolean {
+export function hasNewItems(before: Profile, after: Profile): boolean {
   const earlier = new Set(availableItems(before).map(itemKey));
-  const newItem = availableItems(after).some((item) => !earlier.has(itemKey(item)));
-  const newTrophy = after.inventory.trophies.some(
-    (trophy) => !before.inventory.trophies.includes(trophy),
-  );
-  return newItem || newTrophy;
+  return availableItems(after).some((item) => !earlier.has(itemKey(item)));
 }
 
 export function isSkinLocked(skin: string, ownedSkins: readonly string[] = STARTER_SKINS): boolean {
