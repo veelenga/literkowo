@@ -37,7 +37,7 @@ Actions:
 - `createLabel()`: a word label element, needed to build your own `Enemy`.
 - `addEnemy(enemy, radius?)`: puts an enemy on the board. With `radius` it lands on the spawn arc, without it keeps its position.
 - `removeEnemy(enemy)`: takes an enemy off the board without points. The phase still ends once every spawn happened and the board is empty. Do not remove the boss.
-- `spawnWord(word?)`: spawns a normal enemy on the spawn arc, with the next word from `words` when none is given. Returns it.
+- `spawnWord(word?)`: spawns a normal enemy on the spawn arc, with the next word from `words` when none is given. That word prefers a first letter no enemy on the board is waiting for. Returns it.
 - `setTimeScale(scale)`: slows or speeds enemy movement and spawn timers. The hero and effects keep real time. One shared value, so set it back to `1`.
 - `shakeCamera(strength, seconds)`: `0.18` for `0.25` s is a lost life.
 - `announce(text, style, accent?)`: shows text over the game. `style` is `'callout'`, `'banner'` or `'warning'`, `accent` is any CSS color.

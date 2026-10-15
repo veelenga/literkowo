@@ -293,7 +293,7 @@ export class Game {
     if (!this.isSpawnDue()) return;
     this.sinceSpawn = 0;
     this.spawned += 1;
-    this.spawnWord(this.phase.kind === 'warmup' ? this.words.singleLetter() : this.words.next());
+    this.spawnWord(this.phase.kind === 'warmup' ? this.nextLetter() : this.nextWord());
   }
 
   private isSpawnDue(): boolean {
@@ -304,7 +304,19 @@ export class Game {
     );
   }
 
-  private spawnWord(word = this.words.next()): Enemy {
+  private nextLetter(): string {
+    return this.words.singleLetter(this.liveStarts());
+  }
+
+  private nextWord(): string {
+    return this.words.next(this.liveStarts());
+  }
+
+  private liveStarts(): Set<string> {
+    return new Set(this.enemies.map((enemy) => enemy.expectedChar));
+  }
+
+  private spawnWord(word = this.nextWord()): Enemy {
     const enemy = new Enemy(word, this.labels.createLabel(), this.phase.speed, this.look());
     this.addEnemy(enemy, SPAWN_RADIUS);
     return enemy;

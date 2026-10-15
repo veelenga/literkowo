@@ -11,6 +11,8 @@ const BOSS_GENERATED_LENGTH: [number, number] = [5, 7];
 export const SHORT_LENGTH: [number, number] = [3, 4];
 const NEW_KEY_BIAS = 0.5;
 const LETTERS_ONLY = /[a-ząćęłńóśźż]/;
+const MAX_DRAWS = 10;
+const NO_STARTS: ReadonlySet<string> = new Set();
 
 export class WordSource {
   private readonly allowed: string;
@@ -25,12 +27,13 @@ export class WordSource {
     this.realWords = WORD_LISTS[language].filter((word) => this.fitsAllowed(word));
   }
 
-  singleLetter(): string {
-    return randomChar(this.fresh);
+  singleLetter(takenStarts = NO_STARTS): string {
+    const open = [...this.fresh].filter((char) => !takenStarts.has(char)).join('');
+    return randomChar(open || this.fresh);
   }
 
-  next(): string {
-    return this.realWord() ?? this.generate(GENERATED_MIN_LENGTH, GENERATED_MAX_LENGTH);
+  next(takenStarts = NO_STARTS): string {
+    return drawAvoiding(takenStarts, () => this.anyWord());
   }
 
   bossWord(): string {
@@ -50,6 +53,10 @@ export class WordSource {
 
   queueBossWord(word: string): void {
     this.queuedBossWords.push(word);
+  }
+
+  private anyWord(): string {
+    return this.realWord() ?? this.generate(GENERATED_MIN_LENGTH, GENERATED_MAX_LENGTH);
   }
 
   private realWord(): string | undefined {
@@ -76,6 +83,14 @@ export class WordSource {
       Math.random() < NEW_KEY_BIAS ? randomChar(fresh) : randomChar(pool),
     ).join('');
   }
+}
+
+function drawAvoiding(takenStarts: ReadonlySet<string>, draw: () => string): string {
+  let word = draw();
+  for (let attempt = 1; attempt < MAX_DRAWS && takenStarts.has(word[0]); attempt += 1) {
+    word = draw();
+  }
+  return word;
 }
 
 function pick<T>(items: T[]): T | undefined {
