@@ -6,7 +6,7 @@ const STORAGE_KEY = 'literkowo.quality';
 
 function chips(): HTMLButtonElement[] {
   return [
-    ...pauseOverlay(() => undefined).element.querySelectorAll<HTMLButtonElement>(
+    ...pauseOverlay(() => undefined, {}).element.querySelectorAll<HTMLButtonElement>(
       '.quality-options .chip',
     ),
   ];
@@ -47,8 +47,15 @@ describe('pauseOverlay quality picker', () => {
 describe('pauseOverlay resume button', () => {
   it('resumes the level when tapped', () => {
     const onResume = vi.fn();
-    const overlay = pauseOverlay(onResume);
+    const overlay = pauseOverlay(onResume, {});
     overlay.element.querySelector<HTMLButtonElement>('.button-primary')?.click();
     expect(onResume).toHaveBeenCalledOnce();
+  });
+});
+
+describe('pauseOverlay key heatmap', () => {
+  it('shows the accuracy of each key', () => {
+    const overlay = pauseOverlay(() => undefined, {});
+    expect(overlay.element.querySelector('.heatmap-title')?.textContent).toBe('Celność klawiszy');
   });
 });

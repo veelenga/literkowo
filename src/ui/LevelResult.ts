@@ -3,6 +3,7 @@ import type { GameResult } from '../game/Game';
 import { format } from '../i18n/format';
 import { i18n } from '../i18n/i18n';
 import { Counter, el, icon, prefersReducedMotion } from './dom';
+import { ResultKeys } from './mastery';
 import { createOverlay, type Overlay } from './overlay';
 import { ResultProgress, type EarnedRewards } from './ResultProgress';
 
@@ -32,6 +33,7 @@ export function levelResult(
 ): Overlay {
   const t = i18n.t;
   const progress = new ResultProgress(earned);
+  const keys = new ResultKeys(result.keys);
   const tiles = [
     statTile(t.score, result.score),
     statTile(t.accuracy, result.accuracy * PERCENT, '%'),
@@ -42,6 +44,7 @@ export function levelResult(
   const revealTimer = window.setTimeout(() => {
     tiles.forEach((tile) => tile.reveal());
     progress.reveal();
+    keys.reveal();
   }, revealDelay);
   const element = el(
     'div',
@@ -54,6 +57,7 @@ export function levelResult(
       el('p', { class: 'result-hint', text: result.won ? starsHint() : t.retryHint }),
       el('div', { class: 'result-stats' }, ...tiles.map((tile) => tile.element)),
       progress.element,
+      keys.element,
       actionsRow(stars, actions),
     ),
   );
@@ -61,6 +65,7 @@ export function levelResult(
     element,
     () => window.clearTimeout(revealTimer),
     () => progress.stop(),
+    () => keys.stop(),
     ...tiles.map((tile) => tile.stop),
   );
 }

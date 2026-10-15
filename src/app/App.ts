@@ -103,6 +103,7 @@ export class App {
     this.overlays.open(
       learnCard(
         level,
+        profile.keyStats,
         this.dismissThen(() => this.startLevel(profile, level)),
       ),
     );
@@ -139,6 +140,7 @@ export class App {
       level,
       language: profile.wordLanguage,
       theme: themeFor(regionOf(level).theme),
+      keyStats: profile.keyStats,
     };
     music.play(config.theme.id, level.isBoss ? 'boss' : 'calm');
     this.game = new Game(stage, config, {
@@ -176,7 +178,7 @@ export class App {
 
   private pauseLevel(): void {
     music.pause();
-    this.pause = pauseOverlay(() => this.game?.togglePause());
+    this.pause = pauseOverlay(() => this.game?.togglePause(), this.game?.keyStats ?? {});
     this.overlays.open(this.pause);
   }
 
@@ -294,5 +296,6 @@ function attemptOf(result: GameResult, stars: number, coins: number): Attempt {
     lettersFreed: result.lettersFreed,
     xp: result.xp,
     coins,
+    keyStats: result.keys.practised,
   };
 }

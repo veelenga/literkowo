@@ -13,6 +13,13 @@ const NEW_KEY_BIAS = 0.5;
 const LETTERS_ONLY = /[a-ząćęłńóśźż]/;
 const MAX_DRAWS = 10;
 const NO_STARTS: ReadonlySet<string> = new Set();
+const EVEN_WEIGHT = 1;
+
+export interface KeyWeights {
+  weightOf(key: string): number;
+}
+
+const EVEN_WEIGHTS: KeyWeights = { weightOf: () => EVEN_WEIGHT };
 
 export class WordSource {
   private readonly allowed: string;
@@ -20,7 +27,11 @@ export class WordSource {
   private readonly realWords: string[];
   private readonly queuedBossWords: string[] = [];
 
-  constructor(level: Level, language: WordLanguage) {
+  constructor(
+    level: Level,
+    language: WordLanguage,
+    private readonly weights: KeyWeights = EVEN_WEIGHTS,
+  ) {
     const course = courseFor(language);
     this.allowed = course.allowedKeys(level);
     this.fresh = level.isBoss ? (course.previous(level)?.newKeys ?? this.allowed) : level.newKeys;
@@ -40,14 +51,14 @@ export class WordSource {
     const queued = this.queuedBossWords.shift();
     if (queued) return queued;
     const long = this.realWords.filter((word) => word.length >= BOSS_MIN_LENGTH);
-    const word = long.length >= MIN_REAL_WORDS ? pick(long) : undefined;
+    const word = long.length >= MIN_REAL_WORDS ? this.pickWord(long) : undefined;
     return word ?? this.generate(...BOSS_GENERATED_LENGTH, this.letters());
   }
 
   shortWord(): string {
     const [min, max] = SHORT_LENGTH;
     const short = this.realWords.filter((word) => word.length >= min && word.length <= max);
-    const word = short.length >= MIN_REAL_WORDS ? pick(short) : undefined;
+    const word = short.length >= MIN_REAL_WORDS ? this.pickWord(short) : undefined;
     return word ?? this.generate(min, max, this.letters());
   }
 
@@ -61,7 +72,23 @@ export class WordSource {
 
   private realWord(): string | undefined {
     if (this.realWords.length < MIN_REAL_WORDS || Math.random() <= NEW_KEY_BIAS) return undefined;
-    return pick(this.realWords.filter((word) => this.usesFresh(word))) ?? pick(this.realWords);
+    const fresh = this.realWords.filter((word) => this.usesFresh(word));
+    return this.pickWord(fresh) ?? this.pickWord(this.realWords);
+  }
+
+  private pickWord(words: readonly string[]): string | undefined {
+    const weights = new Map([...this.allowed].map((char) => [char, this.weightOf(char)]));
+    const wordWeight = (word: string) =>
+      Math.max(...[...word].map((char) => weights.get(char) ?? EVEN_WEIGHT));
+    return weightedPick(words, wordWeight);
+  }
+
+  private pickChar(pool: string): string {
+    return weightedPick([...pool], (char) => this.weightOf(char)) ?? randomChar(pool);
+  }
+
+  private weightOf(char: string): number {
+    return Math.max(0, this.weights.weightOf(char));
   }
 
   private letters(): string {
@@ -80,7 +107,7 @@ export class WordSource {
     const length = randomInt(min, max);
     const fresh = [...this.fresh].filter((char) => pool.includes(char)).join('') || pool;
     return Array.from({ length }, () =>
-      Math.random() < NEW_KEY_BIAS ? randomChar(fresh) : randomChar(pool),
+      Math.random() < NEW_KEY_BIAS ? this.pickChar(fresh) : this.pickChar(pool),
     ).join('');
   }
 }
@@ -93,7 +120,16 @@ function drawAvoiding(takenStarts: ReadonlySet<string>, draw: () => string): str
   return word;
 }
 
-function pick<T>(items: T[]): T | undefined {
+function weightedPick<T>(items: readonly T[], weightOf: (item: T) => number): T | undefined {
+  const weights = items.map(weightOf);
+  const total = weights.reduce((sum, weight) => sum + weight, 0);
+  if (total <= 0) return pick(items);
+  let remaining = Math.random() * total;
+  const index = weights.findIndex((weight) => (remaining -= weight) < 0);
+  return items[index < 0 ? items.length - 1 : index];
+}
+
+function pick<T>(items: readonly T[]): T | undefined {
   return items.length ? items[Math.floor(Math.random() * items.length)] : undefined;
 }
 

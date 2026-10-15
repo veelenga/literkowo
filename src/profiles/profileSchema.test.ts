@@ -15,6 +15,7 @@ describe('normalizeProfile', () => {
       lettersFreed: 0,
       xp: 0,
       coins: 0,
+      keyStats: {},
     });
   });
 
@@ -53,6 +54,62 @@ describe('normalizeProfile', () => {
       coins: 7,
     });
     expect(profile).toMatchObject({ xp: 42, coins: 7 });
+  });
+
+  it('starts a version 3 profile with empty key statistics', () => {
+    const profile = normalizeProfile({
+      schemaVersion: 3,
+      id: 'x',
+      name: 'A',
+      keyStats: { f: { hits: 3, misses: 1 } },
+    });
+    expect(profile?.keyStats).toEqual({});
+  });
+
+  it('keeps well formed key statistics of a current profile', () => {
+    const stat = {
+      hits: 40,
+      misses: 2,
+      recentMisses: 0b101,
+      recentCount: 30,
+      speedMs: 512.5,
+      speedSamples: 50,
+      days: ['2026-01-02', '2026-01-01'],
+    };
+    const profile = normalizeProfile({
+      schemaVersion: PROFILE_SCHEMA_VERSION,
+      id: 'x',
+      name: 'A',
+      keyStats: { ą: stat, ab: stat, j: { hits: 'many' }, k: null },
+    });
+    expect(profile?.keyStats).toEqual({ ą: { ...stat, days: ['2026-01-01', '2026-01-02'] } });
+  });
+
+  it('repairs key statistics that are out of range', () => {
+    const profile = normalizeProfile({
+      schemaVersion: PROFILE_SCHEMA_VERSION,
+      id: 'x',
+      name: 'A',
+      keyStats: {
+        f: {
+          hits: 1,
+          misses: 0,
+          recentMisses: 0b1110,
+          recentCount: 2,
+          speedMs: 300,
+          days: ['2026-01-01', 'yesterday', '2026-01-01'],
+        },
+      },
+    });
+    expect(profile?.keyStats.f).toEqual({
+      hits: 1,
+      misses: 0,
+      recentMisses: 0b10,
+      recentCount: 2,
+      speedMs: 0,
+      speedSamples: 0,
+      days: ['2026-01-01'],
+    });
   });
 
   it('falls back to Polish for an unknown word language', () => {

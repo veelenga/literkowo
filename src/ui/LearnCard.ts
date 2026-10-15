@@ -1,15 +1,17 @@
 import { fingerFor, needsRightAlt } from '../course/fingers';
+import type { KeyStat, KeyStats } from '../course/keyStats';
 import type { Level } from '../course/regions';
 import { i18n } from '../i18n/i18n';
 import { el, fingerColor } from './dom';
 import { handsDiagram } from './HandsDiagram';
+import { keyStatus } from './mastery';
 import { createOverlay, onWindowKey, type Overlay } from './overlay';
 
 const KEY_STAGGER_MS = 90;
 const ALT_LABEL = 'Alt';
 const START_KEY = 'Enter';
 
-export function learnCard(level: Level, onStart: () => void): Overlay {
+export function learnCard(level: Level, keyStats: KeyStats, onStart: () => void): Overlay {
   const t = i18n.t;
   const element = el(
     'div',
@@ -18,7 +20,11 @@ export function learnCard(level: Level, onStart: () => void): Overlay {
       'div',
       { class: 'panel panel-center learn-panel' },
       el('span', { class: 'eyebrow', text: t.newKeys }),
-      el('div', { class: 'keycaps' }, ...[...level.newKeys].map(keycap)),
+      el(
+        'div',
+        { class: 'keycaps' },
+        ...[...level.newKeys].map((char, index) => keycap(char, index, keyStats[char])),
+      ),
       handsDiagram(level.newKeys),
       el('p', { class: 'learn-hint', text: t.placeFingers }),
       el(
@@ -41,7 +47,7 @@ export function learnCard(level: Level, onStart: () => void): Overlay {
   return createOverlay(element, stopListening);
 }
 
-function keycap(char: string, index: number): HTMLElement {
+function keycap(char: string, index: number, stat: KeyStat | undefined): HTMLElement {
   return el(
     'div',
     {
@@ -55,6 +61,7 @@ function keycap(char: string, index: number): HTMLElement {
       el('span', { class: 'keycap-letter', text: char.toUpperCase() }),
     ),
     el('span', { class: 'keycap-caption', text: fingerCaption(char) }),
+    keyStatus(char, stat),
   );
 }
 
