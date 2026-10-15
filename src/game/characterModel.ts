@@ -3,6 +3,8 @@ import * as THREE from 'three';
 export const CHARACTER_HEIGHT = 1.9;
 export const IDLE_CLIP = 'idle';
 
+const HEAD_NODE = 'head';
+
 const MISSING_CLIP_ERROR = 'Character model has no animation clip named';
 const LIT_ROUGHNESS = 0.85;
 
@@ -34,6 +36,21 @@ export function fitToCharacterHeight(model: THREE.Object3D): void {
   const scale = CHARACTER_HEIGHT / (bounds.max.y - bounds.min.y);
   model.scale.setScalar(scale);
   model.position.set(-center.x * scale, -bounds.min.y * scale, -center.z * scale);
+}
+
+export function mountOnHead(model: THREE.Object3D, accessory: THREE.Object3D): void {
+  const head = model.getObjectByName(HEAD_NODE) ?? model;
+  const bounds = localBounds(head);
+  const center = bounds.getCenter(new THREE.Vector3());
+  accessory.position.set(center.x, bounds.max.y, center.z);
+  accessory.scale.setScalar(bounds.max.x - bounds.min.x);
+  head.add(accessory);
+}
+
+function localBounds(node: THREE.Object3D): THREE.Box3 {
+  node.updateWorldMatrix(true, true);
+  const toLocal = node.matrixWorld.clone().invert();
+  return new THREE.Box3().setFromObject(node, true).applyMatrix4(toLocal);
 }
 
 export function prepareMeshes(model: THREE.Object3D): void {
