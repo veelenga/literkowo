@@ -115,7 +115,7 @@ describe('ShopScreen', () => {
     });
     const { shop, openTab } = setup(profile);
     openTab(3);
-    expect(shop.element.querySelector('.shop-trophy-count')?.textContent).toBe('Trofea: 1 z 10');
+    expect(shop.element.querySelector('.shop-trophy-count')?.textContent).toBe('Trofea: 1 z 13');
     expect(shop.element.querySelectorAll('.shop-trophy.is-earned')).toHaveLength(1);
   });
 

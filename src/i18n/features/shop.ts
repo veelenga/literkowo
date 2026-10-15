@@ -69,6 +69,8 @@ const pl = {
     region: { name: '{region}', hint: 'Zdobądź gwiazdkę na każdym poziomie tej krainy' },
     playerLevel: { name: 'Poziom {level}', hint: 'Zdobądź poziom {level}' },
     masteredRegion: { name: 'Mistrz klawiszy', hint: 'Opanuj wszystkie klawisze jednej krainy' },
+    arenaWave: { name: 'Fala {wave}', hint: 'Przetrwaj {wave} fal na arenie' },
+    arenaGold: { name: 'Złoty medal', hint: 'Zdobądź złoto na arenie' },
   },
 };
 
@@ -143,6 +145,8 @@ const uk: typeof pl = {
     region: { name: '{region}', hint: 'Здобудь зірочку на кожному рівні цього краю' },
     playerLevel: { name: 'Рівень {level}', hint: 'Досягни рівня {level}' },
     masteredRegion: { name: 'Майстер клавіш', hint: 'Опануй усі клавіші одного краю' },
+    arenaWave: { name: 'Хвиля {wave}', hint: 'Витримай {wave} хвиль на арені' },
+    arenaGold: { name: 'Золота медаль', hint: 'Здобудь золото на арені' },
   },
 };
 

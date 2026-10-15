@@ -1,3 +1,5 @@
+import { GOLD } from '../arena/medals';
+import type { EndlessBest } from '../arena/record';
 import type { Profile } from '../profiles/Profile';
 import { LEVELS, REGIONS, type Level } from './catalog';
 import { masteredShare, regionKeys } from './mastery';
@@ -38,7 +40,15 @@ function isEarned(profile: Profile, rule: TrophyRule): boolean {
       return REGIONS.some(
         (region) => masteredShare(regionKeys(region), profile.keyStats) === FULL_SHARE,
       );
+    case 'arenaWave':
+      return endlessBests(profile).some((best) => best.wave >= rule.wave);
+    case 'arenaGold':
+      return endlessBests(profile).some((best) => best.medal === GOLD);
   }
+}
+
+function endlessBests(profile: Profile): EndlessBest[] {
+  return Object.values(profile.arena.endless);
 }
 
 function isRegionCleared(profile: Profile, regionId: string): boolean {

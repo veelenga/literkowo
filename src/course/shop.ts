@@ -43,7 +43,9 @@ export type TrophyRule =
   | { readonly kind: 'firstBoss' }
   | { readonly kind: 'region'; readonly regionId: string }
   | { readonly kind: 'playerLevel'; readonly level: number }
-  | { readonly kind: 'masteredRegion' };
+  | { readonly kind: 'masteredRegion' }
+  | { readonly kind: 'arenaWave'; readonly wave: number }
+  | { readonly kind: 'arenaGold' };
 
 export interface Trophy {
   readonly id: string;
@@ -116,6 +118,11 @@ const PLAYER_LEVEL_TROPHIES = [
   { level: 50, color: '#ffbe2e' },
 ] as const;
 
+const ARENA_WAVE_TROPHIES = [
+  { wave: 10, color: '#7c5cff' },
+  { wave: 20, color: '#5ce1ff' },
+] as const;
+
 export const TROPHIES: readonly Trophy[] = [
   { id: 'first-boss', rule: { kind: 'firstBoss' }, color: '#ff3d5f' },
   ...REGIONS.map((region) => ({
@@ -129,6 +136,12 @@ export const TROPHIES: readonly Trophy[] = [
     color,
   })),
   { id: 'mastered-region', rule: { kind: 'masteredRegion' }, color: '#3ee07a' },
+  ...ARENA_WAVE_TROPHIES.map(({ wave, color }) => ({
+    id: `arena-wave-${wave}`,
+    rule: { kind: 'arenaWave', wave } as const,
+    color,
+  })),
+  { id: 'arena-gold', rule: { kind: 'arenaGold' }, color: '#ffd23f' },
 ];
 
 export function itemsOf(kind: ItemKind): readonly ShopItem[] {

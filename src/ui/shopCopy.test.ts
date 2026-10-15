@@ -34,6 +34,11 @@ describe('shop copy', () => {
       hint: 'Zdobądź poziom 25',
     });
     expect(trophyCopy(trophy('first-boss')).name).toBe('Pogromca bossa');
+    expect(trophyCopy(trophy('arena-wave-20'))).toEqual({
+      name: 'Fala 20',
+      hint: 'Przetrwaj 20 fal na arenie',
+    });
+    expect(trophyCopy(trophy('arena-gold')).name).toBe('Złoty medal');
   });
 
   it('explains how a locked item unlocks', () => {
