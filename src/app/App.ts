@@ -23,7 +23,9 @@ import type { StoryScene } from '../story/story';
 import { el } from '../ui/dom';
 import { Callouts } from '../ui/Callouts';
 import { Hud } from '../ui/Hud';
+import { usesBuiltInKeyboard } from '../ui/formFactor';
 import { KeyboardHint } from '../ui/KeyboardHint';
+import { KEYBOARD_LAYOUTS } from '../ui/keyboardLayout';
 import { learnCard } from '../ui/LearnCard';
 import { levelResult } from '../ui/LevelResult';
 import { loadErrorOverlay } from '../ui/LoadErrorOverlay';
@@ -143,8 +145,10 @@ export class App {
     const hud = new Hud(profile, {
       onMap: () => this.showMap(profile),
       onPause: () => this.game?.togglePause(),
+      onKeyboard: () => this.touch?.toggleNativeKeyboard(),
     });
-    const keyboard = new KeyboardHint(type);
+    const layout = usesBuiltInKeyboard() ? KEYBOARD_LAYOUTS.compact : KEYBOARD_LAYOUTS.full;
+    const keyboard = new KeyboardHint(type, layout);
     const callouts = new Callouts();
     this.showScreen(
       el('div', { class: 'level-screen' }, stage, callouts.element, hud.element, keyboard.element),
@@ -206,7 +210,7 @@ export class App {
     music.resume();
     if (this.pause) this.overlays.release(this.pause);
     this.pause = undefined;
-    this.touch?.focus();
+    this.touch?.refocus();
   }
 
   private showLoadError(profile: Profile, level: Level, error: unknown): void {

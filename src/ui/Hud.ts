@@ -15,6 +15,7 @@ const BASE_MULTIPLIER = 1;
 interface HudActions {
   onMap: () => void;
   onPause: () => void;
+  onKeyboard: () => void;
 }
 
 export class Hud {
@@ -79,6 +80,7 @@ export class Hud {
         el('div', { class: 'progress-bar' }, this.progressFill),
       ),
       this.heartRow,
+      keyboardButton(actions.onKeyboard),
       pauseButton(actions.onPause),
       soundToggle(),
     );
@@ -147,6 +149,15 @@ export class Hud {
       ),
     );
   }
+}
+
+function keyboardButton(onKeyboard: () => void): HTMLElement {
+  const label = i18n.t.features.touch.phoneKeyboard;
+  return el(
+    'button',
+    { class: 'hud-keys', title: label, 'aria-label': label, onClick: onKeyboard },
+    icon('keyboard', 'hud-keys-icon'),
+  );
 }
 
 function pauseButton(onPause: () => void): HTMLElement {

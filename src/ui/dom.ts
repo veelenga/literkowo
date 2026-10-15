@@ -31,6 +31,7 @@ type AttributeProps = {
   autocapitalize?: string;
   autocorrect?: string;
   inputmode?: string;
+  enterkeyhint?: string;
   spellcheck?: 'true' | 'false';
   [aria: `aria-${string}`]: string | undefined;
   [data: `data-${string}`]: string | undefined;
@@ -139,6 +140,8 @@ const ICON_PATHS = {
   crown: 'M3 8l4.5 3.5L12 4l4.5 7.5L21 8l-1.8 9.5H4.8zM4.8 19h14.4v2.2H4.8z',
   lock: 'M7 10V7.5a5 5 0 0 1 10 0V10h.5a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 19.5v-8A1.5 1.5 0 0 1 6.5 10zm2.2 0h5.6V7.5a2.8 2.8 0 0 0-5.6 0z',
   pause: 'M6.5 4.5h4v15h-4zM13.5 4.5h4v15h-4z',
+  keyboard:
+    'M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm1 3v2h2V8zm3 0v2h2V8zm3 0v2h2V8zm3 0v2h2V8zm3 0v2h2V8zM5 11v2h2v-2zm3 0v2h2v-2zm3 0v2h2v-2zm3 0v2h2v-2zm3 0v2h2v-2zM7 14.5v2h10v-2z',
   soundOn:
     'M3 9.5h3.8L12 5v14l-5.2-4.5H3zM15.2 8.6a4.6 4.6 0 0 1 0 6.8l-1.3-1.4a2.7 2.7 0 0 0 0-4zm2.6-2.8a8.4 8.4 0 0 1 0 12.4l-1.3-1.4a6.5 6.5 0 0 0 0-9.6z',
   soundOff:

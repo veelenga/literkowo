@@ -1,5 +1,6 @@
 import { i18n } from '../i18n/i18n';
 import { el } from './dom';
+import { usesBuiltInKeyboard } from './formFactor';
 import { KEYBOARD_OPEN_ATTRIBUTE } from './keyboardFit';
 import { TypedText } from './typedText';
 import './touchTyping.css';
@@ -17,6 +18,7 @@ export class TouchTyping {
     autocapitalize: 'off',
     autocorrect: 'off',
     spellcheck: 'false',
+    enterkeyhint: 'done',
     'aria-label': i18n.t.features.touch.typingField,
     'data-1p-ignore': 'true',
   });
@@ -29,25 +31,39 @@ export class TouchTyping {
   constructor(
     private readonly stage: HTMLElement,
     private readonly onChar: (char: string) => void,
+    private readonly builtInKeyboard: () => boolean = usesBuiltInKeyboard,
   ) {
     stage.append(this.input, this.pill);
-    stage.addEventListener('click', this.focus);
+    stage.addEventListener('click', this.onStageTap);
     this.input.addEventListener('input', this.onInput);
     this.input.addEventListener('compositionend', this.clear);
     window.addEventListener('keydown', this.noticePhysicalKeyboard, true);
   }
 
-  readonly focus = (): void => {
+  private readonly focus = (): void => {
     if (document.activeElement === this.input && this.keyboardOpen) return;
     this.input.blur();
     this.input.focus({ preventScroll: true });
   };
 
+  readonly toggleNativeKeyboard = (): void => {
+    if (this.keyboardOpen) this.input.blur();
+    else this.focus();
+  };
+
+  refocus(): void {
+    if (!this.builtInKeyboard()) this.focus();
+  }
+
   dispose(): void {
-    this.stage.removeEventListener('click', this.focus);
+    this.stage.removeEventListener('click', this.onStageTap);
     window.removeEventListener('keydown', this.noticePhysicalKeyboard, true);
     this.input.blur();
   }
+
+  private readonly onStageTap = (): void => {
+    if (!this.builtInKeyboard()) this.focus();
+  };
 
   private get keyboardOpen(): boolean {
     return this.root.hasAttribute(KEYBOARD_OPEN_ATTRIBUTE);

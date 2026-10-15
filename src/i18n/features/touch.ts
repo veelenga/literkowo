@@ -3,6 +3,7 @@ interface TouchTexts {
   typingField: string;
   pause: string;
   resume: string;
+  phoneKeyboard: string;
 }
 
 const pl: TouchTexts = {
@@ -10,6 +11,7 @@ const pl: TouchTexts = {
   typingField: 'Pole do pisania',
   pause: 'Pauza',
   resume: 'Graj dalej',
+  phoneKeyboard: 'Klawiatura telefonu',
 };
 
 const uk: TouchTexts = {
@@ -17,6 +19,7 @@ const uk: TouchTexts = {
   typingField: 'Поле для друку',
   pause: 'Пауза',
   resume: 'Грати далі',
+  phoneKeyboard: 'Клавіатура телефону',
 };
 
 export const touch = { pl, uk };
