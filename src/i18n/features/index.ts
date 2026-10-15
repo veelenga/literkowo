@@ -3,6 +3,7 @@ import { bombers, speedSurge, twins } from './actionEvents';
 import { bossPhases } from './bossPhases';
 import { enemyTypes } from './enemyTypes';
 import { fever } from './fever';
+import { mastery } from './mastery';
 import { mergeEnemies } from './mergeEnemies';
 import { powerWords } from './powerWords';
 import { progression } from './progression';
@@ -22,5 +23,6 @@ export function featureTexts(language: UiLanguage) {
     quality: quality[language],
     touch: touch[language],
     progression: progression[language],
+    mastery: mastery[language],
   };
 }

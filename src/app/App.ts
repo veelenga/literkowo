@@ -103,6 +103,7 @@ export class App {
     this.overlays.open(
       learnCard(
         level,
+        profile.keyStats,
         this.dismissThen(() => this.startLevel(profile, level)),
       ),
     );

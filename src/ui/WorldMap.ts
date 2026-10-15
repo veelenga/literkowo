@@ -5,6 +5,7 @@ import { i18n } from '../i18n/i18n';
 import { totalStars, type Profile } from '../profiles/Profile';
 import { characterAvatar } from './CharacterAvatar';
 import { el, icon, svg } from './dom';
+import { keyDots, masteryMeter } from './mastery';
 import { coinIcon, levelBadge } from './progression';
 import { soundToggle } from './SoundToggle';
 
@@ -134,10 +135,15 @@ export class WorldMap {
         el('h2', { class: 'region-title', text: region.name[i18n.current] }),
       ),
       el(
-        'span',
-        { class: 'region-progress', title: t.stars },
-        icon('star', 'stat-icon stat-icon-star'),
-        `${earned} / ${region.levels.length * MAX_STARS}`,
+        'div',
+        { class: 'region-badges' },
+        el(
+          'span',
+          { class: 'region-progress', title: t.stars },
+          icon('star', 'stat-icon stat-icon-star'),
+          `${earned} / ${region.levels.length * MAX_STARS}`,
+        ),
+        masteryMeter(region, this.profile.keyStats),
       ),
     );
   }
@@ -202,6 +208,7 @@ export class WorldMap {
       },
       level.isBoss ? el('span', { class: 'node-crown' }, icon('crown', 'node-crown-icon')) : null,
       this.nodeFace(level, state),
+      state === 'locked' || level.isBoss ? null : keyDots(level.newKeys, this.profile.keyStats),
     );
   }
 

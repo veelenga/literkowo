@@ -38,10 +38,13 @@ export function masteryOf(key: string, stat: KeyStat | undefined): MasteryLevel 
   return isSolid(stat, accuracy) ? 'solid' : 'learning';
 }
 
+export function masteredKeys(keys: string, stats: KeyStats): string[] {
+  return [...keys].filter((key) => masteryOf(key, stats[key]) === 'mastered');
+}
+
 export function masteredShare(keys: string, stats: KeyStats): number {
-  const all = [...keys];
-  if (!all.length) return 0;
-  return all.filter((key) => masteryOf(key, stats[key]) === 'mastered').length / all.length;
+  const total = [...keys].length;
+  return total === 0 ? 0 : masteredKeys(keys, stats).length / total;
 }
 
 export function regionKeys(region: Region): string {
