@@ -255,7 +255,7 @@ Mastery levels (`src/course/mastery.ts`):
 
 Where it shows:
 
-- Map: each region card has a mastery meter next to the stars, with the mastered keys out of all new keys of the region. Each unlocked key level shows a dot per new key in the colour of its level: grey none, orange learning, blue solid, green mastered.
+- Map: each region sign has a mastery meter next to the stars, with the mastered keys out of all new keys of the region. Each unlocked key level shows a dot per new key in the colour of its level: grey none, orange learning, blue solid, green mastered.
 - Learn card: under each keycap, the level of the key and its accuracy over the last 30 keystrokes when there is data.
 - Result card: a "Klawisze" / "Клавіші" row with the two least accurate keys of the run that had a mistake, or "Bez pomyłek" / "Без помилок". A key that became mastered in the run gets a green badge, the sparkle sound and the callout "Opanowany: F" / "Опановано: F".
 - Pause card: a heatmap of the keyboard, each key tinted by its accuracy over the last 30 keystrokes, from red at 70% or less to green at 100%, grey without data. A practised Polish letter shows as a small mark on its base key.
@@ -381,8 +381,8 @@ Map:
 
 - The map is one tall scene. The regions are stacked from top to bottom as bands that blend into each other: meadow, forest, mountains, cave and island. Locked bands are dimmed.
 - One winding path runs through every level. The walked part, up to the first level without a star, is gold.
-- Each band starts with a sign: the chapter number, the region name, a short mood line (`src/i18n/features/worldMap.ts`) and the stars earned out of the total. Signs switch sides from band to band, and the path passes each sign on the other side.
-- Levels are round badges on the path with their new keys. Bosses have a crown. Locked levels show a lock. Levels with stars glow in the region colour and show their stars. The current level pulses, has a Play tag, and the hero stands on it.
+- Each band starts with a sign: the chapter number, the region name, a short mood line (`src/i18n/features/worldMap.ts`), the stars earned out of the total and the mastery meter. Signs switch sides from band to band, and the path passes each sign on the other side.
+- Levels are round badges on the path with their new keys. Unlocked key levels show the key dots under the keys, see [Key mastery](#key-mastery). Bosses have a crown. Locked levels show a lock. Levels with stars glow in the region colour and show their stars. The current level pulses, has a Play tag, and the hero stands on it.
 - The header stays at the top: the avatar with the level number, the name, the rank and a thin XP bar, then stars, coins and the sound toggle. A tap on the avatar goes back to the profiles.
 - On open the map scrolls smoothly to the current level, or to the last open level when all levels have stars. Levels pop in as they scroll into view. With reduced motion the scroll is instant and nothing pops in.
 - The silhouettes of each band move at different speeds while scrolling, except in the low quality preset.
