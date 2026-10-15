@@ -1,6 +1,9 @@
-import { normalizeProfile, type Profile } from './Profile';
+import { readStorage, removeStorage, writeStorage } from '../storage';
+import type { Profile } from './Profile';
+import { parseProfiles } from './profileSchema';
 
-const PROFILES_KEY = 'literkowo.profiles';
+export const PROFILES_KEY = 'literkowo.profiles';
+export const PROFILES_BACKUP_KEY = 'literkowo.profiles.backup';
 const ACTIVE_KEY = 'literkowo.activeProfile';
 
 export class ProfileStore {
@@ -11,12 +14,12 @@ export class ProfileStore {
   }
 
   active(): Profile | undefined {
-    const id = localStorage.getItem(ACTIVE_KEY);
+    const id = readStorage(ACTIVE_KEY);
     return this.profiles.find((profile) => profile.id === id);
   }
 
   setActive(profile: Profile): void {
-    localStorage.setItem(ACTIVE_KEY, profile.id);
+    writeStorage(ACTIVE_KEY, profile.id);
   }
 
   add(profile: Profile): void {
@@ -25,6 +28,7 @@ export class ProfileStore {
   }
 
   update(profile: Profile): void {
+    if (!this.has(profile.id)) return;
     this.profiles = this.profiles.map((existing) =>
       existing.id === profile.id ? profile : existing,
     );
@@ -32,21 +36,25 @@ export class ProfileStore {
   }
 
   remove(id: string): void {
+    if (!this.has(id)) return;
     this.profiles = this.profiles.filter((profile) => profile.id !== id);
-    if (localStorage.getItem(ACTIVE_KEY) === id) localStorage.removeItem(ACTIVE_KEY);
+    if (readStorage(ACTIVE_KEY) === id) removeStorage(ACTIVE_KEY);
     this.persist();
   }
 
+  private has(id: string): boolean {
+    return this.profiles.some((profile) => profile.id === id);
+  }
+
   private load(): Profile[] {
-    try {
-      const raw = localStorage.getItem(PROFILES_KEY);
-      return raw ? (JSON.parse(raw) as Partial<Profile>[]).map(normalizeProfile) : [];
-    } catch {
-      return [];
-    }
+    const raw = readStorage(PROFILES_KEY);
+    if (raw === null) return [];
+    const { profiles, intact } = parseProfiles(raw);
+    if (!intact) writeStorage(PROFILES_BACKUP_KEY, raw);
+    return profiles;
   }
 
   private persist(): void {
-    localStorage.setItem(PROFILES_KEY, JSON.stringify(this.profiles));
+    writeStorage(PROFILES_KEY, JSON.stringify(this.profiles));
   }
 }

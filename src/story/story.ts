@@ -173,6 +173,17 @@ const SCENES: StoryScene[] = [
   },
 ];
 
+export const INTRO_STORY_ID = 'intro';
+export const FINALE_STORY_ID = 'finale';
+
+export function bossStoryId(regionId: string): string {
+  return `boss-${regionId}`;
+}
+
+export function afterStoryId(regionId: string): string {
+  return `after-${regionId}`;
+}
+
 export function storyScene(id: string): StoryScene | undefined {
   return SCENES.find((scene) => scene.id === id);
 }

@@ -3,21 +3,22 @@ import type { Level } from '../course/regions';
 import { i18n } from '../i18n/i18n';
 import { el, fingerColor } from './dom';
 import { handsDiagram } from './HandsDiagram';
+import { createOverlay, onWindowKey, type Overlay } from './overlay';
 
 const KEY_STAGGER_MS = 90;
 const ALT_LABEL = 'Alt';
+const START_KEY = 'Enter';
 
-export function learnCard(level: Level, onStart: () => void): HTMLElement {
+export function learnCard(level: Level, onStart: () => void): Overlay {
   const t = i18n.t;
-  const keys = [...level.newKeys];
-  const overlay = el(
+  const element = el(
     'div',
     { class: 'overlay' },
     el(
       'div',
       { class: 'panel panel-center learn-panel' },
       el('span', { class: 'eyebrow', text: t.newKeys }),
-      el('div', { class: 'keycaps' }, ...keys.map(keycap)),
+      el('div', { class: 'keycaps' }, ...[...level.newKeys].map(keycap)),
       handsDiagram(level.newKeys),
       el('p', { class: 'learn-hint', text: t.placeFingers }),
       el(
@@ -25,28 +26,19 @@ export function learnCard(level: Level, onStart: () => void): HTMLElement {
         { class: 'actions' },
         el(
           'button',
-          { class: 'button button-primary button-large', onClick: () => finish() },
+          { class: 'button button-primary button-large', onClick: onStart },
           t.letsGo,
           el('kbd', { class: 'kbd kbd-on-primary', text: '⏎' }),
         ),
       ),
     ),
   );
-
-  const onKey = (event: KeyboardEvent) => {
-    if (event.key !== 'Enter') return;
+  const stopListening = onWindowKey((event) => {
+    if (event.key !== START_KEY) return;
     event.preventDefault();
-    finish();
-  };
-
-  const finish = () => {
-    window.removeEventListener('keydown', onKey);
-    overlay.remove();
     onStart();
-  };
-
-  window.addEventListener('keydown', onKey);
-  return overlay;
+  });
+  return createOverlay(element, stopListening);
 }
 
 function keycap(char: string, index: number): HTMLElement {

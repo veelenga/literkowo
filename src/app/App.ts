@@ -1,49 +1,61 @@
 import { music } from '../audio/Music';
 import { sfx } from '../audio/Sfx';
-import { levelById, nextLevel, regionOf, regionsFor, type Level } from '../course/regions';
+import { regionOf, type Level } from '../course/catalog';
+import { courseFor } from '../course/course';
+import {
+  markStorySeen,
+  recordResult,
+  storyAfter,
+  storyBefore,
+  type Attempt,
+} from '../course/progress';
 import { starsFor } from '../course/scoring';
 import type { Game, GameResult } from '../game/Game';
 import { i18n } from '../i18n/i18n';
-import { createProfile, type Profile } from '../profiles/Profile';
+import type { Profile } from '../profiles/Profile';
 import { ProfileStore } from '../profiles/ProfileStore';
-import { storyScene } from '../story/story';
+import type { StoryScene } from '../story/story';
 import { el } from '../ui/dom';
-import { pauseOverlay } from '../ui/PauseOverlay';
 import { Hud } from '../ui/Hud';
 import { KeyboardHint } from '../ui/KeyboardHint';
 import { learnCard } from '../ui/LearnCard';
 import { levelResult } from '../ui/LevelResult';
+import { loadErrorOverlay } from '../ui/LoadErrorOverlay';
+import { OverlaySlot, type Overlay } from '../ui/overlay';
+import { pauseOverlay } from '../ui/PauseOverlay';
 import { ProfileScreen } from '../ui/ProfileScreen';
 import { storyCard } from '../ui/StoryCard';
 import { WorldMap } from '../ui/WorldMap';
+import { devLevelFromUrl, devProfile, unlockAudioOnFirstInput } from './devShortcut';
+import { loadGameModule, prefetchGameModule, type GameModule } from './gameModule';
 
 const COMBO_FOR_FULL_INTENSITY = 20;
 
-const loadGameModule = (() => {
-  let pending: Promise<typeof import('../game/Game')> | undefined;
-  return () => (pending ??= import('../game/Game'));
-})();
-
 export class App {
   private readonly store = new ProfileStore();
+  private readonly screen = el('div', { class: 'app-screen' });
+  private readonly overlays: OverlaySlot;
   private game: Game | undefined;
+  private pause: Overlay | undefined;
   private levelToken = 0;
 
-  constructor(private readonly root: HTMLElement) {}
+  constructor(private readonly root: HTMLElement) {
+    this.overlays = new OverlaySlot(root, this.screen);
+  }
 
   start(): void {
     document.documentElement.lang = i18n.current;
-    const devLevel = levelById(new URLSearchParams(location.search).get('level') ?? '');
-    if (devLevel) return void this.startLevel(this.devProfile(), devLevel);
+    this.root.replaceChildren(this.screen);
+    if (import.meta.env.DEV) {
+      const level = devLevelFromUrl();
+      if (level) return this.startDevLevel(level);
+    }
     this.showProfiles();
   }
 
-  private devProfile(): Profile {
-    const existing = this.store.active() ?? this.store.all()[0];
-    if (existing) return existing;
-    const profile = createProfile('Test', '🦊');
-    this.store.add(profile);
-    return profile;
+  private startDevLevel(level: Level): void {
+    unlockAudioOnFirstInput();
+    this.startLevel(devProfile(), level);
   }
 
   private showProfiles(): void {
@@ -54,43 +66,54 @@ export class App {
         this.showMap(profile);
       },
     });
-    this.root.replaceChildren(screen.element);
+    this.showScreen(screen.element);
   }
 
   private showMap(profile: Profile): void {
     this.teardownGame();
     music.stop();
-    void loadGameModule();
+    prefetchGameModule();
     const map = new WorldMap(profile, {
       onPlay: (level) => this.openLevel(profile, level),
       onSwitchPlayer: () => this.showProfiles(),
     });
-    this.root.replaceChildren(map.element);
+    this.showScreen(map.element);
   }
 
   private openLevel(profile: Profile, level: Level): void {
-    const storyId = this.storyBefore(profile, level);
-    const afterStory = () => this.showLearnCard(profile, level);
-    if (!storyId) return afterStory();
-    this.markStorySeen(profile, storyId);
-    this.showStory(storyId, afterStory);
+    const story = storyBefore(profile, level);
+    if (!story) return this.showLearnCard(profile, level);
+    const updated = this.save(markStorySeen(profile, story.id));
+    this.showStory(story, () => this.showLearnCard(updated, level));
   }
 
   private showLearnCard(profile: Profile, level: Level): void {
-    if (level.isBoss) return void this.startLevel(profile, level);
-    this.root.append(learnCard(level, () => void this.startLevel(profile, level)));
+    if (level.isBoss) return this.startLevel(profile, level);
+    this.overlays.open(
+      learnCard(
+        level,
+        this.dismissThen(() => this.startLevel(profile, level)),
+      ),
+    );
   }
 
-  private async startLevel(profile: Profile, level: Level): Promise<void> {
+  private startLevel(profile: Profile, level: Level): void {
     this.teardownGame();
-    const token = ++this.levelToken;
-    const { Game, themeFor } = await loadGameModule();
-    if (token !== this.levelToken) return;
+    const token = this.levelToken;
+    loadGameModule()
+      .then((module) => {
+        if (this.isCurrent(token)) this.runLevel(module, profile, level);
+      })
+      .catch((error: unknown) => {
+        if (this.isCurrent(token)) this.showLoadError(profile, level, error);
+      });
+  }
+
+  private runLevel({ Game, themeFor }: GameModule, profile: Profile, level: Level): void {
     const stage = el('div', { class: 'stage' });
     const hud = new Hud(profile, () => this.showMap(profile));
     const keyboard = new KeyboardHint();
-    let pause: HTMLElement | undefined;
-    this.root.replaceChildren(stage, hud.element, keyboard.element);
+    this.showScreen(stage, hud.element, keyboard.element);
 
     const config = {
       character: profile.avatar,
@@ -106,85 +129,101 @@ export class App {
       },
       onNextKey: (char) => keyboard.show(char),
       onProgress: (progress) => hud.progress(progress),
-      onPause: (paused) => {
-        if (paused) music.pause();
-        else music.resume();
-        pause?.remove();
-        pause = paused ? pauseOverlay() : undefined;
-        if (pause) this.root.append(pause);
-      },
+      onPause: (paused) => this.setPaused(paused),
       onFinished: (result) => this.finishLevel(profile, level, result),
     });
     this.game.start();
   }
 
-  private finishLevel(profile: Profile, level: Level, result: GameResult): void {
-    const stars = starsFor(result.accuracy, result.won);
-    this.recordResult(profile, level, result, stars);
-    const next = nextLevel(level, profile.wordLanguage);
-    this.root.append(
-      levelResult(result, stars, {
-        onNext: next
-          ? () => this.afterLevel(profile, level, stars, () => this.openLevel(profile, next))
-          : undefined,
-        onRetry: () => this.openLevel(profile, level),
-        onMap: () => this.afterLevel(profile, level, stars, () => this.showMap(profile)),
+  private setPaused(paused: boolean): void {
+    if (paused) this.pauseLevel();
+    else this.resumeLevel();
+  }
+
+  private pauseLevel(): void {
+    music.pause();
+    this.pause = pauseOverlay();
+    this.overlays.open(this.pause);
+  }
+
+  private resumeLevel(): void {
+    music.resume();
+    if (this.pause) this.overlays.release(this.pause);
+    this.pause = undefined;
+  }
+
+  private showLoadError(profile: Profile, level: Level, error: unknown): void {
+    reportError(error);
+    this.overlays.open(
+      loadErrorOverlay({
+        onRetry: this.dismissThen(() => this.startLevel(profile, level)),
+        onMap: this.dismissThen(() => this.showMap(profile)),
       }),
     );
   }
 
-  private afterLevel(profile: Profile, level: Level, stars: number, then: () => void): void {
-    const storyId = stars > 0 ? this.storyAfter(profile, level) : undefined;
-    if (!storyId) return then();
-    this.markStorySeen(profile, storyId);
-    this.showStory(storyId, then);
+  private finishLevel(profile: Profile, level: Level, result: GameResult): void {
+    const stars = starsFor(result.accuracy, result.won);
+    const updated = this.recordAttempt(profile, level, attemptOf(result, stars));
+    const next = courseFor(updated.wordLanguage).next(level);
+    const leave = (then: (current: Profile) => void) =>
+      this.dismissThen(() => this.afterLevel(updated, level, stars, then));
+    this.overlays.open(
+      levelResult(result, stars, {
+        onNext: next ? leave((current) => this.openLevel(current, next)) : undefined,
+        onRetry: this.dismissThen(() => this.openLevel(updated, level)),
+        onMap: leave((current) => this.showMap(current)),
+      }),
+    );
   }
 
-  private recordResult(profile: Profile, level: Level, result: GameResult, stars: number): void {
-    const previous = profile.levelResults[level.id];
-    const improved =
-      !previous ||
-      stars > previous.stars ||
-      (stars === previous.stars && result.score > previous.score);
-    if (improved) {
-      profile.levelResults[level.id] = {
-        stars,
-        score: result.score,
-        accuracy: result.accuracy,
-        wpm: result.wpm,
-      };
+  private recordAttempt(profile: Profile, level: Level, attempt: Attempt): Profile {
+    let updated = profile;
+    try {
+      updated = recordResult(profile, level, attempt);
+      this.store.update(updated);
+    } catch (error) {
+      reportError(error);
     }
-    profile.totalScore += result.score;
-    profile.lettersFreed += result.lettersFreed;
-    this.store.update(profile);
+    return updated;
   }
 
-  private storyBefore(profile: Profile, level: Level): string | undefined {
-    const region = regionOf(level);
-    const first = regionsFor(profile.wordLanguage)[0];
-    if (level.index === 1 && region.id === first.id) return this.unseen(profile, 'intro');
-    if (level.isBoss) return this.unseen(profile, `boss-${region.id}`);
-    return undefined;
+  private afterLevel(
+    profile: Profile,
+    level: Level,
+    stars: number,
+    then: (current: Profile) => void,
+  ): void {
+    const story = storyAfter(profile, level, stars);
+    if (!story) return then(profile);
+    const updated = this.save(markStorySeen(profile, story.id));
+    this.showStory(story, () => then(updated));
   }
 
-  private storyAfter(profile: Profile, level: Level): string | undefined {
-    if (!level.isBoss) return undefined;
-    const isLast = !nextLevel(level, profile.wordLanguage);
-    return this.unseen(profile, isLast ? 'finale' : `after-${level.regionId}`);
-  }
-
-  private unseen(profile: Profile, storyId: string): string | undefined {
-    return !profile.seenStories.includes(storyId) && storyScene(storyId) ? storyId : undefined;
-  }
-
-  private markStorySeen(profile: Profile, storyId: string): void {
-    profile.seenStories.push(storyId);
-    this.store.update(profile);
-  }
-
-  private showStory(storyId: string, then: () => void): void {
+  private showStory(scene: StoryScene, then: () => void): void {
     this.teardownGame();
-    this.root.append(storyCard(storyScene(storyId)!, then));
+    this.overlays.open(storyCard(scene, this.dismissThen(then)));
+  }
+
+  private save(profile: Profile): Profile {
+    this.store.update(profile);
+    return profile;
+  }
+
+  private showScreen(...nodes: Node[]): void {
+    this.overlays.close();
+    this.screen.replaceChildren(...nodes);
+  }
+
+  private dismissThen(next: () => void): () => void {
+    return () => {
+      this.overlays.close();
+      next();
+    };
+  }
+
+  private isCurrent(token: number): boolean {
+    return token === this.levelToken;
   }
 
   private teardownGame(): void {
@@ -192,5 +231,16 @@ export class App {
     music.resume();
     this.game?.destroy();
     this.game = undefined;
+    this.pause = undefined;
   }
+}
+
+function attemptOf(result: GameResult, stars: number): Attempt {
+  return {
+    stars,
+    score: result.score,
+    accuracy: result.accuracy,
+    wpm: result.wpm,
+    lettersFreed: result.lettersFreed,
+  };
 }

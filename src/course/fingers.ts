@@ -1,13 +1,16 @@
-export type Finger =
-  | 'leftPinky'
-  | 'leftRing'
-  | 'leftMiddle'
-  | 'leftIndex'
-  | 'rightIndex'
-  | 'rightMiddle'
-  | 'rightRing'
-  | 'rightPinky'
-  | 'thumb';
+export const FINGERS = [
+  'leftPinky',
+  'leftRing',
+  'leftMiddle',
+  'leftIndex',
+  'rightIndex',
+  'rightMiddle',
+  'rightRing',
+  'rightPinky',
+  'thumb',
+] as const;
+
+export type Finger = (typeof FINGERS)[number];
 
 const FINGER_KEYS: Record<Finger, string> = {
   leftPinky: 'qaz1`',
@@ -56,5 +59,5 @@ export function needsRightAlt(char: string): boolean {
 
 export function fingerFor(char: string): Finger | undefined {
   const key = baseKey(char);
-  return (Object.keys(FINGER_KEYS) as Finger[]).find((finger) => FINGER_KEYS[finger].includes(key));
+  return FINGERS.find((finger) => FINGER_KEYS[finger].includes(key));
 }

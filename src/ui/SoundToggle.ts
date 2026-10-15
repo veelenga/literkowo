@@ -12,6 +12,7 @@ export function soundToggle(): HTMLButtonElement {
     button.setAttribute('aria-pressed', String(!enabled));
   };
   button.addEventListener('click', () => {
+    button.blur();
     setSoundEnabled(!isSoundEnabled());
     render();
   });

@@ -1,18 +1,18 @@
 import type { WordLanguage } from '../profiles/Profile';
 
 const pl = `dom kot las sok rak mak lis sad ser los tak jak dal kij fala sala lala kasa sala
-jad kadź dar dał lak lek lok kok sok dla alf sal jaka laska klasa salsa dala gdak
-hak gaz gad hala haha gala gasł dach jadł gaj jaga sagi digi kisi kije siki dieje
-ser sieje lesie jesie idea aleje jedz jeż kies lis sile sieć kij dies jak fik
-rura ruda rusa rudy druga rude jura kura kurs rusk rusa drugi serial dres kres
-tyle tyka tata teatr test taka lata data sety ety typ tyl ryt tryk lity suty
-wada wata woda sowa wola owa owad wady wyt woda tylko rower torty osa osy dwa
-pies pole pora palec prosta pisze kupa pokój kupa plaża pies papuga pstrąg
+jad kadź dar dał lak lek lok kok sok dla fajka sal jaka laska klasa salsa dala kajak
+hak gaz gad hala haki gala gasł dach jadł gaj jajka sagi figa kisi kije lekki dalej
+ser sieje lesie lisek idea aleje jedz jeż kisiel lis sile sieć kij deska jak kafel
+rura ruda kurek rudy druga rude jura kura kurs kruk kredka drugi serial dres kres
+tyle tyka tata teatr test taka lata data sety tygrys typ styl krety tryk lity kaktus
+wada wata woda sowa wola kowal owad wady wydra woda tylko rower torty osa osy dwa
+pies pole pora palec prosta pisze lupa pokój kapusta plaża pies papuga pstrąg
 mama mewa most mysz lampa mapa wiem wam mamy motyl mewy mewa mop mama
 noc nos nowy noga cena cera ocet owoc cały centrum nic nasz nocny
 zupa zima zegar zamek zły zły wózek koza foka zebra zjazd zebra złoty
 baba bal bok lub byk brat bajka barwa buzia buty bułka borsuk balon bób
-ząb mąka pięć sęk gęś kąt wąż ósmy góra król bóbr pójść są mą tę
+ząb mąka pięć sęk gęś kąt wąż ósmy góra król bóbr pójść są wąs tę
 łoś śnieg ćma łódź łyżka śliwka ćwierć łza ślad łapa łoś śruba ćwik łuk
 żaba źrebak koń dżem żółw źle żyrafa pączki dzień żagiel źródło książka słońce`;
 

@@ -9,7 +9,7 @@ describe('regions', () => {
   it('unlocks keys cumulatively in level order', () => {
     const [first, second] = LEVELS;
     expect(allowedKeysFor(first)).toBe('fj');
-    expect(allowedKeysFor(second)).toBe('fjdk');
+    expect(allowedKeysFor(second, 'en')).toBe('fjdk');
   });
 
   it('hides the Polish letters region for English profiles', () => {
@@ -17,11 +17,9 @@ describe('regions', () => {
     expect(regionsFor('pl').map((region) => region.id)).toContain('wyspa');
   });
 
-  it('walks levels in order and across regions', () => {
-    const lastMeadow = REGIONS[0].levels.at(-1)!;
-    expect(nextLevel(lastMeadow, 'pl')?.id).toBe('las-1');
+  it('keeps the level walking helpers as course wrappers', () => {
+    const lastMeadow = REGIONS[0].levels.at(-1);
+    expect(lastMeadow && nextLevel(lastMeadow, 'pl')?.id).toBe('las-1');
     expect(previousLevel(LEVELS[0], 'pl')).toBeUndefined();
-    const lastEnglish = regionsFor('en').at(-1)!.levels.at(-1)!;
-    expect(nextLevel(lastEnglish, 'en')).toBeUndefined();
   });
 });

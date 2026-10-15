@@ -10,26 +10,55 @@ export function present(...items: Child[]): Array<Node | string> {
   return items.filter((item): item is Node | string => Boolean(item));
 }
 
+type EventHandlers = {
+  [K in keyof HTMLElementEventMap as `on${Capitalize<K>}`]?: (
+    event: HTMLElementEventMap[K],
+  ) => void;
+};
+
+type AttributeProps = {
+  class?: string;
+  text?: string;
+  html?: string;
+  title?: string;
+  type?: string;
+  placeholder?: string;
+  style?: string;
+  src?: string;
+  alt?: string;
+  draggable?: 'true' | 'false';
+  disabled?: boolean;
+  maxlength?: number;
+  autocomplete?: string;
+  [aria: `aria-${string}`]: string | undefined;
+  [data: `data-${string}`]: string | undefined;
+};
+
+export type ElementProps = AttributeProps & EventHandlers;
+
+type PropValue = ElementProps[keyof ElementProps];
+
+const EVENT_PREFIX = 'on';
+
 export function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
-  attributes: Partial<
-    Record<'class' | 'text' | 'html' | 'title' | 'type' | 'placeholder', string>
-  > &
-    Record<string, unknown> = {},
+  props: ElementProps = {},
   ...children: Child[]
 ): HTMLElementTagNameMap[K] {
   const element = document.createElement(tag);
-  for (const [key, value] of Object.entries(attributes)) {
-    if (value === undefined || value === null || value === false) continue;
-    if (key === 'class') element.className = String(value);
-    else if (key === 'text') element.textContent = String(value);
-    else if (key === 'html') element.innerHTML = String(value);
-    else if (key.startsWith('on') && typeof value === 'function') {
-      element.addEventListener(key.slice(2).toLowerCase(), value as EventListener);
-    } else element.setAttribute(key, String(value));
-  }
+  for (const [key, value] of Object.entries(props)) applyProp(element, key, value);
   element.append(...present(...children));
   return element;
+}
+
+function applyProp(element: HTMLElement, key: string, value: PropValue): void {
+  if (value === undefined || value === false) return;
+  if (typeof value === 'function') {
+    element.addEventListener(key.slice(EVENT_PREFIX.length).toLowerCase(), { handleEvent: value });
+  } else if (key === 'class') element.className = String(value);
+  else if (key === 'text') element.textContent = String(value);
+  else if (key === 'html') element.innerHTML = String(value);
+  else element.setAttribute(key, value === true ? '' : String(value));
 }
 
 export function svg<K extends keyof SVGElementTagNameMap>(
@@ -41,6 +70,10 @@ export function svg<K extends keyof SVGElementTagNameMap>(
   for (const [key, value] of Object.entries(attributes)) element.setAttribute(key, String(value));
   element.append(...children);
   return element;
+}
+
+export function releaseFocus(event: Event): void {
+  if (event.currentTarget instanceof HTMLElement) event.currentTarget.blur();
 }
 
 export function prefersReducedMotion(): boolean {
@@ -73,9 +106,13 @@ export class Counter {
   set(value: number): void {
     if (value === this.target) return;
     this.target = value;
-    cancelAnimationFrame(this.frame);
+    this.stop();
     if (prefersReducedMotion()) return this.render(value);
     this.animate(this.shown, value, performance.now());
+  }
+
+  stop(): void {
+    cancelAnimationFrame(this.frame);
   }
 
   private animate(from: number, to: number, startedAt: number): void {

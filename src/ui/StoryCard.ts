@@ -1,6 +1,7 @@
 import { i18n } from '../i18n/i18n';
 import type { Speaker, StoryScene } from '../story/story';
 import { el, prefersReducedMotion, restartAnimation } from './dom';
+import { createOverlay, onWindowKey, type Overlay } from './overlay';
 
 const PORTRAITS: Record<Speaker, string> = { owl: '🦉', fox: '🦊', shadow: '🌑' };
 const REVEAL_INTERVAL_MS = 22;
@@ -46,7 +47,7 @@ class Typewriter {
   }
 }
 
-export function storyCard(scene: StoryScene, onDone: () => void): HTMLElement {
+export function storyCard(scene: StoryScene, onDone: () => void): Overlay {
   let index = 0;
   const portrait = el('div', { class: 'story-portrait' });
   const name = el('span', { class: 'story-name' });
@@ -77,7 +78,6 @@ export function storyCard(scene: StoryScene, onDone: () => void): HTMLElement {
       ),
     ),
   );
-  const overlay = el('div', { class: 'overlay overlay-story' }, dialogue);
 
   const render = () => {
     const line = scene.lines[index];
@@ -96,24 +96,20 @@ export function storyCard(scene: StoryScene, onDone: () => void): HTMLElement {
   const advance = () => {
     if (typewriter.isTyping) return typewriter.complete();
     index += 1;
-    if (index >= scene.lines.length) return finish();
+    if (index >= scene.lines.length) return onDone();
     render();
   };
 
-  const onKey = (event: KeyboardEvent) => {
+  const stopListening = onWindowKey((event) => {
     if (!ADVANCE_KEYS.has(event.key)) return;
     event.preventDefault();
     advance();
-  };
+  });
 
-  const finish = () => {
-    typewriter.stop();
-    window.removeEventListener('keydown', onKey);
-    overlay.remove();
-    onDone();
-  };
-
-  window.addEventListener('keydown', onKey);
   render();
-  return overlay;
+  return createOverlay(
+    el('div', { class: 'overlay overlay-story' }, dialogue),
+    () => typewriter.stop(),
+    stopListening,
+  );
 }

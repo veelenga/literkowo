@@ -1,4 +1,5 @@
-import { regionsFor, type Level, type Region, type ThemeId } from '../course/regions';
+import type { Level, Region, ThemeId } from '../course/catalog';
+import { courseFor, type Course } from '../course/course';
 import { MAX_STARS } from '../course/scoring';
 import { i18n } from '../i18n/i18n';
 import { totalStars, type Profile } from '../profiles/Profile';
@@ -29,22 +30,23 @@ interface Actions {
 
 export class WorldMap {
   readonly element = el('div', { class: 'screen map-screen' });
+  private readonly course: Course;
 
   constructor(
     private readonly profile: Profile,
     private readonly actions: Actions,
   ) {
+    this.course = courseFor(profile.wordLanguage);
     this.render();
   }
 
   private render(): void {
-    const regions = regionsFor(this.profile.wordLanguage);
     this.element.replaceChildren(
       this.header(),
       el(
         'main',
         { class: 'map-journey' },
-        ...regions.map((region, index) => this.region(region, index)),
+        ...this.course.regions.map((region, index) => this.region(region, index)),
       ),
     );
     queueMicrotask(() =>
@@ -109,7 +111,6 @@ export class WorldMap {
 
   private regionHeader(region: Region, index: number): HTMLElement {
     const t = i18n.t;
-    const language = i18n.current === 'uk' ? 'uk' : this.profile.wordLanguage;
     const earned = region.levels.reduce((sum, level) => sum + this.starsOf(level), 0);
     return el(
       'header',
@@ -118,7 +119,7 @@ export class WorldMap {
         'div',
         {},
         el('span', { class: 'region-eyebrow', text: `${t.chapter} ${index + 1}` }),
-        el('h2', { class: 'region-title', text: region.name[language] }),
+        el('h2', { class: 'region-title', text: region.name[i18n.current] }),
       ),
       el(
         'span',
@@ -182,7 +183,7 @@ export class WorldMap {
       'button',
       {
         class: classes.join(' '),
-        disabled: state === 'locked' ? 'true' : undefined,
+        disabled: state === 'locked',
         title,
         'aria-label': title,
         onClick: () => this.actions.onPlay(level),
@@ -224,11 +225,7 @@ export class WorldMap {
   }
 
   private isUnlocked(level: Level): boolean {
-    const playable = regionsFor(this.profile.wordLanguage).flatMap((region) => region.levels);
-    const position = playable.findIndex((candidate) => candidate.id === level.id);
-    if (position === 0) return true;
-    const previous = playable[position - 1];
-    return (this.profile.levelResults[previous.id]?.stars ?? 0) > 0;
+    return this.course.isUnlocked(level, this.profile.levelResults);
   }
 }
 

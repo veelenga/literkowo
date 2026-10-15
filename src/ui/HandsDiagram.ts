@@ -18,6 +18,13 @@ interface FingerSpec {
   home: string;
 }
 
+type LeftFinger = Extract<Finger, `left${string}`>;
+type RightFinger = Extract<Finger, `right${string}`>;
+
+interface LeftFingerSpec extends FingerSpec {
+  finger: LeftFinger;
+}
+
 interface HandSpec {
   fingers: FingerSpec[];
   palmX: number;
@@ -26,14 +33,21 @@ interface HandSpec {
   pressesAlt: boolean;
 }
 
-const LEFT_FINGERS: FingerSpec[] = [
+const LEFT_FINGERS: LeftFingerSpec[] = [
   { finger: 'leftPinky', x: 44, length: 52, angle: -14, home: 'A' },
   { finger: 'leftRing', x: 74, length: 72, angle: -6, home: 'S' },
   { finger: 'leftMiddle', x: 104, length: 82, angle: 0, home: 'D' },
   { finger: 'leftIndex', x: 134, length: 72, angle: 7, home: 'F' },
 ];
 
-const RIGHT_HOME: Partial<Record<Finger, string>> = {
+const MIRRORED_FINGER: Record<LeftFinger, RightFinger> = {
+  leftPinky: 'rightPinky',
+  leftRing: 'rightRing',
+  leftMiddle: 'rightMiddle',
+  leftIndex: 'rightIndex',
+};
+
+const RIGHT_HOME: Record<RightFinger, string> = {
   rightIndex: 'J',
   rightMiddle: 'K',
   rightRing: 'L',
@@ -56,14 +70,14 @@ const RIGHT_HAND: HandSpec = {
   pressesAlt: true,
 };
 
-function mirrorFinger(spec: FingerSpec): FingerSpec {
-  const finger = spec.finger.replace('left', 'right') as Finger;
+function mirrorFinger(spec: LeftFingerSpec): FingerSpec {
+  const finger = MIRRORED_FINGER[spec.finger];
   return {
     finger,
     x: WIDTH - spec.x,
     length: spec.length,
     angle: -spec.angle,
-    home: RIGHT_HOME[finger] ?? '',
+    home: RIGHT_HOME[finger],
   };
 }
 

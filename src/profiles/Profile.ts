@@ -1,4 +1,10 @@
-export type WordLanguage = 'pl' | 'en';
+export const WORD_LANGUAGES = ['pl', 'en'] as const;
+
+export type WordLanguage = (typeof WORD_LANGUAGES)[number];
+
+export const DEFAULT_WORD_LANGUAGE: WordLanguage = 'pl';
+
+export const PROFILE_SCHEMA_VERSION = 2;
 
 export interface LevelResult {
   stars: number;
@@ -8,6 +14,7 @@ export interface LevelResult {
 }
 
 export interface Profile {
+  schemaVersion: number;
   id: string;
   name: string;
   avatar: string;
@@ -26,10 +33,11 @@ export function avatarImage(avatar: string): string {
 
 export function createProfile(name: string, avatar: string): Profile {
   return {
+    schemaVersion: PROFILE_SCHEMA_VERSION,
     id: crypto.randomUUID(),
     name,
     avatar,
-    wordLanguage: 'pl',
+    wordLanguage: DEFAULT_WORD_LANGUAGE,
     totalScore: 0,
     lettersFreed: 0,
     seenStories: [],
@@ -37,16 +45,8 @@ export function createProfile(name: string, avatar: string): Profile {
   };
 }
 
-export function normalizeProfile(raw: Partial<Profile>): Profile {
-  return {
-    ...createProfile(raw.name ?? '?', raw.avatar ?? AVATARS[0]),
-    ...raw,
-    avatar: AVATARS.includes(raw.avatar ?? '') ? raw.avatar! : AVATARS[0],
-    seenStories: raw.seenStories ?? [],
-    levelResults: raw.levelResults ?? {},
-    totalScore: raw.totalScore ?? 0,
-    lettersFreed: raw.lettersFreed ?? 0,
-  } as Profile;
+export function isWordLanguage(value: unknown): value is WordLanguage {
+  return WORD_LANGUAGES.some((language) => language === value);
 }
 
 export function totalStars(profile: Profile): number {

@@ -182,7 +182,7 @@ export class ProfileScreen {
         {
           class: candidate === avatar ? 'avatar-option is-active' : 'avatar-option',
           'aria-pressed': String(candidate === avatar),
-          onClick: (event: Event) => {
+          onClick: (event) => {
             avatar = candidate;
             avatarButtons.forEach((button) => {
               const isActive = button === event.currentTarget;

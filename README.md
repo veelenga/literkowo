@@ -15,8 +15,11 @@ npm install
 npm run dev
 ```
 
-`npm run lint` checks types, ESLint and Prettier formatting.
+`npm run lint` checks types, ESLint and Prettier formatting. `npm test` runs the unit tests.
+
+In development, `http://localhost:5173/?level=polana-1` starts a level directly (level ids are `<region>-<index>`, the last index of a region is its boss).
 
 ## Credits
 
 - Characters: "Blocky Characters" by Kenney (kenney.nl), CC0.
+- Fonts: Nunito and JetBrains Mono, self-hosted via Fontsource, OFL.

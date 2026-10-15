@@ -1,17 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { AVATARS, createProfile, normalizeProfile, totalStars } from './Profile';
+import { createProfile, PROFILE_SCHEMA_VERSION, totalStars } from './Profile';
 
-describe('normalizeProfile', () => {
-  it('fills missing fields from an older stored shape', () => {
-    const profile = normalizeProfile({ id: 'x', name: 'Zosia', avatar: '🦊' });
-    expect(profile.avatar).toBe(AVATARS[0]);
-    expect(profile.levelResults).toEqual({});
-    expect(profile.seenStories).toEqual([]);
-    expect(profile.totalScore).toBe(0);
-  });
-
-  it('keeps a valid character id', () => {
-    expect(normalizeProfile({ ...createProfile('A', 'k') }).avatar).toBe('k');
+describe('createProfile', () => {
+  it('stamps the current schema version', () => {
+    expect(createProfile('A', 'a').schemaVersion).toBe(PROFILE_SCHEMA_VERSION);
   });
 });
 

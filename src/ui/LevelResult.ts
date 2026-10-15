@@ -1,7 +1,9 @@
-import { MAX_STARS } from '../course/scoring';
-import { i18n } from '../i18n/i18n';
+import { MAX_STARS, starThresholdPercents } from '../course/scoring';
 import type { GameResult } from '../game/Game';
+import { format } from '../i18n/format';
+import { i18n } from '../i18n/i18n';
 import { Counter, el, icon, prefersReducedMotion } from './dom';
+import { createOverlay, type Overlay } from './overlay';
 
 const PERCENT = 100;
 const STAR_INTRO_MS = 240;
@@ -18,9 +20,10 @@ interface Actions {
 interface StatTile {
   element: HTMLElement;
   reveal: () => void;
+  stop: () => void;
 }
 
-export function levelResult(result: GameResult, stars: number, actions: Actions): HTMLElement {
+export function levelResult(result: GameResult, stars: number, actions: Actions): Overlay {
   const t = i18n.t;
   const tiles = [
     statTile(t.score, result.score),
@@ -29,8 +32,8 @@ export function levelResult(result: GameResult, stars: number, actions: Actions)
     statTile(t.lettersFreed, result.lettersFreed),
   ];
   const revealDelay = prefersReducedMotion() ? 0 : COUNTER_START_MS;
-  window.setTimeout(() => tiles.forEach((tile) => tile.reveal()), revealDelay);
-  return el(
+  const revealTimer = window.setTimeout(() => tiles.forEach((tile) => tile.reveal()), revealDelay);
+  const element = el(
     'div',
     { class: 'overlay' },
     el(
@@ -38,11 +41,21 @@ export function levelResult(result: GameResult, stars: number, actions: Actions)
       { class: `panel panel-center result-panel ${result.won ? 'is-won' : 'is-lost'}` },
       el('h2', { class: 'result-title', text: result.won ? t.levelComplete : t.levelFailed }),
       starsRow(stars),
-      el('p', { class: 'result-hint', text: result.won ? t.starsHint : t.retryHint }),
+      el('p', { class: 'result-hint', text: result.won ? starsHint() : t.retryHint }),
       el('div', { class: 'result-stats' }, ...tiles.map((tile) => tile.element)),
       actionsRow(stars, actions),
     ),
   );
+  return createOverlay(
+    element,
+    () => window.clearTimeout(revealTimer),
+    ...tiles.map((tile) => tile.stop),
+  );
+}
+
+function starsHint(): string {
+  const [one, two, three] = starThresholdPercents();
+  return format(i18n.t.starsHint, { one, two, three });
 }
 
 function starsRow(stars: number): HTMLElement {
@@ -74,7 +87,7 @@ function statTile(label: string, value: number, unit?: string): StatTile {
       unit ? el('span', { class: 'result-stat-unit', text: unit }) : null,
     ),
   );
-  return { element, reveal: () => counter.set(value) };
+  return { element, reveal: () => counter.set(value), stop: () => counter.stop() };
 }
 
 function actionsRow(stars: number, actions: Actions): HTMLElement {
