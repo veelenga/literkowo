@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createProfile, type Profile } from '../profiles/Profile';
 import { GOLD } from '../arena/medals';
 import { emptyArenaRecord } from '../arena/record';
@@ -25,10 +25,17 @@ function profileWith(changes: Partial<Profile> = {}): Profile {
   return { ...createProfile('Ola', 'a'), ...changes };
 }
 
+const shops: ShopScreen[] = [];
+
+function track(shop: ShopScreen): ShopScreen {
+  shops.push(shop);
+  return shop;
+}
+
 function setup(profile: Profile) {
   const onChange = vi.fn<(profile: Profile) => void>();
   const onBack = vi.fn<(profile: Profile) => void>();
-  const shop = new ShopScreen(profile, { onChange, onBack });
+  const shop = track(new ShopScreen(profile, { onChange, onBack }));
   const card = (key: string) => {
     const found = shop.element.querySelector<HTMLElement>(`[data-item="${key}"]`);
     if (!found) throw new Error(`Missing card ${key}`);
@@ -41,6 +48,10 @@ function setup(profile: Profile) {
 }
 
 describe('ShopScreen', () => {
+  afterEach(() => {
+    shops.splice(0).forEach((shop) => shop.dispose());
+  });
+
   it('opens on the pets tab with every tab on offer', () => {
     const { shop } = setup(profileWith());
     const tabs = [...shop.element.querySelectorAll('.shop-tabs .chip')];
@@ -169,19 +180,31 @@ describe('ShopScreen', () => {
   });
 
   it('names the map on the back button unless it was opened from elsewhere', () => {
-    const backOf = (backLabel?: string) =>
-      new ShopScreen(profileWith(), {
-        onChange: vi.fn(),
-        onBack: vi.fn(),
-        backLabel,
-      }).element.querySelector('.shop-back')?.textContent;
+    const backOf = (backLabel?: string) => {
+      const shop = track(
+        new ShopScreen(profileWith(), { onChange: vi.fn(), onBack: vi.fn(), backLabel }),
+      );
+      const back = shop.element.querySelector('.shop-back');
+      back?.querySelector('.kbd-hint')?.remove();
+      return back?.textContent;
+    };
     expect(backOf()).toBe('Mapa');
     expect(backOf('Arena')).toBe('Arena');
   });
 
   it('can open straight on the trophies', () => {
-    const shop = new ShopScreen(profileWith(), { onChange: vi.fn(), onBack: vi.fn() }, 'trophy');
+    const shop = track(
+      new ShopScreen(profileWith(), { onChange: vi.fn(), onBack: vi.fn() }, 'trophy'),
+    );
     expect(shop.element.querySelector('.shop-tabs .chip.is-active')?.textContent).toBe('Trofea');
     expect(shop.element.querySelector('.shop-trophy-count')).not.toBeNull();
+  });
+
+  it('goes back with Escape until it is disposed', () => {
+    const { shop, onBack } = setup(profileWith());
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }));
+    shop.dispose();
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }));
+    expect(onBack).toHaveBeenCalledOnce();
   });
 });

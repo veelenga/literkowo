@@ -110,7 +110,7 @@ Rules during a level:
 - The player has 3 lives (`LEVEL_LIVES` in `src/game/LevelPlan.ts`). Losing the last life ends the level as lost.
 - The progress bar counts a spawn as done once every enemy it turned into has left the board, so a spawn that becomes twins or a special enemy still counts as one. Enemies that features add later, such as power words or bombers, do not change it (`src/game/SpawnGroups.ts`).
 - Typing follows every enemy whose word starts with the letters typed so far, a key that fits none of them is a mistake, and when a word is done every enemy with that same word is done too while the others go back to untyped (`src/game/Targeting.ts`).
-- Escape pauses and resumes. Pause also suspends audio. The pause card also has a resume button, a quiet "Ustawienia" / "Налаштування" button with a gear and the key heatmap, and touch screens get a pause button in the HUD. The settings button opens the [Settings](#settings) screen over the paused level. Graphics quality is picked there, not on the pause card.
+- Escape pauses and resumes, and Enter resumes too. Pause also suspends audio. The pause card also has a resume button, a quiet "Ustawienia" / "Налаштування" button with a gear and the key heatmap, and touch screens get a pause button in the HUD. The settings button opens the [Settings](#settings) screen over the paused level, and while it is open Escape goes back to the pause card. Graphics quality is picked there, not on the pause card.
 - Every correct letter fires a bolt from the hero to the nearest enemy being typed, and every finished word gets a lightning strike with a soft crack and a small camera punch, 30 ms apart when several words finish on one key (`src/game/mechanics/HeroStrikes.ts`). The strikes turn from the world's accent colour toward gold as the combo grows and are fully golden in fever, while a glow under the hero charges with the combo up to 15.
 - Words (`src/course/WordSource.ts`): the main phase of a level runs its word stages in order, see [Difficulty](#difficulty). Each stage takes a share of the phase's words and has its own kind and length limits (`src/course/wordStages.ts`). In the first half of a stage the longest word is one letter shorter, as long as the stage keeps at least two lengths, so `2 to 4` starts as `2 to 3`.
   - `combos`: a generated string with at least one focus key, the other letters from the focus keys about half of the time and from all known keys otherwise, for example `f` `fj` `jf` `fjj`.
@@ -477,6 +477,7 @@ Layout:
 - On the left, "Twój bohater" / "Твій герой" shows the hero in 3D with the equipped hat and pet, swaying slowly (`src/ui/portraits/OutfitView.ts`). Touch screens and reduced motion get a still frame. Until the model loads, the portrait shows.
 - Tabs: "Zwierzaki" / "Улюбленці", "Czapki" / "Шапки", "Postacie" / "Персонажі", "Trofea" / "Трофеї". The coins sit in the header.
 - Each item card shows a rendered preview, the name, for pets and hats a gold line with a bolt icon that says what the item does (see [Item powers](#item-powers)), and a short description. Pets and hats are rendered once per session in an offscreen studio, hats on a plain cube head (`src/ui/portraits/ItemStudio.ts`). Skins use the character portraits.
+- The shop fills the screen and never scrolls as a page. The hero shrinks to the height that is left, and only the item list under the tabs scrolls, when it does not fit. Screens up to 800 px tall get smaller cards. In portrait up to 900 px wide the hero is a strip above the tabs, and on phones in landscape it is a narrow column next to them.
 
 Item states and actions:
 
@@ -592,7 +593,7 @@ Opening:
 
 - The arena opens with at least one star on the Polana boss (`polana-19`), or with a placement in the profile's arena record. The placement test that writes it is planned (`isArenaOpen` in `src/arena/keySets.ts`).
 - Map header: the "Arena" / "Арена" button sits next to the shop button in the same style, only the icon on phones. While the arena is closed it is dimmed, has a lock badge and the hint "Pokonaj bossa Polany" / "Переможи боса Галявини", and a tap scrolls the map to the gate.
-- Map gate: a round badge as big as a boss node in the footer of the Polana band, across from the boss (`gatePoint` in `src/ui/map/journeyLayout.ts`). While closed it is dimmed with a lock and shows the same hint. Once open it shows "Arena" and opens the arena screen.
+- Map gate: a round badge as big as a boss node in the footer of the Polana band, one row below the boss and across from it (`gatePoint` in `src/ui/map/journeyLayout.ts`). While closed it is dimmed with a lock and shows the same hint. Once open it shows "Arena" and opens the arena screen.
 - The result card of the attempt that opens the arena shows the chip "Arena otwarta!" / "Арену відкрито!".
 
 Key sets:
@@ -647,7 +648,8 @@ Arena screen (`src/ui/arena/ArenaScreen.ts`):
 
 - It copies the shop: a header with the back button "Mapa" / "Мапа", the title, a quiet shop link with the bag and "Sklep" / "Крамниця" (only the bag on phones) and the coins. On the left the hero in 3D with the equipped hat and pet, and under it the best wave and medal of the chosen key set for each open preset.
 - On the right: the key set chips with region names and the keys under them, the difficulty chips, and the mode card "Bez końca" / "Без кінця" with its rule line, the best wave of the chosen key set and preset ("Rekord: fala 9" / "Рекорд: хвиля 9", or "Jeszcze bez rekordu" / "Ще без рекорду") with its medal, and a gold Play button. The mode grid has room for the planned cards.
-- Phones: one column, the hero as a 64 px strip with record pills, the difficulty chips 2 by 2 and the mode card at full width.
+- The screen fills the window without scrolling, with the hero column and the setup side by side, also on phones in landscape. The hero shrinks to the height that is left.
+- Phones in portrait: one column, the hero as a 64 px strip with record pills, the difficulty chips 2 by 2 and the mode card at full width. On phones the mode card is a row: the icon, the name and the rule, then the record and Play. In landscape the labels sit next to their chips, the record sits next to the mode name and Play at the right of the mode card.
 - Coming back from a run keeps the chosen key set and preset.
 
 Result card (`src/ui/arena/ArenaResult.ts`), in the result panel of a level:
@@ -754,7 +756,8 @@ Profile screen:
 - With reduced motion or the low quality preset the hills stand still and there are no letters (`src/ui/menuMotion.ts`).
 - Each profile is a card with the rendered portrait under a spotlight, the name, the level, the rank, a thin XP bar, and pills for stars and coins.
 - The selected card lifts, glows and shows the hero in 3D with the equipped hat and pet, swaying slowly. It uses the same outfit view as the shop (`src/ui/portraits/OutfitView.ts`). The play panel opens right under the row of the selected card, and cards from later rows move below it. The panel has a big Play button, then the word language chips and the delete button in a quieter row.
-- The dashed new profile card opens the create panel in its place: a large live preview of the chosen character that switches with every pick, the name field, the 18 characters and a Create button.
+- The narrow dashed new profile card opens the create panel, which takes the place of the cards until the profile is created or the panel is cancelled: a large live preview of the chosen character that switches with every pick, the name field, the 18 characters and a Create button.
+- With four profiles the cards fit in one row, and the screen fits without scrolling from 1280 by 720 up. Screens up to 900 px tall get a smaller logo and tighter spacing, and screens up to 800 px tall also smaller cards, a smaller create panel and 9 characters per row.
 - Long names and rank names end with an ellipsis on the cards.
 - The top right corner holds the interface language switch "PL" / "UA" and a round gear button that opens the [Settings](#settings).
 - The play panel has a quiet "Sklep" / "Крамниця" link with the bag next to Play. It opens the shop for the selected profile.
@@ -762,13 +765,43 @@ Profile screen:
 Map:
 
 - The map is one tall scene. The regions are stacked from top to bottom as bands that blend into each other: meadow, forest, mountains, cave and island. Locked bands are dimmed.
-- One winding path runs through every level. The walked part, up to the first level without a star, is gold.
-- Each band starts with a sign: the chapter number, the region name, a short mood line (`src/i18n/features/worldMap.ts`), the stars earned out of the total and the mastery meter. Signs switch sides from band to band, and the path passes each sign on the other side.
-- Levels are round badges on the path with their focus keys. Learn levels carry a ✨ badge and review levels a 👑 badge for their mini boss, and the title names the kind and the keys, for example "Trening D" / "Тренування D" (`src/ui/levelKind.ts`). Unlocked learn, practice and review levels show the key dots under the keys, see [Key mastery](#key-mastery). Bosses have a crown. Locked levels show a lock, and their title says what to win first: "Wygraj poziomy przed powtórką" / "Виграй рівні перед повторенням" on a review whose practice levels are not all won, "Wygraj powtórkę przed bossem" / "Виграй повторення перед босом" on a boss whose review is not won, and "Najpierw ukończ wcześniejsze poziomy" / "Спочатку пройди попередні рівні" on any other level outside the open window (`lockReason` in `src/course/course.ts`). Levels with stars glow in the region colour and show their stars. The open levels pulse. The current level also has a Play tag, and the hero stands on it.
+- The map is compact: a band of 16 levels fits in a 1280 by 720 window, and the whole Polish course is about a quarter of the height it had with one stop per row (`JOURNEY_SPACING` in `src/ui/map/journeyLayout.ts`).
+- One winding road runs in a snake, two stops per row: each row runs to the other side, and the road turns around in a wide curve to the next row. The rows wave a little. The walked part, up to the stop of the last open level, is gold.
+- A learn level is a smaller satellite of the practice level of the same key, joined to it by a short dashed link that turns gold once the learn level has a star (`stopRoles`). It hangs on the side the row comes from, so the road reads learn, then practice. Review levels and bosses are full stops on the road, bosses bigger.
+- The row of the current level gets extra room above it for the hero.
+- Each band starts with a sign: the chapter number with the stars earned out of the total and the mastery meter in one row, the region name, and a short mood line (`src/i18n/features/worldMap.ts`). Phones show the badges under the name and no mood line. The sign sits on the side away from where the road enters the band.
+- Levels are round badges with their focus keys. Learn levels carry a ✨ badge and review levels a 👑 badge for their mini boss, and the title names the kind and the keys, for example "Trening D" / "Тренування D" (`src/ui/levelKind.ts`). Unlocked learn, practice and review levels show the key dots under the keys, see [Key mastery](#key-mastery). Bosses have a crown. Locked levels show a lock, and their title says what to win first: "Wygraj poziomy przed powtórką" / "Виграй рівні перед повторенням" on a review whose practice levels are not all won, "Wygraj powtórkę przed bossem" / "Виграй повторення перед босом" on a boss whose review is not won, and "Najpierw ukończ wcześniejsze poziomy" / "Спочатку пройди попередні рівні" on any other level outside the open window (`lockReason` in `src/course/course.ts`). Levels with stars glow in the region colour and show their stars on a pill across their lower edge. The open levels pulse. The current level also has a Play tag, and the hero stands on it.
 - The hero on the current level wears the equipped hat and has the equipped pet in front of its hip, a little larger than in the game. The hero is framed like the plain portrait, so it keeps the same size, and a hat rises above the marker. It is a rendered image, not a live 3D view, so the map stays light on phones (`src/ui/OutfitAvatar.ts`, `src/ui/portraits/OutfitStudio.ts`). Until the image is ready, and when it cannot be rendered, the plain portrait shows. Each outfit is rendered once per session and kept in memory, so reopening the map shows it at once. With nothing equipped the hero is the plain portrait.
 - The header stays at the top: the avatar with the level number, the name, the rank and a thin XP bar, then stars, coins, the arena button, the shop button, the settings gear and the sound toggle. A tap on the avatar goes back to the profiles. The settings gear has the label "Ustawienia" / "Налаштування" only on screens wider than 1100 px, so the player name keeps its room on tablets. The shop button has the bag and the label "Sklep" / "Крамниця", only the bag on phones, and the green dot when something can be bought or claimed.
-- On open the map scrolls smoothly to the current level, or to the last open level when all levels have stars. Levels pop in as they scroll into view. With reduced motion the scroll is instant and nothing pops in.
+- On open the map scrolls smoothly to the current level, or to the last open level when all levels have stars. Levels pop in as they scroll into view, at most 12 steps of 70 ms apart. With reduced motion the scroll is instant and nothing pops in.
+- Tab moves through the levels in course order, learn satellites included.
 - The silhouettes of each band move at different speeds while scrolling, except in the low quality preset.
+
+## Keyboard control
+
+Owners: `onShortcutKeys` in `src/ui/overlay.ts`, `src/ui/shortcutHint.ts` and the screens below.
+
+A typing game never needs the mouse, so every menu works with the keyboard alone.
+
+- Shortcut keys listen while their screen or card is shown and stop when it closes.
+- They do nothing while an overlay covers the screen, while Ctrl, Alt or Meta is held, or while a text field has focus. Escape still works in a text field.
+- Enter on a focused button presses that button instead. Held arrow keys repeat, other keys do not.
+
+| Screen      | Keys                                                                                                                                                                                                                        |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Profiles    | Left and Right pick the previous or next profile and wrap around, Enter plays, Escape closes the create panel                                                                                                               |
+| Map         | Enter plays the current level, or the last open level when all have stars. The arrow keys move the focus along the road through the open levels, Right and Down forward, Left and Up back. Escape goes back to the profiles |
+| Arena       | Left and Right change the key set, Up picks a harder and Down an easier open level, Enter plays, Escape goes back to the map                                                                                                |
+| Shop        | Escape goes back to where the shop was opened from                                                                                                                                                                          |
+| Story card  | Enter or Space shows the next line                                                                                                                                                                                          |
+| Learn card  | Enter starts the level and Escape goes back to the map, both ignored for the first 600 ms                                                                                                                                   |
+| Level       | Escape pauses                                                                                                                                                                                                               |
+| Pause card  | Enter or Escape resumes                                                                                                                                                                                                     |
+| Settings    | Escape goes back to where the settings were opened from, and from the pause card it never resumes the level                                                                                                                 |
+| Result card | Enter presses the main button, ignored for the first 600 ms                                                                                                                                                                 |
+
+- Key hints: the Play button of the profiles, the Play tag on the map, the Play button of the arena, the learn card, the pause card and both result cards show ⏎. The back buttons of the shop and the arena show Esc.
+- Hints hide on touch screens without a mouse (`--touch-only` in `src/ui/screenSizes.css`) and on phones.
 
 ## Audio
 
@@ -824,20 +857,21 @@ Owners: `src/i18n/translations.ts`, `src/i18n/i18n.ts`.
 
 ## Mobile and tablets
 
-Owners: `src/styles.css`, `src/ui/TouchTyping.ts`, `src/ui/keyboardFit.ts`, `src/ui/KeyboardHint.ts`, `src/ui/keyboardLayout.ts`, `src/ui/stageInsets.ts`, `src/ui/formFactor.ts`, `src/ui/RotateHint.ts`, `src/game/board.ts`, `vite.config.ts`.
+Owners: `src/styles.css`, `src/ui/screenSizes.css`, `src/ui/TouchTyping.ts`, `src/ui/keyboardFit.ts`, `src/ui/KeyboardHint.ts`, `src/ui/keyboardLayout.ts`, `src/ui/stageInsets.ts`, `src/ui/formFactor.ts`, `src/ui/RotateHint.ts`, `src/game/board.ts`, `vite.config.ts`.
 
 The course still assumes a physical keyboard. A tablet with a Bluetooth keyboard is the main target. A phone plays the game with a built-in keyboard on the screen.
 
 Layout:
 
-- Phones are screens up to 600 px wide or up to 480 px tall. Tablets are up to 1024 px wide. `src/ui/formFactor.ts` mirrors the phone query for code.
+- Phones are screens up to 600 px wide or up to 480 px tall. Tablets are up to 1024 px wide. The screen size breakpoints are named once in `src/ui/screenSizes.css` as custom media (`postcss-custom-media`), and `src/ui/formFactor.ts` mirrors the phone query for code.
 - On tablets the HUD shows score, combo, hearts and progress.
 - On phones the HUD is one translucent strip 44 px tall at the top: avatar with the player level, score, combo, hearts, and small buttons for the native keyboard, pause and sound. The progress bar is a 3 px line along the bottom edge of the strip. The phase name is hidden, the count shows when the screen is at least 400 px wide, and the XP of the run shows next to the score when it is wider than 600 px. Buttons in the strip are 36 px wide and as tall as the strip.
 - The keyboard hint is smaller on tablets in portrait.
 - On a phone the learn card and the result card fit without scrolling, at 390 by 660 px in portrait and 750 by 342 px in landscape, also with landscape safe area insets of 47 px at the sides and 21 px at the bottom.
-- In portrait both cards use smaller keycaps, a smaller hands diagram and full width buttons. When the rank, the XP and the coins do not fit in one row of the result, the XP and the coins move to a second row.
-- In landscape the learn card puts the hands diagram next to the keycaps. The result card puts the stars next to the title, the four results in one row, the XP bar in one row with the level and the rewards, and the buttons side by side. It hides the stars hint and shows the level up banner on one line. Overlays keep an 8 px margin above and below.
-- On screens up to 480 px tall the profile screen shows a smaller logo and no tagline, so the Play button stays in view.
+- In portrait both cards use smaller keycaps, a smaller hands diagram and full width buttons. Each result shows its label and value on one line. When the rank, the XP and the coins do not fit in one row of the result, the XP and the coins move to a second row.
+- In landscape the learn card puts the hands diagram next to the keycaps. The result card puts the stars next to the title, the four results in one row, the XP bar in one row with the level and the rewards, and the buttons side by side. It hides the stars hint and shows the level up banner on one line. Overlays keep an 8 px margin above and below. The pause card puts the key heatmap next to the title and the resume button.
+- Menus and overlays fit without a page scroll at 1280 by 720 and larger, at 1024 by 768, on a tablet in portrait and on phones in both orientations, also after a level up with every treasure chip. Only the journey map, the shop list and the trophy list scroll. On screens up to 900 px tall the result card is wider, with the four results in one row, the buttons side by side and smaller chips. On screens up to 800 px tall the learn card and the pause card are smaller too.
+- On phones the profile screen shows a smaller logo and no tagline. The profile cards sit three in a row in portrait and five in a row in landscape, with the level and the stars under the name. The play panel keeps the shop link and Play next to the name, with the word language and the delete button under them. In landscape the section title is hidden, and the logo hides while the create panel is open.
 - Touch targets are at least 44 px on touch screens, except the 36 px wide HUD buttons on phones. Hover effects apply only on devices that can hover.
 - The app is `100dvh` tall. The HUD, the keyboard hint, the map header and overlays stay inside the safe area insets.
 - The camera keeps a horizontal field of view of at least 62 degrees, so the whole spawn arc stays in frame on narrow and portrait screens. The vertical field of view grows when needed and never drops below 42 degrees (`src/game/board.ts`).

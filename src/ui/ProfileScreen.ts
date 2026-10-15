@@ -17,16 +17,22 @@ import { keepDockBelowRow, type StopDock } from './landing/dockRow';
 import { LandingBackdrop } from './landing/LandingBackdrop';
 import { livePreview, outfitOf } from './LivePreview';
 import { hasAmbientMotion } from './menuMotion';
+import { onShortcutKeys } from './overlay';
 import { coinPill, levelBadge } from './progression';
 import { settingsGearButton } from './settingsParts';
 import { shopLink } from './shopLink';
+import { primaryHint } from './shortcutHint';
 import './profileScreen.css';
 
 const MAX_NAME_LENGTH = 16;
 const CARD_STAGGER_MS = 80;
 const CREATE_PANEL_KEY = 'create';
+const CREATING_CLASS = 'is-creating';
 const SELECTED_CARD_SELECTOR = '.profile-card.is-selected';
 const TILE_SELECTOR = ':scope > .profile-card';
+const NOT_FOUND = -1;
+const PREVIOUS = -1;
+const NEXT = 1;
 const PLAY_ICON_PATH =
   'M8 5.6v12.8a1 1 0 0 0 1.5.86l10.4-6.4a1 1 0 0 0 0-1.72L9.5 4.74A1 1 0 0 0 8 5.6z';
 
@@ -45,6 +51,7 @@ export class ProfileScreen {
   private rendered = false;
   private panelKey: string | undefined;
   private stopDock: StopDock = noDock;
+  private readonly stopKeys: () => void;
 
   constructor(
     private readonly store: ProfileStore,
@@ -53,10 +60,17 @@ export class ProfileScreen {
     this.selected = store.active();
     this.element.append(this.backdrop.element, this.view);
     this.backdrop.followPointer(this.element);
+    this.stopKeys = onShortcutKeys(this.element, {
+      ArrowLeft: () => this.step(PREVIOUS),
+      ArrowRight: () => this.step(NEXT),
+      Enter: () => this.playSelected(),
+      Escape: () => this.closeCreatePanel(),
+    });
     this.render();
   }
 
   dispose(): void {
+    this.stopKeys();
     this.stopDock();
     livePreview.stop();
     releasePortraits();
@@ -66,6 +80,7 @@ export class ProfileScreen {
   private render(): void {
     const t = i18n.t;
     if (this.rendered) this.element.classList.remove('is-intro');
+    this.element.classList.toggle(CREATING_CLASS, this.creating);
     this.rendered = true;
     livePreview.hide();
     const grid = el('div', { class: 'profile-grid' }, ...this.gridItems());
@@ -195,6 +210,27 @@ export class ProfileScreen {
     );
   }
 
+  private step(direction: number): void {
+    const profiles = this.store.all();
+    if (this.creating || profiles.length === 0) return;
+    const current = profiles.findIndex((profile) => profile.id === this.selected?.id);
+    const next =
+      current === NOT_FOUND
+        ? edgeIndex(direction, profiles.length)
+        : wrapIndex(current + direction, profiles.length);
+    this.select(profiles[next]);
+  }
+
+  private playSelected(): void {
+    if (!this.creating && this.selected) this.actions.onPlay(this.selected);
+  }
+
+  private closeCreatePanel(): void {
+    if (!this.creating) return;
+    this.creating = false;
+    this.render();
+  }
+
   private select(profile: Profile): void {
     this.selected = profile;
     this.creating = false;
@@ -220,6 +256,7 @@ export class ProfileScreen {
           },
           playIcon(),
           t.play,
+          primaryHint(),
         ),
       ),
       el(
@@ -288,10 +325,7 @@ export class ProfileScreen {
         el('button', {
           class: 'button button-ghost',
           text: t.cancel,
-          onClick: () => {
-            this.creating = false;
-            this.render();
-          },
+          onClick: () => this.closeCreatePanel(),
         }),
         el('button', {
           class: 'button button-primary button-large',
@@ -329,6 +363,14 @@ export class ProfileScreen {
 }
 
 function noDock(): void {}
+
+function wrapIndex(index: number, length: number): number {
+  return (index + length) % length;
+}
+
+function edgeIndex(direction: number, length: number): number {
+  return direction === NEXT ? 0 : length - 1;
+}
 
 function dock(panel: HTMLElement, isFresh: boolean): HTMLElement {
   panel.classList.toggle('is-fresh', isFresh);

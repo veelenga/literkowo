@@ -28,6 +28,7 @@ import { el, type Child } from './dom';
 import { itemPreview, releaseItemPreviews } from './ItemPreviews';
 import { coinIcon, coinPill } from './progression';
 import { ShopHero } from './ShopHero';
+import { onShortcutKeys } from './overlay';
 import {
   arenaGoalNote,
   itemDescription,
@@ -36,6 +37,7 @@ import {
   rankTitle,
   trophyCopy,
 } from './shopCopy';
+import { ESCAPE_LABEL, shortcutHint } from './shortcutHint';
 import { lockBadge, shopIcon } from './shopParts';
 
 export type ShopTab = ItemKind | 'trophy';
@@ -62,13 +64,19 @@ export class ShopScreen {
   readonly element = el('div', { class: 'screen shop-screen' });
   private readonly hero = new ShopHero();
   private readonly coins = el('div', { class: 'shop-coins' });
-  private readonly catalogue = el('section', { class: 'shop-catalogue' });
+  private readonly tabBar = el('nav', { class: 'segmented shop-tabs' });
+  private readonly list = el('div', { class: 'shop-catalogue-list' });
+  private readonly catalogue = el('section', { class: 'shop-catalogue' }, this.tabBar, this.list);
+  private readonly stopKeys: () => void;
 
   constructor(
     private profile: Profile,
     private readonly actions: ShopActions,
     private tab: ShopTab = SHOP_TABS[0],
   ) {
+    this.stopKeys = onShortcutKeys(this.element, {
+      Escape: () => this.actions.onBack(this.profile),
+    });
     this.element.append(
       this.header(),
       el('main', { class: 'shop-layout' }, this.hero.element, this.catalogue),
@@ -77,6 +85,7 @@ export class ShopScreen {
   }
 
   dispose(): void {
+    this.stopKeys();
     this.hero.dispose();
     releaseItemPreviews();
     releasePortraits();
@@ -95,6 +104,7 @@ export class ShopScreen {
         },
         shopIcon('back', 'shop-back-icon'),
         this.actions.backLabel ?? copy.back,
+        shortcutHint(ESCAPE_LABEL),
       ),
       el('h1', { class: 'logo logo-small shop-title', text: copy.title }),
       this.coins,
@@ -105,28 +115,26 @@ export class ShopScreen {
     this.catalogue.classList.toggle(ENTERING_CLASS, entering);
     this.coins.replaceChildren(coinPill(String(this.profile.coins), 'stat-pill shop-coin-pill'));
     this.hero.show(this.profile);
-    this.catalogue.replaceChildren(this.tabs(), this.content());
+    this.tabBar.replaceChildren(...this.tabs());
+    this.list.replaceChildren(this.content());
   }
 
-  private tabs(): HTMLElement {
+  private tabs(): HTMLElement[] {
     const labels = i18n.t.features.shop.tabs;
-    return el(
-      'nav',
-      { class: 'segmented shop-tabs' },
-      ...SHOP_TABS.map((tab) =>
-        el('button', {
-          class: tab === this.tab ? 'chip is-active' : 'chip',
-          text: labels[tab],
-          'aria-pressed': String(tab === this.tab),
-          onClick: () => this.open(tab),
-        }),
-      ),
+    return SHOP_TABS.map((tab) =>
+      el('button', {
+        class: tab === this.tab ? 'chip is-active' : 'chip',
+        text: labels[tab],
+        'aria-pressed': String(tab === this.tab),
+        onClick: () => this.open(tab),
+      }),
     );
   }
 
   private open(tab: ShopTab): void {
     if (tab === this.tab) return;
     this.tab = tab;
+    this.list.scrollTop = 0;
     this.refresh(true);
   }
 

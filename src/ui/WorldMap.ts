@@ -10,8 +10,11 @@ import {
   gatePoint,
   journeyLayout,
   journeyPath,
+  stopRoles,
   type BandLayout,
+  type BandSpec,
   type JourneyLayout,
+  type JourneyStop,
 } from './map/journeyLayout';
 import { followScroll, revealOnEnter, type StopEffect } from './map/journeyMotion';
 import { mapHeader } from './map/mapHeader';
@@ -19,8 +22,10 @@ import { ART_HEIGHT, ART_WIDTH, CEILING_HEIGHT, regionArt, type ArtLayer } from 
 import { keyLabel, levelTitle } from './levelKind';
 import { keyDots, masteryMeter } from './mastery';
 import { hasAmbientMotion } from './menuMotion';
+import { onShortcutKeys, stepWithin } from './overlay';
 import './courseMap.css';
 import { outfitAvatar, releaseOutfitAvatars } from './OutfitAvatar';
+import { primaryHint } from './shortcutHint';
 import { hintedLockBadge } from './shopParts';
 import './worldMap.css';
 
@@ -30,12 +35,18 @@ const BOSS_FACE = '🌑';
 const KIND_BADGES: Readonly<Partial<Record<LevelKind, string>>> = { learn: '✨', review: '👑' };
 const HALF = 2;
 const STOP_CLASS = 'journey-stop';
+const SATELLITE_ROLE = 'satellite';
 const STOP_SELECTOR = `.${STOP_CLASS}`;
 const REVEAL_CLASS = 'has-reveal';
 const AMBIENT_CLASS = 'has-ambient';
 const PATH_WIDTH = 100;
 const GATE_SELECTOR = '.journey-gate';
 const NUDGE_CLASS = 'is-nudged';
+const OPEN_NODE_SELECTOR = '.level-node:not(:disabled)';
+const NODE_SELECTOR = '.level-node';
+const NOT_FOUND = -1;
+const PREVIOUS = -1;
+const NEXT = 1;
 
 type NodeState = 'locked' | 'open' | 'current' | 'done';
 
@@ -60,6 +71,7 @@ export class WorldMap {
   private readonly layout: JourneyLayout;
   private readonly current: Level | undefined;
   private effects: StopEffect[] = [];
+  private readonly stopKeys: () => void;
 
   constructor(
     private readonly profile: Profile,
@@ -67,14 +79,34 @@ export class WorldMap {
   ) {
     this.course = courseFor(profile.wordLanguage);
     this.current = this.course.current(profile.levelResults);
-    this.layout = journeyLayout(this.course.regions.map((region) => region.levels.length));
+    this.layout = journeyLayout(this.bandSpecs(), this.currentIndex());
+    this.stopKeys = onShortcutKeys(this.element, {
+      Enter: () => this.playFocusLevel(),
+      ArrowRight: () => this.moveFocus(NEXT),
+      ArrowDown: () => this.moveFocus(NEXT),
+      ArrowLeft: () => this.moveFocus(PREVIOUS),
+      ArrowUp: () => this.moveFocus(PREVIOUS),
+      Escape: () => this.actions.onSwitchPlayer(),
+    });
     this.render();
   }
 
   dispose(): void {
+    this.stopKeys();
     this.effects.forEach((stop) => stop());
     this.effects = [];
     releaseOutfitAvatars();
+  }
+
+  private bandSpecs(): BandSpec[] {
+    return this.course.regions.map((region) => ({
+      roles: stopRoles(region.levels.map((level) => level.kind)),
+      gate: this.hasGate(region),
+    }));
+  }
+
+  private currentIndex(): number {
+    return this.course.levels.findIndex((level) => this.stateOf(level) === 'current');
   }
 
   private render(): void {
@@ -108,13 +140,34 @@ export class WorldMap {
     if (isArenaOpen(this.profile)) return this.actions.onArena();
     const gate = this.element.querySelector(GATE_SELECTOR);
     if (!gate) return;
-    gate.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    gate.scrollIntoView({ block: 'center', behavior: scrollBehavior() });
     restartAnimation(gate, NUDGE_CLASS);
   }
 
   private scrollToFocus(): void {
-    const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
-    this.focusStop()?.scrollIntoView({ block: 'center', behavior });
+    this.focusStop()?.scrollIntoView({ block: 'center', behavior: scrollBehavior() });
+  }
+
+  private playFocusLevel(): void {
+    const level = this.focusLevel();
+    if (level) this.actions.onPlay(level);
+  }
+
+  private focusLevel(): Level | undefined {
+    const levels = this.course.levels;
+    const current = levels.find((level) => this.stateOf(level) === 'current');
+    return current ?? levels.filter((level) => this.isUnlocked(level)).at(-1);
+  }
+
+  private moveFocus(direction: number): void {
+    const nodes = [...this.element.querySelectorAll<HTMLButtonElement>(OPEN_NODE_SELECTOR)];
+    const index = nodes.findIndex((node) => node === document.activeElement);
+    const target =
+      index === NOT_FOUND
+        ? this.focusStop()?.querySelector<HTMLButtonElement>(NODE_SELECTOR)
+        : nodes[stepWithin(index, direction, nodes.length)];
+    target?.focus({ preventScroll: true });
+    target?.scrollIntoView({ block: 'center', behavior: scrollBehavior() });
   }
 
   private focusStop(): HTMLElement | null {
@@ -227,8 +280,9 @@ export class WorldMap {
 
   private path(): SVGElement {
     const reached = this.course.levels.filter((level) => this.isUnlocked(level)).length;
-    const route = journeyPath(this.layout.stops);
-    const walked = journeyPath(this.layout.stops.slice(0, reached));
+    const { road, roadIndex } = this.layout;
+    const route = journeyPath(road);
+    const walked = journeyPath(road.slice(0, (roadIndex[reached - 1] ?? -1) + 1));
     return svg(
       'svg',
       {
@@ -247,17 +301,15 @@ export class WorldMap {
   private stop(level: Level, band: BandLayout, index: number): HTMLElement {
     const state = this.stateOf(level);
     const point = band.stops[index];
-    const classes = [STOP_CLASS, `is-${state}`];
-    if (level.isBoss) classes.push('is-boss');
+    const isSatellite = point.role === SATELLITE_ROLE;
+    const classes = [STOP_CLASS, `is-${state}`, `is-${point.role}`];
     return el(
       'div',
-      {
-        class: classes.join(' '),
-        style: `--x: ${point.x.toFixed(2)}; --y: ${point.y - band.top}`,
-      },
+      { class: classes.join(' '), style: stopStyle(point, band) },
+      isSatellite ? el('span', { class: 'stop-link', 'aria-hidden': 'true' }) : null,
       state === 'current' ? this.hero() : null,
       this.node(level, state),
-      state === 'current' ? el('span', { class: 'node-tag', text: i18n.t.play }) : null,
+      state === 'current' ? el('span', { class: 'node-tag' }, i18n.t.play, primaryHint()) : null,
       state === 'done' ? this.stars(level) : null,
     );
   }
@@ -322,6 +374,14 @@ export class WorldMap {
   private isUnlocked(level: Level): boolean {
     return this.course.isUnlocked(level, this.profile.levelResults);
   }
+}
+
+function scrollBehavior(): ScrollBehavior {
+  return prefersReducedMotion() ? 'auto' : 'smooth';
+}
+
+function stopStyle(point: JourneyStop, band: BandLayout): string {
+  return `--x: ${point.x.toFixed(2)}; --y: ${point.y - band.top}; --shift: ${point.shift}`;
 }
 
 function kindBadge(kind: LevelKind): HTMLElement | null {

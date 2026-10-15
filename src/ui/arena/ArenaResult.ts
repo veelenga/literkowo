@@ -9,11 +9,11 @@ import { statTile, type LevelRewards } from '../LevelResult';
 import { createOverlay, KEY_READY_MS, onWindowKeyAfter, type Overlay } from '../overlay';
 import { ResultProgress } from '../ResultProgress';
 import { treasuresNote, type OpenShop } from '../resultTreasures';
+import { primaryHint } from '../shortcutHint';
 import { medalBadge, nextMedalHint } from './arenaParts';
 
 const REVEAL_DELAY_MS = 700;
 const RETRY_KEY = 'Enter';
-const RETRY_KEY_LABEL = '⏎';
 
 export interface ArenaRunSummary {
   readonly result: GameResult;
@@ -94,7 +94,7 @@ function actionsRow(actions: ArenaResultActions): HTMLElement {
       'button',
       { class: 'button button-primary button-large', onClick: actions.onRetry },
       i18n.t.features.arena.again,
-      el('kbd', { class: 'kbd kbd-on-primary', text: RETRY_KEY_LABEL }),
+      primaryHint(),
     ),
   );
 }

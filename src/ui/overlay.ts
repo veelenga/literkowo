@@ -39,6 +39,46 @@ export function claimEscapeKey(handler: () => void): Cleanup {
   return () => window.removeEventListener('keydown', listener, true);
 }
 
+export type ShortcutKeys = Readonly<Partial<Record<string, () => void>>>;
+
+const CLOSE_KEY = 'Escape';
+const ACTIVATE_KEY = 'Enter';
+const REPEATABLE_KEYS: ReadonlySet<string> = new Set([
+  'ArrowLeft',
+  'ArrowRight',
+  'ArrowUp',
+  'ArrowDown',
+]);
+const INERT_SELECTOR = '[inert]';
+const FIELD_SELECTOR = 'input, textarea, select, [contenteditable="true"]';
+const CONTROL_SELECTOR = `button, a[href], ${FIELD_SELECTOR}`;
+
+export function onShortcutKeys(scope: HTMLElement, keys: ShortcutKeys): Cleanup {
+  return onWindowKey((event) => {
+    const action = keys[event.key];
+    if (!action || !isShortcut(scope, event)) return;
+    event.preventDefault();
+    action();
+  });
+}
+
+export function stepWithin(index: number, direction: number, length: number): number {
+  return Math.min(Math.max(index + direction, 0), length - 1);
+}
+
+function isShortcut(scope: HTMLElement, event: KeyboardEvent): boolean {
+  if (scope.closest(INERT_SELECTOR) || hasModifier(event) || event.isComposing) return false;
+  if (event.repeat && !REPEATABLE_KEYS.has(event.key)) return false;
+  if (event.key === CLOSE_KEY) return true;
+  const target = event.target instanceof Element ? event.target : null;
+  const blocker = event.key === ACTIVATE_KEY ? CONTROL_SELECTOR : FIELD_SELECTOR;
+  return !target?.closest(blocker);
+}
+
+function hasModifier(event: KeyboardEvent): boolean {
+  return event.ctrlKey || event.metaKey || event.altKey;
+}
+
 export function onWindowKeyAfter(delayMs: number, handler: KeyHandler): Cleanup {
   let stopListening: Cleanup | undefined;
   const timer = window.setTimeout(() => {

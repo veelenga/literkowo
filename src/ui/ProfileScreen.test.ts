@@ -9,15 +9,24 @@ vi.mock('./LivePreview', () => ({
   outfitOf: () => ({}),
 }));
 
+vi.mock('./menuMotion', () => ({
+  hasAmbientMotion: () => false,
+}));
+
 const ACTIVE_KEY = 'literkowo.activeProfile';
+const NAMES = ['Ola', 'Kuba', 'Zosia'];
 
 function setup(profiles: Profile[] = []) {
   const store = new ProfileStore();
   profiles.forEach((profile) => store.add(profile));
   if (profiles[0]) store.setActive(profiles[0]);
-  const actions = { onPlay: vi.fn(), onSettings: vi.fn(), onShop: vi.fn() };
+  const actions = {
+    onPlay: vi.fn<(profile: Profile) => void>(),
+    onSettings: vi.fn(),
+    onShop: vi.fn<(profile: Profile) => void>(),
+  };
   const screen = new ProfileScreen(store, actions);
-  return { screen, ...actions };
+  return { store, screen, ...actions };
 }
 
 describe('ProfileScreen', () => {
@@ -38,6 +47,7 @@ describe('ProfileScreen', () => {
   afterEach(() => {
     dispose?.();
     dispose = undefined;
+    document.body.replaceChildren();
     removeStorage(PROFILES_KEY);
     removeStorage(ACTIVE_KEY);
   });
@@ -46,6 +56,20 @@ describe('ProfileScreen', () => {
     const parts = setup(profiles);
     dispose = () => parts.screen.dispose();
     return parts;
+  }
+
+  function openWithKeys() {
+    const parts = open(NAMES.map((name) => createProfile(name, 'a')));
+    document.body.append(parts.screen.element);
+    const press = (key: string, target: EventTarget = window) =>
+      target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+    const selectedName = () =>
+      parts.screen.element.querySelector('.profile-card.is-selected .profile-name')?.textContent;
+    const nameField = () =>
+      parts.screen.element.querySelector<HTMLInputElement>('.create-panel input');
+    const openCreatePanel = () =>
+      parts.screen.element.querySelector<HTMLButtonElement>('.profile-card-new')?.click();
+    return { ...parts, press, selectedName, nameField, openCreatePanel };
   }
 
   it('opens the settings from the gear next to the language switch', () => {
@@ -75,5 +99,51 @@ describe('ProfileScreen', () => {
     link?.click();
     expect(onShop).toHaveBeenCalledWith(ola);
     expect(onPlay).not.toHaveBeenCalled();
+  });
+
+  describe('keys', () => {
+    it('picks the next and the previous profile with the arrow keys', () => {
+      const { store, press, selectedName } = openWithKeys();
+      press('ArrowRight');
+      expect(selectedName()).toBe('Kuba');
+      expect(store.active()?.name).toBe('Kuba');
+      press('ArrowLeft');
+      press('ArrowLeft');
+      expect(selectedName()).toBe('Zosia');
+    });
+
+    it('plays the selected profile with Enter', () => {
+      const { onPlay, press } = openWithKeys();
+      press('ArrowRight');
+      press('Enter');
+      expect(onPlay).toHaveBeenCalledOnce();
+      expect(onPlay.mock.lastCall?.[0].name).toBe('Kuba');
+    });
+
+    it('closes the create panel with Escape, also from the name field', () => {
+      const { press, nameField, openCreatePanel } = openWithKeys();
+      openCreatePanel();
+      const field = nameField();
+      expect(field).not.toBeNull();
+      press('Escape', field ?? window);
+      expect(nameField()).toBeNull();
+    });
+
+    it('leaves the arrows and Enter to the name field while it has focus', () => {
+      const { onPlay, press, nameField, openCreatePanel } = openWithKeys();
+      openCreatePanel();
+      const field = nameField() ?? window;
+      press('ArrowRight', field);
+      press('Enter', field);
+      expect(nameField()).not.toBeNull();
+      expect(onPlay).not.toHaveBeenCalled();
+    });
+
+    it('stops listening once the screen is gone', () => {
+      const { screen, onPlay, press } = openWithKeys();
+      screen.dispose();
+      press('Enter');
+      expect(onPlay).not.toHaveBeenCalled();
+    });
   });
 });

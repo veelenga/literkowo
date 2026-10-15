@@ -7,13 +7,13 @@ import { ResultKeys } from './mastery';
 import { createOverlay, KEY_READY_MS, onWindowKeyAfter, type Overlay } from './overlay';
 import { ResultProgress, type EarnedRewards } from './ResultProgress';
 import { treasuresNote, type OpenShop, type Treasures } from './resultTreasures';
+import { primaryHint } from './shortcutHint';
 
 const STAR_INTRO_MS = 240;
 const STAR_STAGGER_MS = 220;
 const COUNTER_START_MS = STAR_INTRO_MS + MAX_STARS * STAR_STAGGER_MS;
 const COUNTER_DURATION_MS = 900;
 const PRIMARY_KEY = 'Enter';
-const PRIMARY_KEY_LABEL = '⏎';
 const PRIMARY_BUTTON_CLASS = 'button button-primary button-large';
 
 export interface LevelRewards extends EarnedRewards {
@@ -155,7 +155,7 @@ function actionButton(action: ResultAction, isPrimary: boolean): HTMLElement {
     'button',
     { class: PRIMARY_BUTTON_CLASS, onClick: action.run },
     action.label,
-    el('kbd', { class: 'kbd kbd-on-primary', text: PRIMARY_KEY_LABEL }),
+    primaryHint(),
   );
 }
 

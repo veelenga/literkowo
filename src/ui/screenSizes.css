@@ -1,0 +1,8 @@
+@custom-media --phone (max-width: 600px), (max-height: 480px);
+@custom-media --phone-narrow (max-width: 600px);
+@custom-media --phone-landscape (max-height: 480px);
+@custom-media --short-screen (max-height: 900px);
+@custom-media --low-screen (max-height: 800px);
+@custom-media --narrow-portrait (max-width: 900px) and (orientation: portrait);
+@custom-media --short-wide-screen (max-height: 900px) and (min-width: 601px);
+@custom-media --touch-only (hover: none) and (pointer: coarse);

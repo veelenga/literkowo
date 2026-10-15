@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { DifficultyId } from '../../arena/difficulty';
 import { SILVER, type Medal } from '../../arena/medals';
 import { arenaKey, withEndlessRun } from '../../arena/record';
@@ -36,11 +36,14 @@ function withBest(profile: Profile, keySet: string, id: DifficultyId, medal: Med
   return { ...profile, arena: withEndlessRun(profile.arena, run) };
 }
 
+const screens: ArenaScreen[] = [];
+
 function setup(profile: Profile, previous?: ArenaChoice) {
   const onPlay = vi.fn<(profile: Profile, choice: ArenaChoice) => void>();
   const onBack = vi.fn<(profile: Profile) => void>();
   const onShop = vi.fn<(profile: Profile, choice: ArenaChoice) => void>();
   const screen = new ArenaScreen(profile, { onPlay, onBack, onShop }, previous);
+  screens.push(screen);
   const chips = (selector: string) => [
     ...screen.element.querySelectorAll<HTMLButtonElement>(`${selector} .chip`),
   ];
@@ -51,7 +54,19 @@ function setup(profile: Profile, previous?: ArenaChoice) {
   return { screen, keySetChips, difficultyChips, play, lastChoice, onBack, onShop };
 }
 
+function press(key: string): void {
+  window.dispatchEvent(new KeyboardEvent('keydown', { key, cancelable: true }));
+}
+
+function activeLabel(chips: HTMLButtonElement[]): string | null | undefined {
+  return chips.find((chip) => chip.classList.contains('is-active'))?.textContent;
+}
+
 describe('ArenaScreen', () => {
+  afterEach(() => {
+    screens.splice(0).forEach((screen) => screen.dispose());
+  });
+
   it('offers the Polana keys and the first two levels after the Polana boss', () => {
     const { keySetChips, difficultyChips, screen } = setup(profileUpTo('polana-19'));
     expect(keySetChips().map((chip) => chip.textContent)).toEqual(['Polana']);
@@ -114,5 +129,32 @@ describe('ArenaScreen', () => {
     expect(link?.nextElementSibling?.classList).toContain('shop-coin-pill');
     link?.click();
     expect(onShop.mock.lastCall?.[1].keySet.id).toBe('polana');
+  });
+
+  describe('keys', () => {
+    it('changes the key set with left and right and the level with up and down', () => {
+      const { keySetChips, difficultyChips } = setup(profileUpTo('gory-16'));
+      expect(activeLabel(keySetChips())).toBe('Góry');
+      press('ArrowLeft');
+      press('ArrowLeft');
+      press('ArrowLeft');
+      expect(activeLabel(keySetChips())).toBe('Polana');
+      press('ArrowRight');
+      expect(activeLabel(keySetChips())).toBe('Las');
+      press('ArrowDown');
+      expect(activeLabel(difficultyChips())).toBe('Spokojnie');
+      press('ArrowUp');
+      press('ArrowUp');
+      expect(activeLabel(difficultyChips())).toBe('Normalnie');
+    });
+
+    it('plays the choice with Enter and goes back to the map with Escape', () => {
+      const { lastChoice, onBack } = setup(profileUpTo('las-16'));
+      press('ArrowLeft');
+      press('Enter');
+      expect(lastChoice()?.keySet.id).toBe('polana');
+      press('Escape');
+      expect(onBack).toHaveBeenCalledOnce();
+    });
   });
 });

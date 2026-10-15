@@ -1,10 +1,14 @@
+@import './screenSizes.css';
+
 .map-screen {
   --unit: 1px;
   --track-width: min(960px, 100% - 48px);
-  --node-size: 84px;
-  --boss-size: 102px;
-  --hero-size: 88px;
-  --art-scale: 1;
+  --node-size: 76px;
+  --boss-size: 96px;
+  --hero-size: 76px;
+  --satellite-size: calc(var(--node-size) * 0.64);
+  --satellite-offset: calc(var(--node-size) * 1.05);
+  --art-scale: 0.62;
   --header-glass: rgba(6, 10, 30, 0.78);
   background: var(--bg-deep);
 }
@@ -581,10 +585,18 @@ svg.stat-icon {
 
 .region-header {
   position: absolute;
-  top: calc(44 * var(--unit));
-  width: min(400px, 56%);
-  padding: 16px 20px 18px;
-  border-radius: var(--radius-xl);
+  top: calc(10 * var(--unit));
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'chapter badges'
+    'title title'
+    'mood mood';
+  align-items: center;
+  column-gap: 12px;
+  width: min(440px, 46%);
+  padding: 8px 16px 10px;
+  border-radius: var(--radius-lg);
   border: 1px solid rgba(255, 255, 255, 0.16);
   background: linear-gradient(180deg, rgba(8, 12, 36, 0.62), rgba(8, 12, 36, 0.44));
   box-shadow:
@@ -599,10 +611,16 @@ svg.stat-icon {
 
 .region-header.is-end {
   right: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'badges chapter'
+    'title title'
+    'mood mood';
   text-align: right;
 }
 
 .region-chapter {
+  grid-area: chapter;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -612,6 +630,10 @@ svg.stat-icon {
   letter-spacing: 0.06em;
 }
 
+.region-header.is-end .region-chapter {
+  justify-content: flex-end;
+}
+
 .region-lock {
   width: 14px;
   height: 14px;
@@ -619,8 +641,9 @@ svg.stat-icon {
 }
 
 .region-title {
+  grid-area: title;
   margin-top: 2px;
-  font-size: 2.3rem;
+  font-size: 1.5rem;
   line-height: 1.05;
   text-shadow:
     0 3px 0 rgba(0, 0, 0, 0.25),
@@ -628,9 +651,13 @@ svg.stat-icon {
 }
 
 .region-mood {
-  margin: 6px 0 12px;
+  grid-area: mood;
+  margin: 3px 0 0;
+  overflow: hidden;
   color: rgba(236, 241, 255, 0.84);
-  font-size: 0.98rem;
+  font-size: 0.86rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-weight: 700;
   line-height: 1.35;
 }
@@ -639,7 +666,7 @@ svg.stat-icon {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 13px 5px 9px;
+  padding: 3px 11px 3px 8px;
   border-radius: var(--radius-pill);
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(3, 6, 20, 0.45);
@@ -649,21 +676,23 @@ svg.stat-icon {
 }
 
 .region-badges {
+  grid-area: badges;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  justify-content: flex-end;
+  gap: 6px;
 }
 
 .region-header.is-end .region-badges {
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .mastery-meter {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 13px 5px 7px;
+  padding: 3px 11px 3px 6px;
   border-radius: var(--radius-pill);
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(3, 6, 20, 0.45);
@@ -712,7 +741,7 @@ svg.stat-icon {
 
 .journey-stop {
   position: absolute;
-  left: calc(var(--x) * 1%);
+  left: calc(var(--x) * 1% + var(--shift, 0) * var(--satellite-offset));
   top: calc(var(--y) * var(--unit));
   width: var(--node-size);
   height: var(--node-size);
@@ -736,6 +765,28 @@ svg.stat-icon {
 .journey-stop.is-boss {
   width: var(--boss-size);
   height: var(--boss-size);
+}
+
+.journey-stop.is-satellite {
+  --node-size: var(--satellite-size);
+  width: var(--satellite-size);
+  height: var(--satellite-size);
+}
+
+.stop-link {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: -1;
+  width: var(--satellite-offset);
+  border-top: 4px dashed rgba(255, 255, 255, 0.55);
+  transform-origin: left center;
+  translate: 0 -50%;
+  rotate: calc((1 + var(--shift)) * 90deg);
+}
+
+.journey-stop.is-done > .stop-link {
+  border-top-color: var(--accent-light);
 }
 
 .has-reveal .journey-stop {
@@ -954,7 +1005,7 @@ svg.stat-icon {
 
 .level-stars {
   position: absolute;
-  top: calc(100% + 12px);
+  top: calc(100% - 8px);
   left: 50%;
   display: flex;
   gap: 1px;
@@ -967,8 +1018,17 @@ svg.stat-icon {
 }
 
 .level-stars .star {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
+}
+
+.is-satellite .level-stars {
+  padding: 2px 5px;
+}
+
+.is-satellite .level-stars .star {
+  width: 11px;
+  height: 11px;
 }
 
 .journey-hero {
@@ -986,21 +1046,30 @@ svg.stat-icon {
 
 .node-tag {
   position: absolute;
-  top: calc(100% + 16px);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  top: calc(100% + 4px);
   left: 50%;
-  padding: 6px 18px;
+  z-index: 1;
+  padding: 3px 14px;
   border-radius: var(--radius-pill);
   background: linear-gradient(180deg, #fffaf0, var(--accent-light));
   box-shadow:
     0 4px 0 var(--accent-edge),
     0 10px 20px rgba(2, 4, 14, 0.35);
   color: var(--accent-ink);
-  font-size: 0.98rem;
+  font-size: 0.88rem;
   font-weight: 900;
   white-space: nowrap;
   translate: -50% 0;
   pointer-events: none;
   animation: tag-bob 1.6s ease-in-out infinite;
+}
+
+.node-tag .kbd {
+  height: 1.5em;
+  font-size: 0.72em;
 }
 
 .node-tag::before {
@@ -1080,14 +1149,14 @@ svg.stat-icon {
   }
 }
 
-@media (max-width: 600px), (max-height: 480px) {
+@media (--phone) {
   .map-screen {
     --unit: 0.8px;
     --track-width: calc(100% - 20px);
-    --node-size: 66px;
-    --boss-size: 80px;
-    --hero-size: 70px;
-    --art-scale: 0.62;
+    --node-size: 58px;
+    --boss-size: 74px;
+    --hero-size: 60px;
+    --art-scale: 0.4;
   }
 
   .map-header {
@@ -1151,11 +1220,25 @@ svg.stat-icon {
     display: none;
   }
 
-  .region-header {
-    top: calc(34 * var(--unit));
-    width: min(260px, 58%);
-    padding: 12px 14px 14px;
-    border-radius: var(--radius-lg);
+  .region-header,
+  .region-header.is-end {
+    top: calc(12 * var(--unit));
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'chapter'
+      'title'
+      'badges';
+    width: min(300px, 62%);
+    padding: 6px 12px 8px;
+  }
+
+  .region-header.is-end .region-badges {
+    justify-content: flex-end;
+  }
+
+  .region-badges {
+    justify-content: flex-start;
+    margin-top: 3px;
   }
 
   .region-chapter {
@@ -1163,23 +1246,22 @@ svg.stat-icon {
   }
 
   .region-title {
-    font-size: 1.55rem;
+    font-size: 1.2rem;
   }
 
   .region-mood {
-    margin: 4px 0 10px;
-    font-size: 0.84rem;
+    display: none;
   }
 
   .region-progress {
-    padding: 3px 10px 3px 7px;
-    font-size: 0.84rem;
+    padding: 2px 9px 2px 6px;
+    font-size: 0.8rem;
   }
 
   .mastery-meter {
     gap: 6px;
-    padding: 3px 10px 3px 5px;
-    font-size: 0.84rem;
+    padding: 2px 9px 2px 4px;
+    font-size: 0.8rem;
   }
 
   .mastery-meter-cap {
@@ -1193,8 +1275,8 @@ svg.stat-icon {
   }
 
   .level-stars .star {
-    width: 15px;
-    height: 15px;
+    width: 13px;
+    height: 13px;
   }
 
   .node-crown {
@@ -1211,9 +1293,9 @@ svg.stat-icon {
   }
 
   .node-tag {
-    top: calc(100% + 13px);
-    padding: 4px 14px;
-    font-size: 0.88rem;
+    top: calc(100% + 2px);
+    padding: 1px 10px;
+    font-size: 0.76rem;
   }
 }
 

@@ -1,16 +1,36 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { Overlay } from './overlay';
 import { pauseOverlay } from './PauseOverlay';
+
+const overlays: Overlay[] = [];
 
 function open() {
   const actions = { onResume: vi.fn(), onSettings: vi.fn() };
   const overlay = pauseOverlay(actions.onResume, {}, actions.onSettings);
-  return { ...actions, element: overlay.element };
+  overlays.push(overlay);
+  return { ...actions, overlay, element: overlay.element };
+}
+
+function pressEnter(): void {
+  window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', cancelable: true }));
 }
 
 describe('pauseOverlay', () => {
+  afterEach(() => {
+    overlays.splice(0).forEach((overlay) => overlay.dispose());
+  });
+
   it('resumes the level when tapped', () => {
     const { element, onResume } = open();
     element.querySelector<HTMLButtonElement>('.button-primary')?.click();
+    expect(onResume).toHaveBeenCalledOnce();
+  });
+
+  it('resumes the level with Enter until the card is closed', () => {
+    const { overlay, onResume } = open();
+    pressEnter();
+    overlay.dispose();
+    pressEnter();
     expect(onResume).toHaveBeenCalledOnce();
   });
 

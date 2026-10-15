@@ -1,12 +1,56 @@
 import { describe, expect, it } from 'vitest';
-import { JOURNEY_SPACING, gatePoint, journeyLayout, journeyPath } from './journeyLayout';
+import type { LevelKind } from '../../course/catalog';
+import {
+  JOURNEY_SPACING,
+  gatePoint,
+  journeyLayout,
+  journeyPath,
+  stopRoles,
+  type BandSpec,
+} from './journeyLayout';
 
-const POLISH_COURSE = [5, 4, 4, 5, 4];
+const REGION_KINDS: readonly LevelKind[] = [
+  'learn',
+  'practice',
+  'review',
+  'learn',
+  'practice',
+  'learn',
+  'practice',
+  'review',
+  'boss',
+];
+const PAIR_COUNT = 3;
+const FIRST_BAND: BandSpec = { roles: stopRoles(REGION_KINDS), gate: true };
+const NEXT_BAND: BandSpec = { roles: stopRoles(REGION_KINDS), gate: false };
+const COURSE = [FIRST_BAND, NEXT_BAND, NEXT_BAND];
 const PRECISION = 6;
+const LEFT = 30;
+const RIGHT = 70;
+
+describe('stopRoles', () => {
+  it('hangs a learn level on the practice level of the same key', () => {
+    expect(stopRoles(REGION_KINDS)).toEqual([
+      'satellite',
+      'stop',
+      'stop',
+      'satellite',
+      'stop',
+      'satellite',
+      'stop',
+      'stop',
+      'boss',
+    ]);
+  });
+
+  it('keeps a learn level without practice as its own stop', () => {
+    expect(stopRoles(['learn', 'review'])).toEqual(['stop', 'stop']);
+  });
+});
 
 describe('journeyLayout', () => {
   it('stacks one band per region without gaps', () => {
-    const layout = journeyLayout(POLISH_COURSE);
+    const layout = journeyLayout(COURSE);
     layout.bands.forEach((band, index) => {
       const previous = layout.bands[index - 1];
       expect(band.top).toBe(previous ? previous.top + previous.height : 0);
@@ -15,64 +59,83 @@ describe('journeyLayout', () => {
     expect(layout.height).toBe(last.top + last.height);
   });
 
-  it('places every stop in order from top to bottom', () => {
-    const { stops } = journeyLayout(POLISH_COURSE);
-    expect(stops).toHaveLength(22);
-    stops.slice(1).forEach((stop, index) => expect(stop.y).toBeGreaterThan(stops[index].y));
+  it('runs the road through two stops per row in a snake', () => {
+    const [band] = journeyLayout(COURSE).bands;
+    expect(band.road).toHaveLength(REGION_KINDS.length - PAIR_COUNT);
+    expect(band.road.map((point) => point.x)).toEqual([RIGHT, LEFT, LEFT, RIGHT, RIGHT, LEFT]);
+    const rows = band.road.map((point) => point.y - band.top);
+    const { header, row } = JOURNEY_SPACING;
+    expect(rows).toEqual([
+      header,
+      header,
+      header + row,
+      header + row,
+      header + 2 * row,
+      header + 2 * row,
+    ]);
   });
 
-  it('puts the gate in the footer of a band, across from its last stop', () => {
-    const [band, next] = journeyLayout(POLISH_COURSE).bands;
-    const last = band.stops[band.stops.length - 1];
+  it('hangs each learn satellite next to its practice stop, on the side the row comes from', () => {
+    const [band] = journeyLayout(COURSE).bands;
+    const [learn, practice] = band.stops;
+    expect(learn).toMatchObject({ x: practice.x, y: practice.y, role: 'satellite', shift: 1 });
+    expect(practice.shift).toBe(0);
+    const secondRow = band.stops[3];
+    expect(secondRow).toMatchObject({ role: 'satellite', shift: -1 });
+  });
+
+  it('maps every level to its place on the road', () => {
+    const { roadIndex, road } = journeyLayout(COURSE);
+    expect(roadIndex.slice(0, REGION_KINDS.length)).toEqual([0, 0, 1, 2, 2, 3, 3, 4, 5]);
+    expect(roadIndex.at(-1)).toBe(road.length - 1);
+  });
+
+  it('enters the next band in the column the previous band left, with the header across', () => {
+    const { bands } = journeyLayout(COURSE);
+    bands.slice(1).forEach((band, index) => {
+      const exit = bands[index].road.at(-1);
+      expect(band.road[0].x).toBeCloseTo(exit?.x ?? 0, PRECISION);
+      expect(band.headerSide).toBe(band.road[0].x > 50 ? 'start' : 'end');
+    });
+  });
+
+  it('makes room for the hero above the row of the current level', () => {
+    const plain = journeyLayout(COURSE).bands[1];
+    const focused = journeyLayout(COURSE, REGION_KINDS.length + 3).bands[1];
+    expect(focused.road[1].y).toBe(plain.road[1].y);
+    expect(focused.road[2].y - plain.road[2].y).toBe(JOURNEY_SPACING.heroRoom);
+    expect(focused.height - plain.height).toBe(JOURNEY_SPACING.heroRoom);
+  });
+
+  it('puts the gate one row below the boss, across from it and inside the band', () => {
+    const [band, next] = journeyLayout(COURSE).bands;
+    const boss = band.road.at(-1);
     const gate = gatePoint(band);
-    expect(gate.x).toBeCloseTo(100 - last.x, PRECISION);
-    expect(gate.y).toBeGreaterThan(last.y);
+    expect(gate.x).toBeCloseTo(100 - (boss?.x ?? 0), PRECISION);
+    expect(gate.y).toBe((boss?.y ?? 0) + JOURNEY_SPACING.row);
     expect(gate.y).toBeLessThan(next.top);
   });
 
-  it('alternates the side of the region headers', () => {
-    const sides = journeyLayout(POLISH_COURSE).bands.map((band) => band.headerSide);
-    expect(sides).toEqual(['start', 'end', 'start', 'end', 'start']);
-  });
-
-  it('starts each band on the side away from its header', () => {
-    const { bands } = journeyLayout(POLISH_COURSE);
-    bands.forEach((band) => {
-      const first = band.stops[0];
-      if (band.headerSide === 'start') expect(first.x).toBeGreaterThan(50);
-      else expect(first.x).toBeLessThan(50);
-    });
-  });
-
-  it('enters the next band on the same side the previous band left', () => {
-    const { bands } = journeyLayout(POLISH_COURSE);
-    bands.slice(1).forEach((band, index) => {
-      const exit = bands[index].stops[bands[index].stops.length - 1];
-      expect(band.stops[0].x).toBeCloseTo(exit.x, PRECISION);
-    });
-  });
-
-  it('keeps room for the header above the first stop of a band', () => {
-    const [band] = journeyLayout(POLISH_COURSE).bands;
-    expect(band.stops[0].y - band.top).toBe(JOURNEY_SPACING.header);
-  });
-
   it('keeps every stop inside the track', () => {
-    journeyLayout(POLISH_COURSE).stops.forEach((stop) => {
-      expect(stop.x).toBeGreaterThan(0);
-      expect(stop.x).toBeLessThan(100);
-    });
+    journeyLayout(COURSE).bands.forEach((band) =>
+      band.stops.forEach((stop) => {
+        expect(stop.x).toBeGreaterThan(0);
+        expect(stop.x).toBeLessThan(100);
+      }),
+    );
   });
 });
 
 describe('journeyPath', () => {
-  it('leaves and enters each stop vertically', () => {
+  it('waves along a row and bulges out in the turns', () => {
     const points = [
-      { x: 20, y: 100 },
-      { x: 80, y: 300 },
-      { x: 40, y: 400 },
+      { x: 30, y: 100 },
+      { x: 70, y: 100 },
+      { x: 70, y: 200 },
     ];
-    expect(journeyPath(points)).toBe('M20 100C20 200 80 200 80 300C80 350 40 350 40 400');
+    expect(journeyPath(points)).toBe(
+      `M30 100C${30 + 40 / 3} 114 ${70 - 40 / 3} 86 70 100C84 100 84 200 70 200`,
+    );
   });
 
   it('is empty without stops', () => {

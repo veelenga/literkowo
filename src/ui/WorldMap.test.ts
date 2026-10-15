@@ -1,9 +1,18 @@
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import type { Level } from '../course/catalog';
 import { courseFor } from '../course/course';
 import { createProfile, type Profile } from '../profiles/Profile';
+import { levelTitle } from './levelKind';
 import { WorldMap } from './WorldMap';
 
 const DONE = { stars: 2, score: 1, accuracy: 1, wpm: 1 };
+
+const maps: WorldMap[] = [];
+
+function track(map: WorldMap): WorldMap {
+  maps.push(map);
+  return map;
+}
 
 function mapOf(
   profile: Profile,
@@ -12,8 +21,13 @@ function mapOf(
 ): HTMLElement {
   const noop = () => undefined;
   const actions = { onPlay: noop, onSwitchPlayer: noop, onShop: noop, onArena, onSettings };
-  return new WorldMap(profile, actions).element;
+  return track(new WorldMap(profile, actions)).element;
 }
+
+afterEach(() => {
+  maps.splice(0).forEach((map) => map.dispose());
+  document.body.replaceChildren();
+});
 
 function polanaDone(): Profile {
   const profile = createProfile('Ola', 'a');
@@ -82,6 +96,26 @@ describe('WorldMap', () => {
     expect(titles[18]).toBe('Wygraj powtórkę przed bossem');
   });
 
+  it('hangs every learn level on its practice stop with a short link', () => {
+    const map = mapOf(createProfile('Ola', 'a'));
+    const learnLevels = courseFor('pl').levels.filter((level) => level.kind === 'learn');
+    const satellites = [...map.querySelectorAll('.journey-stop.is-satellite')];
+    expect(satellites).toHaveLength(learnLevels.length);
+    satellites.forEach((satellite) => expect(satellite.querySelector('.stop-link')).not.toBeNull());
+    expect(map.querySelector('.journey-stop.is-boss .stop-link')).toBeNull();
+  });
+
+  it('keeps the stops in course order for keyboard focus', () => {
+    const map = mapOf(polanaDone());
+    const titles = [...map.querySelectorAll<HTMLElement>('.level-node:not([disabled])')].map(
+      (node) => node.title,
+    );
+    const expected = courseFor('pl')
+      .levels.slice(0, titles.length)
+      .map((level) => levelTitle(level));
+    expect(titles).toEqual(expected);
+  });
+
   it('shows a dimmed arena gate and a locked header button before the Polana boss', () => {
     const onArena = vi.fn();
     const map = mapOf(createProfile('Ola', 'a'), onArena);
@@ -114,5 +148,61 @@ describe('WorldMap', () => {
     expect(gear?.getAttribute('aria-label')).toBe('Ustawienia');
     gear?.click();
     expect(onSettings).toHaveBeenCalledOnce();
+  });
+});
+
+describe('WorldMap keys', () => {
+  function setup(profile: Profile) {
+    const actions = {
+      onPlay: vi.fn<(level: Level) => void>(),
+      onSwitchPlayer: vi.fn(),
+      onShop: vi.fn(),
+      onArena: vi.fn(),
+      onSettings: vi.fn(),
+    };
+    const map = track(new WorldMap(profile, actions));
+    document.body.append(map.element);
+    const press = (key: string) =>
+      window.dispatchEvent(new KeyboardEvent('keydown', { key, cancelable: true }));
+    const focusedTitle = () =>
+      document.activeElement instanceof HTMLElement ? document.activeElement.title : undefined;
+    return { map, actions, press, focusedTitle };
+  }
+
+  beforeAll(() => {
+    vi.stubGlobal('matchMedia', () => ({ matches: true }));
+    Element.prototype.scrollIntoView = () => undefined;
+  });
+
+  it('plays the current level with Enter', () => {
+    const { actions, press } = setup(polanaDone());
+    press('Enter');
+    expect(actions.onPlay.mock.lastCall?.[0].id).toBe('las-1');
+  });
+
+  it('moves the focus along the path with the arrow keys', () => {
+    const { map, press, focusedTitle } = setup(polanaDone());
+    const open = [...map.element.querySelectorAll<HTMLElement>('.level-node:not([disabled])')];
+    press('ArrowRight');
+    expect(focusedTitle()).toBe('Nowy klawisz G');
+    press('ArrowUp');
+    expect(focusedTitle()).toBe('Strażnik regionu');
+    press('ArrowLeft');
+    press('ArrowDown');
+    expect(focusedTitle()).toBe('Strażnik regionu');
+    press('ArrowRight');
+    press('ArrowRight');
+    expect(focusedTitle()).toBe('Trening G');
+    open.forEach(() => press('ArrowRight'));
+    expect(focusedTitle()).toBe(open.at(-1)?.title);
+  });
+
+  it('goes back to the profiles with Escape and stops listening once disposed', () => {
+    const { map, actions, press } = setup(createProfile('Ola', 'a'));
+    press('Escape');
+    expect(actions.onSwitchPlayer).toHaveBeenCalledOnce();
+    map.dispose();
+    press('Escape');
+    expect(actions.onSwitchPlayer).toHaveBeenCalledOnce();
   });
 });

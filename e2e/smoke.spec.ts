@@ -4,6 +4,14 @@ const PROFILE_NAME = 'Ola';
 const INITIAL_SCORE = '0';
 const LEVEL_START_TIMEOUT_MS = 40_000;
 const MAX_OVERLAY_STEPS = 30;
+const PROFILE_SCHEMA_VERSION = 7;
+const PROFILES_KEY = 'literkowo.profiles';
+const ACTIVE_PROFILE_KEY = 'literkowo.activeProfile';
+const KEYBOARD_PROFILE_ID = 'keyboard-walk';
+const CARD_KEY_READY_MS = 700;
+const FIRST_LEVEL_DONE = {
+  'polana-1': { stars: 3, score: 120, accuracy: 0.98, wpm: 8 },
+};
 
 function collectConsoleErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -76,6 +84,68 @@ test('plays the first level with a new profile', async ({ page }) => {
     const word = await page.locator('.word-label').first().innerText();
     await page.keyboard.type(word.trim());
     await expect(hudScore(page)).not.toHaveText(INITIAL_SCORE);
+  });
+
+  expect(consoleErrors).toEqual([]);
+});
+
+test('walks from the profiles into a level and back from pause with the keyboard only', async ({
+  page,
+}) => {
+  const consoleErrors = collectConsoleErrors(page);
+  const profile = {
+    schemaVersion: PROFILE_SCHEMA_VERSION,
+    id: KEYBOARD_PROFILE_ID,
+    name: PROFILE_NAME,
+    avatar: 'a',
+    seenStories: ['intro'],
+    levelResults: FIRST_LEVEL_DONE,
+  };
+  await page.addInitScript(
+    ([profilesKey, activeKey, stored, activeId]) => {
+      localStorage.setItem(profilesKey, stored);
+      localStorage.setItem(activeKey, activeId);
+    },
+    [PROFILES_KEY, ACTIVE_PROFILE_KEY, JSON.stringify([profile]), KEYBOARD_PROFILE_ID],
+  );
+
+  await test.step('plays the selected profile with Enter', async () => {
+    await page.goto('/');
+    await expect(page.locator('.play-panel')).toBeVisible();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.map-screen')).toBeVisible();
+  });
+
+  await test.step('moves along the map with the arrows and opens a level with Enter', async () => {
+    const current = page.locator('.level-node.is-current');
+    await page.keyboard.press('ArrowRight');
+    await expect(current).toBeFocused();
+    await page.keyboard.press('ArrowLeft');
+    await expect(page.locator('.level-node').first()).toBeFocused();
+    await page.keyboard.press('ArrowRight');
+    await expect(current).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.learn-panel')).toBeVisible();
+  });
+
+  await test.step(
+    'starts the level from the learn card with Enter',
+    async () => {
+      await page.waitForTimeout(CARD_KEY_READY_MS);
+      await page.keyboard.press('Enter');
+      await expect(stageCanvas(page)).toBeVisible({ timeout: LEVEL_START_TIMEOUT_MS });
+      await expect(page.locator('.word-label').first()).toHaveText(/\S/, {
+        timeout: LEVEL_START_TIMEOUT_MS,
+      });
+    },
+    { timeout: LEVEL_START_TIMEOUT_MS },
+  );
+
+  await test.step('pauses with Escape and resumes with Enter', async () => {
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.pause-panel')).toBeVisible();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.pause-panel')).toHaveCount(0);
   });
 
   expect(consoleErrors).toEqual([]);
