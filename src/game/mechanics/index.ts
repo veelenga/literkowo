@@ -1,3 +1,4 @@
+import { ArenaWaves } from './ArenaWaves';
 import { Bombers } from './Bombers';
 import { BossPhases } from './BossPhases';
 import { Companion } from './Companion';
@@ -23,6 +24,7 @@ const MECHANICS: readonly MechanicType[] = [
   HeroStrikes,
   WaveEvents,
   Companion,
+  ArenaWaves,
 ];
 
 export function createMechanics(context: MechanicContext): Mechanic[] {
