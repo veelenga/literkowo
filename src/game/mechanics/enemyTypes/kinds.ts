@@ -1,4 +1,5 @@
-import { REGIONS, regionsFor, type Level } from '../../../course/regions';
+import { courseFor } from '../../../course/course';
+import { REGIONS, allowedKeysFor, type Level } from '../../../course/regions';
 import type { WordLanguage } from '../../../profiles/Profile';
 
 export type EnemyKind =
@@ -63,29 +64,31 @@ export const KIND_LIMITS: Readonly<Partial<Record<EnemyKind, number>>> = {
 };
 
 interface Unlock {
-  readonly region: string;
-  readonly level: number;
+  readonly key: string;
   readonly fallback?: Unlock;
 }
 
 const UNLOCKS: Readonly<Record<EnemyKind, Unlock>> = {
-  jumper: { region: 'polana', level: 3 },
-  balloon: { region: 'polana', level: 3 },
-  bat: { region: 'las', level: 1 },
-  swarm: { region: 'gory', level: 1 },
-  splitter: { region: 'gory', level: 2 },
-  shield: { region: 'jaskinia', level: 1 },
-  ghost: { region: 'las', level: 2 },
-  chameleon: { region: 'wyspa', level: 1, fallback: { region: 'jaskinia', level: 3 } },
-  bull: { region: 'jaskinia', level: 2 },
-  nest: { region: 'wyspa', level: 2, fallback: { region: 'jaskinia', level: 4 } },
-  thief: { region: 'las', level: 3 },
+  jumper: { key: 's' },
+  balloon: { key: 's' },
+  bat: { key: 'g' },
+  swarm: { key: 't' },
+  splitter: { key: 'w' },
+  shield: { key: 'v' },
+  ghost: { key: 'e' },
+  chameleon: { key: 'ą', fallback: { key: 'x' } },
+  bull: { key: 'c' },
+  nest: { key: 'ł', fallback: { key: 'b' } },
+  thief: { key: 'r' },
 };
 const FIRST_REGION_CAP = 1;
 const LATER_REGION_CAP = 3;
 
 export function unlockedKinds(level: Level, language: WordLanguage): EnemyKind[] {
-  return ENEMY_KINDS.filter((kind) => isUnlocked(reachableUnlock(UNLOCKS[kind], language), level));
+  const allowed = allowedKeysFor(level, language);
+  return ENEMY_KINDS.filter((kind) =>
+    allowed.includes(reachableUnlock(UNLOCKS[kind], language).key),
+  );
 }
 
 export function boardCap(level: Level): number {
@@ -112,16 +115,13 @@ export function randomInt(min: number, max: number, random: Random): number {
   return min + Math.floor(random() * (max - min + 1));
 }
 
-function isUnlocked(unlock: Unlock, level: Level): boolean {
-  const current = regionIndex(level.regionId);
-  const required = regionIndex(unlock.region);
-  return current > required || (current === required && level.index >= unlock.level);
+function reachableUnlock(unlock: Unlock, language: WordLanguage): Unlock {
+  if (isTaught(unlock.key, language) || !unlock.fallback) return unlock;
+  return reachableUnlock(unlock.fallback, language);
 }
 
-function reachableUnlock(unlock: Unlock, language: WordLanguage): Unlock {
-  const visible = regionsFor(language).some((region) => region.id === unlock.region);
-  if (visible || !unlock.fallback) return unlock;
-  return reachableUnlock(unlock.fallback, language);
+function isTaught(key: string, language: WordLanguage): boolean {
+  return courseFor(language).levels.some((level) => level.newKeys.includes(key));
 }
 
 function regionIndex(regionId: string): number {
