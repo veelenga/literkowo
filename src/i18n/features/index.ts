@@ -1,4 +1,5 @@
 import type { UiLanguage } from '../translations';
+import { speedSurge } from './actionEvents';
 import { bossPhases } from './bossPhases';
 import { enemyTypes } from './enemyTypes';
 import { fever } from './fever';
@@ -15,6 +16,7 @@ export function featureTexts(language: UiLanguage) {
     mergeEnemies: mergeEnemies[language],
     bossPhases: bossPhases[language],
     enemyTypes: enemyTypes[language],
+    speedSurge: speedSurge[language],
     quality: quality[language],
     touch: touch[language],
     progression: progression[language],
