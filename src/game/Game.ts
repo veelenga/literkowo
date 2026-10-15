@@ -5,10 +5,12 @@ import { WordSource } from '../course/WordSource';
 import type { WordLanguage } from '../profiles/Profile';
 import {
   BOSS_SPAWN_RADIUS,
+  CAMERA_FOV,
   CAMERA_POSITION,
   CAMERA_TARGET,
   REACH_DISTANCE,
   SPAWN_RADIUS,
+  cameraFovFor,
 } from './arena';
 import { Boss } from './Boss';
 import { CameraShake } from './CameraShake';
@@ -29,7 +31,6 @@ import { World } from './World';
 
 export { themeFor } from './themes';
 
-const CAMERA_FOV = 42;
 const CAMERA_NEAR = 0.1;
 const CAMERA_FAR = 120;
 const CAMERA_INTRO_SCALE = 2.2;
@@ -285,6 +286,14 @@ export class Game {
     this.camera.position.x += sway;
     this.shake.apply(this.camera.position, delta);
     this.camera.lookAt(this.cameraTarget);
+    this.frameArena();
+  }
+
+  private frameArena(): void {
+    const fov = cameraFovFor(this.camera.aspect);
+    if (fov === this.camera.fov) return;
+    this.camera.fov = fov;
+    this.camera.updateProjectionMatrix();
   }
 
   private spawnIfDue(delta: number): void {
