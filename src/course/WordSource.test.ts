@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { requireLevel } from '../testing/levels';
+import { difficultyFor, LEARN_STAGES } from './difficulty';
 import { LEVELS, allowedKeysFor } from './regions';
+import { WORD_LISTS } from './wordLists';
 import { BOSS_MIN_LENGTH, SHORT_LENGTH, WordSource, type KeyWeights } from './WordSource';
 
 const SAMPLES = 200;
@@ -23,19 +25,63 @@ describe('WordSource', () => {
       const allowed = allowedKeysFor(level);
       const source = new WordSource(level, 'pl');
       for (let i = 0; i < SAMPLES; i += 1) {
-        for (const char of source.next()) expect(allowed).toContain(char);
+        for (const char of source.next() + source.learnWord(i / SAMPLES)) {
+          expect(allowed).toContain(char);
+        }
       }
     }
   });
 
-  it('warm-up letters come from the new keys of the level', () => {
-    const level = requireLevel('las-2');
+  it('keeps words within the length limits of the level', () => {
+    for (const level of LEVELS.filter((candidate) => !candidate.isBoss)) {
+      const { min, max } = difficultyFor(level).lengths;
+      const source = new WordSource(level, 'pl');
+      for (let i = 0; i < SAMPLES; i += 1) {
+        const word = source.next();
+        expect(word.length).toBeGreaterThanOrEqual(min);
+        expect(word.length).toBeLessThanOrEqual(max);
+      }
+    }
+  });
+
+  it('shows only f and j in the first level', () => {
+    const source = new WordSource(requireLevel('polana-1'), 'pl');
+    for (let i = 0; i < SAMPLES; i += 1) {
+      const word = source.singleLetter() + source.learnWord(i / SAMPLES) + source.next();
+      expect(word).toMatch(/^[fj]+$/);
+    }
+  });
+
+  it('teaches the new key with combos before short words', () => {
+    const level = requireLevel('polana-4');
     const source = new WordSource(level, 'pl');
-    for (let i = 0; i < SAMPLES; i += 1) expect(level.newKeys).toContain(source.singleLetter());
+    for (let i = 0; i < SAMPLES; i += 1) {
+      const combo = source.learnWord(0);
+      const short = source.learnWord(1);
+      expect(combo).toContain('d');
+      expect(combo.length).toBeLessThanOrEqual(LEARN_STAGES.combos.max);
+      expect(short).toContain('d');
+      expect(short.length).toBeGreaterThanOrEqual(LEARN_STAGES.words.min);
+      expect(short.length).toBeLessThanOrEqual(LEARN_STAGES.words.max);
+    }
+  });
+
+  it('brings in short real words with the new key when the lists have them', () => {
+    const source = new WordSource(requireLevel('polana-14'), 'pl');
+    const words = new Set(Array.from({ length: SAMPLES }, () => source.learnWord(1)));
+    const real = [...words].filter((word) => WORD_LISTS.pl.includes(word));
+    expect(real.length).toBeGreaterThan(0);
+    for (const word of real) expect(word).toContain('a');
+  });
+
+  it('warm-up letters come from the focus keys of the level', () => {
+    const level = requireLevel('las-10');
+    const source = new WordSource(level, 'pl');
+    for (let i = 0; i < SAMPLES; i += 1) expect(level.focusKeys).toContain(source.singleLetter());
   });
 
   it('boss words are long and contain only letters', () => {
-    const boss = requireLevel('polana-5');
+    const boss = requireLevel('polana-19');
     const source = new WordSource(boss, 'pl');
     for (let i = 0; i < SAMPLES; i += 1) {
       const word = source.bossWord();
@@ -45,15 +91,15 @@ describe('WordSource', () => {
   });
 
   it('uses real words once enough letters are unlocked', () => {
-    const level = requireLevel('jaskinia-4');
+    const level = requireLevel('jaskinia-20');
     const source = new WordSource(level, 'en');
     const words = new Set(Array.from({ length: SAMPLES }, () => source.next()));
-    expect([...words].some((word) => ['bread', 'rabbit', 'banana'].includes(word))).toBe(true);
+    expect([...words].some((word) => ['bread', 'crab', 'bear'].includes(word))).toBe(true);
   });
 
   it('short words have three or four letters', () => {
     const [min, max] = SHORT_LENGTH;
-    for (const id of ['polana-5', 'jaskinia-5']) {
+    for (const id of ['polana-19', 'jaskinia-24']) {
       const source = new WordSource(requireLevel(id), 'pl');
       for (let i = 0; i < SAMPLES; i += 1) {
         const word = source.shortWord();
@@ -66,12 +112,12 @@ describe('WordSource', () => {
 
   it('prefers words that do not start with a letter already on the board', () => {
     const taken = new Set(['f', 'j', 'g']);
-    const source = new WordSource(requireLevel('las-2'), 'pl');
+    const source = new WordSource(requireLevel('las-7'), 'pl');
     for (let i = 0; i < SAMPLES; i += 1) expect(taken).not.toContain(source.next(taken)[0]);
   });
 
   it('rarely repeats a first letter on the board even with only two keys', () => {
-    const source = new WordSource(requireLevel('polana-1'), 'pl');
+    const source = new WordSource(requireLevel('polana-2'), 'pl');
     const taken = new Set(['f']);
     const words = Array.from({ length: SAMPLES }, () => source.next(taken));
     expect(words.filter((word) => word.startsWith('f')).length).toBeLessThan(RARE_SAMPLES);
@@ -87,22 +133,22 @@ describe('WordSource', () => {
   });
 
   it('warm-up letters avoid keys already on the board', () => {
-    const level = requireLevel('las-2');
-    const [taken, open] = level.newKeys;
+    const level = requireLevel('las-10');
+    const [taken, open] = level.focusKeys;
     const source = new WordSource(level, 'pl');
     for (let i = 0; i < SAMPLES; i += 1) expect(source.singleLetter(new Set([taken]))).toBe(open);
   });
 
   it('warm-up letters fall back to any new key when all are on the board', () => {
-    const level = requireLevel('las-2');
+    const level = requireLevel('las-10');
     const source = new WordSource(level, 'pl');
-    const taken = new Set(level.newKeys);
+    const taken = new Set(level.focusKeys);
     for (let i = 0; i < SAMPLES; i += 1)
-      expect(level.newKeys).toContain(source.singleLetter(taken));
+      expect(level.focusKeys).toContain(source.singleLetter(taken));
   });
 
   it('gives queued boss words first, once each', () => {
-    const source = new WordSource(requireLevel('las-4'), 'pl');
+    const source = new WordSource(requireLevel('las-16'), 'pl');
     source.queueBossWord('ser');
     source.queueBossWord('kura');
     expect(source.bossWord()).toBe('ser');
@@ -111,7 +157,7 @@ describe('WordSource', () => {
   });
 
   it('generates more letters of a weak key', () => {
-    const level = requireLevel('polana-2');
+    const level = requireLevel('polana-8');
     const letters = (weights?: KeyWeights) => {
       const source = new WordSource(level, 'pl', weights);
       return Array.from({ length: WEIGHTED_SAMPLES }, () => source.next()).flatMap((word) => [
@@ -124,7 +170,7 @@ describe('WordSource', () => {
   });
 
   it('picks more real words with a weak key', () => {
-    const level = requireLevel('jaskinia-5');
+    const level = requireLevel('jaskinia-24');
     const words = (weights?: KeyWeights) => {
       const source = new WordSource(level, 'en', weights);
       return Array.from({ length: WEIGHTED_SAMPLES }, () => source.bossWord());

@@ -20,8 +20,9 @@ import {
   type LevelResult,
   type Profile,
 } from './Profile';
+import { gradualCourseResults } from './courseMigration';
+import { isRecord, type RawRecord } from './raw';
 
-type RawRecord = Readonly<Record<string, unknown>>;
 type Migration = (raw: RawRecord) => RawRecord;
 
 export interface ParsedProfiles {
@@ -33,6 +34,7 @@ const LEGACY_SCHEMA_VERSION = 1;
 const SCORE_SCHEMA_VERSION = 2;
 const XP_SCHEMA_VERSION = 3;
 const KEY_STATS_SCHEMA_VERSION = 4;
+const INVENTORY_SCHEMA_VERSION = 5;
 const SCORE_PER_SEEDED_XP = 10;
 const KNOWN_PETS = PETS.map((pet) => pet.id);
 const KNOWN_HATS = HATS.map((hat) => hat.id);
@@ -50,6 +52,10 @@ const MIGRATIONS: Partial<Record<number, Migration>> = {
     ...raw,
     inventory: starterInventory(avatarOf(raw.avatar)),
     equipped: {},
+  }),
+  [INVENTORY_SCHEMA_VERSION]: (raw) => ({
+    ...raw,
+    levelResults: gradualCourseResults(raw.levelResults),
   }),
 };
 
@@ -217,8 +223,4 @@ function isCount(value: unknown): value is number {
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.length > 0;
-}
-
-function isRecord(value: unknown): value is RawRecord {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

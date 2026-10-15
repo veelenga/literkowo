@@ -1,4 +1,4 @@
-import type { Level, Region } from '../course/catalog';
+import type { Level, LevelKind, Region } from '../course/catalog';
 import { courseFor, type Course } from '../course/course';
 import { MAX_STARS } from '../course/scoring';
 import { i18n } from '../i18n/i18n';
@@ -14,13 +14,16 @@ import {
 import { followScroll, revealOnEnter, type StopEffect } from './map/journeyMotion';
 import { mapHeader } from './map/mapHeader';
 import { ART_HEIGHT, ART_WIDTH, CEILING_HEIGHT, regionArt, type ArtLayer } from './map/regionArt';
+import { keyLabel, levelTitle } from './levelKind';
 import { keyDots, masteryMeter } from './mastery';
 import { hasAmbientMotion } from './menuMotion';
+import './courseMap.css';
 import './worldMap.css';
 
 const STAR_BASE_DELAY_MS = 260;
 const STAR_STAGGER_MS = 110;
 const BOSS_FACE = '🌑';
+const KIND_BADGES: Readonly<Partial<Record<LevelKind, string>>> = { learn: '✨', review: '🔁' };
 const HALF = 2;
 const STOP_CLASS = 'journey-stop';
 const STOP_SELECTOR = `.${STOP_CLASS}`;
@@ -208,11 +211,8 @@ export class WorldMap {
   }
 
   private node(level: Level, state: NodeState): HTMLElement {
-    const t = i18n.t;
-    const classes = ['level-node', `is-${state}`];
-    if (level.isBoss) classes.push('is-boss');
-    const title =
-      state === 'locked' ? t.locked : level.isBoss ? t.bossLevel : `${t.level} ${level.index}`;
+    const classes = ['level-node', `is-${state}`, `is-${level.kind}`];
+    const title = state === 'locked' ? i18n.t.locked : levelTitle(level);
     return el(
       'button',
       {
@@ -223,18 +223,16 @@ export class WorldMap {
         onClick: () => this.actions.onPlay(level),
       },
       level.isBoss ? el('span', { class: 'node-crown' }, icon('crown', 'node-crown-icon')) : null,
+      state === 'locked' ? null : kindBadge(level.kind),
       this.nodeFace(level, state),
-      state === 'locked' || level.isBoss ? null : keyDots(level.newKeys, this.profile.keyStats),
+      state === 'locked' || level.isBoss ? null : keyDots(level.focusKeys, this.profile.keyStats),
     );
   }
 
   private nodeFace(level: Level, state: NodeState): Element {
     if (state === 'locked') return icon('lock', 'node-lock');
     if (level.isBoss) return el('span', { class: 'level-label level-label-boss', text: BOSS_FACE });
-    return el('span', {
-      class: 'level-label',
-      text: level.newKeys.toUpperCase().split('').join(' '),
-    });
+    return el('span', { class: 'level-label', text: keyLabel(level.focusKeys) });
   }
 
   private stars(level: Level): HTMLElement {
@@ -262,6 +260,11 @@ export class WorldMap {
   private isUnlocked(level: Level): boolean {
     return this.course.isUnlocked(level, this.profile.levelResults);
   }
+}
+
+function kindBadge(kind: LevelKind): HTMLElement | null {
+  const badge = KIND_BADGES[kind];
+  return badge ? el('span', { class: 'node-kind', 'aria-hidden': 'true', text: badge }) : null;
 }
 
 function artLayer(layer: ArtLayer): HTMLElement {

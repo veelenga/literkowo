@@ -173,6 +173,7 @@ describe('normalizeProfile', () => {
 
   it('keeps only well formed level results and story ids', () => {
     const profile = normalizeProfile({
+      schemaVersion: PROFILE_SCHEMA_VERSION,
       id: 'x',
       name: 'A',
       seenStories: ['intro', 7, null],
@@ -184,6 +185,30 @@ describe('normalizeProfile', () => {
     });
     expect(profile?.seenStories).toEqual(['intro']);
     expect(Object.keys(profile?.levelResults ?? {})).toEqual(['polana-1']);
+  });
+
+  it('moves version 5 level results onto the gradual course and keeps the rest', () => {
+    const inventory = { pets: ['bee'], hats: [], skins: [...STARTER_SKINS], trophies: [] };
+    const profile = normalizeProfile({
+      schemaVersion: 5,
+      id: 'x',
+      name: 'A',
+      xp: 120,
+      coins: 9,
+      keyStats: { f: { hits: 3, misses: 1 } },
+      inventory,
+      equipped: { pet: 'bee' },
+      levelResults: { 'polana-1': { stars: 3, score: 10, accuracy: 0.98, wpm: 12 } },
+    });
+    expect(Object.keys(profile?.levelResults ?? {})).toEqual(['polana-1', 'polana-2']);
+    expect(profile?.levelResults['polana-2']?.stars).toBe(3);
+    expect(profile).toMatchObject({
+      xp: 120,
+      coins: 9,
+      keyStats: { f: { hits: 3, misses: 1 } },
+      inventory,
+      equipped: { pet: 'bee' },
+    });
   });
 
   it('rejects entries without an id or a name', () => {

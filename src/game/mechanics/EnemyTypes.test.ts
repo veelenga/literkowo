@@ -8,7 +8,7 @@ import {
   sequence,
   specialOf,
 } from '../../testing/enemyTypes';
-import { regionsFor } from '../../course/regions';
+import { REGIONS, regionsFor } from '../../course/regions';
 import { WORD_LANGUAGES, type WordLanguage } from '../../profiles/Profile';
 import { requireLevel } from '../../testing/levels';
 import { SPAWN_RADIUS } from '../arena';
@@ -35,37 +35,39 @@ const LOOK: EnemyLook = { shape: 'crystal', colors: [0x88ccff] };
 
 const FIRST_LEVELS: Readonly<Record<WordLanguage, readonly (readonly [EnemyKind, string])[]>> = {
   pl: [
-    ['jumper', 'polana-3'],
-    ['balloon', 'polana-3'],
+    ['jumper', 'polana-9'],
+    ['balloon', 'polana-9'],
     ['bat', 'las-1'],
-    ['ghost', 'las-2'],
-    ['thief', 'las-3'],
+    ['ghost', 'las-6'],
+    ['thief', 'las-11'],
     ['swarm', 'gory-1'],
-    ['splitter', 'gory-2'],
+    ['splitter', 'gory-6'],
     ['shield', 'jaskinia-1'],
-    ['bull', 'jaskinia-2'],
+    ['bull', 'jaskinia-6'],
     ['chameleon', 'wyspa-1'],
-    ['nest', 'wyspa-2'],
+    ['nest', 'wyspa-8'],
   ],
   en: [
-    ['jumper', 'polana-3'],
-    ['balloon', 'polana-3'],
+    ['jumper', 'polana-9'],
+    ['balloon', 'polana-9'],
     ['bat', 'las-1'],
-    ['ghost', 'las-2'],
-    ['thief', 'las-3'],
+    ['ghost', 'las-6'],
+    ['thief', 'las-11'],
     ['swarm', 'gory-1'],
-    ['splitter', 'gory-2'],
+    ['splitter', 'gory-6'],
     ['shield', 'jaskinia-1'],
-    ['bull', 'jaskinia-2'],
-    ['chameleon', 'jaskinia-3'],
-    ['nest', 'jaskinia-4'],
+    ['bull', 'jaskinia-6'],
+    ['chameleon', 'jaskinia-11'],
+    ['nest', 'jaskinia-16'],
   ],
 };
+const PLAIN_MEADOW_LEVELS = 8;
 
 describe('EnemyTypes unlocks', () => {
-  it('keeps the first two meadow levels free of types', () => {
-    expect(unlockedKinds(requireLevel('polana-1'), 'pl')).toEqual([]);
-    expect(unlockedKinds(requireLevel('polana-2'), 'pl')).toEqual([]);
+  it('keeps the meadow free of types until the key s', () => {
+    const plain = REGIONS[0].levels.slice(0, PLAIN_MEADOW_LEVELS);
+    for (const level of plain) expect(unlockedKinds(level, 'pl')).toEqual([]);
+    expect(unlockedKinds(REGIONS[0].levels[PLAIN_MEADOW_LEVELS], 'pl')).not.toEqual([]);
   });
 
   it.each(WORD_LANGUAGES)('opens each type at its level and keeps it later in %s', (language) => {
@@ -79,7 +81,7 @@ describe('EnemyTypes unlocks', () => {
   });
 
   it('turns about one spawn in four into a special enemy', () => {
-    const kinds = unlockedKinds(requireLevel('gory-1'), 'pl');
+    const kinds = unlockedKinds(requireLevel('gory-5'), 'pl');
     expect(rollKind(kinds, () => SPECIAL_SHARE - 0.001)).toBe(kinds.at(-1));
     expect(rollKind(kinds, () => 0)).toBe('jumper');
     expect(rollKind(kinds, NO_SPECIAL)).toBeUndefined();
@@ -97,8 +99,8 @@ describe('EnemyTypes', () => {
   });
 
   it('replaces the fresh spawn in its place', () => {
-    const { spawn, enemies, announce } = enemyTypesBoard('polana-3', () =>
-      rollFor('jumper', 'polana-3'),
+    const { spawn, enemies, announce } = enemyTypesBoard('polana-13', () =>
+      rollFor('jumper', 'polana-13'),
     );
     const jumper = spawn();
     expect(jumper).toBeInstanceOf(JumperEnemy);
@@ -108,22 +110,22 @@ describe('EnemyTypes', () => {
   });
 
   it('brings bats from the forest and swarms from the mountains', () => {
-    expect(enemyTypesBoard('las-1', () => rollFor('bat', 'las-1')).spawn()).toBeInstanceOf(
+    expect(enemyTypesBoard('las-5', () => rollFor('bat', 'las-5')).spawn()).toBeInstanceOf(
       BatEnemy,
     );
-    expect(enemyTypesBoard('gory-1', () => rollFor('swarm', 'gory-1')).spawn()).toBeInstanceOf(
+    expect(enemyTypesBoard('gory-5', () => rollFor('swarm', 'gory-5')).spawn()).toBeInstanceOf(
       SwarmEnemy,
     );
   });
 
   it('replaces nothing in the warm-up', () => {
-    const { spawn, enemies } = enemyTypesBoard('gory-2', () => 0, { phase: WARMUP });
+    const { spawn, enemies } = enemyTypesBoard('gory-10', () => 0, { phase: WARMUP });
     const enemy = spawn();
     expect(enemies).toEqual([enemy]);
   });
 
   it('leaves the boss, power, merged and minion enemies alone', () => {
-    const { spawn, enemies, context } = enemyTypesBoard('gory-2', () => 0);
+    const { spawn, enemies, context } = enemyTypesBoard('gory-10', () => 0);
     const label = () => context.createLabel();
     const minion = new Enemy('kot', label(), 1, LOOK);
     minion.tags.add(MINION_TAG);
@@ -141,7 +143,7 @@ describe('EnemyTypes', () => {
   });
 
   it('leaves enemies tagged by any other feature alone', () => {
-    const { spawn, enemies, context } = enemyTypesBoard('gory-2', () => 0);
+    const { spawn, enemies, context } = enemyTypesBoard('gory-10', () => 0);
     const label = () => context.createLabel();
     const twin = new Enemy('kot', label(), 1, LOOK);
     twin.tags.add(TWIN_TAG);
@@ -156,19 +158,19 @@ describe('EnemyTypes', () => {
   });
 
   it('keeps one special on the meadow board and three later', () => {
-    const meadow = enemyTypesBoard('polana-3', () => 0);
+    const meadow = enemyTypesBoard('polana-13', () => 0);
     meadow.spawn();
     const plain = meadow.spawn();
     expect(plain).not.toBeInstanceOf(JumperEnemy);
 
-    const mountains = enemyTypesBoard('gory-2', () => 0);
+    const mountains = enemyTypesBoard('gory-10', () => 0);
     const specials = [mountains.spawn(), mountains.spawn(), mountains.spawn()];
     specials.forEach((enemy) => expect(enemy).toBeInstanceOf(JumperEnemy));
     expect(mountains.spawn()).not.toBeInstanceOf(JumperEnemy);
   });
 
   it('announces each type only the first time in a level', () => {
-    const { spawn, announce, context } = enemyTypesBoard('gory-2', () => 0);
+    const { spawn, announce, context } = enemyTypesBoard('gory-10', () => 0);
     context.removeEnemy(spawn());
     context.removeEnemy(spawn());
     expect(announce).toHaveBeenCalledOnce();
@@ -177,19 +179,22 @@ describe('EnemyTypes', () => {
 
 describe('Jumper', () => {
   it('carries one new key repeated four to seven times', () => {
-    const roll = rollFor('jumper', 'polana-3');
-    const short = specialOf(enemyTypesBoard('polana-3', sequence(roll, 0)).spawn(), JumperEnemy);
-    const long = specialOf(enemyTypesBoard('polana-3', sequence(roll, 0.999)).spawn(), JumperEnemy);
+    const roll = rollFor('jumper', 'polana-13');
+    const short = specialOf(enemyTypesBoard('polana-13', sequence(roll, 0)).spawn(), JumperEnemy);
+    const long = specialOf(
+      enemyTypesBoard('polana-13', sequence(roll, 0.999)).spawn(),
+      JumperEnemy,
+    );
     expect(short.word).toHaveLength(4);
     expect(long.word).toHaveLength(7);
     for (const jumper of [short, long]) {
       expect(new Set(jumper.word).size).toBe(1);
-      expect(requireLevel('polana-3').newKeys).toContain(jumper.word[0]);
+      expect(requireLevel('polana-13').focusKeys).toContain(jumper.word[0]);
     }
   });
 
   it('hops toward the hero at about the normal speed', () => {
-    const { spawn, run } = enemyTypesBoard('polana-3', () => 0);
+    const { spawn, run } = enemyTypesBoard('polana-13', () => 0);
     const jumper = spawn();
     run(jumper, 4);
     expect(SPAWN_RADIUS - jumper.distanceToCenter).toBeGreaterThan(3);
@@ -198,10 +203,10 @@ describe('Jumper', () => {
 });
 
 describe('Balloon', () => {
-  const balloonRoll = () => rollFor('balloon', 'polana-3');
+  const balloonRoll = () => rollFor('balloon', 'polana-13');
 
   it('floats away without a mistake and without costing a life', () => {
-    const { spawn, run, enemies, loseLife, context } = enemyTypesBoard('polana-3', balloonRoll);
+    const { spawn, run, enemies, loseLife, context } = enemyTypesBoard('polana-13', balloonRoll);
     const balloon = specialOf(spawn(), BalloonEnemy);
     run(balloon, 8);
     expect(enemies).toContain(balloon);
@@ -213,14 +218,14 @@ describe('Balloon', () => {
   });
 
   it('pays double word points when popped', () => {
-    const { spawn, type, context } = enemyTypesBoard('polana-3', balloonRoll);
+    const { spawn, type, context } = enemyTypesBoard('polana-13', balloonRoll);
     const balloon = spawn();
     type(balloon);
     expect(context.stats.score).toBe(wordPoints(balloon.word, context.stats) * 2);
   });
 
   it('pays normal points for other types', () => {
-    const { spawn, type, context } = enemyTypesBoard('polana-3', () => 0);
+    const { spawn, type, context } = enemyTypesBoard('polana-13', () => 0);
     const jumper = spawn();
     type(jumper);
     expect(context.stats.score).toBe(wordPoints(jumper.word, context.stats));
@@ -228,10 +233,10 @@ describe('Balloon', () => {
 });
 
 describe('Bomber bat', () => {
-  const batRoll = () => rollFor('bat', 'las-2');
+  const batRoll = () => rollFor('bat', 'las-10');
 
   it('drops a bomb on the hero when nobody types it', () => {
-    const { spawn, run, enemies, loseLife, shakeCamera } = enemyTypesBoard('las-2', batRoll);
+    const { spawn, run, enemies, loseLife, shakeCamera } = enemyTypesBoard('las-10', batRoll);
     const bat = specialOf(spawn(), BatEnemy);
     expect(bat.word.length).toBeGreaterThanOrEqual(3);
     expect(bat.word.length).toBeLessThanOrEqual(4);
@@ -243,7 +248,7 @@ describe('Bomber bat', () => {
   });
 
   it('costs nothing when typed in time', () => {
-    const { spawn, run, type, mechanic, loseLife } = enemyTypesBoard('las-2', batRoll);
+    const { spawn, run, type, mechanic, loseLife } = enemyTypesBoard('las-10', batRoll);
     const bat = spawn();
     run(bat, 2);
     type(bat);
@@ -252,7 +257,7 @@ describe('Bomber bat', () => {
   });
 
   it('keeps its height and never walks into the hero', () => {
-    const { spawn, run } = enemyTypesBoard('las-2', batRoll);
+    const { spawn, run } = enemyTypesBoard('las-10', batRoll);
     const bat = spawn();
     let closest = Number.POSITIVE_INFINITY;
     for (let step = 0; step < 300; step += 1) {
@@ -265,10 +270,10 @@ describe('Bomber bat', () => {
 });
 
 describe('Swarm', () => {
-  const swarmRoll = rollFor('swarm', 'gory-2');
+  const swarmRoll = rollFor('swarm', 'gory-10');
 
   it('carries five to seven letters, one per bug, typed in order', () => {
-    const { spawn } = enemyTypesBoard('gory-2', sequence(swarmRoll, 0.5));
+    const { spawn } = enemyTypesBoard('gory-10', sequence(swarmRoll, 0.5));
     const swarm = specialOf(spawn(), SwarmEnemy);
     expect(swarm.word.length).toBeGreaterThanOrEqual(5);
     expect(swarm.word.length).toBeLessThanOrEqual(7);
@@ -284,7 +289,7 @@ describe('Swarm', () => {
   });
 
   it('moves a bit faster than a walker', () => {
-    const { spawn, run, enemyAt } = enemyTypesBoard('gory-2', () => swarmRoll);
+    const { spawn, run, enemyAt } = enemyTypesBoard('gory-10', () => swarmRoll);
     const swarm = spawn();
     const walker = enemyAt(SPAWN_RADIUS);
     run(swarm, 3);

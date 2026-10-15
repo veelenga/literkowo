@@ -6,7 +6,7 @@ export type WordLanguage = (typeof WORD_LANGUAGES)[number];
 
 export const DEFAULT_WORD_LANGUAGE: WordLanguage = 'pl';
 
-export const PROFILE_SCHEMA_VERSION = 5;
+export const PROFILE_SCHEMA_VERSION = 6;
 
 export interface LevelResult {
   stars: number;

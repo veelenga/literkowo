@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createProfile, type Profile } from '../profiles/Profile';
 import { requireLevel as level } from '../testing/levels';
+import { REGIONS } from './catalog';
 import { EMPTY_KEY_STAT, recordHit, recordMiss } from './keyStats';
 import { markStorySeen, recordResult, storyAfter, storyBefore, type Attempt } from './progress';
 
@@ -64,15 +65,11 @@ describe('recordResult', () => {
 
   it('awards trophies earned by the attempt', () => {
     const results = { stars: 1, score: 10, accuracy: 0.9, wpm: 10 };
+    const [boss, ...rest] = REGIONS[0].levels.toReversed();
     const profile = profileWith({
-      levelResults: {
-        'polana-1': results,
-        'polana-2': results,
-        'polana-3': results,
-        'polana-4': results,
-      },
+      levelResults: Object.fromEntries(rest.map((meadow) => [meadow.id, results])),
     });
-    const beaten = recordResult(profile, level('polana-5'), attempt());
+    const beaten = recordResult(profile, boss, attempt());
     expect(beaten.inventory.trophies).toEqual(['first-boss', 'region-polana']);
   });
 
@@ -98,8 +95,10 @@ describe('storyBefore', () => {
   });
 
   it('introduces a boss once', () => {
-    expect(storyBefore(profileWith(), level('las-4'))?.id).toBe('boss-las');
-    expect(storyBefore(profileWith({ seenStories: ['boss-las'] }), level('las-4'))).toBeUndefined();
+    expect(storyBefore(profileWith(), level('las-16'))?.id).toBe('boss-las');
+    expect(
+      storyBefore(profileWith({ seenStories: ['boss-las'] }), level('las-16')),
+    ).toBeUndefined();
   });
 
   it('stays quiet before regular levels', () => {
@@ -110,15 +109,15 @@ describe('storyBefore', () => {
 describe('storyAfter', () => {
   it('needs a won boss level', () => {
     expect(storyAfter(profileWith(), level('las-2'), 3)).toBeUndefined();
-    expect(storyAfter(profileWith(), level('las-4'), 0)).toBeUndefined();
-    expect(storyAfter(profileWith(), level('las-4'), 1)?.id).toBe('after-las');
+    expect(storyAfter(profileWith(), level('las-16'), 0)).toBeUndefined();
+    expect(storyAfter(profileWith(), level('las-16'), 1)?.id).toBe('after-las');
   });
 
   it('ends each course with the finale', () => {
-    expect(storyAfter(profileWith(), level('wyspa-4'), 1)?.id).toBe('finale');
-    expect(storyAfter(profileWith({ wordLanguage: 'en' }), level('jaskinia-5'), 1)?.id).toBe(
+    expect(storyAfter(profileWith(), level('wyspa-24'), 1)?.id).toBe('finale');
+    expect(storyAfter(profileWith({ wordLanguage: 'en' }), level('jaskinia-24'), 1)?.id).toBe(
       'finale',
     );
-    expect(storyAfter(profileWith(), level('jaskinia-5'), 1)?.id).toBe('after-jaskinia');
+    expect(storyAfter(profileWith(), level('jaskinia-24'), 1)?.id).toBe('after-jaskinia');
   });
 });

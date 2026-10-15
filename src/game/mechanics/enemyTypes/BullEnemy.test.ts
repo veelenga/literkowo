@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { FRAME, VIEWER, enemyTypesBoard, rollFor, specialOf } from '../../../testing/enemyTypes';
 import { BullEnemy, CHARGING_CLASS, KNOCKBACK, STAMP_SECONDS, STUN_SECONDS } from './BullEnemy';
 
-const LEVEL = 'jaskinia-2';
+const LEVEL = 'jaskinia-10';
 const CHARGE_SHARE = 3;
 const bullRoll = () => rollFor('bull', LEVEL);
 
