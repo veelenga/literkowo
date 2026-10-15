@@ -47,6 +47,7 @@ describe('DIFFICULTIES', () => {
       5,
     ]);
     expect(DIFFICULTIES.map((difficulty) => difficulty.coinFactor)).toEqual([1, 1.25, 1.5, 2]);
+    expect(DIFFICULTIES.map((difficulty) => difficulty.xpFactor)).toEqual([0.4, 0.4, 0.3, 0.25]);
   });
 
   it('gets harder from preset to preset', () => {

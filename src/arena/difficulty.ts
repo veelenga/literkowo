@@ -17,6 +17,7 @@ export interface ArenaDifficulty {
   readonly eventsPerWave: number;
   readonly bossEvery: number | undefined;
   readonly coinFactor: number;
+  readonly xpFactor: number;
 }
 
 export const UNLOCK_MEDAL: Medal = SILVER;
@@ -35,6 +36,7 @@ export const DIFFICULTIES: readonly ArenaDifficulty[] = [
     eventsPerWave: 1,
     bossEvery: NO_BOSS,
     coinFactor: 1,
+    xpFactor: 0.4,
   },
   {
     id: 'normal',
@@ -46,6 +48,7 @@ export const DIFFICULTIES: readonly ArenaDifficulty[] = [
     eventsPerWave: 1,
     bossEvery: NO_BOSS,
     coinFactor: 1.25,
+    xpFactor: 0.4,
   },
   {
     id: 'fast',
@@ -57,6 +60,7 @@ export const DIFFICULTIES: readonly ArenaDifficulty[] = [
     eventsPerWave: 1,
     bossEvery: 5,
     coinFactor: 1.5,
+    xpFactor: 0.3,
   },
   {
     id: 'frenzy',
@@ -68,6 +72,7 @@ export const DIFFICULTIES: readonly ArenaDifficulty[] = [
     eventsPerWave: 2,
     bossEvery: 5,
     coinFactor: 2,
+    xpFactor: 0.25,
   },
 ];
 
