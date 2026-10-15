@@ -1,9 +1,9 @@
 import { withRightAlt } from '../course/fingers';
 import { recentAccuracy, type KeyStats } from '../course/keyStats';
+import { accuracyPercent } from '../course/scoring';
 import { i18n } from '../i18n/i18n';
 import { el, type ElementProps } from './dom';
 import { KEY_ROWS, type KeyRow } from './keyboardLayout';
-import { percent } from './mastery';
 import './mastery.css';
 
 const HEAT_FLOOR = 0.7;
@@ -63,7 +63,7 @@ function heatProps(key: string, stats: KeyStats, className: string): ElementProp
   return {
     class: className,
     style: `--heat: ${heatHue(accuracy)}`,
-    title: `${name}: ${percent(accuracy)}%`,
+    title: `${name}: ${accuracyPercent(accuracy)}%`,
   };
 }
 

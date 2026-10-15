@@ -1,6 +1,7 @@
 import { sfx } from '../audio/Sfx';
 import type { Region } from '../course/catalog';
 import { recentAccuracy, type KeyStat, type KeyStats } from '../course/keyStats';
+import { accuracyPercent } from '../course/scoring';
 import { masteredKeys, masteredShare, masteryOf, regionKeys } from '../course/mastery';
 import type { KeyReport } from '../game/KeyTracker';
 import { format } from '../i18n/format';
@@ -12,10 +13,6 @@ const PERCENT = 100;
 const METER_CAP = 'A';
 const MASTERED_CALLOUT_DELAY_MS = 1200;
 const KEY_SEPARATOR = ', ';
-
-export function percent(fraction: number): number {
-  return Math.round(fraction * PERCENT);
-}
 
 export function masteryMeter(region: Region, stats: KeyStats): HTMLElement {
   const keys = regionKeys(region);
@@ -31,7 +28,7 @@ export function masteryMeter(region: Region, stats: KeyStats): HTMLElement {
       { class: 'mastery-meter-bar' },
       el('span', {
         class: 'mastery-meter-fill',
-        style: `width: ${percent(masteredShare(keys, stats))}%`,
+        style: `width: ${Math.round(masteredShare(keys, stats) * PERCENT)}%`,
       }),
     ),
     el('strong', { text: `${mastered}/${total}` }),
@@ -56,7 +53,7 @@ export function keyStatus(key: string, stat: KeyStat | undefined): HTMLElement {
     { class: 'key-status', 'data-mastery': level },
     el('span', { class: 'key-status-dot', 'aria-hidden': 'true' }),
     i18n.t.features.mastery.levels[level],
-    accuracy === undefined ? null : el('strong', { text: `${percent(accuracy)}%` }),
+    accuracy === undefined ? null : el('strong', { text: `${accuracyPercent(accuracy)}%` }),
   );
 }
 
@@ -93,7 +90,7 @@ export class ResultKeys {
         'span',
         { class: 'key-chip' },
         keyCap(key),
-        el('strong', { text: `${percent(accuracy)}%` }),
+        el('strong', { text: `${accuracyPercent(accuracy)}%` }),
       ),
     );
   }
