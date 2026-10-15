@@ -8,6 +8,7 @@ import '@fontsource/jetbrains-mono/800.css';
 import './styles.css';
 import { App } from './app/App';
 import { reloadOnceOnPreloadError } from './app/preloadRecovery';
+import { registerServiceWorker } from './app/serviceWorker';
 import { FINGER_COLORS } from './course/fingers';
 import { fitAboveKeyboard } from './ui/keyboardFit';
 
@@ -19,5 +20,6 @@ for (const [finger, color] of Object.entries(FINGER_COLORS)) {
 }
 
 reloadOnceOnPreloadError();
+registerServiceWorker();
 fitAboveKeyboard();
 new App(root).start();

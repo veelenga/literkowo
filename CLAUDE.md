@@ -21,6 +21,7 @@ These instructions are for AI agents and for people.
 - `npm run lint` checks types, ESLint and Prettier.
 - `npm run format` fixes formatting.
 - `npm run build` type checks and builds into `dist`.
+- `npm run icons` renders the app icons in `public` from `icon.svg` and `icon-maskable.svg`. Commit the PNG files it writes.
 
 ## Workflow
 

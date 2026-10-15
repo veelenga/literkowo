@@ -2,7 +2,7 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
 const UNTYPED_LINT_SOURCES = ['src/game/**', 'src/audio/**'];
-const ROOT_CONFIG_FILES = ['*.js', '*.config.ts'];
+const ROOT_CONFIG_FILES = ['*.js', '*.config.ts', 'scripts/**'];
 
 export default tseslint.config(
   { ignores: ['dist', 'node_modules'] },
