@@ -45,6 +45,10 @@ const SHELL_ROUGHNESS = 0.2;
 const SHELL_METALNESS = 0.1;
 const CORE_ROUGHNESS = 0.35;
 const FULL_TURN = Math.PI * 2;
+const BURST_DROP = 0.8;
+const FROZEN_GLOW = 0.25;
+const FREEZE_RATE = 10;
+const MASK_CHAR = '•';
 
 export interface EnemyLook {
   shape: EnemyShape;
@@ -69,6 +73,8 @@ export interface EnemyBody {
   face?: FaceSpec;
 }
 
+export type LabelMode = 'full' | 'firstLetter' | 'hidden';
+
 type GlowingMesh = THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
 
 export function themedBody(shape: EnemyShape): EnemyBody {
@@ -92,6 +98,7 @@ function pickRandom(values: number[]): number {
 export class Enemy {
   readonly object = new THREE.Group();
   readonly color: THREE.Color;
+  readonly tags = new Set<string>();
   protected readonly rig = new THREE.Group();
   protected readonly outward = new THREE.Vector3();
   protected readonly face: GlowingFace | undefined;
@@ -113,6 +120,10 @@ export class Enemy {
   private typed = 0;
   private isTargeted = false;
   private focus = 0;
+  private speedScale = 1;
+  private frozenFor = 0;
+  private chill = 0;
+  private labelMode: LabelMode = 'full';
   private readonly heightAt = (time: number): number =>
     this.motion.hoverHeight + bobOffset(this.motion.bob, time + this.phase);
 
@@ -161,6 +172,14 @@ export class Enemy {
     return HOVER_HEIGHT + LABEL_GAP;
   }
 
+  get burstPosition(): THREE.Vector3 {
+    return this.object.position.clone().setY(this.labelHeight - BURST_DROP);
+  }
+
+  get isFrozen(): boolean {
+    return this.frozenFor > 0;
+  }
+
   update(delta: number, elapsed: number, viewer: THREE.Vector3Like): void {
     this.approachCenter(delta);
     this.advanceTimers(delta);
@@ -176,6 +195,19 @@ export class Enemy {
   advance(): void {
     this.typed += 1;
     this.pulse.trigger(PULSE_DURATION);
+    this.renderLabel();
+  }
+
+  setSpeedScale(scale: number): void {
+    this.speedScale = Math.max(0, scale);
+  }
+
+  freeze(seconds: number): void {
+    this.frozenFor = Math.max(this.frozenFor, seconds);
+  }
+
+  setLabelMode(mode: LabelMode): void {
+    this.labelMode = mode;
     this.renderLabel();
   }
 
@@ -200,7 +232,8 @@ export class Enemy {
 
   protected renderLabel(): void {
     const done = this.word.slice(0, this.typed);
-    const rest = this.word.slice(this.typed);
+    const rest = this.visibleRest();
+    this.label.hidden = this.labelMode === 'hidden';
     this.label.innerHTML = `<span class="done">${done}</span><span class="rest">${rest}</span>`;
   }
 
@@ -213,13 +246,23 @@ export class Enemy {
     this.outward.set(this.object.position.x, 0, this.object.position.z).normalize();
   }
 
+  private get currentSpeed(): number {
+    return this.isFrozen ? 0 : this.speed * this.speedScale;
+  }
+
   private get threat(): number {
     return 1 - THREE.MathUtils.clamp((this.distanceToCenter - REACH_DISTANCE) / THREAT_SPAN, 0, 1);
   }
 
+  private visibleRest(): string {
+    const rest = this.word.slice(this.typed);
+    if (this.labelMode !== 'firstLetter') return rest;
+    return rest.slice(0, 1) + MASK_CHAR.repeat(Math.max(0, rest.length - 1));
+  }
+
   private approachCenter(delta: number): void {
     this.refreshOutward();
-    this.object.position.addScaledVector(this.outward, -this.speed * delta);
+    this.object.position.addScaledVector(this.outward, -this.currentSpeed * delta);
   }
 
   private advanceTimers(delta: number): void {
@@ -227,6 +270,8 @@ export class Enemy {
     this.flash.update(delta);
     this.shake.update(delta);
     this.focus = THREE.MathUtils.damp(this.focus, this.isTargeted ? 1 : 0, FOCUS_RATE, delta);
+    this.frozenFor = Math.max(0, this.frozenFor - delta);
+    this.chill = THREE.MathUtils.damp(this.chill, this.isFrozen ? 1 : 0, FREEZE_RATE, delta);
   }
 
   private animateBody(delta: number, elapsed: number, viewer: THREE.Vector3Like): void {
@@ -265,8 +310,9 @@ export class Enemy {
       focusedCore * this.style.coreBoost + this.pulse.level * PULSE_GLOW + flash * CORE_FLASH_GLOW;
     const focusedShell = THREE.MathUtils.lerp(SHELL_IDLE_GLOW, SHELL_FOCUS_GLOW, this.focus);
     const shellGlow = focusedShell * this.shellGlowScale + flash * SHELL_FLASH_GLOW;
-    this.tint(this.core.material, coreGlow, flash);
-    this.tint(this.body.material, shellGlow, flash);
+    const dim = THREE.MathUtils.lerp(1, FROZEN_GLOW, this.chill);
+    this.tint(this.core.material, coreGlow * dim, flash);
+    this.tint(this.body.material, shellGlow * dim, flash);
   }
 
   private tint(material: THREE.MeshStandardMaterial, luminance: number, flash: number): void {
@@ -277,7 +323,7 @@ export class Enemy {
   private animateSurroundings(delta: number, elapsed: number): void {
     this.sparks.update(delta, 1 + this.focus * SPARK_FOCUS_BOOST);
     this.glow.update(this.threat, this.focus, elapsed);
-    this.trail?.update(this.outward, this.speed, elapsed);
+    this.trail?.update(this.outward, this.currentSpeed, elapsed);
     this.face?.update(delta);
   }
 

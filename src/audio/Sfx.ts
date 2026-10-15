@@ -45,6 +45,8 @@ const FANFARE_PICKUP = [67, 72, 76] as const;
 const FANFARE_PICKUP_SPACING = 0.1;
 const FANFARE_CHORD = [72, 76, 79, 84] as const;
 const FANFARE_CHORD_DELAY = 0.32;
+const SPARKLE_NOTES = [91, 96, 100, 103, 108] as const;
+const SPARKLE_SPACING = 0.035;
 const FAILED_CADENCE = [
   { notes: [62, 65, 69], delay: 0, decay: 0.55 },
   { notes: [57, 60, 64], delay: 0.5, decay: 1.2 },
@@ -147,6 +149,38 @@ const BOSS_CRACK: NoiseSpec = {
   decay: 0.035,
 };
 
+const IMPACT_THUD: ToneSpec = {
+  frequency: 140,
+  glide: { to: 48, seconds: 0.22 },
+  wave: 'sine',
+  volume: 0.75,
+  attack: 0.002,
+  decay: 0.3,
+};
+const IMPACT_RUMBLE: NoiseSpec = {
+  filter: { type: 'lowpass', frequency: 1200 },
+  volume: 0.38,
+  attack: 0.001,
+  decay: 0.2,
+};
+const IMPACT_MIN_STRENGTH = 0;
+const IMPACT_MAX_STRENGTH = 1;
+
+const SWEEP_VOICE: Omit<Voice, 'decay'> = {
+  wave: 'triangle',
+  volume: 0.22,
+  attack: 0.02,
+  cutoff: 2600,
+};
+
+const SPARKLE_NOTE: Voice = { wave: 'sine', volume: 0.12, attack: 0.002, decay: 0.22 };
+const SPARKLE_SHIMMER: NoiseSpec = {
+  filter: { type: 'highpass', frequency: 6500 },
+  volume: 0.07,
+  attack: 0.004,
+  decay: 0.16,
+};
+
 const FANFARE_PICKUP_NOTE: Voice = { wave: 'triangle', volume: 0.3, decay: 0.16, cutoff: 3200 };
 const FANFARE_BRASS: Voice = {
   wave: 'sawtooth',
@@ -202,13 +236,35 @@ export class Sfx {
   }
 
   callout(combo: number): void {
-    const step = Math.min(CALLOUT_MAX_STEP, Math.round(combo * CALLOUT_STEP_PER_COMBO));
-    this.chime(CALLOUT_BASE_MIDI + step, 0, CALLOUT_DECAY);
-    this.chime(CALLOUT_BASE_MIDI + step + CALLOUT_INTERVAL, CALLOUT_SPACING, CALLOUT_DECAY);
+    const root =
+      CALLOUT_BASE_MIDI + Math.min(CALLOUT_MAX_STEP, Math.round(combo * CALLOUT_STEP_PER_COMBO));
+    this.chimes([root, root + CALLOUT_INTERVAL], CALLOUT_SPACING, CALLOUT_DECAY);
   }
 
   fever(): void {
-    FEVER_ARPEGGIO.forEach((midi, index) => this.chime(midi, index * FEVER_SPACING, FEVER_DECAY));
+    this.chimes(FEVER_ARPEGGIO, FEVER_SPACING, FEVER_DECAY);
+  }
+
+  chimes(midis: readonly number[], spacing: number, decay: number): void {
+    midis.forEach((midi, index) => this.chime(midi, index * spacing, decay));
+  }
+
+  impact(strength: number): void {
+    const level = Math.min(IMPACT_MAX_STRENGTH, Math.max(IMPACT_MIN_STRENGTH, strength));
+    this.tone({ ...IMPACT_THUD, volume: IMPACT_THUD.volume * level });
+    this.noise({ ...IMPACT_RUMBLE, volume: IMPACT_RUMBLE.volume * level });
+  }
+
+  sweep(fromMidi: number, toMidi: number, seconds: number): void {
+    const glide = { to: midiToFrequency(toMidi), seconds };
+    this.note(fromMidi, { ...SWEEP_VOICE, glide, decay: seconds });
+  }
+
+  sparkle(): void {
+    SPARKLE_NOTES.forEach((midi, index) =>
+      this.note(midi, { ...SPARKLE_NOTE, delay: index * SPARKLE_SPACING }),
+    );
+    this.noise(SPARKLE_SHIMMER);
   }
 
   lifeLost(): void {

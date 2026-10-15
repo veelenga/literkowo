@@ -1,0 +1,134 @@
+.callouts {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.callouts.is-fever::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 120px 30px rgba(255, 176, 32, 0.45);
+  animation: fever-pulse 0.9s ease-in-out infinite alternate;
+}
+
+.callout {
+  position: absolute;
+  font-size: 4rem;
+  font-weight: 900;
+  color: var(--callout-accent, #fff);
+  letter-spacing: 0.02em;
+  text-shadow:
+    0 4px 0 rgba(0, 0, 0, 0.35),
+    0 0 30px rgba(255, 200, 80, 0.8);
+  animation: callout-pop 0.9s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  transform-origin: center;
+  translate: 0 -120px;
+}
+
+.callout-banner {
+  font-size: 6rem;
+  color: var(--callout-accent, #ffb020);
+  animation: banner-slam 1.4s ease-out both;
+  text-shadow:
+    0 6px 0 rgba(0, 0, 0, 0.4),
+    0 0 50px rgba(255, 140, 0, 0.9);
+}
+
+.callout-warning {
+  font-size: 4.5rem;
+  color: var(--callout-accent, #ff5a4f);
+  animation: warning-throb 1.8s ease-in-out both;
+  text-shadow:
+    0 5px 0 rgba(0, 0, 0, 0.45),
+    0 0 40px rgba(255, 40, 40, 0.85);
+}
+
+@keyframes callout-pop {
+  0% {
+    opacity: 0;
+    scale: 0.4;
+  }
+  25% {
+    opacity: 1;
+    scale: 1.15;
+  }
+  70% {
+    opacity: 1;
+    scale: 1;
+  }
+  100% {
+    opacity: 0;
+    scale: 1;
+    translate: 0 -170px;
+  }
+}
+
+@keyframes banner-slam {
+  0% {
+    opacity: 0;
+    scale: 2;
+    rotate: -6deg;
+  }
+  30% {
+    opacity: 1;
+    scale: 1;
+    rotate: 2deg;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    scale: 1.1;
+  }
+}
+
+@keyframes warning-throb {
+  0% {
+    opacity: 0;
+    scale: 0.8;
+  }
+  12% {
+    opacity: 1;
+    scale: 1.08;
+  }
+  20%,
+  40%,
+  60% {
+    rotate: -2deg;
+  }
+  30%,
+  50%,
+  70% {
+    rotate: 2deg;
+  }
+  80% {
+    opacity: 1;
+    rotate: 0deg;
+    scale: 1;
+  }
+  100% {
+    opacity: 0;
+    scale: 1;
+  }
+}
+
+@keyframes fever-pulse {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .callout,
+  .callouts.is-fever::before {
+    animation: none;
+  }
+}

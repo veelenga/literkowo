@@ -11,6 +11,7 @@ import {
 } from '../course/progress';
 import { starsFor } from '../course/scoring';
 import type { Game, GameResult } from '../game/Game';
+import type { SessionStats } from '../game/SessionStats';
 import { i18n } from '../i18n/i18n';
 import type { Profile } from '../profiles/Profile';
 import { ProfileStore } from '../profiles/ProfileStore';
@@ -31,6 +32,7 @@ import { devLevelFromUrl, devProfile, unlockAudioOnFirstInput } from './devShort
 import { loadGameModule, prefetchGameModule, type GameModule } from './gameModule';
 
 const COMBO_FOR_FULL_INTENSITY = 20;
+const FULL_INTENSITY = 1;
 
 export class App {
   private readonly store = new ProfileStore();
@@ -127,15 +129,12 @@ export class App {
     this.game = new Game(stage, config, {
       onStats: (stats, lives) => {
         hud.update(stats, lives);
-        music.setIntensity(Math.min(1, stats.combo / COMBO_FOR_FULL_INTENSITY));
+        callouts.setFever(stats.fever);
+        music.setIntensity(musicIntensity(stats));
       },
       onNextKey: (char) => keyboard.show(char),
       onProgress: (progress) => hud.progress(progress),
-      onCallout: (kind) => callouts.show(kind),
-      onFever: (active) => {
-        callouts.setFever(active);
-        if (active) music.setIntensity(1);
-      },
+      onAnnounce: (text, style, accent) => callouts.show(text, style, accent),
       onPause: (paused) => this.setPaused(paused),
       onFinished: (result) => this.finishLevel(profile, level, result),
     });
@@ -240,6 +239,11 @@ export class App {
     this.game = undefined;
     this.pause = undefined;
   }
+}
+
+function musicIntensity(stats: SessionStats): number {
+  if (stats.fever) return FULL_INTENSITY;
+  return Math.min(FULL_INTENSITY, stats.combo / COMBO_FOR_FULL_INTENSITY);
 }
 
 function attemptOf(result: GameResult, stars: number): Attempt {

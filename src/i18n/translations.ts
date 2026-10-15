@@ -1,3 +1,5 @@
+import { featureTexts } from './features';
+
 export type UiLanguage = 'pl' | 'uk';
 
 const pl = {
@@ -53,14 +55,7 @@ const pl = {
   sound: 'Dźwięk',
   chapter: 'Rozdział',
   rightShort: 'prawy',
-  fever: 'Szał!',
-  callouts: {
-    super: 'Super!',
-    mega: 'Mega!',
-    ultra: 'Ultra!',
-    legend: 'Legenda!',
-    master: 'Mistrz!',
-  },
+  features: featureTexts('pl'),
   fingers: {
     leftPinky: 'lewy mały',
     leftRing: 'lewy serdeczny',
@@ -129,14 +124,7 @@ const uk: Translation = {
   sound: 'Звук',
   chapter: 'Розділ',
   rightShort: 'правий',
-  fever: 'Шал!',
-  callouts: {
-    super: 'Супер!',
-    mega: 'Мега!',
-    ultra: 'Ультра!',
-    legend: 'Легенда!',
-    master: 'Майстер!',
-  },
+  features: featureTexts('uk'),
   fingers: {
     leftPinky: 'лівий мізинець',
     leftRing: 'лівий підмізинний',

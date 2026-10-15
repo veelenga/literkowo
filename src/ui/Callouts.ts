@@ -1,25 +1,33 @@
-import type { CalloutKind } from '../game/combo';
-import { i18n } from '../i18n/i18n';
+import type { AnnounceStyle } from '../game/mechanics/Mechanic';
 import { el } from './dom';
+import './callouts.css';
 
-const CALLOUT_LIFETIME_MS = 900;
-const FEVER_BANNER_LIFETIME_MS = 1400;
+const ACCENT_VARIABLE = '--callout-accent';
+const FEVER_CLASS = 'is-fever';
+
+const STYLE_CLASSES: Record<AnnounceStyle, string> = {
+  callout: 'callout',
+  banner: 'callout callout-banner',
+  warning: 'callout callout-warning',
+};
+
+const LIFETIMES_MS: Record<AnnounceStyle, number> = {
+  callout: 900,
+  banner: 1400,
+  warning: 1800,
+};
 
 export class Callouts {
   readonly element = el('div', { class: 'callouts' });
 
-  show(kind: CalloutKind): void {
-    this.pop(i18n.t.callouts[kind], `callout callout-${kind}`, CALLOUT_LIFETIME_MS);
+  show(text: string, style: AnnounceStyle, accent?: string): void {
+    const item = el('div', { class: STYLE_CLASSES[style], text });
+    if (accent) item.style.setProperty(ACCENT_VARIABLE, accent);
+    this.element.append(item);
+    window.setTimeout(() => item.remove(), LIFETIMES_MS[style]);
   }
 
   setFever(active: boolean): void {
-    this.element.classList.toggle('is-fever', active);
-    if (active) this.pop(i18n.t.fever, 'callout callout-fever', FEVER_BANNER_LIFETIME_MS);
-  }
-
-  private pop(text: string, className: string, lifetime: number): void {
-    const item = el('div', { class: className, text });
-    this.element.append(item);
-    window.setTimeout(() => item.remove(), lifetime);
+    this.element.classList.toggle(FEVER_CLASS, active);
   }
 }
