@@ -32,6 +32,10 @@ export interface Profile {
 
 export const AVATARS = 'abcdefghijklmnopqr'.split('');
 
+const STARTER_SKIN_COUNT = 6;
+
+export const STARTER_SKINS: readonly string[] = AVATARS.slice(0, STARTER_SKIN_COUNT);
+
 export function avatarImage(avatar: string): string {
   return `${import.meta.env.BASE_URL}characters/character-${avatar}.png`;
 }

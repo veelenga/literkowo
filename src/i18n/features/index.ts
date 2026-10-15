@@ -8,6 +8,7 @@ import { mergeEnemies } from './mergeEnemies';
 import { powerWords } from './powerWords';
 import { progression } from './progression';
 import { quality } from './quality';
+import { shop } from './shop';
 import { touch } from './touch';
 import { waveEvents } from './waveEvents';
 
@@ -26,5 +27,6 @@ export function featureTexts(language: UiLanguage) {
     progression: progression[language],
     mastery: mastery[language],
     waveEvents: waveEvents[language],
+    shop: shop[language],
   };
 }
