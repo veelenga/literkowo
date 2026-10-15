@@ -7,6 +7,13 @@ import { WorldMap } from './WorldMap';
 
 const DONE = { stars: 2, score: 1, accuracy: 1, wpm: 1 };
 
+const maps: WorldMap[] = [];
+
+function track(map: WorldMap): WorldMap {
+  maps.push(map);
+  return map;
+}
+
 function mapOf(
   profile: Profile,
   onArena: () => void = () => undefined,
@@ -14,8 +21,13 @@ function mapOf(
 ): HTMLElement {
   const noop = () => undefined;
   const actions = { onPlay: noop, onSwitchPlayer: noop, onShop: noop, onArena, onSettings };
-  return new WorldMap(profile, actions).element;
+  return track(new WorldMap(profile, actions)).element;
 }
+
+afterEach(() => {
+  maps.splice(0).forEach((map) => map.dispose());
+  document.body.replaceChildren();
+});
 
 function polanaDone(): Profile {
   const profile = createProfile('Ola', 'a');
@@ -148,7 +160,7 @@ describe('WorldMap keys', () => {
       onArena: vi.fn(),
       onSettings: vi.fn(),
     };
-    const map = new WorldMap(profile, actions);
+    const map = track(new WorldMap(profile, actions));
     document.body.append(map.element);
     const press = (key: string) =>
       window.dispatchEvent(new KeyboardEvent('keydown', { key, cancelable: true }));
@@ -160,10 +172,6 @@ describe('WorldMap keys', () => {
   beforeAll(() => {
     vi.stubGlobal('matchMedia', () => ({ matches: true }));
     Element.prototype.scrollIntoView = () => undefined;
-  });
-
-  afterEach(() => {
-    document.body.replaceChildren();
   });
 
   it('plays the current level with Enter', () => {
