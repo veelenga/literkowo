@@ -17,3 +17,13 @@ const bombersUk: typeof bombersPl = {
 };
 
 export const bombers = { pl: bombersPl, uk: bombersUk };
+
+const twinsPl = {
+  chain: 'Bliźniaki x{count}!',
+};
+
+const twinsUk: typeof twinsPl = {
+  chain: 'Близнюки x{count}!',
+};
+
+export const twins = { pl: twinsPl, uk: twinsUk };

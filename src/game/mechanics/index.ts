@@ -6,6 +6,7 @@ import type { Mechanic, MechanicContext, MechanicType } from './Mechanic';
 import { MergeEnemies } from './MergeEnemies';
 import { PowerWords } from './PowerWords';
 import { SpeedSurge } from './SpeedSurge';
+import { Twins } from './Twins';
 
 const MECHANICS: readonly MechanicType[] = [
   Fever,
@@ -15,6 +16,7 @@ const MECHANICS: readonly MechanicType[] = [
   EnemyTypes,
   SpeedSurge,
   Bombers,
+  Twins,
 ];
 
 export function createMechanics(context: MechanicContext): Mechanic[] {
