@@ -31,6 +31,7 @@ Read only:
 - `player` (`object`, `jump()`, `hurt()`), `scene`, `particles.burst(position, color)`.
 - `stats`: the `SessionStats` of this run. Scoring and the fever flag live there.
 - `phase` (the current phase of the run plan, `src/game/RunPlan.ts`), `playing`, `shields`, `theme`, `sfx`, `words` (the run's `WordSource`, with the keys and lengths of the current phase), `level` and `language` (the profile word language).
+- `allMechanicsUnlocked`: true when the run plan opens every mechanic, as the arena does. A mechanic that unlocks by `level` must then run as unlocked, see `hasForestMechanics` in `actionEvents/regions.ts` and `availableKinds` in `enemyTypes/kinds.ts`.
 - `equipped`: the ids of the pet and the hat the profile wears (`src/course/shop.ts` has their specs). The game already puts the hat on the hero.
 
 Actions:

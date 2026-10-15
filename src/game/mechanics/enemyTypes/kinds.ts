@@ -1,6 +1,7 @@
 import { courseFor } from '../../../course/course';
 import { REGIONS, allowedKeysFor, type Level } from '../../../course/regions';
 import type { WordLanguage } from '../../../profiles/Profile';
+import type { MechanicContext } from '../Mechanic';
 
 export type EnemyKind =
   | 'jumper'
@@ -15,6 +16,7 @@ export type EnemyKind =
   | 'nest'
   | 'thief';
 export type Random = () => number;
+export type KindsContext = Pick<MechanicContext, 'level' | 'language' | 'allMechanicsUnlocked'>;
 
 const ENEMY_KINDS: readonly EnemyKind[] = [
   'jumper',
@@ -93,6 +95,15 @@ export function unlockedKinds(level: Level, language: WordLanguage): EnemyKind[]
 
 export function boardCap(level: Level): number {
   return regionIndex(level.regionId) === 0 ? FIRST_REGION_CAP : LATER_REGION_CAP;
+}
+
+export function availableKinds(context: KindsContext): EnemyKind[] {
+  if (context.allMechanicsUnlocked) return [...ENEMY_KINDS];
+  return unlockedKinds(context.level, context.language);
+}
+
+export function specialCap(context: KindsContext): number {
+  return context.allMechanicsUnlocked ? LATER_REGION_CAP : boardCap(context.level);
 }
 
 export function rollKind(kinds: readonly EnemyKind[], random: Random): EnemyKind | undefined {

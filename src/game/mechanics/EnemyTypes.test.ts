@@ -20,7 +20,14 @@ import { MINION_TAG } from './bossPhases/Minions';
 import { BalloonEnemy, ESCAPE_HEIGHT } from './enemyTypes/BalloonEnemy';
 import { BatEnemy } from './enemyTypes/BatEnemy';
 import { JumperEnemy } from './enemyTypes/JumperEnemy';
-import { SPECIAL_SHARE, rollKind, unlockedKinds, type EnemyKind } from './enemyTypes/kinds';
+import {
+  ENEMY_TYPE_TAG,
+  SPECIAL_SHARE,
+  availableKinds,
+  rollKind,
+  unlockedKinds,
+  type EnemyKind,
+} from './enemyTypes/kinds';
 import { BOMB_SHAKE } from './enemyTypes/Stage';
 import { SwarmEnemy } from './enemyTypes/SwarmEnemy';
 import { DONE_CLASS, NEXT_CLASS } from './enemyTypes/swarmGlyphs';
@@ -32,6 +39,7 @@ import { TWIN_TAG } from './twins/TwinEnemy';
 const NO_SPECIAL = () => SPECIAL_SHARE;
 const WARMUP: Phase = { kind: 'warmup', count: 8, speed: 0.55, spawnInterval: 1.5 };
 const LOOK: EnemyLook = { shape: 'crystal', colors: [0x88ccff] };
+const ALL_UNLOCKED = { language: 'pl', allMechanicsUnlocked: true } as const;
 
 const FIRST_LEVELS: Readonly<Record<WordLanguage, readonly (readonly [EnemyKind, string])[]>> = {
   pl: [
@@ -90,6 +98,16 @@ describe('EnemyTypes unlocks', () => {
 });
 
 describe('EnemyTypes', () => {
+  it('opens every type and three specials at once when the run unlocks every mechanic', () => {
+    const { spawn, enemies } = enemyTypesBoard('polana-2', () => 0, {
+      allMechanicsUnlocked: true,
+    });
+    const specials = [spawn(), spawn(), spawn(), spawn()];
+    expect(specials[0]).toBeInstanceOf(JumperEnemy);
+    expect(enemies.filter((enemy) => enemy.tags.has(ENEMY_TYPE_TAG))).toHaveLength(3);
+    expect(availableKinds({ ...ALL_UNLOCKED, level: requireLevel('polana-2') })).toHaveLength(11);
+  });
+
   it('keeps the first two meadow levels plain', () => {
     for (const id of ['polana-1', 'polana-2']) {
       const { spawn, enemies } = enemyTypesBoard(id, () => 0);

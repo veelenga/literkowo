@@ -73,6 +73,13 @@ describe('Bombers', () => {
     expect(bombers.bombers).toHaveLength(1);
   });
 
+  it('comes to the meadow when the run unlocks every mechanic', () => {
+    const meadow = setup({ level: MEADOW, allMechanicsUnlocked: true });
+    meadow.enemyAt(8);
+    play(meadow.bombers, BOMBER_INTERVAL.max * 2);
+    expect(meadow.bombers.bombers).toHaveLength(1);
+  });
+
   it('never comes in the meadow or in the warm up, but comes to boss fights', () => {
     const meadow = setup({ level: MEADOW });
     meadow.enemyAt(8);

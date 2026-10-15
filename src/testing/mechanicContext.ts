@@ -31,6 +31,7 @@ export function fakeMechanicContext(overrides: Partial<MechanicContext> = {}): M
     sfx: new Sfx(),
     words: levelWords(requireLevel(FAKE_LEVEL), 'pl'),
     level: requireLevel(FAKE_LEVEL),
+    allMechanicsUnlocked: false,
     language: 'pl',
     equipped: {},
     createLabel: unavailable('createLabel'),

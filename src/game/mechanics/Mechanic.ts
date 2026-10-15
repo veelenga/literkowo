@@ -36,6 +36,7 @@ export interface MechanicContext {
   readonly sfx: Sfx;
   readonly words: WordSource;
   readonly level: Level;
+  readonly allMechanicsUnlocked: boolean;
   readonly language: WordLanguage;
   readonly equipped: Readonly<Equipped>;
   createLabel(): HTMLElement;

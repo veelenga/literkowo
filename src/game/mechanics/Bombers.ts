@@ -3,7 +3,7 @@ import { allowedKeysFor } from '../../course/regions';
 import { SPAWN_RADIUS } from '../board';
 import type { Enemy } from '../Enemy';
 import type { PhaseKind } from '../RunPlan';
-import { isForestOrLater } from './actionEvents/regions';
+import { hasForestMechanics } from './actionEvents/regions';
 import { BomberEnemy, EMBER_COLOR } from './bombers/BomberEnemy';
 import { bomberWord, type Random } from './bombers/bomberWord';
 import { BLAST_RADIUS, Detonations } from './bombers/Detonations';
@@ -40,7 +40,7 @@ export class Bombers implements Mechanic {
     private readonly context: MechanicContext,
     private readonly random: Random = Math.random,
   ) {
-    this.enabled = isForestOrLater(context.level);
+    this.enabled = hasForestMechanics(context);
     this.allowedKeys = allowedKeysFor(context.level, context.language);
     this.knockback = new Knockback((enemy) => context.enemies.includes(enemy));
     this.detonations = new Detonations(context, this.waves);

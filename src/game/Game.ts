@@ -240,6 +240,7 @@ export class Game {
       sfx,
       words: this.words,
       level: this.config.level,
+      allMechanicsUnlocked: this.config.plan.allMechanicsUnlocked,
       language: this.config.language,
       equipped: this.config.equipped,
       get phase() {

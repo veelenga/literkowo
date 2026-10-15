@@ -16,5 +16,6 @@ export interface RunPhase extends Phase {
 export interface RunPlan {
   readonly lives: number;
   readonly xpFactor: number;
+  readonly allMechanicsUnlocked: boolean;
   phaseAt(index: number): RunPhase | undefined;
 }

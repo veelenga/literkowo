@@ -3,7 +3,7 @@ import { format } from '../../i18n/format';
 import { i18n } from '../../i18n/i18n';
 import { Enemy } from '../Enemy';
 import type { PhaseKind } from '../RunPlan';
-import { isForestOrLater } from './actionEvents/regions';
+import { hasForestMechanics } from './actionEvents/regions';
 import type { Mechanic, MechanicContext } from './Mechanic';
 import { wordPoints } from './mergeEnemies/scoring';
 import {
@@ -41,7 +41,7 @@ export class Twins implements Mechanic {
     private readonly context: MechanicContext,
     private readonly random: Random = Math.random,
   ) {
-    this.enabled = isForestOrLater(context.level);
+    this.enabled = hasForestMechanics(context);
     context.scene.add(this.arc.group);
   }
 

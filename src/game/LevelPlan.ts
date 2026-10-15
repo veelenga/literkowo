@@ -24,5 +24,10 @@ export function levelPhases(level: Level, language: WordLanguage): RunPhase[] {
 
 export function levelPlan(level: Level, language: WordLanguage): RunPlan {
   const phases = levelPhases(level, language);
-  return { lives: LEVEL_LIVES, xpFactor: LEVEL_XP_FACTOR, phaseAt: (index) => phases[index] };
+  return {
+    lives: LEVEL_LIVES,
+    xpFactor: LEVEL_XP_FACTOR,
+    allMechanicsUnlocked: false,
+    phaseAt: (index) => phases[index],
+  };
 }
