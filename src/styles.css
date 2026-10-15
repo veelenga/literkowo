@@ -2020,7 +2020,21 @@ h3 {
   }
 
   .result-panel .result-progress-head {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px 8px;
     margin-bottom: 8px;
+  }
+
+  .result-panel .level-disc {
+    width: 36px;
+    height: 36px;
+    font-size: 0.95rem;
+  }
+
+  .result-panel .result-rank strong,
+  .result-panel .result-xp-gain {
+    font-size: 1rem;
   }
 
   .result-actions {
