@@ -13,6 +13,7 @@ import { avatarPicker } from './AvatarPicker';
 import { characterAvatar } from './CharacterAvatar';
 import { releasePortraits } from './CharacterPortraits';
 import { el, icon, prefersReducedMotion, svg } from './dom';
+import { keepDockBelowRow, type StopDock } from './landing/dockRow';
 import { LandingBackdrop } from './landing/LandingBackdrop';
 import { livePreview } from './LivePreview';
 import { hasAmbientMotion } from './menuMotion';
@@ -22,6 +23,8 @@ import './profileScreen.css';
 const MAX_NAME_LENGTH = 16;
 const CARD_STAGGER_MS = 80;
 const CREATE_PANEL_KEY = 'create';
+const SELECTED_CARD_SELECTOR = '.profile-card.is-selected';
+const TILE_SELECTOR = ':scope > .profile-card';
 const PLAY_ICON_PATH =
   'M8 5.6v12.8a1 1 0 0 0 1.5.86l10.4-6.4a1 1 0 0 0 0-1.72L9.5 4.74A1 1 0 0 0 8 5.6z';
 
@@ -37,6 +40,7 @@ export class ProfileScreen {
   private creating = false;
   private rendered = false;
   private panelKey: string | undefined;
+  private stopDock: StopDock = noDock;
 
   constructor(
     private readonly store: ProfileStore,
@@ -49,6 +53,7 @@ export class ProfileScreen {
   }
 
   dispose(): void {
+    this.stopDock();
     livePreview.stop();
     releasePortraits();
     this.backdrop.dispose();
@@ -59,6 +64,7 @@ export class ProfileScreen {
     if (this.rendered) this.element.classList.remove('is-intro');
     this.rendered = true;
     livePreview.hide();
+    const grid = el('div', { class: 'profile-grid' }, ...this.gridItems());
     this.view.replaceChildren(
       this.languageSwitch(),
       el(
@@ -71,9 +77,17 @@ export class ProfileScreen {
           el('p', { class: 'tagline', text: t.tagline }),
         ),
         el('h2', { class: 'section-title', text: t.whoPlays }),
-        el('div', { class: 'profile-grid' }, ...this.gridItems()),
+        grid,
       ),
     );
+    this.dockBelowSelectedRow(grid);
+  }
+
+  private dockBelowSelectedRow(grid: HTMLElement): void {
+    this.stopDock();
+    const selected = grid.querySelector<HTMLElement>(SELECTED_CARD_SELECTOR);
+    const tiles = [...grid.querySelectorAll<HTMLElement>(TILE_SELECTOR)];
+    this.stopDock = selected ? keepDockBelowRow(grid, selected, tiles) : noDock;
   }
 
   private gridItems(): HTMLElement[] {
@@ -303,6 +317,8 @@ export class ProfileScreen {
     this.render();
   }
 }
+
+function noDock(): void {}
 
 function dock(panel: HTMLElement, isFresh: boolean): HTMLElement {
   panel.classList.toggle('is-fresh', isFresh);

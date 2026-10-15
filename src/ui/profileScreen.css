@@ -467,6 +467,10 @@
   margin-top: 6px;
 }
 
+.profile-grid > .is-below-dock {
+  order: 2;
+}
+
 .is-intro .profile-dock {
   animation: dock-rise 480ms var(--ease-out) 520ms backwards;
 }
@@ -813,7 +817,6 @@
   }
 
   .profile-dock {
-    order: 0;
     margin-top: 0;
   }
 
