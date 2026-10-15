@@ -78,3 +78,7 @@ export function rankFor(level: number): RankId {
     RANKS[0].id,
   );
 }
+
+export function rankStartLevel(rank: RankId): number {
+  return RANKS.find((entry) => entry.id === rank)?.fromLevel ?? Number.POSITIVE_INFINITY;
+}

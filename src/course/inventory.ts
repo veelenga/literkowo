@@ -8,7 +8,7 @@ import {
   type ShopItem,
   type Unlock,
 } from './shop';
-import { levelProgress, RANKS, type RankId } from './xp';
+import { levelProgress, rankStartLevel, type RankId } from './xp';
 
 export type ItemState =
   'equipped' | 'owned' | 'buyable' | 'claimable' | 'tooExpensive' | 'rankLocked';
@@ -52,7 +52,7 @@ export function itemState(profile: Profile, item: ShopItem): ItemState {
 }
 
 export function hasRank(xp: number, rank: RankId): boolean {
-  return levelProgress(xp).level >= rankStart(rank);
+  return levelProgress(xp).level >= rankStartLevel(rank);
 }
 
 export function buy(profile: Profile, item: ShopItem): Outcome<BuyRefusal> {
@@ -110,10 +110,6 @@ function lockedState(profile: Profile, unlock: Unlock): ItemState {
     case 'rank':
       return hasRank(profile.xp, unlock.rank) ? 'claimable' : 'rankLocked';
   }
-}
-
-function rankStart(rank: RankId): number {
-  return RANKS.find((entry) => entry.id === rank)?.fromLevel ?? Number.POSITIVE_INFINITY;
 }
 
 function withItem(inventory: Inventory, item: ShopItem): Inventory {
