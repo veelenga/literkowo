@@ -9,6 +9,12 @@ const FALLBACK_SAFE_TOP = 120;
 const CHROME_INSET_VARIABLE = '--chrome-inset';
 const HUD_HEIGHT_VARIABLE = '--hud-height';
 
+export interface FloatingText {
+  text: string;
+  className: string;
+  lifetimeMs: number;
+}
+
 export interface LabelTarget {
   readonly label: HTMLElement;
   readonly object: THREE.Object3D;
@@ -43,6 +49,15 @@ export class LabelLayer {
     label.className = LABEL_CLASS;
     this.element.append(label);
     return label;
+  }
+
+  float(anchor: HTMLElement, { text, className, lifetimeMs }: FloatingText): void {
+    const floating = document.createElement('div');
+    floating.className = className;
+    floating.textContent = text;
+    floating.style.transform = anchor.style.transform;
+    this.element.append(floating);
+    window.setTimeout(() => floating.remove(), lifetimeMs);
   }
 
   position(targets: readonly LabelTarget[], camera: THREE.Camera, viewport: Viewport): void {

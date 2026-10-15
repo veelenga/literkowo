@@ -3,6 +3,7 @@ import { sfx } from '../audio/Sfx';
 import type { Level } from '../course/regions';
 import { WordSource } from '../course/WordSource';
 import type { WordLanguage } from '../profiles/Profile';
+import { xpPop } from '../ui/progression';
 import {
   BOSS_SPAWN_RADIUS,
   CAMERA_FOV,
@@ -24,6 +25,7 @@ import { Particles } from './Particles';
 import { Player } from './Player';
 import { currentQuality } from './quality';
 import { renderHost } from './RenderHost';
+import { RunRewards, type Rewards } from './RunRewards';
 import { SessionStats } from './SessionStats';
 import { Targeting } from './Targeting';
 import type { Theme } from './themes';
@@ -59,6 +61,8 @@ export interface GameResult {
   accuracy: number;
   wpm: number;
   lettersFreed: number;
+  xp: number;
+  coins: number;
 }
 
 export interface Progress {
@@ -69,6 +73,7 @@ export interface Progress {
 
 export interface GameEvents {
   onStats(stats: SessionStats, lives: number): void;
+  onRewards(rewards: Rewards): void;
   onNextKey(char: string | undefined): void;
   onPause(paused: boolean): void;
   onProgress(progress: Progress): void;
@@ -86,6 +91,7 @@ export class Game {
   private readonly world: World;
   private readonly words: WordSource;
   private readonly stats = new SessionStats();
+  private readonly rewards = new RunRewards();
   private readonly labels: LabelLayer;
   private readonly phases: Phase[];
   private readonly enemies: Enemy[] = [];
@@ -222,6 +228,7 @@ export class Game {
       announce: (text, style, accent) => this.events.onAnnounce(text, style, accent),
       loseLife: () => this.loseLife(),
       absorbNextHit: () => this.addShield(),
+      addCoins: (amount) => this.addCoins(amount),
     };
   }
 
@@ -402,6 +409,11 @@ export class Game {
     return true;
   }
 
+  private addCoins(amount: number): void {
+    this.rewards.addCoins(amount);
+    this.events.onRewards(this.rewards);
+  }
+
   private setTimeScale(scale: number): void {
     this.timeScale = Math.max(0, scale);
   }
@@ -453,6 +465,8 @@ export class Game {
       accuracy: this.stats.accuracy,
       wpm: this.stats.wpm,
       lettersFreed: this.lettersFreed,
+      xp: this.rewards.xp,
+      coins: this.rewards.coins,
     });
   }
 
@@ -486,6 +500,7 @@ export class Game {
 
   private completeWord(enemy: Enemy): void {
     this.stats.recordWord(enemy.word);
+    this.rewardWord(enemy);
     this.lettersFreed += enemy.word.length;
     this.player.jump();
     this.particles.burst(enemy.burstPosition, enemy.color);
@@ -493,6 +508,18 @@ export class Game {
     if (enemy instanceof Boss) return this.hitBoss(enemy);
     sfx.word();
     this.clearEnemy(enemy);
+  }
+
+  private rewardWord(enemy: Enemy): void {
+    const xp = this.rewards.recordWord({
+      letters: enemy.word.length,
+      tags: enemy.tags,
+      bossHit: enemy instanceof Boss,
+      fever: this.stats.fever,
+      multiplier: this.stats.multiplier,
+    });
+    this.labels.float(enemy.label, xpPop(xp));
+    this.events.onRewards(this.rewards);
   }
 
   private hitBoss(boss: Boss): void {

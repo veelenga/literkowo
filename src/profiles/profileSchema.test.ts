@@ -13,6 +13,8 @@ describe('normalizeProfile', () => {
       seenStories: [],
       totalScore: 0,
       lettersFreed: 0,
+      xp: 0,
+      coins: 0,
     });
   });
 
@@ -30,6 +32,27 @@ describe('normalizeProfile', () => {
 
   it('migrates the legacy best score into the total score', () => {
     expect(normalizeProfile({ id: 'x', name: 'A', bestScore: 120 })?.totalScore).toBe(120);
+  });
+
+  it('seeds XP from the total score of a version 2 profile', () => {
+    const profile = normalizeProfile({ schemaVersion: 2, id: 'x', name: 'A', totalScore: 1234 });
+    expect(profile).toMatchObject({ xp: 123, coins: 0 });
+  });
+
+  it('seeds XP through every migration from the legacy shape', () => {
+    expect(normalizeProfile({ id: 'x', name: 'A', bestScore: 125 })?.xp).toBe(13);
+  });
+
+  it('keeps XP and coins of a current profile', () => {
+    const profile = normalizeProfile({
+      schemaVersion: 3,
+      id: 'x',
+      name: 'A',
+      totalScore: 5000,
+      xp: 42,
+      coins: 7,
+    });
+    expect(profile).toMatchObject({ xp: 42, coins: 7 });
   });
 
   it('falls back to Polish for an unknown word language', () => {

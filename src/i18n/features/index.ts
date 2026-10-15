@@ -4,6 +4,7 @@ import { enemyTypes } from './enemyTypes';
 import { fever } from './fever';
 import { mergeEnemies } from './mergeEnemies';
 import { powerWords } from './powerWords';
+import { progression } from './progression';
 import { quality } from './quality';
 import { touch } from './touch';
 
@@ -16,5 +17,6 @@ export function featureTexts(language: UiLanguage) {
     enemyTypes: enemyTypes[language],
     quality: quality[language],
     touch: touch[language],
+    progression: progression[language],
   };
 }

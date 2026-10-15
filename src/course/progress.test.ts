@@ -4,7 +4,16 @@ import { requireLevel as level } from '../testing/levels';
 import { markStorySeen, recordResult, storyAfter, storyBefore, type Attempt } from './progress';
 
 function attempt(overrides: Partial<Attempt> = {}): Attempt {
-  return { stars: 2, score: 100, accuracy: 0.94, wpm: 12, lettersFreed: 20, ...overrides };
+  return {
+    stars: 2,
+    score: 100,
+    accuracy: 0.94,
+    wpm: 12,
+    lettersFreed: 20,
+    xp: 30,
+    coins: 12,
+    ...overrides,
+  };
 }
 
 function profileWith(overrides: Partial<Profile> = {}): Profile {
@@ -22,6 +31,12 @@ describe('recordResult', () => {
     });
     expect(updated.totalScore).toBe(100);
     expect(updated.lettersFreed).toBe(20);
+  });
+
+  it('adds XP and coins on every attempt, even a worse one', () => {
+    const first = recordResult(profileWith(), level('polana-1'), attempt());
+    const lost = recordResult(first, level('polana-1'), attempt({ stars: 0, xp: 8, coins: 3 }));
+    expect(lost).toMatchObject({ xp: 38, coins: 15 });
   });
 
   it('keeps the better result', () => {
@@ -42,6 +57,7 @@ describe('recordResult', () => {
     recordResult(profile, level('polana-1'), attempt());
     expect(profile.levelResults).toEqual({});
     expect(profile.totalScore).toBe(0);
+    expect(profile.xp).toBe(0);
   });
 });
 

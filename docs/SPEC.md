@@ -38,7 +38,7 @@ Owners: `src/app/App.ts`, `src/course/progress.ts`, `src/game/LevelPlan.ts`, `sr
 4. Warm-up. 8 single letters from the level's new keys, speed 0.55, one every 1.5 seconds. A letter that reaches the player is removed and costs nothing.
 5. Words. `10 + 2 × region index` words. Speed `0.7 + 0.025 × level order`. The spawn interval starts at 3.4 seconds and drops by 0.06 per level order, never below 1.8. A word that reaches the player costs a life and counts as a mistake.
 6. Boss, for boss levels only, with no learn card and no warm-up. One boss that needs `6 + 2 × region index` words, so 6, 8, 10, 12 and 14. Base speed `0.32 + 0.05 × region index`. Each hit knocks it back and makes it 12% faster. When it reaches the player, it jumps back to distance 9 and the player loses a life (`src/game/Boss.ts`).
-7. Result card. It shows stars, score, accuracy, words per minute and letters freed, with buttons for the next level when there is one, retry and map (`src/ui/LevelResult.ts`).
+7. Result card. It shows stars, score, accuracy, words per minute and letters freed, the XP bar with the XP and coins earned, and buttons for the next level when there is one, retry and map (`src/ui/LevelResult.ts`, `src/ui/ResultProgress.ts`).
 
 Region index counts from 0 for `polana`. Level order counts every level of the catalog from 0 for `polana-1`, bosses included.
 
@@ -67,9 +67,9 @@ Stars, with the current thresholds (`src/course/scoring.ts`):
 Owners: `src/profiles/Profile.ts`, `src/profiles/profileSchema.ts`, `src/profiles/ProfileStore.ts`.
 
 - Several profiles per device, stored as a JSON array in localStorage under `literkowo.profiles`.
-- Schema version is 2 (`PROFILE_SCHEMA_VERSION`). Version 1 profiles are migrated on load. A shape change bumps the version and adds a migration.
+- Schema version is 3 (`PROFILE_SCHEMA_VERSION`). Older profiles are migrated on load: version 1 moves the best score into the total score, version 2 seeds XP with `round(totalScore / 10)`. A shape change bumps the version and adds a migration.
 - Entries that cannot be read are dropped, and the raw value is copied to `literkowo.profiles.backup` first.
-- Fields: id, name (up to 16 characters, `src/ui/ProfileScreen.ts`), avatar, word language, total score, letters freed, seen stories and the best result per level.
+- Fields: id, name (up to 16 characters, `src/ui/ProfileScreen.ts`), avatar, word language, total score, letters freed, XP, coins, seen stories and the best result per level.
 - Word language is set per profile. Today the choices are Polish (default) and English (`WORD_LANGUAGES` in `src/profiles/Profile.ts`).
 - Avatars are character skins: 18 Kenney Blocky Characters with ids `a` to `r`. Portraits are in `public/characters`, 3D models in `public/models/characters` (`src/game/Player.ts`).
 - Other keys: `literkowo.activeProfile`, `literkowo.uiLanguage`, `literkowo.sound`, `literkowo.music`, `literkowo.reloadedAfterPreloadError`.
@@ -113,6 +113,56 @@ Owners: `src/game/mechanics/EnemyTypes.ts`, `src/game/mechanics/enemyTypes/kinds
 | `swarm`   | Rój / Рій            | `gory-1`   | 5 to 7 letters, one per bug | walks at 1.25 × the word speed and jitters                   | Letters go in order and the next one glows. Each letter pops one bug.                                                                          |
 
 A type stays unlocked in every later region.
+
+## Progression
+
+Owners: `src/course/xp.ts`, `src/course/coins.ts`, `src/game/RunRewards.ts`, `src/course/progress.ts`.
+
+XP only grows. It drives the player level and the rank. A child never loses XP, also not in a lost level.
+
+- Each completed word gives `letters × multiplier × fever bonus × tag factor` XP, rounded. The multiplier and the fever bonus are the ones from scoring, so XP follows the combo.
+- Tag factor: a boss hit 3, `merged` 3, `power-word` 2, `minion` 1. Any other or unknown tag is 1. With several tags the highest factor counts.
+- A floating "+12 XP" rises from the enemy on each completed word, and the HUD shows the XP of the run next to the score. The level number sits on the avatar button of the HUD.
+- XP of the run is added to the profile after every attempt, won or lost.
+
+Levels start at 1. The step from level `n` to `n + 1` costs `min(15000, round(100 × 1.12^(n - 1)))` XP.
+
+| Level | Total XP |
+| ----- | -------- |
+| 2     | 100      |
+| 3     | 212      |
+| 4     | 337      |
+| 5     | 477      |
+| 6     | 634      |
+| 7     | 810      |
+| 8     | 1007     |
+| 9     | 1228     |
+| 10    | 1476     |
+| 11    | 1753     |
+| 20    | 6343     |
+| 30    | 21456    |
+| 40    | 68399    |
+| 50    | 195821   |
+
+From level 46 on, every step costs 15000 XP. A typical child earns about 5000 XP per hour (about 2000 letters at an average multiplier of 2.5), so level 50 takes about 40 hours.
+
+Ranks by level band, names in `src/i18n/features/progression.ts`:
+
+| Levels    | Id               | Polish            | Ukrainian             |
+| --------- | ---------------- | ----------------- | --------------------- |
+| 1 to 4    | `chick`          | Pisklę            | Пташеня               |
+| 5 to 11   | `apprentice`     | Uczeń             | Учень                 |
+| 12 to 21  | `letterHunter`   | Łowca Liter       | Мисливець за літерами |
+| 22 to 34  | `wordGuardian`   | Strażnik Słów     | Вартовий слів         |
+| 35 to 49  | `keyboardMaster` | Mistrz Klawiatury | Майстер клавіатури    |
+| 50 and up | `legend`         | Legenda           | Легенда               |
+
+Coins are a separate counter for a future shop. Nothing is spent yet.
+
+- During a level each completed word gives 1 coin. Mechanics add more with `addCoins(amount)`, for example balloons or chests. The run total is `GameResult.coins`.
+- After the level: the run coins, plus 10 for a won level, plus 5 per star.
+
+The result card fills the XP bar from the old progress to the new one. When a level is crossed it shows a "Nowy poziom!" / "Новий рівень!" banner with the rank name, confetti and the level complete and sparkle sounds. The coins earned sit in a pill next to the XP. The map header and the profile cards show the level, the rank, a thin XP bar and the coins.
 
 ## Worlds
 

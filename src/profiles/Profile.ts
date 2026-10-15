@@ -4,7 +4,7 @@ export type WordLanguage = (typeof WORD_LANGUAGES)[number];
 
 export const DEFAULT_WORD_LANGUAGE: WordLanguage = 'pl';
 
-export const PROFILE_SCHEMA_VERSION = 2;
+export const PROFILE_SCHEMA_VERSION = 3;
 
 export interface LevelResult {
   stars: number;
@@ -21,6 +21,8 @@ export interface Profile {
   wordLanguage: WordLanguage;
   totalScore: number;
   lettersFreed: number;
+  xp: number;
+  coins: number;
   seenStories: string[];
   levelResults: Record<string, LevelResult>;
 }
@@ -40,6 +42,8 @@ export function createProfile(name: string, avatar: string): Profile {
     wordLanguage: DEFAULT_WORD_LANGUAGE,
     totalScore: 0,
     lettersFreed: 0,
+    xp: 0,
+    coins: 0,
     seenStories: [],
     levelResults: {},
   };

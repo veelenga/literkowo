@@ -1,6 +1,7 @@
 import { music } from '../audio/Music';
 import { sfx } from '../audio/Sfx';
 import { regionOf, type Level } from '../course/catalog';
+import { levelCoins } from '../course/coins';
 import { courseFor } from '../course/course';
 import {
   markStorySeen,
@@ -146,6 +147,7 @@ export class App {
         callouts.setFever(stats.fever);
         music.setIntensity(musicIntensity(stats));
       },
+      onRewards: (rewards) => hud.setRewards(rewards),
       onNextKey: (char) => keyboard.show(char),
       onProgress: (progress) => hud.progress(progress),
       onAnnounce: (text, style, accent) => callouts.show(text, style, accent),
@@ -197,16 +199,22 @@ export class App {
 
   private finishLevel(profile: Profile, level: Level, result: GameResult): void {
     const stars = starsFor(result.accuracy, result.won);
-    const updated = this.recordAttempt(profile, level, attemptOf(result, stars));
+    const coins = levelCoins({ runCoins: result.coins, won: result.won, stars });
+    const updated = this.recordAttempt(profile, level, attemptOf(result, stars, coins));
     const next = courseFor(updated.wordLanguage).next(level);
     const leave = (then: (current: Profile) => void) =>
       this.dismissThen(() => this.afterLevel(updated, level, stars, then));
     this.overlays.open(
-      levelResult(result, stars, {
-        onNext: next ? leave((current) => this.openLevel(current, next)) : undefined,
-        onRetry: this.dismissThen(() => this.openLevel(updated, level)),
-        onMap: leave((current) => this.showMap(current)),
-      }),
+      levelResult(
+        result,
+        stars,
+        { xpBefore: profile.xp, xp: result.xp, coins },
+        {
+          onNext: next ? leave((current) => this.openLevel(current, next)) : undefined,
+          onRetry: this.dismissThen(() => this.openLevel(updated, level)),
+          onMap: leave((current) => this.showMap(current)),
+        },
+      ),
     );
   }
 
@@ -277,12 +285,14 @@ function musicIntensity(stats: SessionStats): number {
   return Math.min(FULL_INTENSITY, stats.combo / COMBO_FOR_FULL_INTENSITY);
 }
 
-function attemptOf(result: GameResult, stars: number): Attempt {
+function attemptOf(result: GameResult, stars: number, coins: number): Attempt {
   return {
     stars,
     score: result.score,
     accuracy: result.accuracy,
     wpm: result.wpm,
     lettersFreed: result.lettersFreed,
+    xp: result.xp,
+    coins,
   };
 }

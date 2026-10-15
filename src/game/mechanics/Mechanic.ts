@@ -46,6 +46,7 @@ export interface MechanicContext {
   announce(text: string, style: AnnounceStyle, accent?: string): void;
   loseLife(): void;
   absorbNextHit(): void;
+  addCoins(amount: number): void;
 }
 
 export type MechanicType = new (context: MechanicContext) => Mechanic;

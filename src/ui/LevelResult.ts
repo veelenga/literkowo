@@ -4,6 +4,7 @@ import { format } from '../i18n/format';
 import { i18n } from '../i18n/i18n';
 import { Counter, el, icon, prefersReducedMotion } from './dom';
 import { createOverlay, type Overlay } from './overlay';
+import { ResultProgress, type EarnedRewards } from './ResultProgress';
 
 const PERCENT = 100;
 const STAR_INTRO_MS = 240;
@@ -23,8 +24,14 @@ interface StatTile {
   stop: () => void;
 }
 
-export function levelResult(result: GameResult, stars: number, actions: Actions): Overlay {
+export function levelResult(
+  result: GameResult,
+  stars: number,
+  earned: EarnedRewards,
+  actions: Actions,
+): Overlay {
   const t = i18n.t;
+  const progress = new ResultProgress(earned);
   const tiles = [
     statTile(t.score, result.score),
     statTile(t.accuracy, result.accuracy * PERCENT, '%'),
@@ -32,7 +39,10 @@ export function levelResult(result: GameResult, stars: number, actions: Actions)
     statTile(t.lettersFreed, result.lettersFreed),
   ];
   const revealDelay = prefersReducedMotion() ? 0 : COUNTER_START_MS;
-  const revealTimer = window.setTimeout(() => tiles.forEach((tile) => tile.reveal()), revealDelay);
+  const revealTimer = window.setTimeout(() => {
+    tiles.forEach((tile) => tile.reveal());
+    progress.reveal();
+  }, revealDelay);
   const element = el(
     'div',
     { class: 'overlay' },
@@ -43,12 +53,14 @@ export function levelResult(result: GameResult, stars: number, actions: Actions)
       starsRow(stars),
       el('p', { class: 'result-hint', text: result.won ? starsHint() : t.retryHint }),
       el('div', { class: 'result-stats' }, ...tiles.map((tile) => tile.element)),
+      progress.element,
       actionsRow(stars, actions),
     ),
   );
   return createOverlay(
     element,
     () => window.clearTimeout(revealTimer),
+    () => progress.stop(),
     ...tiles.map((tile) => tile.stop),
   );
 }

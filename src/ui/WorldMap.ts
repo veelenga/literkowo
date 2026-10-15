@@ -5,6 +5,7 @@ import { i18n } from '../i18n/i18n';
 import { totalStars, type Profile } from '../profiles/Profile';
 import { characterAvatar } from './CharacterAvatar';
 import { el, icon, svg } from './dom';
+import { coinIcon, levelBadge } from './progression';
 import { soundToggle } from './SoundToggle';
 
 const TRAIL_EDGE = 8;
@@ -61,15 +62,24 @@ export class WorldMap {
       'header',
       { class: 'map-header' },
       el(
-        'button',
-        { class: 'profile-chip', title: t.switchPlayer, onClick: this.actions.onSwitchPlayer },
-        el('span', { class: 'avatar-ring avatar-ring-tiny' }, characterAvatar(this.profile.avatar)),
+        'div',
+        { class: 'map-player' },
         el(
-          'span',
-          { class: 'profile-chip-text' },
-          el('strong', { text: this.profile.name }),
-          el('small', { text: t.switchPlayer }),
+          'button',
+          { class: 'profile-chip', title: t.switchPlayer, onClick: this.actions.onSwitchPlayer },
+          el(
+            'span',
+            { class: 'avatar-ring avatar-ring-tiny' },
+            characterAvatar(this.profile.avatar),
+          ),
+          el(
+            'span',
+            { class: 'profile-chip-text' },
+            el('strong', { text: this.profile.name }),
+            el('small', { text: t.switchPlayer }),
+          ),
         ),
+        levelBadge(this.profile.xp),
       ),
       el('h1', { class: 'logo logo-small', text: t.appName }),
       el(
@@ -78,6 +88,11 @@ export class WorldMap {
         this.stat(icon('star', 'stat-icon stat-icon-star'), totalStars(this.profile), t.stars),
         this.stat('🔤', this.profile.lettersFreed, t.lettersFreed),
         this.stat('🏆', this.profile.totalScore, t.score),
+        this.stat(
+          coinIcon('stat-icon coin-icon'),
+          this.profile.coins,
+          t.features.progression.coins,
+        ),
         soundToggle(),
       ),
     );

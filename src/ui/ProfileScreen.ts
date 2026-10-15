@@ -13,6 +13,7 @@ import { avatarPicker } from './AvatarPicker';
 import { releasePortraits } from './CharacterPortraits';
 import { el, present } from './dom';
 import { livePreview } from './LivePreview';
+import { coinPill, levelBadge } from './progression';
 
 const MAX_NAME_LENGTH = 16;
 const CARD_STAGGER_MS = 70;
@@ -137,6 +138,7 @@ export class ProfileScreen {
       },
       el('span', { class: 'avatar-ring' }, avatar),
       el('strong', { class: 'profile-name', text: profile.name }),
+      levelBadge(profile.xp, 'level-badge level-badge-card'),
       el(
         'span',
         { class: 'profile-meta' },
@@ -147,6 +149,7 @@ export class ProfileScreen {
           String(totalStars(profile)),
         ),
         el('span', { class: 'meta-pill', title: t.bestScore, text: `🏆 ${profile.totalScore}` }),
+        coinPill(String(profile.coins), 'meta-pill meta-coins'),
       ),
     );
   }
