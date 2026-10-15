@@ -12,35 +12,87 @@ Touch screens can also type through a hidden input, see [Mobile and tablets](#mo
 
 Owner: `src/course/catalog.ts`.
 
-| Region id  | Name (pl / uk)                   | Theme     | Keys per level          | Word languages |
-| ---------- | -------------------------------- | --------- | ----------------------- | -------------- |
-| `polana`   | Polana / Галявина                | meadow    | `fj`, `dk`, `sl`, `a;`  | pl, en         |
-| `las`      | Las / Ліс                        | forest    | `gh`, `ei`, `ru`        | pl, en         |
-| `gory`     | Góry / Гори                      | mountains | `ty`, `wo`, `qp`        | pl, en         |
-| `jaskinia` | Jaskinia / Печера                | cave      | `vm`, `cn`, `xz`, `b,.` | pl, en         |
-| `wyspa`    | Wyspa Ogonków / Острів Хвостиків | island    | `ąęó`, `łść`, `żźń`     | pl             |
+| Region id  | Name (pl / uk)                   | Theme     | Keys in order                       | Levels | Word languages |
+| ---------- | -------------------------------- | --------- | ----------------------------------- | ------ | -------------- |
+| `polana`   | Polana / Галявина                | meadow    | `fj` `d` `k` `s` `l` `a` `;`        | 19     | pl, en         |
+| `las`      | Las / Ліс                        | forest    | `g` `h` `e` `i` `r` `u`             | 16     | pl, en         |
+| `gory`     | Góry / Гори                      | mountains | `t` `y` `w` `o` `q` `p`             | 16     | pl, en         |
+| `jaskinia` | Jaskinia / Печера                | cave      | `v` `m` `c` `n` `x` `z` `b` `,` `.` | 24     | pl, en         |
+| `wyspa`    | Wyspa Ogonków / Острів Хвостиків | island    | `ą` `ę` `ó` `ł` `ś` `ć` `ż` `ź` `ń` | 24     | pl             |
 
-- Today there are five regions. Each one ends with a boss level that adds no new keys.
-- Level ids are `<region>-<number>`, counted from 1. The bosses are `polana-5`, `las-4`, `gory-4`, `jaskinia-5` and `wyspa-4`.
+The course adds one new key per level. The only exception is the first level, which teaches `f` and `j` together, the two index fingers on the bumps.
+The levels of a region are built from its keys, so the catalog lists keys and not levels. Every level has a kind and focus keys:
+
+- `learn`: introduces one new key. Its focus key is the new key. The warm-up shows only that key, see [Difficulty](#difficulty).
+- `practice`: comes right after the learn level of the same key, with real words of all known keys and a bias to the new key.
+- `review`: comes after every two new keys of a region (`KEYS_PER_REVIEW`) and mixes all known keys. Its focus keys are the keys since the previous review. A key left over at the end of a region gets its own review, so a review always comes right before the boss.
+- `boss`: the last level of each region. It adds no keys, and its focus keys are all keys of the region.
+
+More rules:
+
+- Level ids are `<region>-<number>`, counted from 1 in each region.
+- Polish word profiles get 37 learn, 37 practice, 20 review and 5 boss levels, 99 in total. English word profiles get 28 learn, 28 practice, 15 review and 4 boss levels, 75 in total.
 - A region lists the word languages it supports. Wyspa Ogonków teaches Polish letters, so English word profiles do not see it.
-- With the current regions, Polish word profiles get 17 key levels and 5 bosses, 22 levels in total. English word profiles get 14 key levels and 4 bosses, 18 in total.
 - A level allows every key introduced up to and including that level (`src/course/course.ts`).
 - The first level is always open. Every other level opens once the previous level in the course has at least one star (`src/course/course.ts`).
 - Polish letters are typed with right Alt. Ctrl with Alt also counts as right Alt, so AltGr works on Windows (`src/game/Game.ts`, `src/course/fingers.ts`).
+
+All levels:
+
+| Region     | Key     | Learn         | Practice      | Then                                     |
+| ---------- | ------- | ------------- | ------------- | ---------------------------------------- |
+| `polana`   | `f` `j` | `polana-1`    | `polana-2`    | review `polana-3`                        |
+| `polana`   | `d`     | `polana-4`    | `polana-5`    |                                          |
+| `polana`   | `k`     | `polana-6`    | `polana-7`    | review `polana-8`                        |
+| `polana`   | `s`     | `polana-9`    | `polana-10`   |                                          |
+| `polana`   | `l`     | `polana-11`   | `polana-12`   | review `polana-13`                       |
+| `polana`   | `a`     | `polana-14`   | `polana-15`   |                                          |
+| `polana`   | `;`     | `polana-16`   | `polana-17`   | review `polana-18`, boss `polana-19`     |
+| `las`      | `g`     | `las-1`       | `las-2`       |                                          |
+| `las`      | `h`     | `las-3`       | `las-4`       | review `las-5`                           |
+| `las`      | `e`     | `las-6`       | `las-7`       |                                          |
+| `las`      | `i`     | `las-8`       | `las-9`       | review `las-10`                          |
+| `las`      | `r`     | `las-11`      | `las-12`      |                                          |
+| `las`      | `u`     | `las-13`      | `las-14`      | review `las-15`, boss `las-16`           |
+| `gory`     | `t`     | `gory-1`      | `gory-2`      |                                          |
+| `gory`     | `y`     | `gory-3`      | `gory-4`      | review `gory-5`                          |
+| `gory`     | `w`     | `gory-6`      | `gory-7`      |                                          |
+| `gory`     | `o`     | `gory-8`      | `gory-9`      | review `gory-10`                         |
+| `gory`     | `q`     | `gory-11`     | `gory-12`     |                                          |
+| `gory`     | `p`     | `gory-13`     | `gory-14`     | review `gory-15`, boss `gory-16`         |
+| `jaskinia` | `v`     | `jaskinia-1`  | `jaskinia-2`  |                                          |
+| `jaskinia` | `m`     | `jaskinia-3`  | `jaskinia-4`  | review `jaskinia-5`                      |
+| `jaskinia` | `c`     | `jaskinia-6`  | `jaskinia-7`  |                                          |
+| `jaskinia` | `n`     | `jaskinia-8`  | `jaskinia-9`  | review `jaskinia-10`                     |
+| `jaskinia` | `x`     | `jaskinia-11` | `jaskinia-12` |                                          |
+| `jaskinia` | `z`     | `jaskinia-13` | `jaskinia-14` | review `jaskinia-15`                     |
+| `jaskinia` | `b`     | `jaskinia-16` | `jaskinia-17` |                                          |
+| `jaskinia` | `,`     | `jaskinia-18` | `jaskinia-19` | review `jaskinia-20`                     |
+| `jaskinia` | `.`     | `jaskinia-21` | `jaskinia-22` | review `jaskinia-23`, boss `jaskinia-24` |
+| `wyspa`    | `ą`     | `wyspa-1`     | `wyspa-2`     |                                          |
+| `wyspa`    | `ę`     | `wyspa-3`     | `wyspa-4`     | review `wyspa-5`                         |
+| `wyspa`    | `ó`     | `wyspa-6`     | `wyspa-7`     |                                          |
+| `wyspa`    | `ł`     | `wyspa-8`     | `wyspa-9`     | review `wyspa-10`                        |
+| `wyspa`    | `ś`     | `wyspa-11`    | `wyspa-12`    |                                          |
+| `wyspa`    | `ć`     | `wyspa-13`    | `wyspa-14`    | review `wyspa-15`                        |
+| `wyspa`    | `ż`     | `wyspa-16`    | `wyspa-17`    |                                          |
+| `wyspa`    | `ź`     | `wyspa-18`    | `wyspa-19`    | review `wyspa-20`                        |
+| `wyspa`    | `ń`     | `wyspa-21`    | `wyspa-22`    | review `wyspa-23`, boss `wyspa-24`       |
 
 ## Level flow
 
 Owners: `src/app/App.ts`, `src/course/progress.ts`, `src/game/LevelPlan.ts`, `src/game/Game.ts`.
 
 1. Story card. The intro plays before the first level. A boss scene plays before each boss. An after scene plays when a boss is beaten with at least one star. The finale replaces the after scene for the last boss of the course. Each scene plays once per profile. Speakers are Sowa Klara, Felek and Mrok (`src/story/story.ts`).
-2. Learn card, for key levels only. It shows the new keys, the finger for each key, the mastery status of each key and a hands diagram. Enter starts the level (`src/ui/LearnCard.ts`).
+2. Learn card, for every level except bosses (`src/ui/LearnCard.ts`). Enter starts the level.
+   - Learn level: "Nowy klawisz" / "Нова клавіша" ("Nowe klawisze" / "Нові клавіші" for `f` `j`), the new key with its finger and mastery status, the hands diagram and the hint to put the fingers on the home row.
+   - Practice level: "Trening" / "Тренування", the key and one line: "Ćwiczymy w krótkich słowach. Najpierw dokładnie, potem szybko!" / "Тренуємося на коротких словах. Спершу точно, потім швидко!".
+   - Review level: "Powtórka" / "Повторення", the reviewed keys and one line: "Powtarzamy wszystkie poznane klawisze. Dasz radę!" / "Повторюємо всі вивчені клавіші. Ти впораєшся!".
 3. Camera intro of 1.8 seconds. Typing is ignored until it ends.
-4. Warm-up. 8 single letters from the level's new keys, speed 0.55, one every 1.5 seconds. A letter that reaches the player is removed and costs nothing.
-5. Words. `10 + 2 × region index` words. Speed `0.7 + 0.025 × level order`. The spawn interval starts at 3.4 seconds and drops by 0.06 per level order, never below 1.8. A word that reaches the player costs a life and counts as a mistake.
-6. Boss, for boss levels only, with no learn card and no warm-up. One boss that needs `6 + 2 × region index` words, so 6, 8, 10, 12 and 14. Base speed `0.32 + 0.05 × region index`. Each hit knocks it back and makes it 12% faster. When it reaches the player, it jumps back to distance 9 and the player loses a life (`src/game/Boss.ts`).
+4. Warm-up. Single letters from the level's focus keys. A letter that reaches the player is removed and costs nothing.
+5. Main phase. A learn level runs a learn phase, practice and review levels run a words phase. A word that reaches the player costs a life and counts as a mistake. Counts, speeds and lengths are in [Difficulty](#difficulty).
+6. Boss, for boss levels only, with no learn card and no warm-up. One boss that needs the number of words in [Difficulty](#difficulty). Each hit knocks it back and makes it 12% faster. When it reaches the player, it jumps back to distance 9 and the player loses a life (`src/game/Boss.ts`).
 7. Result card. It shows stars, score, accuracy, words per minute and letters freed, the XP bar with the XP and coins earned, the keys row (see [Key mastery](#key-mastery)), and buttons for the next level when there is one, retry and map (`src/ui/LevelResult.ts`, `src/ui/ResultProgress.ts`).
-
-Region index counts from 0 for `polana`. Level order counts every level of the catalog from 0 for `polana-1`, bosses included.
 
 Rules during a level:
 
@@ -50,7 +102,9 @@ Rules during a level:
 - Typing follows every enemy whose word starts with the letters typed so far, a key that fits none of them is a mistake, and when a word is done every enemy with that same word is done too while the others go back to untyped (`src/game/Targeting.ts`).
 - Escape pauses and resumes. Pause also suspends audio. The pause card also has a resume button and the key heatmap, and touch screens get a pause button in the HUD.
 - Every correct letter fires a bolt from the hero to the nearest enemy being typed, and every finished word gets a lightning strike with a soft crack and a small camera punch, 30 ms apart when several words finish on one key (`src/game/mechanics/HeroStrikes.ts`). The strikes turn from the world's accent colour toward gold as the combo grows and are fully golden in fever, while a glow under the hero charges with the combo up to 15.
-- Words (`src/course/WordSource.ts`): when at least 12 words from `src/course/wordLists.ts` fit the allowed keys, about half of the words are real words. The rest are generated strings of 2 to 5 letters, where about half of the letters come from the new keys. Boss words are real words of 4 or more letters when at least 12 fit, otherwise generated strings of 5 to 7 letters. New words and warm-up letters prefer a first letter that no enemy on the board is waiting for. Generated letters and real words lean toward the player's weak keys, see [Key mastery](#key-mastery).
+- Words (`src/course/WordSource.ts`): when at least 12 words from `src/course/wordLists.ts` fit the allowed keys and the length limits of the level, about half of the words are real words, preferring words with a focus key. The rest are generated strings within the generated length limits, where about half of the letters come from the focus keys. Boss words are real words of 4 or more letters when at least 12 fit, otherwise generated strings of 5 to 7 letters. New words and warm-up letters prefer a first letter that no enemy on the board is waiting for. Generated letters and real words lean toward the player's weak keys, see [Key mastery](#key-mastery).
+- The learn phase teaches the new key in two halves. In the first half every enemy is a combo of 1 or 2 letters with the new key and maybe a known key, for example `f` `j` `fj` `jf` `ff` `jj`. In the second half the words have 2 or 3 letters with the new key: a real word about half of the time when at least 3 such words fit, otherwise a generated one.
+- The learn phase is calm. Special enemies, mid-wave events, speed surges, bombers, twins, power words and merging run only in the words phase and in boss fights, so learn levels have none of them.
 
 Stars, with the current thresholds (`src/course/scoring.ts`):
 
@@ -64,6 +118,27 @@ Stars, with the current thresholds (`src/course/scoring.ts`):
 
 - Accuracy is `hits / (hits + mistakes)`. Words per minute is correct letters divided by 5, per active minute (`src/game/SessionStats.ts`).
 - The best result per level is kept, compared by stars first and score second. Total score and letters freed add up on every attempt (`src/course/progress.ts`).
+
+## Difficulty
+
+Owner: `src/course/difficulty.ts`. Every pace and length limit comes from the kind of the level and its position in the course.
+
+Position is `order / (number of levels − 1)`, from 0 at `polana-1` to 1 at `wyspa-24`. Order counts every level of the catalog from 0, bosses included, so an English course ends at `jaskinia-24`, position 0.76. A value written as "a to b" grows in a straight line from a at position 0 to b at position 1.
+
+| Value          | Learn                        | Practice                    | Review                      |
+| -------------- | ---------------------------- | --------------------------- | --------------------------- |
+| Warm-up        | 8 letters, speed 0.42, 1.6 s | 5 letters, speed 0.5, 1.5 s | 5 letters, speed 0.5, 1.5 s |
+| Main phase     | `learn`                      | `words`                     | `words`                     |
+| Words          | 8 to 12                      | 10 to 16                    | 12 to 20                    |
+| Speed          | 0.8 × word speed             | word speed                  | word speed                  |
+| Spawn interval | 1.15 × spawn interval        | spawn interval              | spawn interval              |
+| Word length    | 1 to 3 letters               | 2 to 4 letters              | 2 to 5 letters              |
+
+- Word speed is 0.52 to 1.2 (`WORD_SPEED`). Spawn interval is 3.8 to 1.9 seconds (`SPAWN_INTERVAL`). Word counts are rounded.
+- Generated words have at most `round(3 to 5)` letters (`GENERATED_MAX_LENGTH`) and never more than the kind allows, so early levels get generated strings of at most 3 letters. Real words use the full length of the kind.
+- Boss: `round(4 to 14)` words (`BOSS_HITS`), so 6, 7, 9, 12 and 14 for the five bosses, at speed 0.3 to 0.52 (`BOSS_SPEED`). Other enemies in a boss fight use 2 to 5 letters.
+- An enemy walks 9.4 units from the spawn arc to the hero. In the first level a letter takes about 22 seconds to reach the hero, and in the second level a word takes about 18 seconds. Before this course, a word in the first level took about 13 seconds.
+- Apart from warm-ups and the rush and meteor events, single letters show only in learn levels.
 
 ## Action events
 
@@ -95,7 +170,34 @@ Twins:
 Owners: `src/profiles/Profile.ts`, `src/profiles/profileSchema.ts`, `src/profiles/ProfileStore.ts`.
 
 - Several profiles per device, stored as a JSON array in localStorage under `literkowo.profiles`.
-- Schema version is 5 (`PROFILE_SCHEMA_VERSION`). Older profiles are migrated on load: version 1 moves the best score into the total score, version 2 seeds XP with `round(totalScore / 10)`, version 3 starts with empty key statistics, version 4 gets the starter inventory, nothing equipped and every trophy it already earned. A shape change bumps the version and adds a migration.
+- Schema version is 6 (`PROFILE_SCHEMA_VERSION`). Older profiles are migrated on load: version 1 moves the best score into the total score, version 2 seeds XP with `round(totalScore / 10)`, version 3 starts with empty key statistics, version 4 gets the starter inventory, nothing equipped and every trophy it already earned, version 5 moves level results onto the course with one key per level (`src/profiles/courseMigration.ts`). A shape change bumps the version and adds a migration.
+- Version 5 and older had one level per two or three keys. Each old result moves to the new level that completes the same keys: the practice level of the last key of the old level, or the boss for an old boss. When the old result has at least one star, the new levels between the previous target and this one get the same result, so a finished region stays finished and the next open level is the first one the child has not played. A result without stars only moves to its target. XP, coins, scores, stories, key statistics, items and trophies stay as they are.
+
+| Old level    | New target    | Also marked done               |
+| ------------ | ------------- | ------------------------------ |
+| `polana-1`   | `polana-2`    | `polana-1`                     |
+| `polana-2`   | `polana-7`    | `polana-3` to `polana-6`       |
+| `polana-3`   | `polana-12`   | `polana-8` to `polana-11`      |
+| `polana-4`   | `polana-17`   | `polana-13` to `polana-16`     |
+| `polana-5`   | `polana-19`   | `polana-18`                    |
+| `las-1`      | `las-4`       | `las-1` to `las-3`             |
+| `las-2`      | `las-9`       | `las-5` to `las-8`             |
+| `las-3`      | `las-14`      | `las-10` to `las-13`           |
+| `las-4`      | `las-16`      | `las-15`                       |
+| `gory-1`     | `gory-4`      | `gory-1` to `gory-3`           |
+| `gory-2`     | `gory-9`      | `gory-5` to `gory-8`           |
+| `gory-3`     | `gory-14`     | `gory-10` to `gory-13`         |
+| `gory-4`     | `gory-16`     | `gory-15`                      |
+| `jaskinia-1` | `jaskinia-4`  | `jaskinia-1` to `jaskinia-3`   |
+| `jaskinia-2` | `jaskinia-9`  | `jaskinia-5` to `jaskinia-8`   |
+| `jaskinia-3` | `jaskinia-14` | `jaskinia-10` to `jaskinia-13` |
+| `jaskinia-4` | `jaskinia-22` | `jaskinia-15` to `jaskinia-21` |
+| `jaskinia-5` | `jaskinia-24` | `jaskinia-23`                  |
+| `wyspa-1`    | `wyspa-7`     | `wyspa-1` to `wyspa-6`         |
+| `wyspa-2`    | `wyspa-14`    | `wyspa-8` to `wyspa-13`        |
+| `wyspa-3`    | `wyspa-22`    | `wyspa-15` to `wyspa-21`       |
+| `wyspa-4`    | `wyspa-24`    | `wyspa-23`                     |
+
 - Entries that cannot be read are dropped, and the raw value is copied to `literkowo.profiles.backup` first.
 - Fields: id, name (up to 16 characters, `src/ui/ProfileScreen.ts`), avatar, word language, total score, letters freed, XP, coins, seen stories, the best result per level, the key statistics, the inventory and the equipped items.
 - Inventory: owned pets, hats, skins and earned trophies, as id lists. Unknown ids are dropped on load. Every profile owns the 6 starter skins and its current avatar.
@@ -196,21 +298,21 @@ Owners: `src/game/mechanics/EnemyTypes.ts`, `src/game/mechanics/enemyTypes/kinds
 - Only plain spawns without a tag are replaced. The boss, power words, merged enemies, minions, twins, bombers, chicks, splitter halves and event pieces stay as they are. Special enemies never merge.
 - At most 1 special enemy is on the board in Polana, and at most 3 in later regions. Bull, nest and thief also come one at a time (`KIND_LIMITS`).
 - The first time a type appears in a level, its name shows as a callout. Each type also has a short hint in `src/i18n/features/enemyTypes.ts`.
-- A type unlocks at the first level in the table. When a profile's course skips that region, the type unlocks at its fallback level instead. English word profiles never see Wyspa Ogonków, so they meet the chameleon in `jaskinia-3` and the nest in `jaskinia-4`.
+- A type unlocks with the learn level of its key, see the table. Special enemies only replace spawns in the words phase, so the first one shows in the practice level of that key. When a profile's course never teaches that key, the type unlocks with its fallback key instead. English word profiles never see Wyspa Ogonków, so they meet the chameleon with `x` in `jaskinia-11` and the nest with `b` in `jaskinia-16` (`src/game/mechanics/enemyTypes/kinds.ts`).
 
-| Type        | Name (pl / uk)          | From                            | Word                                     | Movement                                                                    | Rule                                                                                                                                                                   |
-| ----------- | ----------------------- | ------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `jumper`    | Skoczek / Стрибунець    | `polana-3`                      | one new key, 4 to 7 times                | hops 1 unit at a time, at the normal word speed                             | Each letter makes it hop in place and shrink.                                                                                                                          |
-| `balloon`   | Balonik / Кулька        | `polana-3`                      | 3 to 5 letters                           | starts at distance 6, rises 0.42 per second, drifts sideways                | Above height 7 it floats away, with no mistake and no lost life. Popped, it pays double word points.                                                                   |
-| `bat`       | Nietoperz / Кажан       | `las-1`                         | 3 to 4 letters                           | flies an arc at height 2.5, at 2.5 × the word speed                         | At the far side it drops a bomb. When the bomb lands, the hero loses a life and the camera shakes. Typed before that, it tumbles and shatters.                         |
-| `ghost`     | Duch / Привид           | `las-2`                         | 3 to 5 letters                           | walks at 0.9 × the word speed and drifts sideways                           | It fades out and back in on a 3 second cycle. Its label shows only while it is solid, but it can be typed at any time.                                                 |
-| `thief`     | Złodziej / Злодій       | `las-3`                         | 3 letters, then 6 letters on the way out | runs at 2.2 × the word speed, flees at half that                            | At the hero it steals 100 points, or what there is, and runs back out with a new word. Typed on the way out, it returns the points and 5 coins. It never costs a life. |
-| `swarm`     | Rój / Рій               | `gory-1`                        | 5 to 7 letters, one per bug              | walks at 1.25 × the word speed and jitters                                  | Letters go in order and the next one glows. Each letter pops one bug.                                                                                                  |
-| `splitter`  | Rozszczep / Розщеп      | `gory-2`                        | two short words joined, 6 to 8 letters   | walks at 0.8 × the word speed                                               | Typed, it splits at its place into two smaller halves, one per word, 1.35 × faster. Halves never split again.                                                          |
-| `shield`    | Tarczownik / Щитоносець | `jaskinia-1`                    | a 2 letter key, then 4 to 6 letters      | walks at 0.85 × the word speed                                              | The label shows the key on a shield and masks the word. Typing the key knocks the shield off with a clang and reveals the word.                                        |
-| `bull`      | Byk / Бик               | `jaskinia-2`                    | 4 to 5 letters                           | stamps at the spawn arc for 1.5 seconds, then charges at 3 × the word speed | Each correct letter knocks it back 1.2 units and stops it for 0.4 seconds.                                                                                             |
-| `chameleon` | Kameleon / Хамелеон     | `wyspa-1`, English `jaskinia-3` | 3 to 5 letters                           | walks at 0.9 × the word speed                                               | Every 2.5 seconds it swaps its word for another of the same length and changes colour. The first typed letter locks it.                                                |
-| `nest`      | Gniazdo / Гніздо        | `wyspa-2`, English `jaskinia-4` | 7 to 9 letters                           | sits still at distance 9.6                                                  | Every 4 seconds it hatches a chick with a 2 letter word that walks at 1.1 × the word speed, at most 3 alive. Typed, it pops all its chicks.                            |
+| Type        | Name (pl / uk)          | From                        | Word                                     | Movement                                                                    | Rule                                                                                                                                                                   |
+| ----------- | ----------------------- | --------------------------- | ---------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `jumper`    | Skoczek / Стрибунець    | `s`, `polana-9`             | one focus key, 4 to 7 times              | hops 1 unit at a time, at the normal word speed                             | Each letter makes it hop in place and shrink.                                                                                                                          |
+| `balloon`   | Balonik / Кулька        | `s`, `polana-9`             | 3 to 5 letters                           | starts at distance 6, rises 0.42 per second, drifts sideways                | Above height 7 it floats away, with no mistake and no lost life. Popped, it pays double word points.                                                                   |
+| `bat`       | Nietoperz / Кажан       | `g`, `las-1`                | 3 to 4 letters                           | flies an arc at height 2.5, at 2.5 × the word speed                         | At the far side it drops a bomb. When the bomb lands, the hero loses a life and the camera shakes. Typed before that, it tumbles and shatters.                         |
+| `ghost`     | Duch / Привид           | `e`, `las-6`                | 3 to 5 letters                           | walks at 0.9 × the word speed and drifts sideways                           | It fades out and back in on a 3 second cycle. Its label shows only while it is solid, but it can be typed at any time.                                                 |
+| `thief`     | Złodziej / Злодій       | `r`, `las-11`               | 3 letters, then 6 letters on the way out | runs at 2.2 × the word speed, flees at half that                            | At the hero it steals 100 points, or what there is, and runs back out with a new word. Typed on the way out, it returns the points and 5 coins. It never costs a life. |
+| `swarm`     | Rój / Рій               | `t`, `gory-1`               | 5 to 7 letters, one per bug              | walks at 1.25 × the word speed and jitters                                  | Letters go in order and the next one glows. Each letter pops one bug.                                                                                                  |
+| `splitter`  | Rozszczep / Розщеп      | `w`, `gory-6`               | two short words joined, 6 to 8 letters   | walks at 0.8 × the word speed                                               | Typed, it splits at its place into two smaller halves, one per word, 1.35 × faster. Halves never split again.                                                          |
+| `shield`    | Tarczownik / Щитоносець | `v`, `jaskinia-1`           | a 2 letter key, then 4 to 6 letters      | walks at 0.85 × the word speed                                              | The label shows the key on a shield and masks the word. Typing the key knocks the shield off with a clang and reveals the word.                                        |
+| `bull`      | Byk / Бик               | `c`, `jaskinia-6`           | 4 to 5 letters                           | stamps at the spawn arc for 1.5 seconds, then charges at 3 × the word speed | Each correct letter knocks it back 1.2 units and stops it for 0.4 seconds.                                                                                             |
+| `chameleon` | Kameleon / Хамелеон     | `ą`, `wyspa-1`, English `x` | 3 to 5 letters                           | walks at 0.9 × the word speed                                               | Every 2.5 seconds it swaps its word for another of the same length and changes colour. The first typed letter locks it.                                                |
+| `nest`      | Gniazdo / Гніздо        | `ł`, `wyspa-8`, English `b` | 7 to 9 letters                           | sits still at distance 9.6                                                  | Every 4 seconds it hatches a chick with a 2 letter word that walks at 1.1 × the word speed, at most 3 alive. Typed, it pops all its chicks.                            |
 
 A type stays unlocked in every later region.
 
@@ -309,7 +411,7 @@ Mastery levels (`src/course/mastery.ts`):
 
 Where it shows:
 
-- Map: each region sign has a mastery meter next to the stars, with the mastered keys out of all new keys of the region. Each unlocked key level shows a dot per new key in the colour of its level: grey none, orange learning, blue solid, green mastered.
+- Map: each region sign has a mastery meter next to the stars, with the mastered keys out of all new keys of the region. Each unlocked learn, practice and review level shows a dot per focus key in the colour of its level: grey none, orange learning, blue solid, green mastered.
 - Learn card: under each keycap, the level of the key and its accuracy over the last 30 keystrokes when there is data.
 - Result card: a "Klawisze" / "Клавіші" row with the two least accurate keys of the run that had a mistake, or "Bez pomyłek" / "Без помилок". A key that became mastered in the run gets a green badge, the sparkle sound and the callout "Opanowany: F" / "Опановано: F".
 - Pause card: a heatmap of the keyboard, each key tinted by its accuracy over the last 30 keystrokes, from red at 70% or less to green at 100%, grey without data. A practised Polish letter shows as a small mark on its base key.
@@ -436,7 +538,7 @@ Map:
 - The map is one tall scene. The regions are stacked from top to bottom as bands that blend into each other: meadow, forest, mountains, cave and island. Locked bands are dimmed.
 - One winding path runs through every level. The walked part, up to the first level without a star, is gold.
 - Each band starts with a sign: the chapter number, the region name, a short mood line (`src/i18n/features/worldMap.ts`), the stars earned out of the total and the mastery meter. Signs switch sides from band to band, and the path passes each sign on the other side.
-- Levels are round badges on the path with their new keys. Unlocked key levels show the key dots under the keys, see [Key mastery](#key-mastery). Bosses have a crown. Locked levels show a lock. Levels with stars glow in the region colour and show their stars. The current level pulses, has a Play tag, and the hero stands on it.
+- Levels are round badges on the path with their focus keys. Learn levels carry a ✨ badge and review levels a 🔁 badge, and the title names the kind and the keys, for example "Trening D" / "Тренування D" (`src/ui/levelKind.ts`). Unlocked learn, practice and review levels show the key dots under the keys, see [Key mastery](#key-mastery). Bosses have a crown. Locked levels show a lock. Levels with stars glow in the region colour and show their stars. The current level pulses, has a Play tag, and the hero stands on it.
 - The header stays at the top: the avatar with the level number, the name, the rank and a thin XP bar, then stars, coins, the shop button and the sound toggle. A tap on the avatar goes back to the profiles. The shop button has the bag and the label "Sklep" / "Крамниця", only the bag on phones, and the green dot when something can be bought or claimed.
 - On open the map scrolls smoothly to the current level, or to the last open level when all levels have stars. Levels pop in as they scroll into view. With reduced motion the scroll is instant and nothing pops in.
 - The silhouettes of each band move at different speeds while scrolling, except in the low quality preset.
@@ -448,7 +550,7 @@ Owners: `src/audio/Sfx.ts`, `src/audio/Music.ts`, `src/audio/music/themes.ts`.
 - All sound is generated live with Web Audio. There are no audio files.
 - Audio unlocks when the player presses Play on the profile screen, because browsers need a user gesture (`src/app/App.ts`).
 - Music has one arrangement per theme, built from bass, drum, pad, motif, noise bed and sporadic layers. It plays during levels and stops on the map.
-- Key levels use the calm mood. Boss levels use the boss mood: tempo × 1.15, the boss mode, and extra kick, tom and ostinato layers.
+- Learn, practice and review levels use the calm mood. Boss levels use the boss mood: tempo × 1.15, the boss mode, and extra kick, tom and ostinato layers.
 - Up to 8 music voices play at once. Tracks crossfade over 1.5 seconds.
 - Intensity runs from 0 to 1. It follows `combo / 20` and is 1 during fever (`src/app/App.ts`). Higher intensity brightens the mix and brings in a sparkle layer.
 - Sound effects: hit (pitch climbs a pentatonic scale with the combo), mistake, word, callout, fever, life lost, boss hit, level complete and level failed.
@@ -513,7 +615,7 @@ Install and offline:
 
 Owners: `src/app/devShortcut.ts`, `src/app/App.ts`.
 
-- In development only, `?level=<id>` starts a level directly, for example `http://localhost:5173/?level=jaskinia-5`.
+- In development only, `?level=<id>` starts a level directly, for example `http://localhost:5173/?level=jaskinia-24` for the cave boss. Every level id is in the table under [Regions and levels](#regions-and-levels).
 - It uses a temporary profile named Test with Polish words. It takes the character, the inventory and the equipped pet and hat of the active profile, or the first character without items when there is none. Story and learn cards are skipped. Results are not saved.
 - An unknown id opens the profile screen. Production builds ignore the parameter.
 

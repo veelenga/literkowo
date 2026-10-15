@@ -16,7 +16,7 @@ These instructions are for AI agents and for people.
 - `nvm use` picks the Node version from `.nvmrc`.
 - `npm install` installs dependencies.
 - `npm run dev` starts Vite on `http://localhost:5173`.
-- `http://localhost:5173/?level=<id>` starts a level directly in dev, for example `?level=polana-1`. Level ids are in `docs/SPEC.md`.
+- `http://localhost:5173/?level=<id>` starts a level directly in dev. Ids are `<region>-<number>`, for example `?level=polana-1` (learn), `?level=polana-2` (practice), `?level=polana-3` (review) and `?level=polana-19` (boss). The full level table is in `docs/SPEC.md`.
 - `npm test` runs the Vitest unit tests.
 - `npm run lint` checks types, ESLint and Prettier.
 - `npm run format` fixes formatting.
