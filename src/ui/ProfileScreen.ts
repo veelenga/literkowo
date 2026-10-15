@@ -25,6 +25,7 @@ import './profileScreen.css';
 const MAX_NAME_LENGTH = 16;
 const CARD_STAGGER_MS = 80;
 const CREATE_PANEL_KEY = 'create';
+const CREATING_CLASS = 'is-creating';
 const SELECTED_CARD_SELECTOR = '.profile-card.is-selected';
 const TILE_SELECTOR = ':scope > .profile-card';
 const PLAY_ICON_PATH =
@@ -66,6 +67,7 @@ export class ProfileScreen {
   private render(): void {
     const t = i18n.t;
     if (this.rendered) this.element.classList.remove('is-intro');
+    this.element.classList.toggle(CREATING_CLASS, this.creating);
     this.rendered = true;
     livePreview.hide();
     const grid = el('div', { class: 'profile-grid' }, ...this.gridItems());

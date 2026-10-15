@@ -1,3 +1,5 @@
 @custom-media --phone (max-width: 600px), (max-height: 480px);
 @custom-media --phone-narrow (max-width: 600px);
 @custom-media --phone-landscape (max-height: 480px);
+@custom-media --short-screen (max-height: 900px);
+@custom-media --low-screen (max-height: 800px);

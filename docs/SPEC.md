@@ -754,7 +754,8 @@ Profile screen:
 - With reduced motion or the low quality preset the hills stand still and there are no letters (`src/ui/menuMotion.ts`).
 - Each profile is a card with the rendered portrait under a spotlight, the name, the level, the rank, a thin XP bar, and pills for stars and coins.
 - The selected card lifts, glows and shows the hero in 3D with the equipped hat and pet, swaying slowly. It uses the same outfit view as the shop (`src/ui/portraits/OutfitView.ts`). The play panel opens right under the row of the selected card, and cards from later rows move below it. The panel has a big Play button, then the word language chips and the delete button in a quieter row.
-- The dashed new profile card opens the create panel in its place: a large live preview of the chosen character that switches with every pick, the name field, the 18 characters and a Create button.
+- The narrow dashed new profile card opens the create panel, which takes the place of the cards until the profile is created or the panel is cancelled: a large live preview of the chosen character that switches with every pick, the name field, the 18 characters and a Create button.
+- With four profiles the cards fit in one row, and the screen fits without scrolling from 1280 by 720 up. Screens up to 900 px tall get a smaller logo and tighter spacing, and screens up to 800 px tall also smaller cards, a smaller create panel and 9 characters per row.
 - Long names and rank names end with an ellipsis on the cards.
 - The top right corner holds the interface language switch "PL" / "UA" and a round gear button that opens the [Settings](#settings).
 - The play panel has a quiet "Sklep" / "Крамниця" link with the bag next to Play. It opens the shop for the selected profile.
@@ -837,7 +838,7 @@ Layout:
 - On a phone the learn card and the result card fit without scrolling, at 390 by 660 px in portrait and 750 by 342 px in landscape, also with landscape safe area insets of 47 px at the sides and 21 px at the bottom.
 - In portrait both cards use smaller keycaps, a smaller hands diagram and full width buttons. When the rank, the XP and the coins do not fit in one row of the result, the XP and the coins move to a second row.
 - In landscape the learn card puts the hands diagram next to the keycaps. The result card puts the stars next to the title, the four results in one row, the XP bar in one row with the level and the rewards, and the buttons side by side. It hides the stars hint and shows the level up banner on one line. Overlays keep an 8 px margin above and below.
-- On screens up to 480 px tall the profile screen shows a smaller logo and no tagline, so the Play button stays in view.
+- On phones the profile screen shows a smaller logo and no tagline. The profile cards sit three in a row in portrait and five in a row in landscape, with the level and the stars under the name. The play panel keeps Play next to the name, with the word language and the delete button under them. In landscape the section title is hidden, and the logo hides while the create panel is open.
 - Touch targets are at least 44 px on touch screens, except the 36 px wide HUD buttons on phones. Hover effects apply only on devices that can hover.
 - The app is `100dvh` tall. The HUD, the keyboard hint, the map header and overlays stay inside the safe area insets.
 - The camera keeps a horizontal field of view of at least 62 degrees, so the whole spawn arc stays in frame on narrow and portrait screens. The vertical field of view grows when needed and never drops below 42 degrees (`src/game/board.ts`).
