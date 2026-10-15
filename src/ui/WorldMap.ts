@@ -1,31 +1,34 @@
-import type { Level, Region, ThemeId } from '../course/catalog';
+import type { Level, Region } from '../course/catalog';
 import { courseFor, type Course } from '../course/course';
 import { MAX_STARS } from '../course/scoring';
 import { i18n } from '../i18n/i18n';
-import { totalStars, type Profile } from '../profiles/Profile';
+import type { Profile } from '../profiles/Profile';
 import { characterAvatar } from './CharacterAvatar';
-import { el, icon, svg } from './dom';
+import { el, icon, prefersReducedMotion, svg } from './dom';
+import {
+  journeyLayout,
+  journeyPath,
+  type BandLayout,
+  type JourneyLayout,
+} from './map/journeyLayout';
+import { followScroll, revealOnEnter, type StopEffect } from './map/journeyMotion';
+import { mapHeader } from './map/mapHeader';
+import { ART_HEIGHT, ART_WIDTH, CEILING_HEIGHT, regionArt, type ArtLayer } from './map/regionArt';
 import { keyDots, masteryMeter } from './mastery';
-import { coinIcon, levelBadge } from './progression';
-import { shopButton } from './shopParts';
-import { soundToggle } from './SoundToggle';
+import { hasAmbientMotion } from './menuMotion';
+import './worldMap.css';
 
-const TRAIL_EDGE = 8;
-const TRAIL_LOW = 64;
-const TRAIL_HIGH = 34;
-const TRAIL_VIEWBOX = '0 0 100 100';
-const REGION_STAGGER_MS = 90;
-const STAR_BASE_DELAY_MS = 320;
+const STAR_BASE_DELAY_MS = 260;
 const STAR_STAGGER_MS = 110;
-const ART_VIEWBOX = '0 0 800 240';
 const BOSS_FACE = '🌑';
+const HALF = 2;
+const STOP_CLASS = 'journey-stop';
+const STOP_SELECTOR = `.${STOP_CLASS}`;
+const REVEAL_CLASS = 'has-reveal';
+const AMBIENT_CLASS = 'has-ambient';
+const PATH_WIDTH = 100;
 
 type NodeState = 'locked' | 'current' | 'done';
-
-interface Point {
-  x: number;
-  y: number;
-}
 
 interface Actions {
   onPlay: (level: Level) => void;
@@ -36,161 +39,171 @@ interface Actions {
 export class WorldMap {
   readonly element = el('div', { class: 'screen map-screen' });
   private readonly course: Course;
+  private readonly layout: JourneyLayout;
+  private effects: StopEffect[] = [];
 
   constructor(
     private readonly profile: Profile,
     private readonly actions: Actions,
   ) {
     this.course = courseFor(profile.wordLanguage);
+    this.layout = journeyLayout(this.course.regions.map((region) => region.levels.length));
     this.render();
   }
 
+  dispose(): void {
+    this.effects.forEach((stop) => stop());
+    this.effects = [];
+  }
+
   private render(): void {
+    const scene = this.scene();
     this.element.replaceChildren(
-      this.header(),
-      el(
-        'main',
-        { class: 'map-journey' },
-        ...this.course.regions.map((region, index) => this.region(region, index)),
-      ),
+      mapHeader(this.profile, this.actions),
+      el('main', { class: 'map-journey' }, scene),
     );
-    queueMicrotask(() =>
-      this.element.querySelector('.level-node.is-current')?.scrollIntoView({ block: 'center' }),
-    );
+    queueMicrotask(() => this.startMotion(scene));
   }
 
-  private header(): HTMLElement {
-    const t = i18n.t;
-    return el(
-      'header',
-      { class: 'map-header' },
-      el(
-        'div',
-        { class: 'map-player' },
-        el(
-          'button',
-          { class: 'profile-chip', title: t.switchPlayer, onClick: this.actions.onSwitchPlayer },
-          el(
-            'span',
-            { class: 'avatar-ring avatar-ring-tiny' },
-            characterAvatar(this.profile.avatar),
-          ),
-          el(
-            'span',
-            { class: 'profile-chip-text' },
-            el('strong', { text: this.profile.name }),
-            el('small', { text: t.switchPlayer }),
-          ),
-        ),
-        levelBadge(this.profile.xp),
-      ),
-      el('h1', { class: 'logo logo-small', text: t.appName }),
-      el(
-        'div',
-        { class: 'map-stats' },
-        this.stat(icon('star', 'stat-icon stat-icon-star'), totalStars(this.profile), t.stars),
-        this.stat('🔤', this.profile.lettersFreed, t.lettersFreed),
-        this.stat('🏆', this.profile.totalScore, t.score),
-        this.stat(
-          coinIcon('stat-icon coin-icon'),
-          this.profile.coins,
-          t.features.progression.coins,
-        ),
-        shopButton(this.profile, this.actions.onShop),
-        soundToggle(),
-      ),
-    );
+  private startMotion(scene: HTMLElement): void {
+    if (!prefersReducedMotion()) this.revealStops(scene);
+    if (hasAmbientMotion()) this.addParallax(scene);
+    this.scrollToFocus();
   }
 
-  private stat(symbol: SVGElement | string, value: number, label: string): HTMLElement {
-    const glyph =
-      typeof symbol === 'string' ? el('span', { class: 'stat-icon', text: symbol }) : symbol;
+  private revealStops(scene: HTMLElement): void {
+    scene.classList.add(REVEAL_CLASS);
+    this.effects.push(revealOnEnter([...scene.querySelectorAll<HTMLElement>(STOP_SELECTOR)]));
+  }
+
+  private addParallax(scene: HTMLElement): void {
+    scene.classList.add(AMBIENT_CLASS);
+    this.effects.push(followScroll(this.element, scene));
+  }
+
+  private scrollToFocus(): void {
+    const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
+    this.focusStop()?.scrollIntoView({ block: 'center', behavior });
+  }
+
+  private focusStop(): HTMLElement | null {
+    const current = this.element.querySelector<HTMLElement>(`${STOP_SELECTOR}.is-current`);
+    if (current) return current;
+    const unlocked = this.element.querySelectorAll<HTMLElement>(`${STOP_SELECTOR}:not(.is-locked)`);
+    return unlocked.item(unlocked.length - 1);
+  }
+
+  private scene(): HTMLElement {
     return el(
       'div',
-      { class: 'stat-pill', title: label, 'aria-label': `${label}: ${value}` },
-      glyph,
-      el('strong', { text: String(value) }),
+      { class: 'journey-scene', style: `--journey-height: ${this.layout.height}` },
+      ...this.course.regions.map((region, index) =>
+        this.region(region, index, this.layout.bands[index]),
+      ),
+      el('div', { class: 'journey-track journey-path-track' }, this.path()),
     );
   }
 
-  private region(region: Region, index: number): HTMLElement {
+  private region(region: Region, index: number, band: BandLayout): HTMLElement {
     const classes = ['region', `region-${region.theme}`];
     if (!this.isUnlocked(region.levels[0])) classes.push('is-locked');
     return el(
       'section',
-      { class: classes.join(' '), style: `--delay: ${index * REGION_STAGGER_MS}ms` },
-      el('div', { class: 'region-art', 'aria-hidden': 'true', html: regionArt(region.theme) }),
-      this.regionHeader(region, index),
-      this.trail(region.levels),
+      {
+        class: classes.join(' '),
+        style: `--band-height: ${band.height}; --band-center: ${band.top + band.height / HALF}`,
+        'aria-label': region.name[i18n.current],
+      },
+      el(
+        'div',
+        { class: 'region-art', 'aria-hidden': 'true' },
+        ...regionArt(region.theme).map(artLayer),
+      ),
+      el(
+        'div',
+        { class: 'journey-track region-track' },
+        this.regionHeader(region, index, band),
+        ...region.levels.map((level, stop) => this.stop(level, band, stop)),
+      ),
     );
   }
 
-  private regionHeader(region: Region, index: number): HTMLElement {
+  private regionHeader(region: Region, index: number, band: BandLayout): HTMLElement {
     const t = i18n.t;
     const earned = region.levels.reduce((sum, level) => sum + this.starsOf(level), 0);
+    const total = region.levels.length * MAX_STARS;
+    const locked = !this.isUnlocked(region.levels[0]);
     return el(
       'header',
-      { class: 'region-header' },
+      { class: `region-header is-${band.headerSide}` },
       el(
-        'div',
-        {},
-        el('span', { class: 'region-eyebrow', text: `${t.chapter} ${index + 1}` }),
-        el('h2', { class: 'region-title', text: region.name[i18n.current] }),
+        'span',
+        { class: 'region-chapter' },
+        locked ? icon('lock', 'region-lock') : null,
+        `${t.chapter} ${index + 1}`,
       ),
+      el('h2', { class: 'region-title', text: region.name[i18n.current] }),
+      el('p', { class: 'region-mood', text: t.features.worldMap.moods[region.theme] }),
       el(
         'div',
         { class: 'region-badges' },
         el(
           'span',
-          { class: 'region-progress', title: t.stars },
+          {
+            class: 'region-progress',
+            title: t.stars,
+            'aria-label': `${t.stars}: ${earned} / ${total}`,
+          },
           icon('star', 'stat-icon stat-icon-star'),
-          `${earned} / ${region.levels.length * MAX_STARS}`,
+          `${earned} / ${total}`,
         ),
         masteryMeter(region, this.profile.keyStats),
       ),
     );
   }
 
-  private trail(levels: Level[]): HTMLElement {
-    const points = trailPoints(levels.length);
-    return el(
-      'div',
-      { class: 'level-trail', style: `--stops: ${levels.length}` },
-      this.trailPath(levels, points),
-      ...levels.map((level, index) => this.stop(level, points[index])),
-    );
-  }
-
-  private trailPath(levels: Level[], points: Point[]): SVGElement {
-    const segments = points.slice(1).map((point, index) =>
-      svg('path', {
-        d: curveBetween(points[index], point),
-        class: this.isUnlocked(levels[index + 1]) ? 'trail-segment is-done' : 'trail-segment',
-      }),
-    );
+  private path(): SVGElement {
+    const reached = this.course.levels.filter((level) => this.isUnlocked(level)).length;
+    const route = journeyPath(this.layout.stops);
+    const walked = journeyPath(this.layout.stops.slice(0, reached));
     return svg(
       'svg',
       {
-        class: 'trail-path',
-        viewBox: TRAIL_VIEWBOX,
+        class: 'journey-path',
+        viewBox: `0 0 ${PATH_WIDTH} ${this.layout.height}`,
         preserveAspectRatio: 'none',
         'aria-hidden': 'true',
       },
-      ...segments,
+      svg('path', { class: 'journey-road', d: route }),
+      svg('path', { class: 'journey-road-dots', d: route }),
+      svg('path', { class: 'journey-walked-glow', d: walked }),
+      svg('path', { class: 'journey-walked', d: walked }),
     );
   }
 
-  private stop(level: Level, point: Point): HTMLElement {
+  private stop(level: Level, band: BandLayout, index: number): HTMLElement {
     const state = this.stateOf(level);
+    const point = band.stops[index];
+    const classes = [STOP_CLASS, `is-${state}`];
+    if (level.isBoss) classes.push('is-boss');
     return el(
       'div',
       {
-        class: level.isBoss ? 'trail-stop is-boss' : 'trail-stop',
-        style: `--x: ${point.x}%; --y: ${point.y}%`,
+        class: classes.join(' '),
+        style: `--x: ${point.x.toFixed(2)}; --y: ${point.y - band.top}`,
       },
-      state === 'current' ? el('span', { class: 'node-tag', text: i18n.t.play }) : null,
+      state === 'current' ? this.hero() : null,
       this.node(level, state),
-      state === 'locked' ? null : this.stars(level),
+      state === 'current' ? el('span', { class: 'node-tag', text: i18n.t.play }) : null,
+      state === 'done' ? this.stars(level) : null,
+    );
+  }
+
+  private hero(): HTMLElement {
+    return el(
+      'span',
+      { class: 'journey-hero', 'aria-hidden': 'true' },
+      characterAvatar(this.profile.avatar),
     );
   }
 
@@ -251,155 +264,12 @@ export class WorldMap {
   }
 }
 
-function trailPoints(count: number): Point[] {
-  const span = 100 - TRAIL_EDGE * 2;
-  const step = count > 1 ? span / (count - 1) : 0;
-  return Array.from({ length: count }, (_, index) => ({
-    x: count > 1 ? TRAIL_EDGE + index * step : 50,
-    y: index % 2 === 0 ? TRAIL_LOW : TRAIL_HIGH,
-  }));
+function artLayer(layer: ArtLayer): HTMLElement {
+  const height = layer.anchor === 'top' ? CEILING_HEIGHT : ART_HEIGHT;
+  const align = layer.anchor === 'top' ? 'xMidYMin' : 'xMidYMax';
+  return el('div', {
+    class: `art-layer art-layer-${layer.name} is-${layer.anchor}`,
+    style: `--art-width: ${ART_WIDTH}; --art-height: ${height}`,
+    html: `<svg viewBox="0 0 ${ART_WIDTH} ${height}" preserveAspectRatio="${align} slice">${layer.markup}</svg>`,
+  });
 }
-
-function curveBetween(from: Point, to: Point): string {
-  const middle = (from.x + to.x) / 2;
-  return `M${from.x} ${from.y}C${middle} ${from.y} ${middle} ${to.y} ${to.x} ${to.y}`;
-}
-
-function regionArt(theme: ThemeId): string {
-  return `<svg viewBox="${ART_VIEWBOX}" preserveAspectRatio="xMidYMax slice">${REGION_MOTIFS[theme]}</svg>`;
-}
-
-type Dot = [x: number, y: number, radius: number];
-type Pine = [x: number, base: number, height: number];
-type Stalactite = [x: number, width: number, length: number];
-type Crystal = [x: number, base: number, height: number, half: number];
-
-function shapes(className: string, paths: string[]): string {
-  return `<path class="${className}" d="${paths.join('')}"/>`;
-}
-
-function dots(className: string, points: Dot[]): string {
-  return points
-    .map(([x, y, r]) => `<circle class="${className}" cx="${x}" cy="${y}" r="${r}"/>`)
-    .join('');
-}
-
-function pine([x, base, height]: Pine): string {
-  const half = Math.round(height * 0.36);
-  const tier = Math.round(base - height * 0.5);
-  const foot = Math.round(base - height * 0.1);
-  const inner = Math.round(half * 0.45);
-  const shoulder = Math.round(half * 0.7);
-  return `M${x} ${base - height}L${x + shoulder} ${tier}H${x + inner}L${x + half} ${foot}H${x - half}L${x - inner} ${tier}H${x - shoulder}Z`;
-}
-
-function stalactite([x, width, length]: Stalactite): string {
-  return `M${x - width / 2} 0L${x} ${length}L${x + width / 2} 0Z`;
-}
-
-function crystal([x, base, height, half]: Crystal): string {
-  const shoulder = Math.round(base - height * 0.6);
-  return `M${x - half} ${base}V${shoulder}L${x} ${base - height}L${x + half} ${shoulder}V${base}Z`;
-}
-
-const FAR_PINES: Pine[] = [
-  [60, 210, 90],
-  [130, 214, 70],
-  [520, 210, 80],
-  [590, 214, 104],
-  [660, 210, 76],
-  [740, 214, 96],
-];
-
-const NEAR_PINES: Pine[] = [
-  [18, 240, 130],
-  [96, 240, 100],
-  [690, 240, 120],
-  [772, 240, 146],
-];
-
-const STALACTITES: Stalactite[] = [
-  [40, 40, 60],
-  [96, 26, 36],
-  [160, 50, 82],
-  [240, 30, 44],
-  [560, 36, 58],
-  [620, 24, 34],
-  [690, 48, 92],
-  [760, 30, 50],
-];
-
-const CRYSTALS: Crystal[] = [
-  [600, 236, 70, 12],
-  [632, 236, 46, 9],
-  [574, 236, 40, 8],
-  [120, 236, 50, 10],
-  [146, 236, 32, 7],
-];
-
-const MEADOW_ART = [
-  dots('art-glow', [[560, 74, 30]]),
-  shapes('art-far', ['M0 172C110 122 230 128 340 160S560 132 680 142 780 160 800 166V240H0Z']),
-  shapes('art-near', ['M0 206C140 172 270 182 400 206S650 182 800 196V240H0Z']),
-  dots('art-accent', [
-    [90, 198, 4],
-    [150, 190, 3],
-    [600, 192, 4],
-    [690, 186, 3],
-    [740, 194, 4],
-  ]),
-].join('');
-
-const FOREST_ART = [
-  dots('art-glow', [[470, 58, 20]]),
-  shapes('art-far', FAR_PINES.map(pine)),
-  shapes('art-near', ['M0 226Q400 204 800 226V240H0Z', ...NEAR_PINES.map(pine)]),
-  dots('art-accent', [
-    [240, 150, 2.5],
-    [300, 120, 2],
-    [470, 160, 2.5],
-    [560, 110, 2],
-  ]),
-].join('');
-
-const MOUNTAINS_ART = [
-  dots('art-glow', [[500, 54, 24]]),
-  shapes('art-far', [
-    'M0 200L90 120L150 160L240 80L330 170L420 110L520 180L610 70L700 150L800 100V240H0Z',
-  ]),
-  shapes('art-snow', [
-    'M240 80L262 102L250 97L240 106L230 96L218 100Z',
-    'M610 70L632 90L620 86L610 96L599 88L588 97Z',
-  ]),
-  shapes('art-near', ['M0 216L120 170L210 210L330 150L460 214L560 176L680 220L800 182V240H0Z']),
-].join('');
-
-const CAVE_ART = [
-  shapes('art-far', STALACTITES.map(stalactite)),
-  shapes('art-near', ['M0 240V222Q200 204 400 222T800 216V240Z']),
-  shapes('art-glow', CRYSTALS.map(crystal)),
-].join('');
-
-const ISLAND_ART = [
-  dots('art-glow', [[640, 150, 64]]),
-  shapes('art-far', [
-    'M0 196Q50 186 100 196T200 196T300 196T400 196T500 196T600 196T700 196T800 196V240H0Z',
-  ]),
-  shapes('art-near', ['M10 240Q160 192 330 240Z']),
-  '<path class="art-trunk" d="M168 226Q158 170 196 118"/>',
-  shapes('art-leaf', [
-    'M196 118Q160 92 122 112Q162 104 196 118Z',
-    'M196 118Q214 84 254 92Q220 98 196 118Z',
-    'M196 118Q238 112 262 140Q228 120 196 118Z',
-    'M196 118Q170 116 146 146Q172 122 196 118Z',
-    'M196 118Q190 88 206 66Q200 92 196 118Z',
-  ]),
-].join('');
-
-const REGION_MOTIFS: Record<ThemeId, string> = {
-  meadow: MEADOW_ART,
-  forest: FOREST_ART,
-  mountains: MOUNTAINS_ART,
-  cave: CAVE_ART,
-  island: ISLAND_ART,
-};

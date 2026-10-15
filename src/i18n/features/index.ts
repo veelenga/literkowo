@@ -11,6 +11,7 @@ import { quality } from './quality';
 import { shop } from './shop';
 import { touch } from './touch';
 import { waveEvents } from './waveEvents';
+import { worldMap } from './worldMap';
 
 export function featureTexts(language: UiLanguage) {
   return {
@@ -28,5 +29,6 @@ export function featureTexts(language: UiLanguage) {
     mastery: mastery[language],
     waveEvents: waveEvents[language],
     shop: shop[language],
+    worldMap: worldMap[language],
   };
 }

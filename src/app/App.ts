@@ -93,6 +93,7 @@ export class App {
       onShop: () => this.showShop(profile),
     });
     this.showScreen(map.element);
+    this.disposeScreen = () => map.dispose();
   }
 
   private showShop(profile: Profile): void {
