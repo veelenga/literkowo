@@ -52,7 +52,7 @@ function typeOut(enemy: Enemy, mechanic: WaveEvents, context: MechanicContext): 
 }
 
 describe('WaveEvents timing', () => {
-  it('starts once per level after the first third of the words', () => {
+  it('starts once per words phase after the first third of the words', () => {
     const { mechanic, wait, announce } = eventBoard(PICK.rush);
     const earliest = WORDS.count * WORDS.spawnInterval * EVENT_WINDOW.start;
     wait(earliest - FRAME * 2);
@@ -62,6 +62,18 @@ describe('WaveEvents timing', () => {
     expect(announce).toHaveBeenCalledWith('Fala!', 'banner', expect.any(String));
     wait(60);
     expect(announce).toHaveBeenCalledOnce();
+  });
+
+  it('arms again for every words phase', () => {
+    const { mechanic, untilEvent, wait, announce } = eventBoard(PICK.rush);
+    untilEvent();
+    expect(announce).toHaveBeenCalledOnce();
+    mechanic.onPhaseChange(BOSS);
+    wait(60);
+    expect(announce).toHaveBeenCalledOnce();
+    mechanic.onPhaseChange(WORDS);
+    untilEvent();
+    expect(announce).toHaveBeenCalledTimes(2);
   });
 
   it('never starts in the warm-up or next to a boss', () => {

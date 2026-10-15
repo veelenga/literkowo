@@ -320,7 +320,7 @@ A type stays unlocked in every later region.
 
 Owners: `src/game/mechanics/WaveEvents.ts`, `src/game/mechanics/waveEvents/events.ts`.
 
-- Once per level, during the words phase, one event starts with a banner. It starts at a random moment between one third and two thirds of `count × spawnInterval` of the phase. Each event is equally likely.
+- Once in each words phase, one event starts with a banner. A course level has one words phase. It starts at a random moment between one third and two thirds of `count × spawnInterval` of the phase. Each event is equally likely.
 - Event pieces join the board only while fewer than 6 enemies are on it, so a full board delays them. They stop when the phase changes, and no event runs next to a boss.
 - Event pieces are never replaced by special enemies and never merge.
 

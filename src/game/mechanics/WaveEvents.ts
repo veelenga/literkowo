@@ -68,8 +68,7 @@ export class WaveEvents implements Mechanic {
 
   onPhaseChange(phase: Phase): void {
     this.active = undefined;
-    this.countdown =
-      phase.kind === EVENT_PHASE && !this.fired ? eventDelay(phase, this.random) : undefined;
+    this.countdown = phase.kind === EVENT_PHASE ? eventDelay(phase, this.random) : undefined;
   }
 
   onWordComplete(enemy: Enemy): void {
