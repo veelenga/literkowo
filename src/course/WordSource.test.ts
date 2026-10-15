@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { levelWords, requireLevel } from '../testing/levels';
 import { difficultyFor, FOCUS_WORD_LENGTHS, PRACTICE_LENGTHS } from './difficulty';
 import { LEVELS, allowedKeysFor } from './regions';
+import { TRANSITION_SCORES, transitionScore } from './typability';
 import { WORD_LISTS } from './wordLists';
 import type { WordRules } from './wordRules';
-import { BOSS_MIN_LENGTH, SHORT_LENGTH, type KeyWeights } from './WordSource';
+import { BOSS_MIN_LENGTH, SHORT_LENGTH, WordSource, type KeyWeights } from './WordSource';
 
 const SAMPLES = 200;
 const RARE_SAMPLES = 10;
@@ -14,6 +15,17 @@ const CLEAR_PREFERENCE = 1.5;
 const SHORT_COMBO = 2;
 const EARLY_WORDS = 0.3;
 const LAST_SPAWN = 0.99;
+const COMBO_SAMPLES = 2000;
+const RARE_SHARE = 0.02;
+const CLEAR_AVOIDANCE = 0.8;
+const ALL_LETTERS = 'abcdefghijklmnopqrstuvwxyząćęłńóśźż';
+const FOCUS_WORD_RULES: WordRules = {
+  allowedKeys: ALL_LETTERS,
+  focusKeys: 'r',
+  lengths: { min: 3, max: 6 },
+  generatedLengths: { min: 3, max: 6 },
+  stages: [{ kind: 'focusWords', share: 1, lengths: { min: 3, max: 6 } }],
+};
 const PHASE_RULES: WordRules = {
   allowedKeys: 'kot',
   focusKeys: 'k',
@@ -23,6 +35,15 @@ const PHASE_RULES: WordRules = {
 
 function weakKey(key: string): KeyWeights {
   return { weightOf: (char) => (char === key ? WEAK_WEIGHT : 1) };
+}
+
+function sameFingerAt(word: string, keys = word): boolean {
+  const chars = [...word];
+  return chars.slice(1).some((char, index) => {
+    const previous = chars[index];
+    const touchesKeys = keys.includes(char) || keys.includes(previous);
+    return touchesKeys && transitionScore(previous, char) === TRANSITION_SCORES.sameFinger;
+  });
 }
 
 function share(items: readonly string[], matches: (item: string) => boolean): number {
@@ -212,5 +233,27 @@ describe('WordSource', () => {
     const weighted = share(words(weakKey('w')), (word) => word.includes('w'));
     expect(even).toBeGreaterThan(0);
     expect(weighted).toBeGreaterThan(even * CLEAR_PREFERENCE);
+  });
+
+  it('picks generated words where no finger presses twice in a row', () => {
+    for (const id of ['las-11', 'las-12', 'gory-1', 'gory-2']) {
+      const source = levelWords(requireLevel(id), 'pl');
+      for (const progress of [0, EARLY_WORDS, LAST_SPAWN]) {
+        const words = Array.from({ length: COMBO_SAMPLES }, () => source.stagedWord(progress));
+        expect(share(words, (word) => sameFingerAt(word))).toBeLessThan(RARE_SHARE);
+      }
+    }
+  });
+
+  it('prefers real words that are easy to type around the focus key', () => {
+    const fitting = WORD_LISTS.pl.filter((word) => word.length >= 3 && word.length <= 6);
+    const pool = fitting.filter((word) => word.includes('r'));
+    const source = new WordSource('pl', FOCUS_WORD_RULES);
+    const picks = Array.from({ length: WEIGHTED_SAMPLES }, () => source.stagedWord(0)).filter(
+      (word) => pool.includes(word),
+    );
+    const hard = (word: string) => sameFingerAt(word, 'r');
+    expect(share(pool, hard)).toBeGreaterThan(0);
+    expect(share(picks, hard)).toBeLessThan(share(pool, hard) * CLEAR_AVOIDANCE);
   });
 });

@@ -1,5 +1,6 @@
 import type { WordLanguage } from '../profiles/Profile';
 import type { LetterRange, WordStageKind } from './difficulty';
+import { typability } from './typability';
 import type { WordRules } from './wordRules';
 import { WORD_LISTS } from './wordLists';
 import { lengthsAt, stageAt } from './wordStages';
@@ -15,6 +16,8 @@ const MAX_DRAWS = 10;
 const NO_STARTS: ReadonlySet<string> = new Set();
 const EVEN_WEIGHT = 1;
 const NO_STAGES = [] as const;
+const TYPABILITY_DRAWS = 4;
+const TYPABILITY_FLOOR = 0.25;
 
 export interface KeyWeights {
   weightOf(key: string): number;
@@ -122,9 +125,10 @@ export class WordSource {
 
   private pickWord(words: readonly string[]): string | undefined {
     const weights = new Map([...this.allowed].map((char) => [char, this.weightOf(char)]));
-    const wordWeight = (word: string) =>
+    const weakness = (word: string) =>
       Math.max(...[...word].map((char) => weights.get(char) ?? EVEN_WEIGHT));
-    return weightedPick(words, wordWeight);
+    const ease = (word: string) => TYPABILITY_FLOOR + typability(word, this.fresh);
+    return weightedPick(words, (word) => weakness(word) * ease(word));
   }
 
   private pickChar(pool: string): string {
@@ -141,17 +145,18 @@ export class WordSource {
 
   private generate(range: LetterRange, pool = this.allowed): string {
     const fresh = [...this.fresh].filter((char) => pool.includes(char)).join('') || pool;
-    return Array.from({ length: randomInt(range.min, range.max) }, () =>
-      this.biasedChar(pool, fresh),
-    ).join('');
+    const length = randomInt(range.min, range.max);
+    return easiestOf(() => Array.from({ length }, () => this.biasedChar(pool, fresh)).join(''));
   }
 
   private focused(range: LetterRange): string {
     const length = randomInt(range.min, range.max);
-    const anchor = randomInt(0, length - 1);
-    return Array.from({ length }, (_, index) =>
-      index === anchor ? this.pickChar(this.fresh) : this.biasedChar(this.allowed, this.fresh),
-    ).join('');
+    return easiestOf(() => {
+      const anchor = randomInt(0, length - 1);
+      return Array.from({ length }, (_, index) =>
+        index === anchor ? this.pickChar(this.fresh) : this.biasedChar(this.allowed, this.fresh),
+      ).join('');
+    });
   }
 
   private biasedChar(pool: string, fresh: string): string {
@@ -173,6 +178,11 @@ function usesOnly(word: string, keys: string): boolean {
 
 function usesFresh(word: string, fresh: string): boolean {
   return [...word].some((char) => fresh.includes(char));
+}
+
+function easiestOf(draw: () => string): string {
+  const candidates = Array.from({ length: TYPABILITY_DRAWS }, draw);
+  return candidates.reduce((best, word) => (typability(word) > typability(best) ? word : best));
 }
 
 function drawAvoiding(takenStarts: ReadonlySet<string>, draw: () => string): string {
