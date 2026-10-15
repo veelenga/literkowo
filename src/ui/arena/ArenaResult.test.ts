@@ -4,6 +4,7 @@ import { GOLD, NO_MEDAL, SILVER } from '../../arena/medals';
 import type { GameResult } from '../../game/Game';
 import { KEY_READY_MS } from '../overlay';
 import { arenaResult, type ArenaRunSummary } from './ArenaResult';
+import { EMPTY_TALLY } from '../../course/counters';
 
 const RESULT: GameResult = {
   won: false,
@@ -13,8 +14,10 @@ const RESULT: GameResult = {
   lettersFreed: 300,
   xp: 62,
   coins: 40,
+  coinBoost: 1,
   keys: { practised: {}, weakest: [], mastered: [] },
   phasesCleared: 8,
+  tally: EMPTY_TALLY,
 };
 
 function summary(overrides: Partial<ArenaRunSummary> = {}): ArenaRunSummary {

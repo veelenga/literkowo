@@ -60,6 +60,7 @@ export class GhostEnemy extends SpecialEnemy {
   private readonly fading: FadingMaterials;
   private readonly sideways = new THREE.Vector3();
   private time = 0;
+  private solid = false;
 
   constructor(
     spec: SpecialSpec,
@@ -70,7 +71,11 @@ export class GhostEnemy extends SpecialEnemy {
   }
 
   get solidity(): number {
-    return solidityAt(this.time);
+    return this.solid ? 1 : solidityAt(this.time);
+  }
+
+  holdSolid(): void {
+    this.solid = true;
   }
 
   override get labelHeight(): number {

@@ -1,3 +1,4 @@
+import { hasReachedArenaGoal } from '../arena/goals';
 import { STARTER_SKINS, type Inventory, type Profile } from '../profiles/Profile';
 import {
   SHOP_ITEMS,
@@ -10,10 +11,11 @@ import {
 } from './shop';
 import { levelProgress, rankStartLevel, type RankId } from './xp';
 
-export type ItemState =
-  'equipped' | 'owned' | 'buyable' | 'claimable' | 'tooExpensive' | 'rankLocked';
+export const LOCKED_STATES = ['tooExpensive', 'rankLocked', 'arenaLocked'] as const;
 
-export type BuyRefusal = 'owned' | 'tooExpensive' | 'rankLocked';
+export type LockedState = (typeof LOCKED_STATES)[number];
+export type ItemState = 'equipped' | 'owned' | 'buyable' | 'claimable' | LockedState;
+export type BuyRefusal = 'owned' | LockedState;
 export type EquipRefusal = 'notOwned';
 
 export type Outcome<Refusal> =
@@ -58,7 +60,7 @@ export function hasRank(xp: number, rank: RankId): boolean {
 export function buy(profile: Profile, item: ShopItem): Outcome<BuyRefusal> {
   const state = itemState(profile, item);
   if (state === 'equipped' || state === 'owned') return { ok: false, reason: 'owned' };
-  if (state === 'tooExpensive' || state === 'rankLocked') return { ok: false, reason: state };
+  if (isLocked(state)) return { ok: false, reason: state };
   return {
     ok: true,
     profile: {
@@ -84,6 +86,10 @@ export function unequip(profile: Profile, kind: WearableKind): Profile {
   return { ...profile, equipped };
 }
 
+export function isLocked(state: ItemState): state is LockedState {
+  return LOCKED_STATES.some((locked) => locked === state);
+}
+
 export function availableItems(profile: Profile): ShopItem[] {
   return SHOP_ITEMS.filter((item) => AVAILABLE_STATES.includes(itemState(profile, item)));
 }
@@ -105,6 +111,8 @@ function lockedState(profile: Profile, unlock: Unlock): ItemState {
       return profile.coins >= unlock.price ? 'buyable' : 'tooExpensive';
     case 'rank':
       return hasRank(profile.xp, unlock.rank) ? 'claimable' : 'rankLocked';
+    case 'arena':
+      return hasReachedArenaGoal(profile.arena, unlock.goal) ? 'claimable' : 'arenaLocked';
   }
 }
 

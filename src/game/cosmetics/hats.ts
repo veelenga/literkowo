@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { HatId, HatSpec } from '../../course/shop';
-import { blockAssembly, type Block } from '../effects/chunkyGeometry';
+import { blockAssembly, type Block, type Triple } from '../effects/chunkyGeometry';
 import { finish, part, pivot, shade } from './parts';
 
 type HatBuilder = (color: string) => THREE.Group;
@@ -42,6 +42,52 @@ const CROWN_RING = { radius: 0.53, depth: 0.28, lift: 0.14, segments: 8 };
 const CROWN_SPIKE = { radius: 0.11, height: 0.26, lift: 0.4, count: 5, ring: 0.44 };
 const CROWN_GEM: readonly Block[] = [{ size: [0.12, 0.12, 0.06], position: [0, 0.14, 0.54] }];
 
+const WHITE = 0xffffff;
+const PLUME = 0xff5f7e;
+const CUFF_DARKEN = -0.1;
+const LEAF_DARKEN = -0.14;
+
+const BEANIE_DOME = { radius: 0.6, squash: 0.75, lift: 0.1 };
+const BEANIE_CUFF = { radius: 0.63, depth: 0.28, lift: 0.04 };
+const BEANIE_POMPOM = { radius: 0.19, detail: 1, lift: 0.6 };
+const BEANIE_SEGMENTS = { round: 8, rings: 4 };
+
+const FELT = 0x35294a;
+const PIRATE_CROWN: readonly Block[] = [{ size: [0.78, 0.5, 0.78], position: [0, 0.22, 0] }];
+const PIRATE_WALL: readonly Block[] = [{ size: [0.8, 0.36, 0.08] }];
+const PIRATE_TRIM: readonly Block[] = [{ size: [0.8, 0.07, 0.12], position: [0, 0.18, 0] }];
+const PIRATE_PEAK = { offset: 0.36, slope: 0.18 };
+const PIRATE_BRIM = { count: 3, ring: 0.44, lift: 0.12, tilt: 0.3 };
+const PIRATE_COIN = { radius: 0.13, depth: 0.05, position: [0, 0.06, 0.06] as const };
+
+const STEEL = { metalness: 0.25, roughness: 0.3 };
+const HELMET_SHELL: readonly Block[] = [
+  { size: [1.12, 0.36, 1.12], position: [0, 0.1, 0] },
+  { size: [1.12, 0.62, 0.07], position: [0, -0.36, -0.565] },
+  ...[-1, 1].map((side) => ({
+    size: [0.07, 0.62, 1.04] as const,
+    position: [side * 0.565, -0.36, -0.04] as const,
+  })),
+];
+const HELMET_TRIM: readonly Block[] = [
+  { size: [1.16, 0.1, 1.16], position: [0, -0.06, 0] },
+  { size: [0.16, 0.1, 0.16], position: [0, 0.32, 0] },
+];
+const HELMET_VISOR: readonly Block[] = [{ size: [0.94, 0.34, 0.06], position: [0, 0.17, 0] }];
+const HELMET_SLIT: readonly Block[] = [{ size: [0.72, 0.06, 0.03], position: [0, 0.2, 0.035] }];
+const HELMET_VISOR_HINGE: Triple = [0, 0.06, 0.62];
+const HELMET_VISOR_LIFT = -0.6;
+const HELMET_PLUME: readonly Block[] = [
+  { size: [0.16, 0.28, 0.16], position: [0, 0.4, 0], rotation: [-0.2, 0, 0] },
+  { size: [0.14, 0.26, 0.14], position: [0, 0.5, -0.16], rotation: [-0.8, 0, 0] },
+  { size: [0.12, 0.22, 0.12], position: [0, 0.48, -0.34], rotation: [-1.4, 0, 0] },
+];
+
+const LAUREL_LEAF: readonly Block[] = [{ size: [0.24, 0.1, 0.05] }];
+const LAUREL_BRANCH = { leaves: 7, from: 0.3, to: Math.PI - 0.2, stagger: 0.5 };
+const LAUREL_RING = { radius: 0.58, lift: -0.02, spread: 0.05, tilt: 0.55, lean: 0.3 };
+const LAUREL_BAND = { radius: 0.57, tube: 0.035, lift: -0.02 };
+
 const HAT_BUILDERS: Readonly<Record<HatId, HatBuilder>> = {
   cap: buildCap,
   headphones: buildHeadphones,
@@ -49,6 +95,10 @@ const HAT_BUILDERS: Readonly<Record<HatId, HatBuilder>> = {
   wizard: buildWizardHat,
   halo: buildHalo,
   crown: buildCrown,
+  beanie: buildBeanie,
+  pirate: buildPirateHat,
+  helmet: buildHelmet,
+  laurel: buildLaurel,
 };
 
 export function buildHat(spec: HatSpec): THREE.Group {
@@ -167,6 +217,123 @@ function buildCrown(color: string): THREE.Group {
   );
   ring.translate(0, CROWN_RING.lift, 0);
   return pivot([0, 0, 0], part(ring, doubleSided(gold)), ...spikes, ...gems);
+}
+
+function buildBeanie(color: string): THREE.Group {
+  const cuff = flatDisc(BEANIE_CUFF.radius, BEANIE_CUFF.depth, BEANIE_SEGMENTS.round);
+  const pompom = new THREE.IcosahedronGeometry(BEANIE_POMPOM.radius, BEANIE_POMPOM.detail);
+  return pivot(
+    [0, 0, 0],
+    part(beanieDome(), finish(color), { position: [0, BEANIE_DOME.lift, 0] }),
+    part(cuff, finish(shade(color, CUFF_DARKEN)), { position: [0, BEANIE_CUFF.lift, 0] }),
+    part(pompom, finish(WHITE), { position: [0, BEANIE_POMPOM.lift, 0] }),
+  );
+}
+
+function beanieDome(): THREE.BufferGeometry {
+  const { radius, squash } = BEANIE_DOME;
+  const { round, rings } = BEANIE_SEGMENTS;
+  const dome = new THREE.SphereGeometry(radius, round, rings, 0, FULL_TURN, 0, QUARTER_TURN);
+  return dome.scale(1, squash, 1);
+}
+
+function buildPirateHat(color: string): THREE.Group {
+  const felt = finish(FELT);
+  const trim = finish(color);
+  const coin = part(
+    flatDisc(PIRATE_COIN.radius, PIRATE_COIN.depth, ROUND_SEGMENTS),
+    finish(GOLD, SHINE),
+    { position: PIRATE_COIN.position, rotation: [QUARTER_TURN, 0, 0] },
+  );
+  const walls = Array.from({ length: PIRATE_BRIM.count }, (_, index) =>
+    brimWall(
+      (index / PIRATE_BRIM.count) * FULL_TURN,
+      ...[-1, 1].map((side) => brimHalf(side, felt, trim)),
+    ),
+  );
+  return pivot([0, 0, 0], part(blockAssembly(PIRATE_CROWN), felt), ...walls, brimWall(0, coin));
+}
+
+function brimHalf(side: number, felt: THREE.Material, trim: THREE.Material): THREE.Group {
+  const half = pivot(
+    [side * PIRATE_PEAK.offset, 0, 0],
+    part(blockAssembly(PIRATE_WALL), felt),
+    part(blockAssembly(PIRATE_TRIM), trim),
+  );
+  half.rotation.z = -side * PIRATE_PEAK.slope;
+  return half;
+}
+
+function brimWall(angle: number, ...parts: THREE.Object3D[]): THREE.Group {
+  const wall = pivot([0, PIRATE_BRIM.lift, PIRATE_BRIM.ring], ...parts);
+  wall.rotation.x = PIRATE_BRIM.tilt;
+  const brim = pivot([0, 0, 0], wall);
+  brim.rotation.y = angle;
+  return brim;
+}
+
+function buildHelmet(color: string): THREE.Group {
+  const steel = finish(color, STEEL);
+  const visor = pivot(
+    HELMET_VISOR_HINGE,
+    part(blockAssembly(HELMET_VISOR), steel),
+    part(blockAssembly(HELMET_SLIT), finish(DARK)),
+  );
+  visor.rotation.x = HELMET_VISOR_LIFT;
+  return pivot(
+    [0, 0, 0],
+    part(blockAssembly(HELMET_SHELL), steel),
+    part(blockAssembly(HELMET_TRIM), finish(shade(color, TRIM_DARKEN), STEEL)),
+    visor,
+    part(blockAssembly(HELMET_PLUME), finish(PLUME)),
+  );
+}
+
+function buildLaurel(color: string): THREE.Group {
+  const leaves = [finish(color), finish(shade(color, LEAF_DARKEN))];
+  const band = new THREE.TorusGeometry(
+    LAUREL_BAND.radius,
+    LAUREL_BAND.tube,
+    RING_SEGMENTS.radial,
+    RING_SEGMENTS.tubular,
+  );
+  return pivot(
+    [0, 0, 0],
+    part(band, finish(GOLD, SHINE), {
+      position: [0, LAUREL_BAND.lift, 0],
+      rotation: [QUARTER_TURN, 0, 0],
+    }),
+    ...[-1, 1].flatMap((side) => laurelBranch(side, leaves)),
+  );
+}
+
+function laurelBranch(side: number, materials: readonly THREE.Material[]): THREE.Group[] {
+  const { leaves, from, to, stagger } = LAUREL_BRANCH;
+  const step = (to - from) / (leaves - 1);
+  return [-1, 1].flatMap((row) =>
+    Array.from({ length: leaves }, (_, index) => {
+      const angle = from + step * (index + (row > 0 ? 0 : stagger));
+      return laurelLeaf(side * angle, row, side, materials[index % materials.length]);
+    }),
+  );
+}
+
+function laurelLeaf(
+  angle: number,
+  row: number,
+  side: number,
+  material: THREE.Material,
+): THREE.Group {
+  const { radius, lift, spread, tilt, lean } = LAUREL_RING;
+  const leaf = pivot(
+    [0, 0, 0],
+    part(blockAssembly(LAUREL_LEAF), material, {
+      position: [0, lift + row * spread, radius],
+      rotation: [lean, 0, row * side * tilt],
+    }),
+  );
+  leaf.rotation.y = angle;
+  return leaf;
 }
 
 function sideDisc(radius: number, depth: number): THREE.BufferGeometry {

@@ -1,5 +1,14 @@
+import type { ArenaGoal } from '../arena/goals';
 import { REGIONS } from '../course/catalog';
-import { hatSpec, petSpec, type ShopItem, type Trophy, type Unlock } from '../course/shop';
+import { POWER_COMBOS, percentOf, type ItemPower, type PowerKind } from '../course/powers';
+import {
+  hatSpec,
+  petSpec,
+  wearableSpec,
+  type ShopItem,
+  type Trophy,
+  type Unlock,
+} from '../course/shop';
 import type { RankId } from '../course/xp';
 import { format } from '../i18n/format';
 import { i18n } from '../i18n/i18n';
@@ -15,6 +24,11 @@ interface TrophyCopy {
   readonly hint: string;
 }
 
+interface ArenaGoalTexts {
+  readonly gold: string;
+  readonly wave: string;
+}
+
 const FIRST_NUMBER = 1;
 
 export function itemName(item: ShopItem): string {
@@ -23,6 +37,20 @@ export function itemName(item: ShopItem): string {
 
 export function itemDescription(item: ShopItem): string | undefined {
   return itemCopy(item).description;
+}
+
+export function itemPower(item: ShopItem): string | undefined {
+  const spec = wearableSpec(item);
+  return spec ? powerLine(spec.power) : undefined;
+}
+
+export function powerLine(power: ItemPower): string {
+  const copy = i18n.t.features.shop.powers;
+  return format(copy.lines[power.kind], {
+    times: copy.times.at(power.strength - FIRST_NUMBER) ?? String(power.strength),
+    percent: percentOf(power),
+    combo: comboFor(power.kind) ?? '',
+  });
 }
 
 export function trophyCopy({ rule }: Trophy): TrophyCopy {
@@ -40,6 +68,18 @@ export function trophyCopy({ rule }: Trophy): TrophyCopy {
       return filled(copy.arenaWave, { wave: rule.wave });
     case 'arenaGold':
       return copy.arenaGold;
+    case 'starStreak':
+      return filled(copy.starStreak, { levels: rule.levels });
+    case 'everyRegionThreeStars':
+      return copy.everyRegionThreeStars;
+    case 'starterSkins':
+      return copy.starterSkins;
+    case 'counter':
+      return filled(copy.counters[rule.counter], { goal: rule.goal });
+    case 'itemsOwned':
+      return rule.count === FIRST_NUMBER
+        ? copy.firstItem
+        : filled(copy.itemsOwned, { count: rule.count });
   }
 }
 
@@ -49,9 +89,24 @@ export function rankTitle(rank: RankId): string {
 
 export function unlockHint(unlock: Unlock): string | undefined {
   const copy = i18n.t.features.shop;
-  if (unlock.by === 'coins') return format(copy.skinPriceHint, { price: unlock.price });
-  if (unlock.by === 'rank') return format(copy.skinRankHint, { rank: rankTitle(unlock.rank) });
-  return undefined;
+  switch (unlock.by) {
+    case 'free':
+      return undefined;
+    case 'coins':
+      return format(copy.skinPriceHint, { price: unlock.price });
+    case 'rank':
+      return format(copy.skinRankHint, { rank: rankTitle(unlock.rank) });
+    case 'arena':
+      return arenaGoalText(copy.arenaHints, unlock.goal);
+  }
+}
+
+export function arenaGoalNote(goal: ArenaGoal): string {
+  return arenaGoalText(i18n.t.features.shop.arenaGoals, goal);
+}
+
+function arenaGoalText(texts: ArenaGoalTexts, goal: ArenaGoal): string {
+  return goal.kind === 'gold' ? texts.gold : format(texts.wave, { wave: goal.wave });
 }
 
 function itemCopy(item: ShopItem): ItemCopy {
@@ -61,6 +116,10 @@ function itemCopy(item: ShopItem): ItemCopy {
   const hat = item.kind === 'hat' ? hatSpec(item.id) : undefined;
   if (hat) return copy.hats[hat.id];
   return { name: format(copy.skinName, { number: AVATARS.indexOf(item.id) + FIRST_NUMBER }) };
+}
+
+function comboFor(kind: PowerKind): number | undefined {
+  return Object.entries(POWER_COMBOS).find(([comboKind]) => comboKind === kind)?.[1];
 }
 
 function filled(copy: TrophyCopy, values: Readonly<Record<string, string | number>>): TrophyCopy {

@@ -14,6 +14,7 @@ export class SessionStats {
   fever = false;
   private activeSeconds = 0;
   private frozen = false;
+  private feverSlips = 0;
 
   get accuracy(): number {
     const total = this.hits + this.mistakes;
@@ -46,11 +47,21 @@ export class SessionStats {
   recordMistake(): void {
     this.mistakes += 1;
     this.combo = 0;
-    this.fever = false;
+    this.fever = this.fever && this.spendFeverSlip();
+  }
+
+  keepFeverOnSlips(slips: number): void {
+    this.feverSlips = Math.max(0, slips);
   }
 
   recordWord(word: string): void {
     const feverBonus = this.fever ? FEVER_MULTIPLIER : 1;
     this.score += word.length * BASE_POINTS_PER_CHAR * this.multiplier * feverBonus;
+  }
+
+  private spendFeverSlip(): boolean {
+    if (this.feverSlips <= 0) return false;
+    this.feverSlips -= 1;
+    return true;
   }
 }

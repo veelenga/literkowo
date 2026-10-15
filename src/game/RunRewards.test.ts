@@ -3,6 +3,7 @@ import { tagFactor, type CompletedWord } from '../course/xp';
 import { MINION_TAG } from './mechanics/bossPhases/Minions';
 import { MERGED_TAG } from './mechanics/mergeEnemies/rules';
 import { POWER_TAG } from './mechanics/powerWords/PowerEnemy';
+import { MAX_BOOST } from '../course/powers';
 import { RunRewards } from './RunRewards';
 
 const COURSE = { xpFactor: 1, coinsPerWord: 1 };
@@ -39,6 +40,23 @@ describe('RunRewards', () => {
     rewards.addCoins(5);
     rewards.addCoins(-3);
     expect(rewards.coins).toBe(5);
+  });
+});
+
+describe('RunRewards boost', () => {
+  it('scales the XP of the run and hands the coin factor on for the payout', () => {
+    const rewards = new RunRewards(COURSE);
+    for (let word = 0; word < 10; word += 1) rewards.recordWord(wordOf());
+    rewards.addCoins(15);
+    rewards.boost({ coins: 1.2, xp: 1.05 });
+    expect(rewards).toMatchObject({ xp: 63, coins: 25, coinBoost: 1.2 });
+  });
+
+  it('keeps every boost between no boost and the cap', () => {
+    const rewards = new RunRewards(COURSE);
+    for (let word = 0; word < 10; word += 1) rewards.recordWord(wordOf());
+    rewards.boost({ coins: 3, xp: 0.5 });
+    expect(rewards).toMatchObject({ xp: 60, coins: 10, coinBoost: MAX_BOOST.coins });
   });
 });
 

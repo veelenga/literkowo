@@ -321,7 +321,12 @@ export class App {
 
   private finishLevel(profile: Profile, level: Level, result: GameResult): void {
     const stars = starsFor(result.accuracy, result.won);
-    const coins = levelCoins({ runCoins: result.coins, won: result.won, stars });
+    const coins = levelCoins({
+      runCoins: result.coins,
+      won: result.won,
+      stars,
+      coinBoost: result.coinBoost,
+    });
     const updated = this.recordAttempt(profile, level, attemptOf(result, stars, coins));
     const treasures = {
       trophies: freshTrophies(profile, updated),
@@ -427,5 +432,6 @@ function attemptOf(result: GameResult, stars: number, coins: number): Attempt {
     xp: result.xp,
     coins,
     keyStats: result.keys.practised,
+    tally: result.tally,
   };
 }

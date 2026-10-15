@@ -11,6 +11,7 @@ import type { Overlay } from '../ui/overlay';
 import type { ShopExit, ShopTab } from '../ui/ShopScreen';
 import { ArenaFlow, type ArenaHost, type Screen } from './ArenaFlow';
 import type { GameRun } from './GameRun';
+import { EMPTY_TALLY } from '../course/counters';
 
 vi.mock('../ui/ShopHero', () => ({
   ShopHero: class {
@@ -38,8 +39,10 @@ const RESULT: GameResult = {
   lettersFreed: 220,
   xp: 70,
   coins: 25,
+  coinBoost: 1,
   keys: { practised: {}, weakest: [], mastered: [] },
   phasesCleared: 7,
+  tally: EMPTY_TALLY,
 };
 
 function lasPlayer(): Profile {

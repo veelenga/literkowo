@@ -22,6 +22,7 @@ import {
 import { Boss } from './Boss';
 import { CameraShake } from './CameraShake';
 import { Enemy, type EnemyLook } from './Enemy';
+import type { Tally } from '../course/counters';
 import { KeyTracker, type KeyReport } from './KeyTracker';
 import { LabelLayer } from './LabelLayer';
 import { createMechanics } from './mechanics';
@@ -32,7 +33,9 @@ import { Player } from './Player';
 import { currentQuality } from './quality';
 import { renderHost, type Viewport } from './RenderHost';
 import type { Phase, PhaseKind, RunPhase, RunPlan } from './RunPlan';
+import type { RewardBoost } from '../course/powers';
 import { RunRewards, type Rewards } from './RunRewards';
+import { RunTally } from './RunTally';
 import { SessionStats } from './SessionStats';
 import { SpawnGroups } from './SpawnGroups';
 import { Targeting } from './Targeting';
@@ -74,8 +77,10 @@ export interface GameResult {
   lettersFreed: number;
   xp: number;
   coins: number;
+  coinBoost: number;
   keys: KeyReport;
   phasesCleared: number;
+  tally: Tally;
 }
 
 export interface Progress {
@@ -106,6 +111,7 @@ export class Game {
   private readonly words: WordSource;
   private readonly stats = new SessionStats();
   private readonly rewards: RunRewards;
+  private readonly tally = new RunTally();
   private readonly keys: KeyTracker;
   private readonly labels: LabelLayer;
   private readonly enemies: Enemy[] = [];
@@ -123,6 +129,7 @@ export class Game {
   private boss: Boss | undefined;
   private lives: number;
   private shields = 0;
+  private guards = 0;
   private timeScale = 1;
   private lettersFreed = 0;
   private elapsed = 0;
@@ -235,6 +242,7 @@ export class Game {
     const phase = (): Phase => this.phase;
     const playing = (): boolean => this.isPlaying;
     const shields = (): number => this.shields;
+    const guards = (): number => this.guards;
     return {
       enemies: this.enemies,
       player: this.player,
@@ -257,6 +265,9 @@ export class Game {
       get shields() {
         return shields();
       },
+      get guards() {
+        return guards();
+      },
       createLabel: () => this.labels.createLabel(),
       addEnemy: (enemy, radius) => this.addEnemy(enemy, radius),
       removeEnemy: (enemy) => this.clearEnemy(enemy),
@@ -266,7 +277,10 @@ export class Game {
       announce: (text, style, accent) => this.events.onAnnounce(text, style, accent),
       loseLife: () => this.loseLife(),
       absorbNextHit: () => this.addShield(),
+      guardNextHit: () => this.addGuard(),
+      restoreLife: () => this.restoreLife(),
       addCoins: (amount) => this.addCoins(amount),
+      boostRewards: (boost) => this.boostRewards(boost),
     };
   }
 
@@ -439,7 +453,7 @@ export class Game {
   }
 
   private loseLife(): void {
-    if (this.finished || this.absorbHit()) return;
+    if (this.finished || this.guardHit() || this.absorbHit()) return;
     this.lives -= 1;
     this.shake.start(SHAKE_AMPLITUDE, SHAKE_DURATION);
     this.player.hurt();
@@ -460,8 +474,33 @@ export class Game {
     return true;
   }
 
+  private addGuard(): void {
+    this.guards += 1;
+  }
+
+  private guardHit(): boolean {
+    if (this.guards <= 0) return false;
+    this.guards -= 1;
+    sfx.impact(SHIELD_IMPACT);
+    this.recordMistake();
+    this.events.onStats(this.stats, this.lives);
+    return true;
+  }
+
+  private restoreLife(): boolean {
+    if (this.finished || this.lives >= this.config.plan.lives) return false;
+    this.lives += 1;
+    this.events.onStats(this.stats, this.lives);
+    return true;
+  }
+
   private addCoins(amount: number): void {
     this.rewards.addCoins(amount);
+    this.events.onRewards(this.rewards);
+  }
+
+  private boostRewards(boost: RewardBoost): void {
+    this.rewards.boost(boost);
     this.events.onRewards(this.rewards);
   }
 
@@ -522,8 +561,10 @@ export class Game {
       lettersFreed: this.lettersFreed,
       xp: this.rewards.xp,
       coins: this.rewards.coins,
+      coinBoost: this.rewards.coinBoost,
       keys: this.keys.report(),
       phasesCleared: this.phaseIndex,
+      tally: this.tally.snapshot(),
     });
   }
 
@@ -559,6 +600,7 @@ export class Game {
 
   private completeWord(enemy: Enemy): void {
     this.stats.recordWord(enemy.word);
+    this.tally.recordWord(enemy.tags);
     this.rewardWord(enemy);
     this.lettersFreed += enemy.word.length;
     this.player.jump();
@@ -586,6 +628,7 @@ export class Game {
     boss.takeHit();
     this.reportProgress();
     if (!boss.isDefeated) return;
+    this.tally.recordBossBeaten();
     this.remove(boss);
     this.boss = undefined;
     this.advancePhase();

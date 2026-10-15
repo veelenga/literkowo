@@ -36,6 +36,7 @@ type AttributeProps = {
   inputmode?: string;
   enterkeyhint?: string;
   spellcheck?: 'true' | 'false';
+  role?: string;
   [aria: `aria-${string}`]: string | undefined;
   [data: `data-${string}`]: string | undefined;
 };

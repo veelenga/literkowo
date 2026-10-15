@@ -2,6 +2,7 @@ import { sfx } from '../audio/Sfx';
 import {
   buy,
   equip,
+  isLocked,
   itemState,
   unequip,
   type ItemState,
@@ -17,6 +18,7 @@ import {
   type Trophy,
   type Unlock,
 } from '../course/shop';
+import { awardTrophies, trophyProgress, type TrophyProgress } from '../course/trophies';
 import { format, formatParts } from '../i18n/format';
 import { i18n } from '../i18n/i18n';
 import type { Profile } from '../profiles/Profile';
@@ -26,7 +28,14 @@ import { el, type Child } from './dom';
 import { itemPreview, releaseItemPreviews } from './ItemPreviews';
 import { coinIcon, coinPill } from './progression';
 import { ShopHero } from './ShopHero';
-import { itemDescription, itemName, rankTitle, trophyCopy } from './shopCopy';
+import {
+  arenaGoalNote,
+  itemDescription,
+  itemName,
+  itemPower,
+  rankTitle,
+  trophyCopy,
+} from './shopCopy';
 import { lockBadge, shopIcon } from './shopParts';
 
 export type ShopTab = ItemKind | 'trophy';
@@ -38,6 +47,7 @@ const WEAR_CHIMES = { midis: [79, 84], spacing: 0.06, decay: 0.3 } as const;
 const FRESH_CLASS = 'is-fresh';
 const ENTERING_CLASS = 'is-entering';
 const CONFETTI_PIECES = 20;
+const PERCENT = 100;
 
 export interface ShopExit {
   readonly onBack: (profile: Profile) => void;
@@ -132,6 +142,7 @@ export class ShopScreen {
   private itemCard(item: ShopItem): HTMLElement {
     const state = itemState(this.profile, item);
     const description = itemDescription(item);
+    const power = itemPower(item);
     return el(
       'article',
       { class: `shop-item is-${state}`, 'data-item': itemKey(item) },
@@ -139,9 +150,10 @@ export class ShopScreen {
         'div',
         { class: 'shop-item-art' },
         itemPreview(item),
-        state === 'rankLocked' ? lockBadge(item.unlock) : null,
+        isGated(state) ? lockBadge(item.unlock) : null,
       ),
       el('h3', { class: 'shop-item-name', text: itemName(item) }),
+      power ? powerNote(power) : null,
       description ? el('p', { class: 'shop-item-text', text: description }) : null,
       el('div', { class: 'shop-item-footer' }, ...this.itemFooter(item, state)),
     );
@@ -166,6 +178,8 @@ export class ShopScreen {
         return [coinAmount(priceOf(item), 'shop-price'), missingNote(priceOf(item), this.profile)];
       case 'rankLocked':
         return [rankNote(item.unlock)];
+      case 'arenaLocked':
+        return [arenaNote(item.unlock)];
     }
   }
 
@@ -187,7 +201,7 @@ export class ShopScreen {
     const bought = buy(this.profile, item);
     if (!bought.ok) return;
     const worn = equip(bought.profile, item);
-    this.commit(worn.ok ? worn.profile : bought.profile);
+    this.commit(awardTrophies(worn.ok ? worn.profile : bought.profile));
     sfx.chimes(BUY_CHIMES.midis, BUY_CHIMES.spacing, BUY_CHIMES.decay);
     sfx.sparkle();
     this.celebrate(item);
@@ -227,7 +241,9 @@ export class ShopScreen {
       el(
         'div',
         { class: 'shop-grid' },
-        ...TROPHIES.map((trophy) => trophyCard(trophy, owned.has(trophy.id))),
+        ...TROPHIES.map((trophy) =>
+          trophyCard(trophy, owned.has(trophy.id), trophyProgress(this.profile, trophy.rule)),
+        ),
       ),
     );
   }
@@ -235,6 +251,15 @@ export class ShopScreen {
 
 function wearableKind(item: ShopItem): WearableKind | undefined {
   return item.kind === 'skin' ? undefined : item.kind;
+}
+
+function powerNote(power: string): HTMLElement {
+  return el(
+    'p',
+    { class: 'shop-item-power' },
+    shopIcon('bolt', 'shop-item-power-icon'),
+    el('span', { text: power }),
+  );
 }
 
 function coinAmount(amount: number, className: string): HTMLElement {
@@ -256,7 +281,20 @@ function rankNote(unlock: Unlock): HTMLElement | null {
   return el('span', { class: 'shop-note', text });
 }
 
-function trophyCard(trophy: Trophy, earned: boolean): HTMLElement {
+function arenaNote(unlock: Unlock): HTMLElement | null {
+  if (unlock.by !== 'arena') return null;
+  return el('span', { class: 'shop-note', text: arenaGoalNote(unlock.goal) });
+}
+
+function isGated(state: ItemState): boolean {
+  return isLocked(state) && state !== 'tooExpensive';
+}
+
+function trophyCard(
+  trophy: Trophy,
+  earned: boolean,
+  progress: TrophyProgress | undefined,
+): HTMLElement {
   const { name, hint } = trophyCopy(trophy);
   return el(
     'article',
@@ -267,12 +305,29 @@ function trophyCard(trophy: Trophy, earned: boolean): HTMLElement {
     el('div', { class: 'shop-item-art' }, shopIcon('trophy', 'shop-trophy-icon')),
     el('h3', { class: 'shop-item-name', text: name }),
     el('p', { class: 'shop-item-text', text: hint }),
-    earned
-      ? null
-      : el(
-          'div',
-          { class: 'shop-item-footer' },
-          el('span', { class: 'shop-note', text: i18n.t.features.shop.trophyLocked }),
-        ),
+    earned ? null : el('div', { class: 'shop-item-footer' }, trophyGoal(progress)),
+  );
+}
+
+function trophyGoal(progress: TrophyProgress | undefined): HTMLElement {
+  const copy = i18n.t.features.shop;
+  if (!progress) return el('span', { class: 'shop-note', text: copy.trophyLocked });
+  const current = Math.min(progress.current, progress.goal);
+  const share = Math.round((current / progress.goal) * PERCENT);
+  const label = format(copy.trophyProgress, { current, goal: progress.goal });
+  return el(
+    'div',
+    { class: 'trophy-progress' },
+    el(
+      'span',
+      {
+        class: 'trophy-progress-bar',
+        role: 'progressbar',
+        'aria-label': label,
+        'aria-valuenow': String(share),
+      },
+      el('span', { class: 'trophy-progress-fill', style: `width: ${share}%` }),
+    ),
+    el('span', { class: 'shop-note', text: label }),
   );
 }

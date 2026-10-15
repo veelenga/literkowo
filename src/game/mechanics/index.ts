@@ -1,10 +1,10 @@
 import { ArenaWaves } from './ArenaWaves';
 import { Bombers } from './Bombers';
 import { BossPhases } from './BossPhases';
-import { Companion } from './Companion';
 import { EnemyTypes } from './EnemyTypes';
 import { Fever } from './Fever';
 import { HeroStrikes } from './HeroStrikes';
+import { ItemPowers } from './ItemPowers';
 import type { Mechanic, MechanicContext, MechanicType } from './Mechanic';
 import { MergeEnemies } from './MergeEnemies';
 import { PowerWords } from './PowerWords';
@@ -23,7 +23,7 @@ const MECHANICS: readonly MechanicType[] = [
   Twins,
   HeroStrikes,
   WaveEvents,
-  Companion,
+  ItemPowers,
   ArenaWaves,
 ];
 

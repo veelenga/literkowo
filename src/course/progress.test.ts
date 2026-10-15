@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createProfile, type Profile } from '../profiles/Profile';
 import { requireLevel as level } from '../testing/levels';
 import { REGIONS } from './catalog';
+import { EMPTY_TALLY } from './counters';
 import { EMPTY_KEY_STAT, recordHit, recordMiss } from './keyStats';
 import { markStorySeen, recordResult, storyAfter, storyBefore, type Attempt } from './progress';
 
@@ -15,6 +16,7 @@ function attempt(overrides: Partial<Attempt> = {}): Attempt {
     xp: 30,
     coins: 12,
     keyStats: {},
+    tally: EMPTY_TALLY,
     ...overrides,
   };
 }
@@ -23,7 +25,33 @@ function profileWith(overrides: Partial<Profile> = {}): Profile {
   return { ...createProfile('Ola', 'a'), ...overrides };
 }
 
+const TALLY = { words: 14, powerWords: 1, specialEnemies: 2, bossesBeaten: 0 };
+
 describe('recordResult', () => {
+  it('counts the words, coins and skin of every attempt', () => {
+    const first = recordResult(profileWith(), level('polana-2'), attempt({ tally: TALLY }));
+    const second = recordResult(first, level('polana-2'), attempt({ tally: TALLY, coins: 8 }));
+    expect(second.counters).toMatchObject({
+      wordsTyped: 28,
+      powerWords: 2,
+      specialEnemies: 4,
+      coinsEarned: 20,
+      skinsPlayed: ['a'],
+    });
+  });
+
+  it('keeps the best speed and perfect levels only from attempts with stars', () => {
+    const lost = recordResult(
+      profileWith(),
+      level('polana-2'),
+      attempt({ stars: 0, accuracy: 1, wpm: 40 }),
+    );
+    expect(lost.counters).toMatchObject({ bestWpm: 0, perfectLevels: 0 });
+    const perfect = recordResult(lost, level('polana-2'), attempt({ stars: 3, accuracy: 1 }));
+    expect(perfect.counters).toMatchObject({ bestWpm: 12, perfectLevels: 1 });
+    expect(perfect.inventory.trophies).toContain('perfect-level');
+  });
+
   it('stores the first result and adds up totals', () => {
     const updated = recordResult(profileWith(), level('polana-1'), attempt());
     expect(updated.levelResults['polana-1']).toEqual({

@@ -30,7 +30,7 @@ Read only:
 - `enemies`: live list of enemies on the board. Never mutate it, use the methods below.
 - `player` (`object`, `jump()`, `hurt()`), `scene`, `particles.burst(position, color)`.
 - `stats`: the `SessionStats` of this run. Scoring and the fever flag live there.
-- `phase` (the current phase of the run plan, `src/game/RunPlan.ts`), `playing`, `shields`, `theme`, `sfx`, `words` (the run's `WordSource`, with the keys and lengths of the current phase), `level` and `language` (the profile word language).
+- `phase` (the current phase of the run plan, `src/game/RunPlan.ts`), `playing`, `shields`, `guards`, `theme`, `sfx`, `words` (the run's `WordSource`, with the keys and lengths of the current phase), `level` and `language` (the profile word language).
 - `allMechanicsUnlocked`: true when the run plan opens every mechanic, as the arena does. A mechanic that unlocks by `level` must then run as unlocked, see `hasForestMechanics` in `actionEvents/regions.ts` and `availableKinds` in `enemyTypes/kinds.ts`.
 - `equipped`: the ids of the pet and the hat the profile wears (`src/course/shop.ts` has their specs). The game already puts the hat on the hero.
 
@@ -45,7 +45,11 @@ Actions:
 - `announce(text, style, accent?)`: shows text over the game. `style` is `'callout'`, `'banner'` or `'warning'`, `accent` is any CSS color.
 - `loseLife()`: costs a life like an enemy reaching the hero, unless a shield absorbs it.
 - `absorbNextHit()`: adds one shield. Each shield cancels one `loseLife`.
+- `guardNextHit()`: adds one guard. A guard keeps the heart of the next `loseLife`, but the hit still counts as a mistake and breaks the combo, so accuracy stays the same. Guards go before shields.
+- `restoreLife()`: gives back one lost heart. Returns `false` and does nothing when every heart is still there.
 - `addCoins(amount)`: adds coins to this run, for example from a balloon or a chest. They reach `GameResult.coins` and the profile with the level's other coins.
+- `boostRewards({ coins, xp })`: scales the XP of the whole run and the coin payout of the run, for example `1.2` for 20% more. The XP grows during the run. The coin factor reaches `GameResult.coinBoost` and scales the whole payout after the run, bonuses included (`levelCoins` in `src/course/coins.ts`, `arenaPayout` in `src/arena/economy.ts`). Each factor stays between 1 and the cap in `MAX_BOOST` (`src/course/powers.ts`).
+- `stats.keepFeverOnSlips(slips)`: the next `slips` mistakes during the fever keep it going. They still count as mistakes and still break the combo.
 
 Enemies also offer `tags` (a `Set<string>` for your own markers), `typedLength` (letters typed so far), `setSpeedScale(scale)`, `freeze(seconds)` (stops and dims), `isFrozen`, `burstPosition` and `setLabelMode('full' | 'firstLetter' | 'hidden')`. `firstLetter` shows the typed part and the next letter and masks the rest.
 

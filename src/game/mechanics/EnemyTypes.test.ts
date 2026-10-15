@@ -163,7 +163,7 @@ describe('EnemyTypes', () => {
     minion.tags.add(MINION_TAG);
     const kept: Enemy[] = [
       new Boss(label(), 1, LOOK, () => 'kot', 6),
-      new PowerEnemy('las', label(), 1, 'crystal'),
+      new PowerEnemy('las', label(), 1, 'crystal', 'storm'),
       new MergedEnemy('kotlas', label(), 1, LOOK),
       minion,
     ];

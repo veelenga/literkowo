@@ -1,5 +1,8 @@
+import type { ArenaGoal } from '../arena/goals';
 import { AVATARS, STARTER_SKINS } from '../profiles/Profile';
 import { REGIONS, type ThemeId } from './catalog';
+import type { CounterId } from './counters';
+import type { HatPower, HatPowerKind, PetPower, PetPowerKind } from './powers';
 import type { RankId } from './xp';
 
 export const ITEM_KINDS = ['pet', 'hat', 'skin'] as const;
@@ -9,7 +12,8 @@ export type ItemKind = (typeof ITEM_KINDS)[number];
 export type Unlock =
   | { readonly by: 'free' }
   | { readonly by: 'coins'; readonly price: number }
-  | { readonly by: 'rank'; readonly rank: RankId };
+  | { readonly by: 'rank'; readonly rank: RankId }
+  | { readonly by: 'arena'; readonly goal: ArenaGoal };
 
 export interface ShopItem {
   readonly kind: ItemKind;
@@ -17,8 +21,30 @@ export interface ShopItem {
   readonly unlock: Unlock;
 }
 
-export const PET_IDS = ['cube-cat', 'bee', 'star', 'ghost', 'robot', 'dragon'] as const;
-export const HAT_IDS = ['cap', 'headphones', 'horns', 'wizard', 'halo', 'crown'] as const;
+export const PET_IDS = [
+  'cube-cat',
+  'piggy',
+  'bee',
+  'star',
+  'puppy',
+  'ghost',
+  'penguin',
+  'dragon',
+  'robot',
+  'shadow',
+] as const;
+export const HAT_IDS = [
+  'cap',
+  'headphones',
+  'horns',
+  'halo',
+  'beanie',
+  'wizard',
+  'helmet',
+  'pirate',
+  'crown',
+  'laurel',
+] as const;
 
 export type PetId = (typeof PET_IDS)[number];
 export type HatId = (typeof HAT_IDS)[number];
@@ -27,13 +53,17 @@ export interface PetSpec extends ShopItem {
   readonly kind: 'pet';
   readonly id: PetId;
   readonly color: string;
+  readonly power: PetPower;
 }
 
 export interface HatSpec extends ShopItem {
   readonly kind: 'hat';
   readonly id: HatId;
   readonly color: string;
+  readonly power: HatPower;
 }
+
+export type WearableSpec = PetSpec | HatSpec;
 
 export interface SkinSpec extends ShopItem {
   readonly kind: 'skin';
@@ -45,7 +75,12 @@ export type TrophyRule =
   | { readonly kind: 'playerLevel'; readonly level: number }
   | { readonly kind: 'masteredRegion' }
   | { readonly kind: 'arenaWave'; readonly wave: number }
-  | { readonly kind: 'arenaGold' };
+  | { readonly kind: 'arenaGold' }
+  | { readonly kind: 'starStreak'; readonly levels: number }
+  | { readonly kind: 'counter'; readonly counter: CounterId; readonly goal: number }
+  | { readonly kind: 'starterSkins' }
+  | { readonly kind: 'everyRegionThreeStars' }
+  | { readonly kind: 'itemsOwned'; readonly count: number };
 
 export interface Trophy {
   readonly id: string;
@@ -54,6 +89,7 @@ export interface Trophy {
 }
 
 const FREE: Unlock = { by: 'free' };
+const SHADOW_WAVE = 15;
 
 function coins(price: number): Unlock {
   return { by: 'coins', price };
@@ -63,22 +99,90 @@ function rank(rankId: RankId): Unlock {
   return { by: 'rank', rank: rankId };
 }
 
+function arena(goal: ArenaGoal): Unlock {
+  return { by: 'arena', goal };
+}
+
+function pet(kind: PetPowerKind, strength: number): PetPower {
+  return { kind, strength };
+}
+
+function hat(kind: HatPowerKind, strength: number): HatPower {
+  return { kind, strength };
+}
+
 export const PETS: readonly PetSpec[] = [
-  { kind: 'pet', id: 'cube-cat', unlock: coins(160), color: '#5ce1ff' },
-  { kind: 'pet', id: 'bee', unlock: coins(320), color: '#ffc61a' },
-  { kind: 'pet', id: 'star', unlock: rank('apprentice'), color: '#ffe066' },
-  { kind: 'pet', id: 'ghost', unlock: coins(480), color: '#c9b8ff' },
-  { kind: 'pet', id: 'robot', unlock: rank('wordGuardian'), color: '#9fc3e0' },
-  { kind: 'pet', id: 'dragon', unlock: coins(900), color: '#4ade80' },
+  { kind: 'pet', id: 'cube-cat', unlock: coins(160), color: '#5ce1ff', power: pet('zap', 1) },
+  { kind: 'pet', id: 'piggy', unlock: coins(250), color: '#ff9ec7', power: pet('doubleChest', 1) },
+  { kind: 'pet', id: 'bee', unlock: coins(320), color: '#ffc61a', power: pet('popBalloon', 3) },
+  {
+    kind: 'pet',
+    id: 'star',
+    unlock: rank('apprentice'),
+    color: '#ffe066',
+    power: pet('restoreHeart', 1),
+  },
+  { kind: 'pet', id: 'puppy', unlock: coins(400), color: '#e8b878', power: pet('catchThief', 2) },
+  { kind: 'pet', id: 'ghost', unlock: coins(480), color: '#c9b8ff', power: pet('catchGhost', 2) },
+  {
+    kind: 'pet',
+    id: 'penguin',
+    unlock: coins(700),
+    color: '#7cc8ff',
+    power: pet('freezeBoard', 2),
+  },
+  { kind: 'pet', id: 'dragon', unlock: coins(900), color: '#4ade80', power: pet('catchBat', 2) },
+  {
+    kind: 'pet',
+    id: 'robot',
+    unlock: rank('wordGuardian'),
+    color: '#9fc3e0',
+    power: pet('catchBomber', 1),
+  },
+  {
+    kind: 'pet',
+    id: 'shadow',
+    unlock: arena({ kind: 'wave', wave: SHADOW_WAVE }),
+    color: '#9a8cff',
+    power: pet('stopNear', 2),
+  },
 ];
 
 export const HATS: readonly HatSpec[] = [
-  { kind: 'hat', id: 'cap', unlock: coins(75), color: '#ff5f7e' },
-  { kind: 'hat', id: 'headphones', unlock: coins(200), color: '#3db4ff' },
-  { kind: 'hat', id: 'horns', unlock: coins(350), color: '#ff7a45' },
-  { kind: 'hat', id: 'wizard', unlock: rank('letterHunter'), color: '#7c5cff' },
-  { kind: 'hat', id: 'halo', unlock: coins(600), color: '#ffe08a' },
-  { kind: 'hat', id: 'crown', unlock: rank('legend'), color: '#ffbe2e' },
+  { kind: 'hat', id: 'cap', unlock: coins(75), color: '#ff5f7e', power: hat('coins', 0.1) },
+  { kind: 'hat', id: 'headphones', unlock: coins(200), color: '#3db4ff', power: hat('xp', 0.05) },
+  { kind: 'hat', id: 'horns', unlock: coins(350), color: '#ff7a45', power: hat('solidGhosts', 1) },
+  { kind: 'hat', id: 'halo', unlock: coins(600), color: '#ffe08a', power: hat('bossGuard', 1) },
+  {
+    kind: 'hat',
+    id: 'beanie',
+    unlock: coins(800),
+    color: '#4fd1c5',
+    power: hat('longFreeze', 0.5),
+  },
+  {
+    kind: 'hat',
+    id: 'wizard',
+    unlock: rank('letterHunter'),
+    color: '#7c5cff',
+    power: hat('xp', 0.1),
+  },
+  { kind: 'hat', id: 'helmet', unlock: coins(1100), color: '#c9d4ea', power: hat('defuse', 1) },
+  { kind: 'hat', id: 'pirate', unlock: coins(1500), color: '#ffcf5a', power: hat('coins', 0.2) },
+  {
+    kind: 'hat',
+    id: 'crown',
+    unlock: rank('legend'),
+    color: '#ffbe2e',
+    power: hat('coins', 0.25),
+  },
+  {
+    kind: 'hat',
+    id: 'laurel',
+    unlock: arena({ kind: 'gold' }),
+    color: '#7dd56f',
+    power: hat('feverSlip', 1),
+  },
 ];
 
 const LOCKED_SKINS: Readonly<Record<string, Unlock>> = {
@@ -123,6 +227,42 @@ const ARENA_WAVE_TROPHIES = [
   { wave: 20, color: '#5ce1ff' },
 ] as const;
 
+const STAR_STREAK_LEVELS = 5;
+
+const COUNTER_TROPHIES: readonly { counter: CounterId; goal: number; color: string }[] = [
+  { counter: 'perfectLevels', goal: 1, color: '#3ee07a' },
+  { counter: 'bestWpm', goal: 20, color: '#d98c4a' },
+  { counter: 'bestWpm', goal: 30, color: '#c9d2e3' },
+  { counter: 'bestWpm', goal: 40, color: '#ffbe2e' },
+  { counter: 'wordsTyped', goal: 500, color: '#5ce1ff' },
+  { counter: 'wordsTyped', goal: 2000, color: '#3db4ff' },
+  { counter: 'wordsTyped', goal: 5000, color: '#7c5cff' },
+  { counter: 'bossesBeaten', goal: 10, color: '#ff3d5f' },
+  { counter: 'powerWords', goal: 50, color: '#ffc53d' },
+  { counter: 'specialEnemies', goal: 100, color: '#b98cff' },
+  { counter: 'coinsEarned', goal: 1000, color: '#ffd447' },
+];
+
+const COUNTER_TROPHY_IDS: Readonly<Record<CounterId, string>> = {
+  perfectLevels: 'perfect-level',
+  bestWpm: 'wpm',
+  wordsTyped: 'words',
+  bossesBeaten: 'bosses',
+  powerWords: 'power-words',
+  specialEnemies: 'special-enemies',
+  coinsEarned: 'coins',
+};
+
+const ITEM_TROPHIES = [
+  { id: 'first-item', count: 1, color: '#7cf5a8' },
+  { id: 'five-items', count: 5, color: '#4ade80' },
+] as const;
+
+function counterTrophyId(counter: CounterId, goal: number): string {
+  const id = COUNTER_TROPHY_IDS[counter];
+  return goal > 1 ? `${id}-${goal}` : id;
+}
+
 export const TROPHIES: readonly Trophy[] = [
   { id: 'first-boss', rule: { kind: 'firstBoss' }, color: '#ff3d5f' },
   ...REGIONS.map((region) => ({
@@ -142,6 +282,23 @@ export const TROPHIES: readonly Trophy[] = [
     color,
   })),
   { id: 'arena-gold', rule: { kind: 'arenaGold' }, color: '#ffd23f' },
+  {
+    id: `star-streak-${STAR_STREAK_LEVELS}`,
+    rule: { kind: 'starStreak', levels: STAR_STREAK_LEVELS },
+    color: '#ffe066',
+  },
+  { id: 'every-region-three-stars', rule: { kind: 'everyRegionThreeStars' }, color: '#ffbe2e' },
+  ...COUNTER_TROPHIES.map(({ counter, goal, color }) => ({
+    id: counterTrophyId(counter, goal),
+    rule: { kind: 'counter', counter, goal } as const,
+    color,
+  })),
+  { id: 'starter-skins', rule: { kind: 'starterSkins' }, color: '#ff7ad9' },
+  ...ITEM_TROPHIES.map(({ id, count, color }) => ({
+    id,
+    rule: { kind: 'itemsOwned', count } as const,
+    color,
+  })),
 ];
 
 export function itemsOf(kind: ItemKind): readonly ShopItem[] {
@@ -158,6 +315,12 @@ export function petSpec(id: string | undefined): PetSpec | undefined {
 
 export function hatSpec(id: string | undefined): HatSpec | undefined {
   return HATS.find((hat) => hat.id === id);
+}
+
+export function wearableSpec(item: ShopItem): WearableSpec | undefined {
+  if (item.kind === 'pet') return petSpec(item.id);
+  if (item.kind === 'hat') return hatSpec(item.id);
+  return undefined;
 }
 
 export function skinSpec(id: string): SkinSpec | undefined {

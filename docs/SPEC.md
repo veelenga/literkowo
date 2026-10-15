@@ -158,7 +158,7 @@ Bombers:
 - From Las on, and in every arena run, in the words phase and in boss fights. One comes about every 40 to 50 seconds while enemies are on the board, and at most one is on the board at a time.
 - A bomber is 1.7 times bigger and moves at 0.55 times the phase speed. Its word has 6 to 9 letters: a boss word when one fits, otherwise letters from the allowed keys. A lit fuse sparks on top and ticks faster and faster from 7 units away.
 - Typing its word detonates it: slow motion at 0.3 for 0.6 seconds, a camera shake and a shockwave. Every enemy within 4.5 units shatters and scores its normal word points. The boss never shatters. Other bombers in range go off 0.25 seconds later. When 3 or more enemies go down, a banner shows "Bum! x3" / "Бум! x3".
-- A bomber that reaches the player costs a life and knocks every other enemy 4 units back.
+- A bomber that reaches the player costs a life and knocks every other enemy 4 units back. The helmet hat defuses it just before, see [Item powers](#item-powers).
 
 Twins:
 
@@ -172,7 +172,8 @@ Twins:
 Owners: `src/profiles/Profile.ts`, `src/profiles/profileSchema.ts`, `src/profiles/ProfileStore.ts`.
 
 - Several profiles per device, stored as a JSON array in localStorage under `literkowo.profiles`.
-- Schema version is 7 (`PROFILE_SCHEMA_VERSION`). Older profiles are migrated on load: version 1 moves the best score into the total score, version 2 seeds XP with `round(totalScore / 10)`, version 3 starts with empty key statistics, version 4 gets the starter inventory, nothing equipped and every trophy it already earned, version 5 moves level results onto the course with one key per level (`src/profiles/courseMigration.ts`), version 6 gets an empty arena record. A shape change bumps the version and adds a migration.
+- Schema version is 8 (`PROFILE_SCHEMA_VERSION`). Older profiles are migrated on load: version 1 moves the best score into the total score, version 2 seeds XP with `round(totalScore / 10)`, version 3 starts with empty key statistics, version 4 gets the starter inventory and nothing equipped, version 5 moves level results onto the course with one key per level (`src/profiles/courseMigration.ts`), version 6 gets an empty arena record, version 7 gets counters seeded from what it already has (`src/profiles/countersMigration.ts`). Every profile from version 7 or older also gets every trophy it already earned. A shape change bumps the version and adds a migration.
+- Seeded counters: bosses beaten from boss levels with a star, coins earned from the coins plus the price of every owned item, perfect levels and the best speed from level results with stars, and the current skin as played. Words, power words and special enemies start at 0, since older profiles did not count them.
 - Version 5 and older had one level per two or three keys. Each old result moves to the new level that completes the same keys: the practice level of the last key of the old level, or the boss for an old boss. When the old result has at least one star, the new levels between the previous target and this one get the same result, so a finished region stays finished and the next open level is the first one the child has not played. A result without stars only moves to its target. XP, coins, scores, stories, key statistics, items and trophies stay as they are.
 
 | Old level    | New target    | Also marked done               |
@@ -201,7 +202,7 @@ Owners: `src/profiles/Profile.ts`, `src/profiles/profileSchema.ts`, `src/profile
 | `wyspa-4`    | `wyspa-24`    | `wyspa-23`                     |
 
 - Entries that cannot be read are dropped, and the raw value is copied to `literkowo.profiles.backup` first.
-- Fields: id, name (up to 16 characters, `src/ui/ProfileScreen.ts`), avatar, word language, total score, letters freed, XP, coins, seen stories, the best result per level, the key statistics, the inventory, the equipped items and the arena record (see [Arena](#arena)).
+- Fields: id, name (up to 16 characters, `src/ui/ProfileScreen.ts`), avatar, word language, total score, letters freed, XP, coins, seen stories, the best result per level, the key statistics, the inventory, the equipped items, the arena record (see [Arena](#arena)) and the counters (see [Trophies](#trophies)).
 - Inventory: owned pets, hats, skins and earned trophies, as id lists. Unknown ids are dropped on load. Every profile owns the 6 starter skins and its current avatar.
 - Equipped: at most one pet and one hat. An id the inventory does not own is dropped on load.
 - Word language is set per profile. Today the choices are Polish (default) and English (`WORD_LANGUAGES` in `src/profiles/Profile.ts`).
@@ -216,7 +217,7 @@ Owners: `src/game/SessionStats.ts`, `src/game/combo.ts`.
 - Points are added when a word is complete: `letters × 10 × multiplier × fever bonus`.
 - Combo grows by 1 for each correct letter. A mistake or a lost life sets it back to 0.
 - Multiplier is `1 + floor(combo / 5)`, at most 5.
-- Fever starts at combo 15 and doubles points. It ends on a mistake or a lost life. A gold ring spins around the player while it lasts (`src/game/Game.ts`).
+- Fever starts at combo 15 and doubles points. It ends on a mistake or a lost life, unless the laurel hat keeps it, see [Item powers](#item-powers). A gold ring spins around the player while it lasts (`src/game/mechanics/Fever.ts`).
 - Callouts appear when the combo reaches exactly these values:
 
 | Combo | Kind     | Polish   | Ukrainian |
@@ -245,7 +246,7 @@ Owners: `src/game/mechanics/PowerWords.ts`, `src/game/mechanics/powerWords`, nam
 
 | Power    | Name (pl / uk)    | Icon | Polish words                        | English words        | Effect                                                                                                                                                                                  |
 | -------- | ----------------- | ---- | ----------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `freeze` | Mróz / Мороз      | ❄️   | lód, mróz, zima, szron              | ice, frost, snow     | Every enemy on the board, the boss included, freezes for 3 seconds (`FREEZE_SECONDS`).                                                                                                  |
+| `freeze` | Mróz / Мороз      | ❄️   | lód, mróz, zima, szron              | ice, frost, snow     | Every enemy on the board, the boss included, freezes for 3 seconds (`FREEZE_SECONDS`), 4.5 with the beanie hat.                                                                         |
 | `storm`  | Burza / Гроза     | ⚡   | burza, grom, piorun, błysk          | storm, bolt, spark   | Lightning strikes the 3 enemies nearest to the hero, 0.12 seconds apart, never the boss (`STRIKE_COUNT`). Each one shatters and scores its normal word points, with no XP and no coins. |
 | `quake`  | Wstrząs / Поштовх | 💥   | wstrząs, tąpnięcie, trzęsienie, huk | quake, rumble, shake | Every enemy on the board, the boss included, is pushed 3 units back (`KNOCKBACK`), and the camera shakes.                                                                               |
 | `shield` | Tarcza / Щит      | 🛡️   | tarcza, osłona, mur, zbroja         | shield, wall, guard  | A bubble around the hero takes the next lost life: no life is lost, no mistake counts and the combo stays. Shields stack until the end of the level.                                    |
@@ -307,7 +308,7 @@ Owners: `src/game/mechanics/EnemyTypes.ts`, `src/game/mechanics/enemyTypes/kinds
 | `jumper`    | Skoczek / Стрибунець    | `s`, `polana-9`             | one focus key, 4 to 7 times              | hops 1 unit at a time, at the normal word speed                             | Each letter makes it hop in place and shrink.                                                                                                                          |
 | `balloon`   | Balonik / Кулька        | `s`, `polana-9`             | 3 to 5 letters                           | starts at distance 6, rises 0.42 per second, drifts sideways                | Above height 7 it floats away, with no mistake and no lost life. Popped, it pays double word points.                                                                   |
 | `bat`       | Nietoperz / Кажан       | `g`, `las-1`                | 3 to 4 letters                           | flies an arc at height 2.5, at 2.5 × the word speed                         | At the far side it drops a bomb. When the bomb lands, the hero loses a life and the camera shakes. Typed before that, it tumbles and shatters.                         |
-| `ghost`     | Duch / Привид           | `e`, `las-6`                | 3 to 5 letters                           | walks at 0.9 × the word speed and drifts sideways                           | It fades out and back in on a 3 second cycle. Its label shows only while it is solid, but it can be typed at any time.                                                 |
+| `ghost`     | Duch / Привид           | `e`, `las-6`                | 3 to 5 letters                           | walks at 0.9 × the word speed and drifts sideways                           | It fades out and back in on a 3 second cycle. Its label shows only while it is solid, but it can be typed at any time. The horns hat keeps it solid.                   |
 | `thief`     | Złodziej / Злодій       | `r`, `las-11`               | 3 letters, then 6 letters on the way out | runs at 2.2 × the word speed, flees at half that                            | At the hero it steals 100 points, or what there is, and runs back out with a new word. Typed on the way out, it returns the points and 5 coins. It never costs a life. |
 | `swarm`     | Rój / Рій               | `t`, `gory-1`               | 5 to 7 letters, one per bug              | walks at 1.25 × the word speed and jitters                                  | Letters go in order and the next one glows. Each letter pops one bug.                                                                                                  |
 | `splitter`  | Rozszczep / Розщеп      | `w`, `gory-6`               | two short words joined, 6 to 8 letters   | walks at 0.8 × the word speed                                               | Typed, it splits at its place into two smaller halves, one per word, 1.35 × faster. Halves never split again.                                                          |
@@ -341,7 +342,7 @@ XP only grows. It drives the player level and the rank. A child never loses XP, 
 
 - Each completed word gives `letters × multiplier × fever bonus × tag factor` XP, rounded. The multiplier and the fever bonus are the ones from scoring, so XP follows the combo.
 - Tag factor: a boss hit 3, `merged` 3, `power-word` 2, `minion` 1. Any other or unknown tag is 1. With several tags the highest factor counts.
-- The XP of each word is then scaled by the XP factor of the run plan and rounded again. Course levels use 1 (`LEVEL_XP_FACTOR` in `src/game/LevelPlan.ts`), the arena 0.4 to 0.25 by preset.
+- The XP of each word is then scaled by the XP factor of the run plan and rounded again. Course levels use 1 (`LEVEL_XP_FACTOR` in `src/game/LevelPlan.ts`), the arena 0.4 to 0.25 by preset. An XP hat scales the XP of the whole run by at most 10%, see [Item powers](#item-powers).
 - A floating "+12 XP" rises from the enemy on each completed word, and the HUD shows the XP of the run next to the score. The level number sits on the avatar button of the HUD.
 - XP of the run is added to the profile after every attempt, won or lost.
 
@@ -379,8 +380,8 @@ Ranks by level band, names in `src/i18n/features/progression.ts`:
 
 Coins are a separate counter. They are spent in the [shop](#shop).
 
-- During a level each completed word gives 1 coin, the coins per word of the run plan. The arena pays less per word, see [Arena](#arena). Mechanics add more with `addCoins(amount)`: 15 for a treasure chest, 5 for a thief caught with its loot. Run coins never go down. The run total is `GameResult.coins`.
-- After the level: the run coins, plus 10 for a won level, plus 5 per star.
+- During a level each completed word gives 1 coin, the coins per word of the run plan. The arena pays less per word, see [Arena](#arena). Mechanics add more with `addCoins(amount)`: 15 for a treasure chest, 5 for a thief caught with its loot, 15 more for a chest doubled by the piggy. Run coins never go down. The run total is `GameResult.coins`, and the coin factor of the equipped hat is `GameResult.coinBoost`.
+- After the level: the run coins, plus 10 for a won level, plus 5 per star. A coin hat scales this whole sum by its share, rounded down, so "Monety +10%" is what the result card shows (`levelCoins` in `src/course/coins.ts`, see [Item powers](#item-powers)).
 
 The result card fills the XP bar from the old progress to the new one. When a level is crossed it shows a "Nowy poziom!" / "Новий рівень!" banner with the rank name, confetti that stays inside the card, and the level complete and sparkle sounds. The coins earned sit in a pill next to the XP. The map header and the profile cards show the level, the rank, a thin XP bar and the coins.
 
@@ -429,7 +430,7 @@ Weak keys in words (`src/course/WordSource.ts`, `keyWeight` in `src/course/maste
 
 ## Shop
 
-Owners: `src/course/shop.ts` (catalogue and prices), `src/course/inventory.ts` (buying and equipping), `src/course/trophies.ts`, `src/ui/ShopScreen.ts`, copy in `src/i18n/features/shop.ts`.
+Owners: `src/course/shop.ts` (catalogue, prices, powers and trophies), `src/course/powers.ts` (power kinds and strength units), `src/course/inventory.ts` (buying and equipping), `src/course/trophies.ts`, `src/course/counters.ts`, `src/arena/goals.ts`, `src/ui/ShopScreen.ts`, copy in `src/i18n/features/shop.ts`.
 
 The shop opens from several places, and its back button returns to where it was opened from and names it (`ShopExit` in `src/ui/ShopScreen.ts`):
 
@@ -448,43 +449,55 @@ Layout:
 
 - On the left, "Twój bohater" / "Твій герой" shows the hero in 3D with the equipped hat and pet, swaying slowly (`src/ui/portraits/OutfitView.ts`). Touch screens and reduced motion get a still frame. Until the model loads, the portrait shows.
 - Tabs: "Zwierzaki" / "Улюбленці", "Czapki" / "Шапки", "Postacie" / "Персонажі", "Trofea" / "Трофеї". The coins sit in the header.
-- Each item card shows a rendered preview, the name and a short description. Pets and hats are rendered once per session in an offscreen studio, hats on a plain cube head (`src/ui/portraits/ItemStudio.ts`). Skins use the character portraits.
+- Each item card shows a rendered preview, the name, for pets and hats a gold line with a bolt icon that says what the item does (see [Item powers](#item-powers)), and a short description. Pets and hats are rendered once per session in an offscreen studio, hats on a plain cube head (`src/ui/portraits/ItemStudio.ts`). Skins use the character portraits.
 
 Item states and actions:
 
-| State          | Card shows                                                                  |
-| -------------- | --------------------------------------------------------------------------- |
-| `equipped`     | "W użyciu" / "Обрано" and, for pets and hats, "Zdejmij" / "Зняти"           |
-| `owned`        | "Weź ze sobą" for a pet, "Załóż" for a hat, "Wybierz" for a skin            |
-| `buyable`      | "Kup" / "Купити" with the price                                             |
-| `claimable`    | "Odbierz" / "Забрати", for rank items once the rank is reached              |
-| `tooExpensive` | the price and "Brakuje 45" / "Бракує 45", no button                         |
-| `rankLocked`   | a lock badge with the rank's first level and "Ranga: Uczeń" / "Ранг: Учень" |
+| State          | Card shows                                                                                                                               |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `equipped`     | "W użyciu" / "Обрано" and, for pets and hats, "Zdejmij" / "Зняти"                                                                        |
+| `owned`        | "Weź ze sobą" for a pet, "Załóż" for a hat, "Wybierz" for a skin                                                                         |
+| `buyable`      | "Kup" / "Купити" with the price                                                                                                          |
+| `claimable`    | "Odbierz" / "Забрати", for rank items once the rank is reached and arena items once the arena goal is reached                            |
+| `tooExpensive` | the price and "Brakuje 45" / "Бракує 45", no button                                                                                      |
+| `rankLocked`   | a lock badge with the rank's first level and "Ranga: Uczeń" / "Ранг: Учень"                                                              |
+| `arenaLocked`  | a lock badge with the wave or a star for gold, and "Arena: fala 15" / "Арена: хвиля 15" or "Arena: złoty medal" / "Арена: золота медаль" |
 
 - Buying or claiming puts the item on at once, with chimes, a sparkle and confetti on the card. A skin becomes the profile's avatar.
 - Every change is saved to the profile right away.
+- Arena goals count any key set and difficulty: the most waves cleared in one endless run, or a gold medal in any of them (`hasReachedArenaGoal` in `src/arena/goals.ts`).
 
-Prices. A won Polana level pays about 30 to 45 coins, so the cap takes about 2 levels and the first pet about 4 to 6.
+Economy. With the gradual course a won level pays about 35 coins: about 33 with one star, 38 with two and 43 with three, so the whole Polish course pays about 3300, 3800 and 4300 coins. The first hat takes about 2 levels and the first pet 4 to 6. Every coin item together costs 12135 coins, about three times the whole course, so the full shop takes many weeks of levels, replays and arena coins. `src/course/shop.test.ts` checks the first pet and these totals. Coin hats raise every payout by at most 25%, so even the crown cuts the time to the full shop by only a fifth.
 
-| Pet        | Polish   | Ukrainian | Unlock             |
-| ---------- | -------- | --------- | ------------------ |
-| `cube-cat` | Kostka   | Кубик     | 160 coins          |
-| `bee`      | Bzyczek  | Дзижчик   | 320 coins          |
-| `star`     | Gwiazdka | Зірочка   | rank Uczeń         |
-| `ghost`    | Duszek   | Привидик  | 480 coins          |
-| `robot`    | Robocik  | Роботик   | rank Strażnik Słów |
-| `dragon`   | Smoczek  | Дракончик | 900 coins          |
+Pets act in the level and hats work all the time, see [Item powers](#item-powers) for each rule. The strength is a count per level, seconds, a share or simply on.
 
-| Hat          | Polish               | Ukrainian         | Unlock           |
-| ------------ | -------------------- | ----------------- | ---------------- |
-| `cap`        | Czapka z daszkiem    | Кепка             | 75 coins         |
-| `headphones` | Słuchawki            | Навушники         | 200 coins        |
-| `horns`      | Różki                | Ріжки             | 350 coins        |
-| `wizard`     | Kapelusz czarodzieja | Капелюх чарівника | rank Łowca Liter |
-| `halo`       | Aureola              | Німб              | 600 coins        |
-| `crown`      | Korona               | Корона            | rank Legenda     |
+| Pet        | Polish    | Ukrainian  | Unlock                     | Power          | Strength               |
+| ---------- | --------- | ---------- | -------------------------- | -------------- | ---------------------- |
+| `cube-cat` | Kostka    | Кубик      | 160 coins                  | `zap`          | 1 per level            |
+| `piggy`    | Skarbonka | Скарбничка | 250 coins                  | `doubleChest`  | 1 per level            |
+| `bee`      | Bzyczek   | Дзижчик    | 320 coins                  | `popBalloon`   | 3 per level            |
+| `star`     | Gwiazdka  | Зірочка    | rank Uczeń                 | `restoreHeart` | 1 per level            |
+| `puppy`    | Piesek    | Цуценя     | 400 coins                  | `catchThief`   | 2 per level            |
+| `ghost`    | Duszek    | Привидик   | 480 coins                  | `catchGhost`   | 2 per level            |
+| `penguin`  | Pingwinek | Пінгвінчик | 700 coins                  | `freezeBoard`  | 2 seconds, 1 per level |
+| `dragon`   | Smoczek   | Дракончик  | 900 coins                  | `catchBat`     | 2 per level            |
+| `robot`    | Robocik   | Роботик    | rank Strażnik Słów         | `catchBomber`  | 1 per level            |
+| `shadow`   | Cień      | Тінь       | arena: 15 waves in one run | `stopNear`     | 2 seconds              |
 
-Skins are named "Postać 7" / "Персонаж 7" by their place in the roster.
+| Hat          | Polish               | Ukrainian         | Unlock                  | Power         | Strength         |
+| ------------ | -------------------- | ----------------- | ----------------------- | ------------- | ---------------- |
+| `cap`        | Czapka z daszkiem    | Кепка             | 75 coins                | `coins`       | +10%             |
+| `headphones` | Słuchawki            | Навушники         | 200 coins               | `xp`          | +5%              |
+| `horns`      | Różki                | Ріжки             | 350 coins               | `solidGhosts` | on               |
+| `halo`       | Aureola              | Німб              | 600 coins               | `bossGuard`   | 1 per boss fight |
+| `beanie`     | Czapka z pomponem    | Шапка з помпоном  | 800 coins               | `longFreeze`  | +50%             |
+| `wizard`     | Kapelusz czarodzieja | Капелюх чарівника | rank Łowca Liter        | `xp`          | +10%             |
+| `helmet`     | Hełm rycerza         | Шолом лицаря      | 1100 coins              | `defuse`      | on               |
+| `pirate`     | Kapelusz pirata      | Капелюх пірата    | 1500 coins              | `coins`       | +20%             |
+| `crown`      | Korona               | Корона            | rank Legenda            | `coins`       | +25%             |
+| `laurel`     | Wieniec laurowy      | Лавровий вінок    | arena: first gold medal | `feverSlip`   | 1 per level      |
+
+Skins are named "Postać 7" / "Персонаж 7" by their place in the roster. They have no power.
 
 | Skins         | Unlock                     |
 | ------------- | -------------------------- |
@@ -500,18 +513,45 @@ Skins are named "Postać 7" / "Персонаж 7" by their place in the roster.
 
 Pets and hats are built from chunky blocks in code, no model files (`src/game/cosmetics`). A hat is mounted on the head node of the character, scaled to the head's width (`mountOnHead` in `src/game/characterModel.ts`, `Player.setHat`).
 
-Trophies are awarded after every attempt and when an older profile is migrated. They are never taken away.
+### Trophies
 
-| Trophy                             | Polish            | Ukrainian         | Rule                                            |
-| ---------------------------------- | ----------------- | ----------------- | ----------------------------------------------- |
-| `first-boss`                       | Pogromca bossa    | Переможець боса   | at least one star on any boss level             |
-| `region-<id>`                      | the region's name | the region's name | at least one star on every level of that region |
-| `level-10`, `level-25`, `level-50` | Poziom 10         | Рівень 10         | the player level reached                        |
-| `mastered-region`                  | Mistrz klawiszy   | Майстер клавіш    | every new key of one region mastered            |
-| `arena-wave-10`, `arena-wave-20`   | Fala 10           | Хвиля 10          | the waves cleared in one arena run              |
-| `arena-gold`                       | Złoty medal       | Золота медаль     | a gold medal in the arena                       |
+Trophies are awarded after every attempt, after buying or claiming an item and when an older profile is migrated. They are never taken away.
 
-The trophy tab shows "Trofea: 3 z 13" / "Трофеї: 3 з 13", earned trophies in their colour and the others in grey with their hint.
+| Trophy                                  | Polish                   | Ukrainian          | Rule                                                     |
+| --------------------------------------- | ------------------------ | ------------------ | -------------------------------------------------------- |
+| `first-boss`                            | Pogromca bossa           | Переможець боса    | at least one star on any boss level                      |
+| `region-<id>`                           | the region's name        | the region's name  | at least one star on every level of that region          |
+| `level-10`, `level-25`, `level-50`      | Poziom 10                | Рівень 10          | the player level reached                                 |
+| `mastered-region`                       | Mistrz klawiszy          | Майстер клавіш     | every new key of one region mastered                     |
+| `arena-wave-10`, `arena-wave-20`        | Fala 10                  | Хвиля 10           | the waves cleared in one arena run                       |
+| `arena-gold`                            | Złoty medal              | Золота медаль      | a gold medal in the arena                                |
+| `star-streak-5`                         | Gwiezdna seria           | Зіркова серія      | three stars on 5 levels in a row of the profile's course |
+| `every-region-three-stars`              | Gwiazda wszystkich krain | Зірка всіх країв   | three stars on every level of the profile's course       |
+| `perfect-level`                         | Bez pomyłki              | Без помилок        | a level won at 100% accuracy                             |
+| `wpm-20`, `wpm-30`, `wpm-40`            | Tempo 20                 | Темп 20            | words per minute in a level with at least one star       |
+| `words-500`, `words-2000`, `words-5000` | 500 słów                 | 500 слів           | words typed in total, in levels and the arena            |
+| `bosses-10`                             | Łowca bossów             | Мисливець на босів | bosses beaten: region bosses and arena boss waves        |
+| `power-words-50`                        | Złote słowa              | Золоті слова       | power words typed                                        |
+| `special-enemies-100`                   | Łowca stworków           | Ловець істот       | special enemies typed, see [Enemy types](#enemy-types)   |
+| `coins-1000`                            | Skarbnik                 | Скарбник           | coins earned in total, purchases do not count against it |
+| `starter-skins`                         | Przebieraniec            | Перевдягайко       | a level or arena run with each of the six starter skins  |
+| `first-item`                            | Pierwszy zakup           | Перша покупка      | one pet, hat or skin from the shop, bought or claimed    |
+| `five-items`                            | Kolekcjoner              | Колекціонер        | five of them                                             |
+
+Counters (`src/course/counters.ts`, `src/game/RunTally.ts`). The game tallies each run and the profile adds it up after every attempt, won or lost:
+
+| Counter          | Adds up                                                                          |
+| ---------------- | -------------------------------------------------------------------------------- |
+| `wordsTyped`     | every typed word, boss hits included                                             |
+| `powerWords`     | typed power words                                                                |
+| `specialEnemies` | typed special enemies. Pet catches and blasts do not count                       |
+| `bossesBeaten`   | bosses beaten in a level or an arena boss wave                                   |
+| `coinsEarned`    | the coins of each level and arena run                                            |
+| `perfectLevels`  | levels won with at least one star at 100% accuracy                               |
+| `bestWpm`        | the best words per minute of a level with at least one star, arena runs excluded |
+| `skinsPlayed`    | the skins a level or arena run was played with                                   |
+
+The trophy tab shows "Trofea: 3 z 29" / "Трофеї: 3 з 29" and every trophy with its name and the rule as its hint. Earned trophies glow in their colour. Locked ones are grey, and when the rule can be measured they show a bar in the trophy's colour with "312 z 500" / "312 з 500" (`trophyProgress` in `src/course/trophies.ts`). The first boss, the mastered region and the arena gold show "Jeszcze przed tobą" / "Ще попереду" instead.
 
 The result card adds a chip "Nowy skarb: Polana" / "Новий скарб: Галявина" for each trophy of the attempt, and "Nowość w sklepie" / "Новинка в крамниці" when an item became affordable or claimable. These chips are buttons with a small › mark that open the shop as in the table above (`src/ui/resultTreasures.ts`). The "Arena otwarta!" / "Арену відкрито!" chip is not a link. On touch screens each chip button reaches 44 px tall without changing the card layout.
 
@@ -571,9 +611,10 @@ Coins and XP (`src/arena/economy.ts`):
 - Each word pays half a coin times the preset's coin factor, and the run's word coins are rounded down. Chests and caught thieves pay as in a level.
 - Each medal pays once per key set and difficulty: bronze 20, silver 40, gold 80. A run that skips a medal pays every medal up to the new one.
 - A new best wave, more waves cleared than before on that key set and difficulty, pays 15.
+- A coin hat scales the whole payout of the run, words, chests, thieves, medals and the new best wave together, rounded down (`arenaPayout`).
 - XP is word XP times the preset's XP factor. Faster presets pay less XP per word, so they never pay more XP per minute.
 - Rule: arena XP per minute stays within 1.25 times the course practice XP per minute at the same accuracy and course position (`XP_RATE_CAP`). `src/arena/xpPerMinute.test.ts` simulates the real XP formulas at 93, 95 and 97% accuracy, for every key set, preset and run length up to 60 waves, against the last practice level of the key set's region.
-- XP, score, letters freed and key statistics are added to the profile after every run, and trophies are awarded, as after a level (`src/arena/progress.ts`).
+- XP, score, letters freed, key statistics and counters are added to the profile after every run, and trophies are awarded, as after a level (`src/arena/progress.ts`). Item powers that work a number of times per level start again at every wave.
 
 Arena screen (`src/ui/arena/ArenaScreen.ts`):
 
@@ -617,14 +658,50 @@ interface EndlessBest {
 - `daily`, `tracks`, `shadowWins` and `modifierWins` stay empty until the planned modes fill them. Their shapes (`DailyRecord`, `TrackBest` with its `GhostRun`) are read and checked on load already, so those modes need no new schema version.
 - Broken entries are dropped on load.
 
-## Companion
+## Item powers
 
-Owners: `src/game/mechanics/Companion.ts`, `src/game/mechanics/companion`.
+Owners: `src/game/mechanics/ItemPowers.ts`, `src/game/mechanics/itemPowers` (`Pet.ts` for the pet in the scene, one file per power in `pet` and `hat`), `src/course/powers.ts`, card lines and callouts in `src/i18n/features/shop.ts`.
+
+Every pet and every hat has exactly one power, as a kind and a strength in the catalogue, see [Shop](#shop). Skins have none.
+
+- Strength units (`STRENGTH_UNITS`): a count per level from 1 to 3, seconds, a share where `0.2` means 20%, or `1` for a power that is simply on.
+- A count per level starts again at every arena wave.
+- Limits: XP boosts at most 10% and coin boosts at most 25% (`MAX_BOOST` in `src/course/powers.ts`, also checked by `src/course/shop.test.ts`). No power raises accuracy or stars and no power types for the player. A power that keeps a heart still counts the hit as a mistake and breaks the combo.
+- Each power shows when it works: a callout in the item's colour, and for pets a pounce with a bolt in the pet's colour.
+- The card line uses "Raz" / "Раз", "Dwa razy" / "Двічі" and "Trzy razy" / "Тричі" for the count, for example "Dwa razy na poziom łapie nietoperza" / "Двічі за рівень ловить кажана".
+
+The pet:
 
 - With a pet equipped, it floats next to the hero's shoulder, follows with a short lag, bobs and turns with the hero.
-- Once per level, when the combo is 5 or more outside the warm up, it zaps the enemy nearest to the hero that has no typed letters yet. The boss and the word the player is typing are never zapped.
-- The pet pounces, a bolt in the pet's colour flies to the enemy, and the enemy freezes for 0.14 seconds. Then it shatters, scores its normal word points and the callout "Pomocnik!" / "Помічник!" shows. A zap gives no XP and no coins.
-- If the enemy was typed before the bolt lands, the zap is not used up.
+- A catch: the pet pounces, a bolt in the pet's colour flies to the enemy, and the enemy freezes for 0.14 seconds (`ZAP_DELAY`). Then it shatters and scores its normal word points, with no XP and no coins, and the callout shows. Special enemies also play their own pop. If the enemy was typed before the bolt lands, the catch is not used up.
+- The pet never catches the boss or a word the player has started typing.
+
+| Pet power      | Callout (pl / uk)                     | Rule                                                                                                                                                                                               |
+| -------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `zap`          | Pomocnik! / Помічник!                 | With the combo at 5 or more outside the warm up, it catches the enemy nearest to the hero.                                                                                                         |
+| `catchBat`     | Nietoperz złapany! / Кажана спіймано! | Catches a bat 1 second after it shows (`NOTICE_SECONDS`), while it still has its bomb.                                                                                                             |
+| `catchGhost`   | Duch przegoniony! / Привида прогнано! | Catches a ghost 1 second after it shows.                                                                                                                                                           |
+| `catchThief`   | Złodziej złapany! / Злодія спіймано!  | Catches a running thief 1.6 units before it would steal (`THIEF_CATCH_LEAD`), so it steals nothing.                                                                                                |
+| `popBalloon`   | Balonik złapany! / Кульку спіймано!   | Pops a balloon within 1 unit of floating away (`BALLOON_CATCH_MARGIN`). It scores normal word points, not the double points of a typed balloon.                                                    |
+| `catchBomber`  | Lont zgaszony! / Ґніт погашено!       | Catches a bomber 1 second after it shows, with no blast.                                                                                                                                           |
+| `doubleChest`  | Podwójny skarb! / Подвійний скарб!    | A typed treasure chest pays its 15 coins once more.                                                                                                                                                |
+| `restoreHeart` | Nowe serce! / Нове серце!             | At combo 15 or more, when a heart is missing, it gives one back.                                                                                                                                   |
+| `freezeBoard`  | Zamrożone! / Заморожено!              | Once per level, when an enemy that can cost a heart comes within 4 units of the hero (`DANGER_DISTANCE`), every enemy, the boss included, freezes for the strength in seconds. Not in the warm up. |
+| `stopNear`     | Stop! / Стоп!                         | Each time the combo reaches exactly 10, the enemies within 5 units (`NEAR_RADIUS`) that can cost a heart freeze for the strength in seconds.                                                       |
+
+Enemies that can cost a heart are all but power words, thieves and balloons.
+
+| Hat power     | Callout (pl / uk)                      | Rule                                                                                                                                                                                                                                                   |
+| ------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `coins`       | Monety +20% / Монети +20%              | The whole coin payout of the run grows by the share, rounded down: words, chests, thieves, the bonus for winning and the stars, and in the arena the medals and the new best wave. The callout shows when the level starts.                            |
+| `xp`          | XP +10% / XP +10%                      | The XP of the run grows by the share, rounded. The pop over each word still shows the word's own XP. The callout shows when the level starts.                                                                                                          |
+| `solidGhosts` | Duch nie zniknie! / Привид не зникне!  | Ghosts stay solid and their labels stay visible. The callout shows for the first ghost.                                                                                                                                                                |
+| `longFreeze`  | Mocny mróz! / Міцний мороз!            | The Mróz power word freezes for 3 × (1 + share) seconds.                                                                                                                                                                                               |
+| `bossGuard`   | Tarcza na bossa! / Щит на боса!        | At the start of each boss fight, also arena boss waves, the hero gets guards up to the strength, shown as a bubble in the hat's colour. A guard keeps the heart of the next hit, but the hit counts as a mistake. Guards go before power word shields. |
+| `defuse`      | Bomba rozbrojona! / Бомбу знешкоджено! | A bomber 0.4 units before it reaches the hero (`DEFUSE_DISTANCE`) fizzles out in smoke: no blast, no knockback and no lost heart, but it counts as a mistake.                                                                                          |
+| `feverSlip`   | Szał trwa! / Шал триває!               | Up to the strength per level, a mistake during the fever keeps the fever. It still counts as a mistake and breaks the combo.                                                                                                                           |
+
+Game hooks used by the powers are listed in `src/game/mechanics/README.md`: `boostRewards`, `restoreLife`, `guardNextHit` with `guards`, and `stats.keepFeverOnSlips`.
 
 ## Worlds
 

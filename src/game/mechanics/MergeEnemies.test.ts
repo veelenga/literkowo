@@ -136,7 +136,7 @@ describe('MergeEnemies', () => {
   });
 
   it('fuses only plain enemies, never ones made by other features', () => {
-    const powered = new PowerEnemy('las', document.createElement('div'), 1, 'crystal');
+    const powered = new PowerEnemy('las', document.createElement('div'), 1, 'crystal', 'storm');
     powered.object.position.set(1, 0, DEPTH);
     const { board, run } = setup([enemyAt('kot', 0), powered]);
     run();

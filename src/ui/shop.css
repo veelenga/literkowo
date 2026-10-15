@@ -50,6 +50,24 @@
   font-size: 0.68rem;
 }
 
+.lock-badge-arena {
+  display: grid;
+  place-items: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, var(--accent-light), var(--accent));
+  color: var(--accent-ink);
+  font-size: 0.68rem;
+}
+
+.lock-badge-star {
+  width: 11px;
+  height: 11px;
+  fill: var(--accent-ink);
+}
+
 .avatar-option.is-locked {
   cursor: not-allowed;
   filter: saturate(0.35) brightness(0.8);
@@ -216,7 +234,8 @@
   filter: saturate(0.55) brightness(0.85);
 }
 
-.shop-item.is-rankLocked .shop-item-art .avatar {
+.shop-item.is-rankLocked .shop-item-art .avatar,
+.shop-item.is-arenaLocked .shop-item-art .avatar {
   filter: grayscale(1) brightness(0.6);
 }
 
@@ -230,6 +249,31 @@
   color: var(--muted);
   font-size: 0.9rem;
   line-height: 1.35;
+}
+
+.shop-item-power {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+  margin: 0;
+  padding: 7px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 210, 90, 0.32);
+  background: var(--accent-soft);
+  color: var(--accent-light);
+  font-size: 0.88rem;
+  font-weight: 800;
+  line-height: 1.3;
+  text-align: left;
+}
+
+.shop-item-power-icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  fill: var(--accent);
 }
 
 .shop-item-footer {
@@ -305,6 +349,35 @@
   height: 72px;
   fill: var(--trophy);
   filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.3)) drop-shadow(0 0 16px var(--trophy));
+}
+
+.shop-trophy .shop-item-footer {
+  align-self: stretch;
+}
+
+.trophy-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+}
+
+.trophy-progress-bar {
+  display: block;
+  width: 100%;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(0, 0, 0, 0.32);
+  overflow: hidden;
+}
+
+.trophy-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--trophy);
+  box-shadow: 0 0 8px var(--trophy);
 }
 
 .shop-trophy.is-locked .shop-trophy-icon {
@@ -420,6 +493,11 @@
 
   .shop-item-text {
     font-size: 0.82rem;
+  }
+
+  .shop-item-power {
+    padding: 6px 8px;
+    font-size: 0.8rem;
   }
 }
 

@@ -7,7 +7,10 @@ import {
   arenaPayout,
   medalCoins,
 } from './economy';
+import { NO_BOOST } from '../course/powers';
 import { BRONZE, GOLD, NO_MEDAL, SILVER } from './medals';
+
+const NO_HAT = NO_BOOST.coins;
 
 describe('arenaCoinsPerWord', () => {
   it('pays a coin for every two words times the coin factor of the preset', () => {
@@ -29,16 +32,40 @@ describe('medalCoins', () => {
 describe('arenaPayout', () => {
   it('adds the run coins, the new medals and the new best wave', () => {
     expect(
-      arenaPayout({ runCoins: 12, paidMedal: BRONZE, medal: SILVER, newBestWave: true }),
+      arenaPayout({
+        runCoins: 12,
+        paidMedal: BRONZE,
+        medal: SILVER,
+        newBestWave: true,
+        coinBoost: NO_HAT,
+      }),
     ).toEqual({ run: 12, medals: 40, newBest: NEW_BEST_WAVE_COINS, total: 67 });
   });
 
   it('pays only the run coins for a run that brings nothing new', () => {
-    expect(arenaPayout({ runCoins: 9, paidMedal: GOLD, medal: GOLD, newBestWave: false })).toEqual({
+    const payout = arenaPayout({
+      runCoins: 9,
+      paidMedal: GOLD,
+      medal: GOLD,
+      newBestWave: false,
+      coinBoost: NO_HAT,
+    });
+    expect(payout).toEqual({
       run: 9,
       medals: 0,
       newBest: 0,
       total: 9,
     });
+  });
+
+  it('scales the whole payout with the coin hat, medals and best wave included', () => {
+    const payout = arenaPayout({
+      runCoins: 12,
+      paidMedal: BRONZE,
+      medal: SILVER,
+      newBestWave: true,
+      coinBoost: 1.25,
+    });
+    expect(payout).toEqual({ run: 12, medals: 40, newBest: NEW_BEST_WAVE_COINS, total: 83 });
   });
 });

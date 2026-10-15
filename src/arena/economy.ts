@@ -1,4 +1,4 @@
-import { COINS_PER_WORD } from '../course/coins';
+import { boostedCoins, COINS_PER_WORD } from '../course/coins';
 import type { ArenaDifficulty } from './difficulty';
 import { MEDALS, type Medal } from './medals';
 
@@ -12,6 +12,7 @@ export interface ArenaPayoutInput {
   readonly paidMedal: Medal;
   readonly medal: Medal;
   readonly newBestWave: boolean;
+  readonly coinBoost: number;
 }
 
 export interface ArenaPayout {
@@ -37,8 +38,10 @@ export function arenaPayout({
   paidMedal,
   medal,
   newBestWave,
+  coinBoost,
 }: ArenaPayoutInput): ArenaPayout {
   const medals = medalCoins(paidMedal, medal);
   const newBest = newBestWave ? NEW_BEST_WAVE_COINS : 0;
-  return { run: runCoins, medals, newBest, total: runCoins + medals + newBest };
+  const total = boostedCoins(runCoins + medals + newBest, coinBoost);
+  return { run: runCoins, medals, newBest, total };
 }

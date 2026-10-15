@@ -1,3 +1,4 @@
+import { countRun, type Tally } from '../course/counters';
 import type { KeyStats } from '../course/keyStats';
 import { awardTrophies } from '../course/trophies';
 import type { Profile } from '../profiles/Profile';
@@ -24,7 +25,9 @@ export interface EndlessAttempt {
   readonly lettersFreed: number;
   readonly xp: number;
   readonly runCoins: number;
+  readonly coinBoost: number;
   readonly keyStats: KeyStats;
+  readonly tally: Tally;
   readonly date: string;
 }
 
@@ -41,6 +44,7 @@ export function recordEndlessRun(profile: Profile, attempt: EndlessAttempt): End
   const newBestWave = isNewBestWave(profile.arena, run);
   const payout = arenaPayout({
     runCoins: attempt.runCoins,
+    coinBoost: attempt.coinBoost,
     paidMedal: paidMedal(profile.arena, run.key),
     medal: run.medal,
     newBestWave,
@@ -53,6 +57,13 @@ export function recordEndlessRun(profile: Profile, attempt: EndlessAttempt): End
     coins: profile.coins + payout.total,
     keyStats: { ...profile.keyStats, ...attempt.keyStats },
     arena: withEndlessRun(profile.arena, run),
+    counters: countRun(profile.counters, {
+      tally: attempt.tally,
+      coins: payout.total,
+      avatar: profile.avatar,
+      perfect: false,
+      wpm: 0,
+    }),
   });
   const best = endlessBest(updated.arena, run.key);
   return { profile: updated, medal: run.medal, best, newBestWave, payout };
