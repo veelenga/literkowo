@@ -198,6 +198,11 @@ export class Enemy {
     this.renderLabel();
   }
 
+  resetTyped(): void {
+    this.typed = 0;
+    this.renderLabel();
+  }
+
   setSpeedScale(scale: number): void {
     this.speedScale = Math.max(0, scale);
   }
@@ -226,8 +231,7 @@ export class Enemy {
 
   protected setWord(word: string): void {
     this.currentWord = word;
-    this.typed = 0;
-    this.renderLabel();
+    this.resetTyped();
   }
 
   protected renderLabel(): void {

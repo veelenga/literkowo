@@ -44,9 +44,9 @@ Region index counts from 0 for `polana`. Level order counts every level of the c
 Rules during a level:
 
 - At most 6 enemies are on screen at once. The player has 3 lives. Losing the last life ends the level as lost.
-- The first letter typed picks the nearest enemy whose next letter matches. That enemy stays the target until its word is done. Any other key is a mistake.
+- Typing follows every enemy whose word starts with the letters typed so far, a key that fits none of them is a mistake, and when a word is done every enemy with that same word is done too while the others go back to untyped (`src/game/Targeting.ts`).
 - Escape pauses and resumes. Pause also suspends audio.
-- Words (`src/course/WordSource.ts`): when at least 12 words from `src/course/wordLists.ts` fit the allowed keys, about half of the words are real words. The rest are generated strings of 2 to 5 letters, where about half of the letters come from the new keys. Boss words are real words of 4 or more letters when at least 12 fit, otherwise generated strings of 5 to 7 letters.
+- Words (`src/course/WordSource.ts`): when at least 12 words from `src/course/wordLists.ts` fit the allowed keys, about half of the words are real words. The rest are generated strings of 2 to 5 letters, where about half of the letters come from the new keys. Boss words are real words of 4 or more letters when at least 12 fit, otherwise generated strings of 5 to 7 letters. New words and warm-up letters prefer a first letter that no enemy on the board is waiting for.
 
 Stars, with the current thresholds (`src/course/scoring.ts`):
 
