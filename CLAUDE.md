@@ -46,10 +46,15 @@ Screenshots:
 
 1. Run `npm run dev` and open the changed screen. Use `?level=<id>` to jump straight to a level.
 2. Capture it with the Claude in Chrome screenshot tool: the `computer` tool with `action: "screenshot"` and `save_to_disk: true`. The result gives the saved path.
-3. Copy that file to `docs/screenshots/<branch-name>.jpg`, with each `/` in the branch name replaced by `-`. If the saved file is a PNG, convert it on macOS: `sips -s format jpeg <saved file> --out docs/screenshots/<branch-name>.jpg`.
-4. Commit it on the branch. When you capture again, overwrite the same file. Replace, do not accumulate.
-5. Reference it in the pull request body with the raw URL:
-   `https://raw.githubusercontent.com/veelenga/literkowo/<branch>/docs/screenshots/<file>`
+3. Screenshots never go into `main`. They live on the orphan `screenshots` branch, one image per pull request.
+   Open it in a worktree once, from the main checkout: `git fetch origin && git worktree add ../literkowo-wt/screenshots screenshots`.
+   If that worktree already exists, update it with `git -C ../literkowo-wt/screenshots pull`.
+4. Copy the image into that worktree as `<branch-name>.jpg`, with each `/` in the branch name replaced by `-`.
+   If the saved file is a PNG, convert it on macOS: `sips -s format jpeg <saved file> --out ../literkowo-wt/screenshots/<branch-name>.jpg`.
+5. Commit it there with `chore: screenshot for <branch>` and push the `screenshots` branch.
+   When you capture again, overwrite the same file. Replace, do not accumulate.
+6. Link it in the pull request body with the raw URL:
+   `https://raw.githubusercontent.com/veelenga/literkowo/screenshots/<file>`
 
 ## Verify before a pull request
 
