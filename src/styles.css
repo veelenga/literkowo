@@ -146,15 +146,19 @@ h3 {
   scale: var(--avatar-zoom);
 }
 
-.avatar-portrait {
+.avatar-portrait,
+.avatar-live {
   opacity: 0;
 }
 
-.avatar.is-ready .avatar-portrait {
+.avatar.is-ready .avatar-portrait,
+.avatar.is-live .avatar-live {
   opacity: 1;
 }
 
-.avatar.is-ready .avatar-placeholder {
+.avatar.is-ready .avatar-placeholder,
+.avatar.is-live .avatar-placeholder,
+.avatar.is-live .avatar-portrait {
   opacity: 0;
 }
 
