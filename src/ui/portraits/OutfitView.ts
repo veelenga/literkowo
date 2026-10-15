@@ -1,16 +1,9 @@
-import * as THREE from 'three';
+import type * as THREE from 'three';
 import type { HatSpec, PetSpec } from '../../course/shop';
-import { CHARACTER_HEIGHT, mountOnHead } from '../../game/characterModel';
-import { buildHat } from '../../game/cosmetics/hats';
-import { buildPet, type PetModel } from '../../game/cosmetics/pets';
+import type { PetModel } from '../../game/cosmetics/pets';
 import { disposeObject } from '../../game/disposal';
-import { CharacterStage, createCharacterRenderer, IdleCharacter } from './characterStage';
-
-export interface Outfit {
-  readonly character: string;
-  readonly hat?: HatSpec;
-  readonly pet?: PetSpec;
-}
+import { createCharacterRenderer, IdleCharacter } from './characterStage';
+import { OutfitStage, STILL_POSE_TIME, wearHat, type Outfit } from './outfitStage';
 
 export interface OutfitViewOptions {
   readonly animate: boolean;
@@ -26,17 +19,10 @@ const CANVAS_CLASS = 'avatar-live';
 const MAX_PIXEL_RATIO = 2;
 const MAX_STEP_SECONDS = 0.1;
 const MS_PER_SECOND = 1000;
-const FRAMING = { framedHeight: CHARACTER_HEIGHT * 1.55, focusHeight: CHARACTER_HEIGHT * 0.62 };
-const HERO_SPOT = new THREE.Vector3(-0.17, 0, 0.1);
-const PET_SPOT = new THREE.Vector3(0.45, 1, -0.46);
-const PET_BOB = { speed: 2.3, height: 0.1 };
-const SWAY = { speed: 0.45, angle: 0.4 };
-const STILL_POSE_TIME = 0.4;
 
 export class OutfitView {
   private readonly renderer = createCharacterRenderer();
-  private readonly stage = new CharacterStage(FRAMING);
-  private readonly petSpot = new THREE.Group();
+  private readonly stage = new OutfitStage();
   private readonly resizer = new ResizeObserver((entries) =>
     entries.forEach((entry) => this.resize(entry.contentRect)),
   );
@@ -55,9 +41,6 @@ export class OutfitView {
   constructor(private readonly options: OutfitViewOptions) {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO));
     this.renderer.domElement.classList.add(CANVAS_CLASS);
-    this.petSpot.position.copy(PET_SPOT);
-    this.stage.turntable.position.copy(HERO_SPOT);
-    this.stage.scene.add(this.petSpot);
   }
 
   show(host: HTMLElement, outfit: Outfit, onFirstFrame: () => void): void {
@@ -127,9 +110,7 @@ export class OutfitView {
     if (!this.character || this.hat?.spec === spec) return;
     this.removeHat();
     if (!spec) return;
-    const model = buildHat(spec);
-    mountOnHead(this.character.model.model, model);
-    this.hat = { spec, model };
+    this.hat = { spec, model: wearHat(this.character.model, spec) };
   }
 
   private removeHat(): void {
@@ -143,15 +124,12 @@ export class OutfitView {
     if (this.pet?.spec === spec) return;
     this.removePet();
     if (!spec) return;
-    const model = buildPet(spec);
-    this.petSpot.add(model.object);
-    this.pet = { spec, model };
+    this.pet = { spec, model: this.stage.addPet(spec) };
   }
 
   private removePet(): void {
     if (!this.pet) return;
-    this.pet.model.object.removeFromParent();
-    disposeObject(this.pet.model.object);
+    this.stage.removePet(this.pet.model);
     this.pet = undefined;
   }
 
@@ -181,11 +159,7 @@ export class OutfitView {
     if (!this.hasSize || !this.character || !this.isWanted(this.character.spec)) return;
     this.elapsed += seconds;
     this.character.model.advance(seconds);
-    this.pet?.model.animate(this.elapsed);
-    this.petSpot.position.y = PET_SPOT.y + Math.sin(this.elapsed * PET_BOB.speed) * PET_BOB.height;
-    this.stage.turntable.rotation.y = this.options.animate
-      ? Math.sin(this.elapsed * SWAY.speed) * SWAY.angle
-      : 0;
+    this.stage.pose(this.elapsed, this.pet?.model, this.options.animate);
     this.renderer.render(this.stage.scene, this.stage.camera);
     this.onFirstFrame?.();
     this.onFirstFrame = undefined;

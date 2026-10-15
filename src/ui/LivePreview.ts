@@ -2,7 +2,8 @@ import { hatSpec, petSpec } from '../course/shop';
 import { hasCoarsePointer } from '../game/deviceProbe';
 import type { Equipped } from '../profiles/Profile';
 import { prefersReducedMotion } from './dom';
-import type { Outfit, OutfitView } from './portraits/OutfitView';
+import type { Outfit } from './portraits/outfitStage';
+import type { OutfitView } from './portraits/OutfitView';
 
 const LIVE_CLASS = 'is-live';
 const PREVIEW_UNAVAILABLE = 'Live character preview is unavailable, keeping the portrait';
