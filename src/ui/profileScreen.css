@@ -696,6 +696,21 @@
   }
 }
 
+@media (max-width: 1024px) {
+  .profile-screen {
+    --card-width: 168px;
+    --stage-height: 158px;
+  }
+
+  .profile-grid {
+    gap: 14px;
+  }
+
+  .profile-name {
+    font-size: 1.15rem;
+  }
+}
+
 @media (max-height: 760px) {
   .landing {
     padding-top: calc(4vh + var(--safe-top));
