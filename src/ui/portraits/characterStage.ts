@@ -14,8 +14,10 @@ import { disposeObject } from '../../game/disposal';
 const FIELD_OF_VIEW = 24;
 const NEAR_PLANE = 0.1;
 const FAR_PLANE = 40;
-const FRAMED_HEIGHT = CHARACTER_HEIGHT * 1.2;
-const FOCUS_HEIGHT = CHARACTER_HEIGHT * 0.48;
+const PORTRAIT_FRAMING: StageFraming = {
+  framedHeight: CHARACTER_HEIGHT * 1.2,
+  focusHeight: CHARACTER_HEIGHT * 0.48,
+};
 const VIEW_AZIMUTH = THREE.MathUtils.degToRad(32);
 const VIEW_ELEVATION = THREE.MathUtils.degToRad(12);
 
@@ -27,6 +29,11 @@ const SHADOW_OPACITY = 0.3;
 const EXPOSURE = 1.05;
 const TRANSPARENT = 0x000000;
 const IDLE_POSE_TIME = 0.35;
+
+export interface StageFraming {
+  framedHeight: number;
+  focusHeight: number;
+}
 
 export interface RendererOptions {
   preserveDrawingBuffer?: boolean;
@@ -42,10 +49,11 @@ export function createCharacterRenderer(options: RendererOptions = {}): THREE.We
 
 export class CharacterStage {
   readonly scene = new THREE.Scene();
-  readonly camera = createCamera();
+  readonly camera: THREE.PerspectiveCamera;
   readonly turntable = new THREE.Group();
 
-  constructor() {
+  constructor(framing: StageFraming = PORTRAIT_FRAMING) {
+    this.camera = createCamera(framing);
     this.scene.add(this.turntable, createContactShadow(SHADOW_OPACITY), ...createLights());
   }
 
@@ -93,18 +101,18 @@ export class IdleCharacter {
   }
 }
 
-function createCamera(): THREE.PerspectiveCamera {
+function createCamera({ framedHeight, focusHeight }: StageFraming): THREE.PerspectiveCamera {
   const camera = new THREE.PerspectiveCamera(FIELD_OF_VIEW, 1, NEAR_PLANE, FAR_PLANE);
-  const focus = new THREE.Vector3(0, FOCUS_HEIGHT, 0);
+  const focus = new THREE.Vector3(0, focusHeight, 0);
   const halfView = THREE.MathUtils.degToRad(FIELD_OF_VIEW / 2);
-  const distance = FRAMED_HEIGHT / 2 / Math.tan(halfView);
+  const distance = framedHeight / 2 / Math.tan(halfView);
   const polar = Math.PI / 2 - VIEW_ELEVATION;
   camera.position.setFromSphericalCoords(distance, polar, VIEW_AZIMUTH).add(focus);
   camera.lookAt(focus);
   return camera;
 }
 
-function createLights(): THREE.Light[] {
+export function createLights(): THREE.Light[] {
   const key = new THREE.DirectionalLight(KEY_LIGHT.color, KEY_LIGHT.intensity);
   key.position.set(...KEY_LIGHT.position);
   const fill = new THREE.DirectionalLight(FILL_LIGHT.color, FILL_LIGHT.intensity);

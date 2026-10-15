@@ -96,11 +96,13 @@ Twins:
 Owners: `src/profiles/Profile.ts`, `src/profiles/profileSchema.ts`, `src/profiles/ProfileStore.ts`.
 
 - Several profiles per device, stored as a JSON array in localStorage under `literkowo.profiles`.
-- Schema version is 4 (`PROFILE_SCHEMA_VERSION`). Older profiles are migrated on load: version 1 moves the best score into the total score, version 2 seeds XP with `round(totalScore / 10)`, version 3 starts with empty key statistics. A shape change bumps the version and adds a migration.
+- Schema version is 5 (`PROFILE_SCHEMA_VERSION`). Older profiles are migrated on load: version 1 moves the best score into the total score, version 2 seeds XP with `round(totalScore / 10)`, version 3 starts with empty key statistics, version 4 gets the starter inventory, nothing equipped and every trophy it already earned. A shape change bumps the version and adds a migration.
 - Entries that cannot be read are dropped, and the raw value is copied to `literkowo.profiles.backup` first.
-- Fields: id, name (up to 16 characters, `src/ui/ProfileScreen.ts`), avatar, word language, total score, letters freed, XP, coins, seen stories, the best result per level and the key statistics.
+- Fields: id, name (up to 16 characters, `src/ui/ProfileScreen.ts`), avatar, word language, total score, letters freed, XP, coins, seen stories, the best result per level, the key statistics, the inventory and the equipped items.
+- Inventory: owned pets, hats, skins and earned trophies, as id lists. Unknown ids are dropped on load. Every profile owns the 6 starter skins and its current avatar.
+- Equipped: at most one pet and one hat. An id the inventory does not own is dropped on load.
 - Word language is set per profile. Today the choices are Polish (default) and English (`WORD_LANGUAGES` in `src/profiles/Profile.ts`).
-- Avatars are character skins: 18 Kenney Blocky Characters with ids `a` to `r`. Portraits are in `public/characters`, 3D models in `public/models/characters` (`src/game/Player.ts`).
+- Avatars are character skins: 18 Kenney Blocky Characters with ids `a` to `r`. Portraits are in `public/characters`, 3D models in `public/models/characters` (`src/game/Player.ts`). The skins `a` to `f` are free. The new profile picker shows the other 12 with a lock badge: the price in coins, or the level where the rank opens them. Locked skins cannot be picked there, they come from the shop.
 - Other keys: `literkowo.activeProfile`, `literkowo.uiLanguage`, `literkowo.sound`, `literkowo.music`, `literkowo.reloadedAfterPreloadError`.
 - When localStorage is blocked, storage falls back to memory for the session (`src/storage.ts`).
 
@@ -215,7 +217,7 @@ Ranks by level band, names in `src/i18n/features/progression.ts`:
 | 35 to 49  | `keyboardMaster` | Mistrz Klawiatury | Майстер клавіатури    |
 | 50 and up | `legend`         | Legenda           | Легенда               |
 
-Coins are a separate counter for a future shop. Nothing is spent yet.
+Coins are a separate counter. They are spent in the [shop](#shop).
 
 - During a level each completed word gives 1 coin. Mechanics add more with `addCoins(amount)`: 15 for a treasure chest, 5 for a thief caught with its loot. Run coins never go down. The run total is `GameResult.coins`.
 - After the level: the run coins, plus 10 for a won level, plus 5 per star.
@@ -263,6 +265,90 @@ Weak keys in words (`src/course/WordSource.ts`, `keyWeight` in `src/course/maste
 - Generated letters and real words are picked with a weight per key. A real word takes the highest weight of its letters.
 - Weight is 1 for keys without data and for mastered keys. Otherwise it grows from 1 to 3 with the weakness of the key: accuracy from 97% down to 80%, or speed from the target up to twice the target, whichever is weaker.
 - The weights follow the statistics live during the level.
+
+## Shop
+
+Owners: `src/course/shop.ts` (catalogue and prices), `src/course/inventory.ts` (buying and equipping), `src/course/trophies.ts`, `src/ui/ShopScreen.ts`, copy in `src/i18n/features/shop.ts`.
+
+The shop opens from the bag button "Sklep" / "Крамниця" in the map header. A green dot on the button means something can be bought or claimed right now. The back button returns to the map.
+
+Layout:
+
+- On the left, "Twój bohater" / "Твій герой" shows the hero in 3D with the equipped hat and pet, swaying slowly (`src/ui/portraits/OutfitView.ts`). Touch screens and reduced motion get a still frame. Until the model loads, the portrait shows.
+- Tabs: "Zwierzaki" / "Улюбленці", "Czapki" / "Шапки", "Postacie" / "Персонажі", "Trofea" / "Трофеї". The coins sit in the header.
+- Each item card shows a rendered preview, the name and a short description. Pets and hats are rendered once per session in an offscreen studio, hats on a plain cube head (`src/ui/portraits/ItemStudio.ts`). Skins use the character portraits.
+
+Item states and actions:
+
+| State          | Card shows                                                                  |
+| -------------- | --------------------------------------------------------------------------- |
+| `equipped`     | "W użyciu" / "Обрано" and, for pets and hats, "Zdejmij" / "Зняти"           |
+| `owned`        | "Weź ze sobą" for a pet, "Załóż" for a hat, "Wybierz" for a skin            |
+| `buyable`      | "Kup" / "Купити" with the price                                             |
+| `claimable`    | "Odbierz" / "Забрати", for rank items once the rank is reached              |
+| `tooExpensive` | the price and "Brakuje 45" / "Бракує 45", no button                         |
+| `rankLocked`   | a lock badge with the rank's first level and "Ranga: Uczeń" / "Ранг: Учень" |
+
+- Buying or claiming puts the item on at once, with chimes, a sparkle and confetti on the card. A skin becomes the profile's avatar.
+- Every change is saved to the profile right away.
+
+Prices. A won Polana level pays about 30 to 45 coins, so the cap takes about 2 levels and the first pet about 4 to 6.
+
+| Pet        | Polish   | Ukrainian | Unlock             |
+| ---------- | -------- | --------- | ------------------ |
+| `cube-cat` | Kostka   | Кубик     | 160 coins          |
+| `bee`      | Bzyczek  | Дзижчик   | 320 coins          |
+| `star`     | Gwiazdka | Зірочка   | rank Uczeń         |
+| `ghost`    | Duszek   | Привидик  | 480 coins          |
+| `robot`    | Robocik  | Роботик   | rank Strażnik Słów |
+| `dragon`   | Smoczek  | Дракончик | 900 coins          |
+
+| Hat          | Polish               | Ukrainian         | Unlock           |
+| ------------ | -------------------- | ----------------- | ---------------- |
+| `cap`        | Czapka z daszkiem    | Кепка             | 75 coins         |
+| `headphones` | Słuchawki            | Навушники         | 200 coins        |
+| `horns`      | Różki                | Ріжки             | 350 coins        |
+| `wizard`     | Kapelusz czarodzieja | Капелюх чарівника | rank Łowca Liter |
+| `halo`       | Aureola              | Німб              | 600 coins        |
+| `crown`      | Korona               | Корона            | rank Legenda     |
+
+Skins are named "Postać 7" / "Персонаж 7" by their place in the roster.
+
+| Skins         | Unlock                     |
+| ------------- | -------------------------- |
+| `a` to `f`    | free, owned from the start |
+| `g`, `h`, `i` | 200, 250, 300 coins        |
+| `j`           | rank Uczeń                 |
+| `k`, `l`      | 400, 500 coins             |
+| `m`           | rank Łowca Liter           |
+| `n`, `o`      | 650, 800 coins             |
+| `p`           | rank Strażnik Słów         |
+| `q`           | 1200 coins                 |
+| `r`           | rank Mistrz Klawiatury     |
+
+Pets and hats are built from chunky blocks in code, no model files (`src/game/cosmetics`). A hat is mounted on the head node of the character, scaled to the head's width (`mountOnHead` in `src/game/characterModel.ts`, `Player.setHat`).
+
+Trophies are awarded after every attempt and when an older profile is migrated. They are never taken away.
+
+| Trophy                             | Polish            | Ukrainian         | Rule                                            |
+| ---------------------------------- | ----------------- | ----------------- | ----------------------------------------------- |
+| `first-boss`                       | Pogromca bossa    | Переможець боса   | at least one star on any boss level             |
+| `region-<id>`                      | the region's name | the region's name | at least one star on every level of that region |
+| `level-10`, `level-25`, `level-50` | Poziom 10         | Рівень 10         | the player level reached                        |
+| `mastered-region`                  | Mistrz klawiszy   | Майстер клавіш    | every new key of one region mastered            |
+
+The trophy tab shows "Trofea: 3 z 10" / "Трофеї: 3 з 10", earned trophies in their colour and the others in grey with their hint.
+
+The result card adds a chip "Nowy skarb: Polana" / "Новий скарб: Галявина" for each trophy of the attempt, and "Nowość w sklepie" / "Новинка в крамниці" when an item became affordable or claimable.
+
+## Companion
+
+Owners: `src/game/mechanics/Companion.ts`, `src/game/mechanics/companion`.
+
+- With a pet equipped, it floats next to the hero's shoulder, follows with a short lag, bobs and turns with the hero.
+- Once per level, when the combo is 5 or more outside the warm up, it zaps the enemy nearest to the hero that has no typed letters yet. The boss and the word the player is typing are never zapped.
+- The pet pounces, a bolt in the pet's colour flies to the enemy, and the enemy freezes for 0.14 seconds. Then it shatters, scores its normal word points and the callout "Pomocnik!" / "Помічник!" shows. A zap gives no XP and no coins.
+- If the enemy was typed before the bolt lands, the zap is not used up.
 
 ## Worlds
 
@@ -341,7 +427,7 @@ Install and offline:
 Owners: `src/app/devShortcut.ts`, `src/app/App.ts`.
 
 - In development only, `?level=<id>` starts a level directly, for example `http://localhost:5173/?level=jaskinia-5`.
-- It uses a temporary profile named Test with the first character and Polish words. Story and learn cards are skipped. Results are not saved.
+- It uses a temporary profile named Test with Polish words. It takes the character, the inventory and the equipped pet and hat of the active profile, or the first character without items when there is none. Story and learn cards are skipped. Results are not saved.
 - An unknown id opens the profile screen. Production builds ignore the parameter.
 
 ## Planned
@@ -351,6 +437,5 @@ Not built yet. In this order:
 1. Power words
 2. Merging enemies
 3. Boss phases and attacks
-4. Coins shop and pets
-5. Runner segments
-6. Sibling race and arena
+4. Runner segments
+5. Sibling race and arena

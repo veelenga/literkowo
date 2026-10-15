@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
+import type { HatSpec } from '../course/shop';
 import {
   CHARACTER_HEIGHT,
   characterModelUrl,
@@ -7,8 +8,10 @@ import {
   findClip,
   fitToCharacterHeight,
   IDLE_CLIP,
+  mountOnHead,
   prepareMeshes,
 } from './characterModel';
+import { buildHat } from './cosmetics/hats';
 import { disposeObject } from './disposal';
 
 const MODEL_LOAD_ERROR = 'Could not load the character model, keeping the placeholder';
@@ -32,6 +35,8 @@ export class Player {
   readonly object = new THREE.Group();
   private readonly placeholder = createPlaceholder();
   private animator: CharacterAnimator | null = null;
+  private model: THREE.Object3D | null = null;
+  private hat: THREE.Object3D | null = null;
   private now = 0;
   private targetYaw = 0;
   private disposed = false;
@@ -55,6 +60,12 @@ export class Player {
     this.animator?.play(REFUSE_CLIP, this.now);
   }
 
+  setHat(spec: HatSpec | undefined): void {
+    this.removeHat();
+    this.hat = spec ? buildHat(spec) : null;
+    this.mountHat();
+  }
+
   lookAt(target: THREE.Vector3): void {
     const { position } = this.object;
     this.targetYaw = Math.atan2(target.x - position.x, target.z - position.z);
@@ -64,6 +75,7 @@ export class Player {
     this.disposed = true;
     this.animator?.stop();
     this.animator = null;
+    this.removeHat();
     disposeObject(this.object);
   }
 
@@ -82,8 +94,21 @@ export class Player {
     fitToCharacterHeight(model);
     prepareMeshes(model);
     this.animator = new CharacterAnimator(model, gltf.animations);
+    this.model = model;
+    this.mountHat();
     this.removePlaceholder();
     this.object.add(model);
+  }
+
+  private mountHat(): void {
+    if (this.model && this.hat) mountOnHead(this.model, this.hat);
+  }
+
+  private removeHat(): void {
+    if (!this.hat) return;
+    this.hat.removeFromParent();
+    disposeObject(this.hat);
+    this.hat = null;
   }
 
   private removePlaceholder(): void {

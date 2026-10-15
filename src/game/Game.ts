@@ -3,8 +3,9 @@ import { sfx } from '../audio/Sfx';
 import { practiceDay, type KeyStats } from '../course/keyStats';
 import { keyWeight } from '../course/mastery';
 import { allowedKeysFor, type Level } from '../course/regions';
+import { hatSpec } from '../course/shop';
 import { WordSource } from '../course/WordSource';
-import type { WordLanguage } from '../profiles/Profile';
+import type { Equipped, WordLanguage } from '../profiles/Profile';
 import { xpPop } from '../ui/progression';
 import {
   BOSS_SPAWN_RADIUS,
@@ -58,6 +59,7 @@ export interface GameConfig {
   language: WordLanguage;
   theme: Theme;
   keyStats: KeyStats;
+  equipped: Readonly<Equipped>;
 }
 
 export interface GameResult {
@@ -129,6 +131,7 @@ export class Game {
     private readonly events: GameEvents,
   ) {
     this.player = new Player(config.character);
+    this.player.setHat(hatSpec(config.equipped.hat));
     this.keys = new KeyTracker(
       config.keyStats,
       allowedKeysFor(config.level, config.language),
@@ -229,6 +232,7 @@ export class Game {
       words: this.words,
       level: this.config.level,
       language: this.config.language,
+      equipped: this.config.equipped,
       get phase() {
         return phase();
       },

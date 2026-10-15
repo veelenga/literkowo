@@ -3,6 +3,7 @@ import { sfx } from '../audio/Sfx';
 import { regionOf, type Level } from '../course/catalog';
 import { levelCoins } from '../course/coins';
 import { courseFor } from '../course/course';
+import { hasNewItems } from '../course/inventory';
 import {
   markStorySeen,
   recordResult,
@@ -11,6 +12,7 @@ import {
   type Attempt,
 } from '../course/progress';
 import { starsFor } from '../course/scoring';
+import { freshTrophies } from '../course/trophies';
 import { hasCoarsePointer } from '../game/deviceProbe';
 import type { Game, GameResult } from '../game/Game';
 import type { SessionStats } from '../game/SessionStats';
@@ -28,6 +30,7 @@ import { loadErrorOverlay } from '../ui/LoadErrorOverlay';
 import { OverlaySlot, type Overlay } from '../ui/overlay';
 import { pauseOverlay } from '../ui/PauseOverlay';
 import { ProfileScreen } from '../ui/ProfileScreen';
+import { ShopScreen } from '../ui/ShopScreen';
 import { storyCard } from '../ui/StoryCard';
 import { TouchTyping } from '../ui/TouchTyping';
 import { WorldMap } from '../ui/WorldMap';
@@ -65,7 +68,7 @@ export class App {
 
   private startDevLevel(level: Level): void {
     unlockAudioOnFirstInput();
-    this.startLevel(devProfile(), level);
+    this.startLevel(devProfile(this.store.active()), level);
   }
 
   private showProfiles(): void {
@@ -87,8 +90,19 @@ export class App {
     const map = new WorldMap(profile, {
       onPlay: (level) => this.openLevel(profile, level),
       onSwitchPlayer: () => this.showProfiles(),
+      onShop: () => this.showShop(profile),
     });
     this.showScreen(map.element);
+  }
+
+  private showShop(profile: Profile): void {
+    this.leaveScreen();
+    const shop = new ShopScreen(profile, {
+      onBack: (current) => this.showMap(current),
+      onChange: (current) => this.save(current),
+    });
+    this.showScreen(shop.element);
+    this.disposeScreen = () => shop.dispose();
   }
 
   private openLevel(profile: Profile, level: Level): void {
@@ -141,6 +155,7 @@ export class App {
       language: profile.wordLanguage,
       theme: themeFor(regionOf(level).theme),
       keyStats: profile.keyStats,
+      equipped: profile.equipped,
     };
     music.play(config.theme.id, level.isBoss ? 'boss' : 'calm');
     this.game = new Game(stage, config, {
@@ -203,6 +218,10 @@ export class App {
     const stars = starsFor(result.accuracy, result.won);
     const coins = levelCoins({ runCoins: result.coins, won: result.won, stars });
     const updated = this.recordAttempt(profile, level, attemptOf(result, stars, coins));
+    const treasures = {
+      trophies: freshTrophies(profile, updated),
+      newItems: hasNewItems(profile, updated),
+    };
     const next = courseFor(updated.wordLanguage).next(level);
     const leave = (then: (current: Profile) => void) =>
       this.dismissThen(() => this.afterLevel(updated, level, stars, then));
@@ -210,7 +229,7 @@ export class App {
       levelResult(
         result,
         stars,
-        { xpBefore: profile.xp, xp: result.xp, coins },
+        { xpBefore: profile.xp, xp: result.xp, coins, treasures },
         {
           onNext: next ? leave((current) => this.openLevel(current, next)) : undefined,
           onRetry: this.dismissThen(() => this.openLevel(updated, level)),

@@ -6,7 +6,7 @@ export type WordLanguage = (typeof WORD_LANGUAGES)[number];
 
 export const DEFAULT_WORD_LANGUAGE: WordLanguage = 'pl';
 
-export const PROFILE_SCHEMA_VERSION = 4;
+export const PROFILE_SCHEMA_VERSION = 5;
 
 export interface LevelResult {
   stars: number;
@@ -28,9 +28,31 @@ export interface Profile {
   seenStories: string[];
   levelResults: Record<string, LevelResult>;
   keyStats: Record<string, KeyStat>;
+  inventory: Inventory;
+  equipped: Equipped;
+}
+
+export interface Inventory {
+  pets: string[];
+  hats: string[];
+  skins: string[];
+  trophies: string[];
+}
+
+export interface Equipped {
+  pet?: string;
+  hat?: string;
 }
 
 export const AVATARS = 'abcdefghijklmnopqr'.split('');
+
+const STARTER_SKIN_COUNT = 6;
+
+export const STARTER_SKINS: readonly string[] = AVATARS.slice(0, STARTER_SKIN_COUNT);
+
+export function starterInventory(avatar: string): Inventory {
+  return { pets: [], hats: [], skins: [...new Set([...STARTER_SKINS, avatar])], trophies: [] };
+}
 
 export function avatarImage(avatar: string): string {
   return `${import.meta.env.BASE_URL}characters/character-${avatar}.png`;
@@ -50,6 +72,8 @@ export function createProfile(name: string, avatar: string): Profile {
     seenStories: [],
     levelResults: {},
     keyStats: {},
+    inventory: starterInventory(avatar),
+    equipped: {},
   };
 }
 

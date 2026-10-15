@@ -3,6 +3,7 @@ import type { UiLanguage } from '../i18n/translations';
 import {
   AVATARS,
   createProfile,
+  STARTER_SKINS,
   totalStars,
   type Profile,
   type WordLanguage,
@@ -206,7 +207,7 @@ export class ProfileScreen {
       el('h3', { class: 'panel-title', text: t.newProfile }),
       input,
       el('p', { class: 'field-label', text: t.chooseAvatar }),
-      avatarPicker(avatar, (picked) => (avatar = picked)),
+      avatarPicker(avatar, STARTER_SKINS, (picked) => (avatar = picked)),
       el(
         'div',
         { class: 'actions actions-end' },

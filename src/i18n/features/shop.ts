@@ -1,0 +1,149 @@
+const pl = {
+  title: 'Sklep',
+  open: 'Sklep',
+  back: 'Mapa',
+  hero: 'Twój bohater',
+  newInShop: 'Nowość w sklepie',
+  tabs: {
+    pet: 'Zwierzaki',
+    hat: 'Czapki',
+    skin: 'Postacie',
+    trophy: 'Trofea',
+  },
+  buy: 'Kup',
+  claim: 'Odbierz',
+  equip: {
+    pet: 'Weź ze sobą',
+    hat: 'Załóż',
+    skin: 'Wybierz',
+  },
+  unequip: 'Zdejmij',
+  inUse: 'W użyciu',
+  missing: 'Brakuje {coins}',
+  rank: 'Ranga: {rank}',
+  free: 'Za darmo',
+  owned: 'Masz',
+  newItem: 'Nowy skarb: {name}',
+  helper: 'Pomocnik!',
+  skinName: 'Postać {number}',
+  skinPriceHint: 'Odblokuj w sklepie. Cena: {price}',
+  skinRankHint: 'Odblokujesz z rangą {rank}',
+  trophyCount: 'Trofea: {earned} z {total}',
+  trophyLocked: 'Jeszcze przed tobą',
+  pets: {
+    'cube-cat': {
+      name: 'Kostka',
+      description: 'Świecący kotek z klocków. Mruczy, gdy piszesz bez błędów.',
+    },
+    bee: {
+      name: 'Bzyczek',
+      description: 'Pracowita pszczółka. Bzyczy radośnie przy każdym słowie.',
+    },
+    star: {
+      name: 'Gwiazdka',
+      description: 'Mała gwiazdka, która świeci coraz jaśniej.',
+    },
+    ghost: {
+      name: 'Duszek',
+      description: 'Miły duszek. Wcale nie straszy, za to lubi się chować.',
+    },
+    robot: {
+      name: 'Robocik',
+      description: 'Mały robot, który liczy każdą literę.',
+    },
+    dragon: {
+      name: 'Smoczek',
+      description: 'Malutki smok. Zamiast ognia zieje iskierkami.',
+    },
+  },
+  hats: {
+    cap: { name: 'Czapka z daszkiem', description: 'Na słoneczne dni na polanie.' },
+    headphones: { name: 'Słuchawki', description: 'Muzyka gra jeszcze weselej.' },
+    horns: { name: 'Różki', description: 'Psotne, ale bardzo miłe.' },
+    wizard: { name: 'Kapelusz czarodzieja', description: 'Dla tych, co czarują klawiaturą.' },
+    halo: { name: 'Aureola', description: 'Świeci nad głową jak małe słońce.' },
+    crown: { name: 'Korona', description: 'Tylko dla prawdziwych legend.' },
+  },
+  trophies: {
+    firstBoss: { name: 'Pogromca bossa', hint: 'Pokonaj pierwszego bossa' },
+    region: { name: '{region}', hint: 'Zdobądź gwiazdkę na każdym poziomie tej krainy' },
+    playerLevel: { name: 'Poziom {level}', hint: 'Zdobądź poziom {level}' },
+    masteredRegion: { name: 'Mistrz klawiszy', hint: 'Opanuj wszystkie klawisze jednej krainy' },
+  },
+};
+
+const uk: typeof pl = {
+  title: 'Крамниця',
+  open: 'Крамниця',
+  back: 'Мапа',
+  hero: 'Твій герой',
+  newInShop: 'Новинка в крамниці',
+  tabs: {
+    pet: 'Улюбленці',
+    hat: 'Шапки',
+    skin: 'Персонажі',
+    trophy: 'Трофеї',
+  },
+  buy: 'Купити',
+  claim: 'Забрати',
+  equip: {
+    pet: 'Взяти з собою',
+    hat: 'Вдягнути',
+    skin: 'Обрати',
+  },
+  unequip: 'Зняти',
+  inUse: 'Обрано',
+  missing: 'Бракує {coins}',
+  rank: 'Ранг: {rank}',
+  free: 'Безкоштовно',
+  owned: 'Є',
+  newItem: 'Новий скарб: {name}',
+  helper: 'Помічник!',
+  skinName: 'Персонаж {number}',
+  skinPriceHint: 'Відкрий у крамниці. Ціна: {price}',
+  skinRankHint: 'Відкриється з рангом {rank}',
+  trophyCount: 'Трофеї: {earned} з {total}',
+  trophyLocked: 'Ще попереду',
+  pets: {
+    'cube-cat': {
+      name: 'Кубик',
+      description: 'Світле котеня з кубиків. Муркоче, коли друкуєш без помилок.',
+    },
+    bee: {
+      name: 'Дзижчик',
+      description: 'Працьовита бджілка. Радісно дзижчить на кожне слово.',
+    },
+    star: {
+      name: 'Зірочка',
+      description: 'Маленька зірочка, що світить дедалі яскравіше.',
+    },
+    ghost: {
+      name: 'Привидик',
+      description: 'Добрий привидик. Зовсім не лякає, зате любить ховатися.',
+    },
+    robot: {
+      name: 'Роботик',
+      description: 'Маленький робот, який рахує кожну літеру.',
+    },
+    dragon: {
+      name: 'Дракончик',
+      description: 'Крихітний дракон. Замість вогню пускає іскорки.',
+    },
+  },
+  hats: {
+    cap: { name: 'Кепка', description: 'Для сонячних днів на галявині.' },
+    headphones: { name: 'Навушники', description: 'Музика лунає ще веселіше.' },
+    horns: { name: 'Ріжки', description: 'Пустотливі, але дуже милі.' },
+    wizard: { name: 'Капелюх чарівника', description: 'Для тих, хто чарує клавіатурою.' },
+    halo: { name: 'Німб', description: 'Світить над головою, як маленьке сонце.' },
+    crown: { name: 'Корона', description: 'Лише для справжніх легенд.' },
+  },
+  trophies: {
+    firstBoss: { name: 'Переможець боса', hint: 'Перемож першого боса' },
+    region: { name: '{region}', hint: 'Здобудь зірочку на кожному рівні цього краю' },
+    playerLevel: { name: 'Рівень {level}', hint: 'Досягни рівня {level}' },
+    masteredRegion: { name: 'Майстер клавіш', hint: 'Опануй усі клавіші одного краю' },
+  },
+};
+
+export const shop = { pl, uk };
