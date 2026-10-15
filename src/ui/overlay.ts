@@ -5,6 +5,8 @@ export interface Overlay {
 
 type Cleanup = () => void;
 
+export const KEY_READY_MS = 600;
+
 export function createOverlay(element: HTMLElement, ...cleanups: Cleanup[]): Overlay {
   let disposed = false;
   return {
@@ -18,9 +20,22 @@ export function createOverlay(element: HTMLElement, ...cleanups: Cleanup[]): Ove
   };
 }
 
-export function onWindowKey(handler: (event: KeyboardEvent) => void): Cleanup {
+type KeyHandler = (event: KeyboardEvent) => void;
+
+export function onWindowKey(handler: KeyHandler): Cleanup {
   window.addEventListener('keydown', handler);
   return () => window.removeEventListener('keydown', handler);
+}
+
+export function onWindowKeyAfter(delayMs: number, handler: KeyHandler): Cleanup {
+  let stopListening: Cleanup | undefined;
+  const timer = window.setTimeout(() => {
+    stopListening = onWindowKey(handler);
+  }, delayMs);
+  return () => {
+    window.clearTimeout(timer);
+    stopListening?.();
+  };
 }
 
 export class OverlaySlot {

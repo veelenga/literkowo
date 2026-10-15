@@ -6,7 +6,7 @@ import { el, fingerColor } from './dom';
 import { handsDiagram } from './HandsDiagram';
 import { levelKindLabel } from './levelKind';
 import { keyStatus } from './mastery';
-import { createOverlay, onWindowKey, type Overlay } from './overlay';
+import { createOverlay, KEY_READY_MS, onWindowKeyAfter, type Overlay } from './overlay';
 
 const KEY_STAGGER_MS = 90;
 const ALT_LABEL = 'Alt';
@@ -39,7 +39,7 @@ export function learnCard(level: Level, keyStats: KeyStats, onStart: () => void)
       ),
     ),
   );
-  const stopListening = onWindowKey((event) => {
+  const stopListening = onWindowKeyAfter(KEY_READY_MS, (event) => {
     if (event.key !== START_KEY) return;
     event.preventDefault();
     onStart();
