@@ -6,13 +6,13 @@ import { JumperEnemy } from './JumperEnemy';
 import { randomInt, type EnemyKind, type Random } from './kinds';
 import type { SpecialEnemy, SpecialHost, SpecialSpec } from './SpecialEnemy';
 import { SwarmEnemy } from './SwarmEnemy';
+import { letters, wordWithin } from './words';
 
 const JUMPER_LETTERS = { min: 4, max: 7 };
 const BALLOON_LETTERS = { min: 3, max: 5 };
 const SWARM_LETTERS = { min: 5, max: 7 };
 const SPEED_SHARES = { jumper: 1, bat: 2.5, swarm: 1.25 };
 
-const WORD_ATTEMPTS = 8;
 const HALF = 0.5;
 
 export interface SpawnSource {
@@ -21,34 +21,36 @@ export interface SpawnSource {
   createLabel(): HTMLElement;
 }
 
+type SpecFor = (word: string) => SpecialSpec;
+
 interface Recipe {
-  word(words: WordSource, random: Random): string;
-  build(spec: SpecialSpec, random: Random): SpecialEnemy;
-  speedShare: number;
+  readonly speedShare: number;
+  create(spec: SpecFor, words: WordSource, random: Random): SpecialEnemy;
 }
 
 const RECIPES: Readonly<Record<EnemyKind, Recipe>> = {
   jumper: {
-    word: (words, random) =>
-      words.singleLetter().repeat(randomInt(JUMPER_LETTERS.min, JUMPER_LETTERS.max, random)),
-    build: (spec) => new JumperEnemy(spec),
     speedShare: SPEED_SHARES.jumper,
+    create: (spec, words, random) =>
+      new JumperEnemy(
+        spec(
+          words.singleLetter().repeat(randomInt(JUMPER_LETTERS.min, JUMPER_LETTERS.max, random)),
+        ),
+      ),
   },
   balloon: {
-    word: (words) => wordWithin(words, BALLOON_LETTERS),
-    build: (spec) => new BalloonEnemy(spec),
     speedShare: 0,
+    create: (spec, words) => new BalloonEnemy(spec(wordWithin(words, BALLOON_LETTERS))),
   },
   bat: {
-    word: (words) => words.shortWord(),
-    build: (spec, random) => new BatEnemy(spec, random() < HALF ? 1 : -1),
     speedShare: SPEED_SHARES.bat,
+    create: (spec, words, random) =>
+      new BatEnemy(spec(words.shortWord()), random() < HALF ? 1 : -1),
   },
   swarm: {
-    word: (words, random) =>
-      letters(words, randomInt(SWARM_LETTERS.min, SWARM_LETTERS.max, random)),
-    build: (spec) => new SwarmEnemy(spec),
     speedShare: SPEED_SHARES.swarm,
+    create: (spec, words, random) =>
+      new SwarmEnemy(spec(letters(words, randomInt(SWARM_LETTERS.min, SWARM_LETTERS.max, random)))),
   },
 };
 
@@ -59,26 +61,12 @@ export function createSpecial(
   random: Random,
 ): SpecialEnemy {
   const recipe = RECIPES[kind];
-  const spec: SpecialSpec = {
+  const spec: SpecFor = (word) => ({
     kind,
-    word: recipe.word(source.words, random),
+    word,
     label: source.createLabel(),
     speed: source.phase.speed * recipe.speedShare,
     host,
-  };
-  return recipe.build(spec, random);
-}
-
-function wordWithin(words: WordSource, range: { min: number; max: number }): string {
-  for (let attempt = 0; attempt < WORD_ATTEMPTS; attempt += 1) {
-    const word = words.next();
-    if (word.length >= range.min && word.length <= range.max) return word;
-  }
-  return words.shortWord();
-}
-
-function letters(words: WordSource, count: number): string {
-  let pool = '';
-  while (pool.length < count) pool += words.next();
-  return pool.slice(0, count);
+  });
+  return recipe.create(spec, source.words, random);
 }

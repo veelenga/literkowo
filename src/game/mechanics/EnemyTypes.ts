@@ -1,6 +1,5 @@
 import { i18n } from '../../i18n/i18n';
-import { Boss } from '../Boss';
-import type { Enemy } from '../Enemy';
+import { Enemy } from '../Enemy';
 import type { PhaseKind } from '../LevelPlan';
 import { createSpecial } from './enemyTypes/factory';
 import {
@@ -94,5 +93,5 @@ export class EnemyTypes implements Mechanic {
 }
 
 function isReplaceable(enemy: Enemy): boolean {
-  return !(enemy instanceof Boss) && enemy.tags.size === 0;
+  return Object.getPrototypeOf(enemy) === Enemy.prototype && enemy.tags.size === 0;
 }
