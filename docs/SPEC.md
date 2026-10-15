@@ -406,7 +406,8 @@ Mastery levels (`src/course/mastery.ts`):
 | `mastered` | Opanowany    | Опановано    | 30 recent keystrokes, 97% accuracy, speed on target, 3 different days |
 
 - Speed target: at most 900 ms between keys, or 1400 ms for Polish letters typed with right Alt.
-- 97% of 30 keystrokes means the last 30 keystrokes of a mastered key have no mistake. One mistake drops it to `solid` until its last 30 keystrokes are clean again.
+- The mastered check uses the accuracy rounded to a whole percent, the same number the learn card, the result card and the heatmap show, so a key showing 97% always has mastered accuracy.
+- 97% of 30 keystrokes means at most one mistake in the last 30 keystrokes, since 29 of 30 rounds to 97%. A second mistake drops the key to `solid` until its last 30 keystrokes have at most one mistake again.
 - A region's mastery share is the part of its new keys that are mastered.
 
 Where it shows:
