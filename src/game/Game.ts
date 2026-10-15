@@ -239,6 +239,7 @@ export class Game {
     this.tick(delta);
     this.labels.position(this.enemies, this.camera, renderHost.viewport);
     renderHost.render();
+    if (this.isPlaying) renderHost.recordFrame(delta);
   };
 
   private tick(delta: number): void {

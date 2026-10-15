@@ -3,12 +3,14 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { DynamicResolution } from './DynamicResolution';
 import type { QualityPreset } from './quality';
 
 const BLOOM = { strength: 0.5, radius: 0.7, threshold: 0.8 };
 const EXPOSURE = 1.05;
 const INITIAL_SIZE = 1;
 const MIN_BLOOM_SIZE = 1;
+const MS_PER_SECOND = 1000;
 const VISIBLE: DocumentVisibilityState = 'visible';
 
 export interface Viewport {
@@ -81,6 +83,7 @@ class RenderHost {
   private renderer: THREE.WebGLRenderer | undefined;
   private pipeline: Pipeline | undefined;
   private stage: Stage | undefined;
+  private resolution: DynamicResolution | undefined;
   private size: Viewport = { width: INITIAL_SIZE, height: INITIAL_SIZE };
 
   get viewport(): Viewport {
@@ -96,6 +99,7 @@ class RenderHost {
     const renderer = (this.renderer ??= createRenderer());
     this.usePreset(renderer, preset, scene, camera);
     this.stage = { container, camera };
+    this.resolution = new DynamicResolution(pixelRatioCap(preset));
     container.append(renderer.domElement);
     window.addEventListener('resize', this.resize);
     this.resize();
@@ -105,10 +109,15 @@ class RenderHost {
     window.removeEventListener('resize', this.resize);
     this.renderer?.domElement.remove();
     this.stage = undefined;
+    this.resolution = undefined;
   }
 
   render(): void {
     if (this.stage) this.pipeline?.composer.render();
+  }
+
+  recordFrame(seconds: number): void {
+    if (this.resolution?.record(seconds * MS_PER_SECOND)) this.applyPixelRatio();
   }
 
   private usePreset(
@@ -140,8 +149,8 @@ class RenderHost {
   };
 
   private applyPixelRatio(): void {
-    if (!this.renderer || !this.pipeline) return;
-    const ratio = pixelRatioCap(this.pipeline.preset);
+    if (!this.renderer || !this.pipeline || !this.resolution) return;
+    const ratio = Math.min(this.resolution.pixelRatio, pixelRatioCap(this.pipeline.preset));
     if (this.renderer.getPixelRatio() === ratio) return;
     this.renderer.setPixelRatio(ratio);
     this.pipeline.composer.setPixelRatio(ratio);
