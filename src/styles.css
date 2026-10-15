@@ -1914,73 +1914,126 @@ h3 {
   }
 
   .learn-panel {
-    padding: 20px 16px 22px;
+    padding: 18px 14px 16px;
   }
 
   .keycaps {
-    gap: 10px;
-    margin: 12px 0 14px;
+    gap: 8px;
+    margin: 10px 0 8px;
   }
 
   .keycap-column {
-    gap: 10px;
+    gap: 8px;
   }
 
   .keycap {
-    width: 68px;
-    height: 68px;
-    border-radius: 18px;
-    font-size: 2rem;
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    font-size: 1.8rem;
+  }
+
+  .keycap-mod {
+    top: 4px;
+    left: 50%;
+    padding: 0 5px;
+    font-size: 0.6rem;
+    translate: -50% 0;
+  }
+
+  .keycap-mod + .keycap-letter {
+    translate: 0 5px;
   }
 
   .keycap-caption {
-    max-width: 96px;
-    font-size: 0.78rem;
+    max-width: 100px;
+    padding: 3px 10px;
+    font-size: 0.74rem;
     text-align: center;
     white-space: normal;
   }
 
   .learn-hint {
-    font-size: 0.92rem;
+    margin-top: 10px;
+    font-size: 0.88rem;
   }
 
   .hands {
-    max-width: 320px;
+    max-width: 250px;
   }
 
-  .result-panel {
-    padding: 24px 16px 20px;
-  }
-
-  .result-title {
-    font-size: 1.8rem;
-  }
-
-  .stars-row .star {
-    width: 52px;
-    height: 52px;
-  }
-
-  .stars-row .star:nth-child(2) {
-    width: 70px;
-    height: 70px;
-    translate: 0 -10px;
-  }
-
-  .result-stats {
+  .learn-panel .actions {
     margin-top: 16px;
   }
 
+  .learn-panel .button-large {
+    width: 100%;
+  }
+
+  .result-panel {
+    padding: 22px 14px 14px;
+  }
+
+  .result-panel:has(.level-up-banner) {
+    padding-top: 36px;
+  }
+
+  .result-title {
+    font-size: 1.55rem;
+  }
+
+  .stars-row {
+    margin: 12px 0 4px;
+  }
+
+  .stars-row .star {
+    width: 44px;
+    height: 44px;
+  }
+
+  .stars-row .star:nth-child(2) {
+    width: 58px;
+    height: 58px;
+    translate: 0 -8px;
+  }
+
+  .result-hint {
+    font-size: 0.86rem;
+  }
+
+  .result-stats {
+    gap: 8px;
+    margin-top: 10px;
+  }
+
   .result-stat {
-    padding: 10px 12px;
+    padding: 7px 10px;
   }
 
   .result-stat-value {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
+  }
+
+  .result-panel .result-progress {
+    margin-top: 8px;
+    padding: 10px 12px 12px;
+  }
+
+  .result-panel .result-progress-head {
+    margin-bottom: 8px;
   }
 
   .result-actions {
-    margin-top: 18px;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .result-actions .button {
+    min-height: var(--touch-target);
+  }
+
+  .result-actions .button-large {
+    min-height: 50px;
   }
 }
 
@@ -2012,7 +2065,46 @@ h3 {
   }
 
   .stars-row {
-    margin: 10px 0 4px;
+    margin: 2px 0 0;
+  }
+
+  .stars-row .star {
+    width: 34px;
+    height: 34px;
+  }
+
+  .stars-row .star:nth-child(2) {
+    width: 44px;
+    height: 44px;
+    translate: 0 -6px;
+  }
+
+  .result-hint {
+    display: none;
+  }
+
+  .result-panel:has(.level-up-banner) {
+    padding-top: 26px;
+  }
+
+  .result-panel .level-up-banner {
+    padding: 3px 18px 4px;
+  }
+
+  .result-panel .level-up-banner strong {
+    font-size: 1.1rem;
+  }
+
+  .result-panel .level-up-banner span {
+    font-size: 0.75rem;
+  }
+
+  .result-stat {
+    padding: 5px 10px;
+  }
+
+  .result-panel .result-progress {
+    padding: 8px 12px 10px;
   }
 
   .result-stats {
@@ -2032,7 +2124,29 @@ h3 {
     grid-column: auto;
   }
 
+  .learn-panel {
+    padding: 12px 16px;
+  }
+
+  .keycaps {
+    margin: 6px 0;
+  }
+
+  .keycap {
+    width: 52px;
+    height: 52px;
+    font-size: 1.5rem;
+  }
+
   .hands {
-    max-width: 240px;
+    max-width: 170px;
+  }
+
+  .learn-hint {
+    margin-top: 6px;
+  }
+
+  .learn-panel .actions {
+    margin-top: 10px;
   }
 }
