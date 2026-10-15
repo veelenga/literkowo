@@ -22,6 +22,8 @@ npm run dev
 
 `npm test` runs the unit tests, `npm run lint` checks types and formatting. In development, `?level=polana-1` on the dev URL starts a level directly.
 
+Contribution rules, including pull request screenshots in `docs/screenshots`, are in [CLAUDE.md](CLAUDE.md).
+
 ## Credits
 
 - Characters: "Blocky Characters" by Kenney (kenney.nl), CC0
