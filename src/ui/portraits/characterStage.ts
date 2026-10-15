@@ -14,7 +14,7 @@ import { disposeObject } from '../../game/disposal';
 const FIELD_OF_VIEW = 24;
 const NEAR_PLANE = 0.1;
 const FAR_PLANE = 40;
-const PORTRAIT_FRAMING: StageFraming = {
+export const PORTRAIT_FRAMING: StageFraming = {
   framedHeight: CHARACTER_HEIGHT * 1.2,
   focusHeight: CHARACTER_HEIGHT * 0.48,
 };

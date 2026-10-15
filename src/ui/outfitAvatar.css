@@ -1,4 +1,6 @@
-.avatar-outfit {
+.avatar .avatar-outfit {
+  inset: auto 0 0;
+  height: auto;
   opacity: 0;
 }
 
