@@ -6,11 +6,16 @@ import {
   recentMissesWithin,
   type KeyStat,
 } from '../course/keyStats';
+import { HATS, PETS, SKINS, TROPHIES } from '../course/shop';
 import {
   AVATARS,
   DEFAULT_WORD_LANGUAGE,
   PROFILE_SCHEMA_VERSION,
+  STARTER_SKINS,
   isWordLanguage,
+  starterInventory,
+  type Equipped,
+  type Inventory,
   type LevelResult,
   type Profile,
 } from './Profile';
@@ -26,7 +31,12 @@ export interface ParsedProfiles {
 const LEGACY_SCHEMA_VERSION = 1;
 const SCORE_SCHEMA_VERSION = 2;
 const XP_SCHEMA_VERSION = 3;
+const KEY_STATS_SCHEMA_VERSION = 4;
 const SCORE_PER_SEEDED_XP = 10;
+const KNOWN_PETS = PETS.map((pet) => pet.id);
+const KNOWN_HATS = HATS.map((hat) => hat.id);
+const KNOWN_SKINS = SKINS.map((skin) => skin.id);
+const KNOWN_TROPHIES = TROPHIES.map((trophy) => trophy.id);
 
 const MIGRATIONS: Partial<Record<number, Migration>> = {
   [LEGACY_SCHEMA_VERSION]: (raw) => ({ ...raw, totalScore: raw.totalScore ?? raw.bestScore }),
@@ -35,6 +45,11 @@ const MIGRATIONS: Partial<Record<number, Migration>> = {
     xp: raw.xp ?? Math.round(countOf(raw.totalScore) / SCORE_PER_SEEDED_XP),
   }),
   [XP_SCHEMA_VERSION]: (raw) => ({ ...raw, keyStats: {} }),
+  [KEY_STATS_SCHEMA_VERSION]: (raw) => ({
+    ...raw,
+    inventory: starterInventory(avatarOf(raw.avatar)),
+    equipped: {},
+  }),
 };
 
 export function parseProfiles(json: string): ParsedProfiles {
@@ -49,11 +64,13 @@ export function normalizeProfile(value: unknown): Profile | undefined {
   const raw = migrate(value);
   const { id, name } = raw;
   if (!isNonEmptyString(id) || !isNonEmptyString(name)) return undefined;
+  const avatar = avatarOf(raw.avatar);
+  const inventory = inventoryOf(raw.inventory, avatar);
   return {
     schemaVersion: PROFILE_SCHEMA_VERSION,
     id,
     name,
-    avatar: AVATARS.find((avatar) => avatar === raw.avatar) ?? AVATARS[0],
+    avatar,
     wordLanguage: isWordLanguage(raw.wordLanguage) ? raw.wordLanguage : DEFAULT_WORD_LANGUAGE,
     totalScore: countOf(raw.totalScore),
     lettersFreed: countOf(raw.lettersFreed),
@@ -62,6 +79,8 @@ export function normalizeProfile(value: unknown): Profile | undefined {
     seenStories: stringsOf(raw.seenStories),
     levelResults: levelResultsOf(raw.levelResults),
     keyStats: keyStatsOf(raw.keyStats),
+    inventory,
+    equipped: equippedOf(raw.equipped, inventory),
   };
 }
 
@@ -85,6 +104,36 @@ function schemaVersionOf({ schemaVersion }: RawRecord): number {
   return typeof schemaVersion === 'number' && Number.isInteger(schemaVersion)
     ? schemaVersion
     : LEGACY_SCHEMA_VERSION;
+}
+
+function avatarOf(value: unknown): string {
+  return AVATARS.find((avatar) => avatar === value) ?? AVATARS[0];
+}
+
+function inventoryOf(value: unknown, avatar: string): Inventory {
+  const raw = isRecord(value) ? value : {};
+  return {
+    pets: knownIdsOf(raw.pets, KNOWN_PETS),
+    hats: knownIdsOf(raw.hats, KNOWN_HATS),
+    skins: knownIdsOf([...stringsOf(raw.skins), ...STARTER_SKINS, avatar], KNOWN_SKINS),
+    trophies: knownIdsOf(raw.trophies, KNOWN_TROPHIES),
+  };
+}
+
+function equippedOf(value: unknown, inventory: Inventory): Equipped {
+  if (!isRecord(value)) return {};
+  const equipped: Equipped = {};
+  if (isOneOf(value.pet, inventory.pets)) equipped.pet = value.pet;
+  if (isOneOf(value.hat, inventory.hats)) equipped.hat = value.hat;
+  return equipped;
+}
+
+function knownIdsOf(value: unknown, known: readonly string[]): string[] {
+  return [...new Set(stringsOf(value))].filter((id) => known.includes(id));
+}
+
+function isOneOf(value: unknown, options: readonly string[]): value is string {
+  return typeof value === 'string' && options.includes(value);
 }
 
 function levelResultsOf(value: unknown): Record<string, LevelResult> {

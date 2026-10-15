@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AVATARS, createProfile, PROFILE_SCHEMA_VERSION } from './Profile';
+import { AVATARS, createProfile, PROFILE_SCHEMA_VERSION, STARTER_SKINS } from './Profile';
 import { normalizeProfile, parseProfiles } from './profileSchema';
 
 describe('normalizeProfile', () => {
@@ -16,6 +16,8 @@ describe('normalizeProfile', () => {
       xp: 0,
       coins: 0,
       keyStats: {},
+      inventory: { pets: [], hats: [], skins: [...STARTER_SKINS], trophies: [] },
+      equipped: {},
     });
   });
 
@@ -110,6 +112,49 @@ describe('normalizeProfile', () => {
       speedSamples: 0,
       days: ['2026-01-01'],
     });
+  });
+
+  it('grants the starter skins and the current avatar to a version 4 profile', () => {
+    const profile = normalizeProfile({ schemaVersion: 4, id: 'x', name: 'A', avatar: 'k' });
+    expect(profile?.inventory).toEqual({
+      pets: [],
+      hats: [],
+      skins: [...STARTER_SKINS, 'k'],
+      trophies: [],
+    });
+    expect(profile?.equipped).toEqual({});
+  });
+
+  it('keeps known items and drops unknown ones', () => {
+    const profile = normalizeProfile({
+      schemaVersion: PROFILE_SCHEMA_VERSION,
+      id: 'x',
+      name: 'A',
+      avatar: 'q',
+      inventory: {
+        pets: ['bee', 'unicorn', 'bee', 3],
+        hats: ['crown'],
+        skins: ['m', 'zz'],
+        trophies: ['level-10', 'moon'],
+      },
+    });
+    expect(profile?.inventory).toEqual({
+      pets: ['bee'],
+      hats: ['crown'],
+      skins: ['m', ...STARTER_SKINS, 'q'],
+      trophies: ['level-10'],
+    });
+  });
+
+  it('equips only items the profile owns', () => {
+    const profile = normalizeProfile({
+      schemaVersion: PROFILE_SCHEMA_VERSION,
+      id: 'x',
+      name: 'A',
+      inventory: { pets: ['bee'], hats: [] },
+      equipped: { pet: 'bee', hat: 'crown' },
+    });
+    expect(profile?.equipped).toEqual({ pet: 'bee' });
   });
 
   it('falls back to Polish for an unknown word language', () => {
