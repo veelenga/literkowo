@@ -33,12 +33,12 @@ Owner: `src/course/catalog.ts`.
 Owners: `src/app/App.ts`, `src/course/progress.ts`, `src/game/LevelPlan.ts`, `src/game/Game.ts`.
 
 1. Story card. The intro plays before the first level. A boss scene plays before each boss. An after scene plays when a boss is beaten with at least one star. The finale replaces the after scene for the last boss of the course. Each scene plays once per profile. Speakers are Sowa Klara, Felek and Mrok (`src/story/story.ts`).
-2. Learn card, for key levels only. It shows the new keys, the finger for each key and a hands diagram. Enter starts the level (`src/ui/LearnCard.ts`).
+2. Learn card, for key levels only. It shows the new keys, the finger for each key, the mastery status of each key and a hands diagram. Enter starts the level (`src/ui/LearnCard.ts`).
 3. Camera intro of 1.8 seconds. Typing is ignored until it ends.
 4. Warm-up. 8 single letters from the level's new keys, speed 0.55, one every 1.5 seconds. A letter that reaches the player is removed and costs nothing.
 5. Words. `10 + 2 × region index` words. Speed `0.7 + 0.025 × level order`. The spawn interval starts at 3.4 seconds and drops by 0.06 per level order, never below 1.8. A word that reaches the player costs a life and counts as a mistake.
 6. Boss, for boss levels only, with no learn card and no warm-up. One boss that needs `6 + 2 × region index` words, so 6, 8, 10, 12 and 14. Base speed `0.32 + 0.05 × region index`. Each hit knocks it back and makes it 12% faster. When it reaches the player, it jumps back to distance 9 and the player loses a life (`src/game/Boss.ts`).
-7. Result card. It shows stars, score, accuracy, words per minute and letters freed, the XP bar with the XP and coins earned, and buttons for the next level when there is one, retry and map (`src/ui/LevelResult.ts`, `src/ui/ResultProgress.ts`).
+7. Result card. It shows stars, score, accuracy, words per minute and letters freed, the XP bar with the XP and coins earned, the keys row (see [Key mastery](#key-mastery)), and buttons for the next level when there is one, retry and map (`src/ui/LevelResult.ts`, `src/ui/ResultProgress.ts`).
 
 Region index counts from 0 for `polana`. Level order counts every level of the catalog from 0 for `polana-1`, bosses included.
 
@@ -47,8 +47,8 @@ Rules during a level:
 - At most 6 enemies are on screen at once. The player has 3 lives. Losing the last life ends the level as lost.
 - The progress bar counts a spawn as done once every enemy it turned into has left the board, so a spawn that becomes twins or a special enemy still counts as one. Enemies that features add later, such as power words or bombers, do not change it (`src/game/SpawnGroups.ts`).
 - Typing follows every enemy whose word starts with the letters typed so far, a key that fits none of them is a mistake, and when a word is done every enemy with that same word is done too while the others go back to untyped (`src/game/Targeting.ts`).
-- Escape pauses and resumes. Pause also suspends audio. The pause card also has a resume button, and touch screens get a pause button in the HUD.
-- Words (`src/course/WordSource.ts`): when at least 12 words from `src/course/wordLists.ts` fit the allowed keys, about half of the words are real words. The rest are generated strings of 2 to 5 letters, where about half of the letters come from the new keys. Boss words are real words of 4 or more letters when at least 12 fit, otherwise generated strings of 5 to 7 letters. New words and warm-up letters prefer a first letter that no enemy on the board is waiting for.
+- Escape pauses and resumes. Pause also suspends audio. The pause card also has a resume button and the key heatmap, and touch screens get a pause button in the HUD.
+- Words (`src/course/WordSource.ts`): when at least 12 words from `src/course/wordLists.ts` fit the allowed keys, about half of the words are real words. The rest are generated strings of 2 to 5 letters, where about half of the letters come from the new keys. Boss words are real words of 4 or more letters when at least 12 fit, otherwise generated strings of 5 to 7 letters. New words and warm-up letters prefer a first letter that no enemy on the board is waiting for. Generated letters and real words lean toward the player's weak keys, see [Key mastery](#key-mastery).
 
 Stars, with the current thresholds (`src/course/scoring.ts`):
 
@@ -93,9 +93,9 @@ Twins:
 Owners: `src/profiles/Profile.ts`, `src/profiles/profileSchema.ts`, `src/profiles/ProfileStore.ts`.
 
 - Several profiles per device, stored as a JSON array in localStorage under `literkowo.profiles`.
-- Schema version is 3 (`PROFILE_SCHEMA_VERSION`). Older profiles are migrated on load: version 1 moves the best score into the total score, version 2 seeds XP with `round(totalScore / 10)`. A shape change bumps the version and adds a migration.
+- Schema version is 4 (`PROFILE_SCHEMA_VERSION`). Older profiles are migrated on load: version 1 moves the best score into the total score, version 2 seeds XP with `round(totalScore / 10)`, version 3 starts with empty key statistics. A shape change bumps the version and adds a migration.
 - Entries that cannot be read are dropped, and the raw value is copied to `literkowo.profiles.backup` first.
-- Fields: id, name (up to 16 characters, `src/ui/ProfileScreen.ts`), avatar, word language, total score, letters freed, XP, coins, seen stories and the best result per level.
+- Fields: id, name (up to 16 characters, `src/ui/ProfileScreen.ts`), avatar, word language, total score, letters freed, XP, coins, seen stories, the best result per level and the key statistics.
 - Word language is set per profile. Today the choices are Polish (default) and English (`WORD_LANGUAGES` in `src/profiles/Profile.ts`).
 - Avatars are character skins: 18 Kenney Blocky Characters with ids `a` to `r`. Portraits are in `public/characters`, 3D models in `public/models/characters` (`src/game/Player.ts`).
 - Other keys: `literkowo.activeProfile`, `literkowo.uiLanguage`, `literkowo.sound`, `literkowo.music`, `literkowo.reloadedAfterPreloadError`.
@@ -191,6 +191,48 @@ Coins are a separate counter for a future shop. Nothing is spent yet.
 - After the level: the run coins, plus 10 for a won level, plus 5 per star.
 
 The result card fills the XP bar from the old progress to the new one. When a level is crossed it shows a "Nowy poziom!" / "Новий рівень!" banner with the rank name, confetti and the level complete and sparkle sounds. The coins earned sit in a pill next to the XP. The map header and the profile cards show the level, the rank, a thin XP bar and the coins.
+
+## Key mastery
+
+Owners: `src/course/keyStats.ts`, `src/course/mastery.ts`, `src/game/KeyTracker.ts`.
+
+The game keeps statistics for every key of the course, Polish letters included, so finished regions still have work in them.
+
+Recording, during a level (`src/game/KeyTracker.ts`):
+
+- Only keys allowed in the level count. Keys are the lower case characters the game sees.
+- A hit counts for the typed key. A mistake counts for the key the nearest followed enemy is waiting for, or for the typed key when no enemy is followed.
+- A lost life is not a keystroke and does not count.
+- Speed is the time from the previous correct key to this hit. Gaps over 2 seconds are ignored. It is the plain average for the first samples and then a moving average over about 50 hits.
+- The statistics are added to the profile after every attempt, won or lost. The dev shortcut does not save them.
+
+Stored per key, with no keystroke history: hits, misses, the outcome of the last 30 keystrokes as a bit mask, the moving speed with its sample count, and the last 10 days the key was practised as ISO dates in local time.
+
+Mastery levels (`src/course/mastery.ts`):
+
+| Level      | Polish       | Ukrainian    | Rule                                                                  |
+| ---------- | ------------ | ------------ | --------------------------------------------------------------------- |
+| `none`     | Nowy klawisz | Нова клавіша | no keystroke yet                                                      |
+| `learning` | Uczysz się   | Вчишся       | any other key                                                         |
+| `solid`    | Pewnie       | Впевнено     | at least 10 recent keystrokes and 90% accuracy over the last 30       |
+| `mastered` | Opanowany    | Опановано    | 30 recent keystrokes, 97% accuracy, speed on target, 3 different days |
+
+- Speed target: at most 900 ms between keys, or 1400 ms for Polish letters typed with right Alt.
+- 97% of 30 keystrokes means the last 30 keystrokes of a mastered key have no mistake. One mistake drops it to `solid` until its last 30 keystrokes are clean again.
+- A region's mastery share is the part of its new keys that are mastered.
+
+Where it shows:
+
+- Map: each region card has a mastery meter next to the stars, with the mastered keys out of all new keys of the region. Each unlocked key level shows a dot per new key in the colour of its level: grey none, orange learning, blue solid, green mastered.
+- Learn card: under each keycap, the level of the key and its accuracy over the last 30 keystrokes when there is data.
+- Result card: a "Klawisze" / "Клавіші" row with the two least accurate keys of the run that had a mistake, or "Bez pomyłek" / "Без помилок". A key that became mastered in the run gets a green badge, the sparkle sound and the callout "Opanowany: F" / "Опановано: F".
+- Pause card: a heatmap of the keyboard, each key tinted by its accuracy over the last 30 keystrokes, from red at 70% or less to green at 100%, grey without data. A practised Polish letter shows as a small mark on its base key.
+
+Weak keys in words (`src/course/WordSource.ts`, `keyWeight` in `src/course/mastery.ts`):
+
+- Generated letters and real words are picked with a weight per key. A real word takes the highest weight of its letters.
+- Weight is 1 for keys without data and for mastered keys. Otherwise it grows from 1 to 3 with the weakness of the key: accuracy from 97% down to 80%, or speed from the target up to twice the target, whichever is weaker.
+- The weights follow the statistics live during the level.
 
 ## Worlds
 
