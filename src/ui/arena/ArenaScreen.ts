@@ -17,12 +17,14 @@ import { el } from '../dom';
 import { keyLabel } from '../levelKind';
 import { coinPill } from '../progression';
 import { ShopHero } from '../ShopHero';
+import { shopLink } from '../shopLink';
 import { hintedLockBadge, shopIcon } from '../shopParts';
 import { arenaIcon, difficultyName, medalBadge, waveLabel } from './arenaParts';
 
 interface ArenaActions {
   onBack: (profile: Profile) => void;
   onPlay: (profile: Profile, choice: ArenaChoice) => void;
+  onShop: (profile: Profile, choice: ArenaChoice) => void;
 }
 
 const DEFAULT_DIFFICULTY_ID = 'normal';
@@ -73,6 +75,7 @@ export class ArenaScreen {
       el(
         'div',
         { class: 'shop-coins' },
+        shopLink(() => this.actions.onShop(this.profile, this.choice), 'is-icon-on-phone'),
         coinPill(String(this.profile.coins), 'stat-pill shop-coin-pill'),
       ),
     );

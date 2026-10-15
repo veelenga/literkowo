@@ -38,6 +38,7 @@ export class ArenaFlow {
           {
             onBack: (current) => this.host.showMap(current),
             onPlay: (current, choice) => this.start(current, choice),
+            onShop: (current, choice) => this.openShop(current, choice),
           },
           previous,
         ),

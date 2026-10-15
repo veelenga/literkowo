@@ -39,7 +39,8 @@ function withBest(profile: Profile, keySet: string, id: DifficultyId, medal: Med
 function setup(profile: Profile, previous?: ArenaChoice) {
   const onPlay = vi.fn<(profile: Profile, choice: ArenaChoice) => void>();
   const onBack = vi.fn<(profile: Profile) => void>();
-  const screen = new ArenaScreen(profile, { onPlay, onBack }, previous);
+  const onShop = vi.fn<(profile: Profile, choice: ArenaChoice) => void>();
+  const screen = new ArenaScreen(profile, { onPlay, onBack, onShop }, previous);
   const chips = (selector: string) => [
     ...screen.element.querySelectorAll<HTMLButtonElement>(`${selector} .chip`),
   ];
@@ -47,7 +48,7 @@ function setup(profile: Profile, previous?: ArenaChoice) {
   const difficultyChips = () => chips('.arena-difficulties');
   const play = () => screen.element.querySelector<HTMLButtonElement>('.arena-play')?.click();
   const lastChoice = () => onPlay.mock.lastCall?.[1];
-  return { screen, keySetChips, difficultyChips, play, lastChoice, onBack };
+  return { screen, keySetChips, difficultyChips, play, lastChoice, onBack, onShop };
 }
 
 describe('ArenaScreen', () => {
@@ -104,5 +105,14 @@ describe('ArenaScreen', () => {
     const { screen, onBack } = setup(profileUpTo('polana-19'));
     screen.element.querySelector<HTMLButtonElement>('.shop-back')?.click();
     expect(onBack).toHaveBeenCalledOnce();
+  });
+
+  it('opens the shop from the link next to the coins with the current choice', () => {
+    const { screen, keySetChips, onShop } = setup(profileUpTo('las-16'));
+    keySetChips()[0].click();
+    const link = screen.element.querySelector<HTMLButtonElement>('.shop-coins .shop-link');
+    expect(link?.nextElementSibling?.classList).toContain('shop-coin-pill');
+    link?.click();
+    expect(onShop.mock.lastCall?.[1].keySet.id).toBe('polana');
   });
 });

@@ -135,4 +135,16 @@ describe('ArenaFlow', () => {
     expect([...active].map((item) => item.textContent)).toEqual(['Las', 'Szybko']);
     overlays[0].dispose();
   });
+
+  it('opens the shop from the arena screen and comes back to the same choice', () => {
+    const { flow, screens, shops } = setup();
+    flow.show(lasPlayer(), CHOICE);
+    screens[0].element.querySelector<HTMLButtonElement>('.shop-link')?.click();
+    const [shop] = shops;
+    expect(shop.tab).toBeUndefined();
+    expect(shop.exit.backLabel).toBe('Arena');
+    shop.exit.onBack(shop.profile);
+    const active = screens[1].element.querySelectorAll('.chip.is-active');
+    expect([...active].map((item) => item.textContent)).toEqual(['Las', 'Szybko']);
+  });
 });
