@@ -72,26 +72,26 @@
 
 .node-keys {
   position: absolute;
-  bottom: 9px;
+  bottom: 7px;
   left: 50%;
   translate: -50% 0;
   display: flex;
-  gap: 4px;
+  gap: 3px;
+  padding: 3px 5px;
+  border-radius: var(--radius-pill);
+  background: rgba(3, 6, 20, 0.6);
   pointer-events: none;
 }
 
 .node-key {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--mastery);
-  box-shadow: 0 0 0 1.5px rgba(3, 6, 20, 0.6);
 }
 
 .node-key[data-mastery='mastered'] {
-  box-shadow:
-    0 0 0 1.5px rgba(3, 6, 20, 0.6),
-    0 0 6px var(--mastery-glow);
+  box-shadow: 0 0 6px var(--mastery-glow);
 }
 
 .key-status {
@@ -348,13 +348,14 @@
   }
 
   .node-keys {
-    bottom: 6px;
-    gap: 3px;
+    bottom: 5px;
+    gap: 2px;
+    padding: 2px 4px;
   }
 
   .node-key {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
   }
 
   .result-keys {
