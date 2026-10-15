@@ -1,0 +1,179 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { music } from '../audio/Music';
+import { sfx } from '../audio/Sfx';
+import { readQualityChoice } from '../game/quality';
+import { i18n } from '../i18n/i18n';
+import { removeStorage } from '../storage';
+import { ON_SCREEN_KEYBOARD_KEY, readOnScreenKeyboard } from './formFactor';
+import { readReducedMotion, REDUCED_MOTION_KEY } from './motionPreference';
+import { onWindowKey } from './overlay';
+import { SettingsScreen, settingsOverlay } from './SettingsScreen';
+
+const QUALITY_KEY = 'literkowo.quality';
+
+function setup() {
+  const onBack = vi.fn();
+  const screen = new SettingsScreen({ onBack });
+  const rows = () => [...screen.element.querySelectorAll<HTMLElement>('.settings-row')];
+  const row = (title: string) => {
+    const found = rows().find(
+      (item) => item.querySelector('.settings-label')?.textContent === title,
+    );
+    if (!found) throw new Error(`Missing row ${title}`);
+    return found;
+  };
+  const chips = (title: string) => [...row(title).querySelectorAll<HTMLButtonElement>('.chip')];
+  const chip = (title: string, label: string) => {
+    const found = chips(title).find((item) => item.textContent === label);
+    if (!found) throw new Error(`Missing chip ${label}`);
+    return found;
+  };
+  const toggle = (title: string) => {
+    const found = row(title).querySelector<HTMLButtonElement>('[role="switch"]');
+    if (!found) throw new Error(`Missing switch ${title}`);
+    return found;
+  };
+  const active = (title: string) =>
+    chips(title)
+      .filter((item) => item.classList.contains('is-active'))
+      .map((item) => item.textContent);
+  return { screen, onBack, rows, row, chips, chip, toggle, active };
+}
+
+function pressEscape(): void {
+  window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+}
+
+describe('SettingsScreen', () => {
+  let dispose: (() => void) | undefined;
+
+  beforeEach(() => {
+    vi.stubGlobal('matchMedia', () => ({ matches: false }));
+  });
+
+  afterEach(() => {
+    dispose?.();
+    dispose = undefined;
+    [QUALITY_KEY, ON_SCREEN_KEYBOARD_KEY, REDUCED_MOTION_KEY].forEach(removeStorage);
+    document.documentElement.removeAttribute('data-reduced-motion');
+    sfx.setEnabled(true);
+    music.setEnabled(true);
+    i18n.set('pl');
+    vi.unstubAllGlobals();
+  });
+
+  function open() {
+    const parts = setup();
+    dispose = () => parts.screen.dispose();
+    return parts;
+  }
+
+  it('lists every setting under a titled header without coins', () => {
+    const { screen, rows } = open();
+    expect(screen.element.querySelector('.shop-title')?.textContent).toBe('Ustawienia');
+    expect(screen.element.querySelector('.shop-coins')).toBeNull();
+    expect(rows().map((item) => item.querySelector('.settings-label')?.textContent)).toEqual([
+      'Jakość grafiki',
+      'Efekty dźwiękowe',
+      'Muzyka',
+      'Język gry',
+      'Klawiatura na ekranie',
+      'Mniej animacji',
+    ]);
+  });
+
+  it('offers the quality presets with auto active and the next level note', () => {
+    const { row, chips, active } = open();
+    expect(chips('Jakość grafiki').map((item) => item.textContent)).toEqual([
+      'Auto',
+      'Wysoka',
+      'Średnia',
+      'Niska',
+    ]);
+    expect(active('Jakość grafiki')).toEqual(['Auto']);
+    expect(row('Jakość grafiki').querySelector('.settings-hint')?.textContent).toBe(
+      'Nowa jakość zadziała od następnego poziomu',
+    );
+  });
+
+  it('saves the picked quality and moves the highlight', () => {
+    const { chip, active } = open();
+    const low = chip('Jakość grafiki', 'Niska');
+    low.click();
+    expect(readQualityChoice()).toBe('low');
+    expect(active('Jakość grafiki')).toEqual(['Niska']);
+    expect(low.getAttribute('aria-pressed')).toBe('true');
+    expect(chip('Jakość grafiki', 'Auto').getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('switches sound effects and music on their own', () => {
+    const { toggle } = open();
+    const effects = toggle('Efekty dźwiękowe');
+    expect(effects.getAttribute('aria-checked')).toBe('true');
+    effects.click();
+    expect(sfx.enabled).toBe(false);
+    expect(music.enabled).toBe(true);
+    expect(effects.getAttribute('aria-checked')).toBe('false');
+    toggle('Muzyka').click();
+    expect(music.enabled).toBe(false);
+  });
+
+  it('switches the interface language and redraws in it', () => {
+    const { screen, chip } = open();
+    chip('Język gry', 'Українська').click();
+    expect(i18n.current).toBe('uk');
+    expect(screen.element.querySelector('.shop-title')?.textContent).toBe('Налаштування');
+    expect(screen.element.querySelector('.chip.is-active')?.textContent).toBe('Авто');
+  });
+
+  it('saves the on screen keyboard choice', () => {
+    const { chip, active } = open();
+    expect(active('Klawiatura na ekranie')).toEqual(['Auto']);
+    chip('Klawiatura na ekranie', 'Nigdy').click();
+    expect(readOnScreenKeyboard()).toBe('never');
+  });
+
+  it('forces reduced motion on', () => {
+    const { chip } = open();
+    chip('Mniej animacji', 'Zawsze').click();
+    expect(readReducedMotion()).toBe('always');
+    expect(document.documentElement.hasAttribute('data-reduced-motion')).toBe(true);
+  });
+
+  it('goes back from the back button', () => {
+    const { screen, onBack } = open();
+    screen.element.querySelector<HTMLButtonElement>('.shop-back')?.click();
+    expect(onBack).toHaveBeenCalledOnce();
+  });
+
+  it('goes back on Escape before a paused level can see the key', () => {
+    const level = vi.fn();
+    const stopLevel = onWindowKey(level);
+    const { onBack } = open();
+    pressEscape();
+    stopLevel();
+    expect(onBack).toHaveBeenCalledOnce();
+    expect(level).not.toHaveBeenCalled();
+  });
+
+  it('stops listening for Escape once disposed', () => {
+    const { screen, onBack } = setup();
+    screen.dispose();
+    pressEscape();
+    expect(onBack).not.toHaveBeenCalled();
+  });
+});
+
+describe('settingsOverlay', () => {
+  it('shows the settings screen on its own layer and releases Escape on dispose', () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: false }));
+    const onBack = vi.fn();
+    const overlay = settingsOverlay({ onBack });
+    expect(overlay.element.classList).toContain('settings-layer');
+    expect(overlay.element.querySelector('.settings-screen')).not.toBeNull();
+    overlay.dispose();
+    pressEscape();
+    expect(onBack).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+});

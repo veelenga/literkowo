@@ -10,6 +10,7 @@ import { mergeEnemies } from './mergeEnemies';
 import { powerWords } from './powerWords';
 import { progression } from './progression';
 import { quality } from './quality';
+import { settings } from './settings';
 import { shop } from './shop';
 import { touch } from './touch';
 import { waveEvents } from './waveEvents';
@@ -34,5 +35,6 @@ export function featureTexts(language: UiLanguage) {
     worldMap: worldMap[language],
     course: course[language],
     arena: arena[language],
+    settings: settings[language],
   };
 }

@@ -1,0 +1,173 @@
+import { music } from '../audio/Music';
+import { sfx } from '../audio/Sfx';
+import { QUALITY_CHOICES, readQualityChoice, saveQualityChoice } from '../game/quality';
+import { i18n } from '../i18n/i18n';
+import type { UiLanguage } from '../i18n/translations';
+import { el } from './dom';
+import {
+  ON_SCREEN_KEYBOARD_CHOICES,
+  readOnScreenKeyboard,
+  saveOnScreenKeyboard,
+} from './formFactor';
+import { REDUCED_MOTION_CHOICES, readReducedMotion, saveReducedMotion } from './motionPreference';
+import { claimEscapeKey, createOverlay, type Overlay } from './overlay';
+import { choiceChips, switchToggle } from './settingsControls';
+import './settings.css';
+import { shopIcon } from './shopParts';
+
+const UI_LANGUAGES: readonly UiLanguage[] = ['pl', 'uk'];
+
+export interface SettingsActions {
+  readonly onBack: () => void;
+}
+
+export class SettingsScreen {
+  readonly element = el('div', { class: 'screen settings-screen' });
+  private readonly stopEscape: () => void;
+
+  constructor(private readonly actions: SettingsActions) {
+    this.stopEscape = claimEscapeKey(actions.onBack);
+    this.render();
+  }
+
+  dispose(): void {
+    this.stopEscape();
+  }
+
+  private render(): void {
+    this.element.replaceChildren(
+      this.header(),
+      el(
+        'main',
+        { class: 'settings-layout' },
+        el(
+          'section',
+          { class: 'panel settings-panel' },
+          qualityRow(),
+          soundEffectsRow(),
+          musicRow(),
+          this.languageRow(),
+          keyboardRow(),
+          motionRow(),
+        ),
+      ),
+    );
+  }
+
+  private header(): HTMLElement {
+    const copy = i18n.t.features.settings;
+    return el(
+      'header',
+      { class: 'shop-header settings-header' },
+      el(
+        'button',
+        { class: 'button button-ghost shop-back', type: 'button', onClick: this.actions.onBack },
+        shopIcon('back', 'shop-back-icon'),
+        copy.back,
+      ),
+      el('h1', { class: 'shop-title settings-title', text: copy.title }),
+    );
+  }
+
+  private languageRow(): HTMLElement {
+    const copy = i18n.t.features.settings;
+    return settingRow(
+      copy.language,
+      choiceChips({
+        label: copy.language,
+        choices: UI_LANGUAGES,
+        current: i18n.current,
+        names: copy.languages,
+        onPick: (language) => {
+          i18n.set(language);
+          this.render();
+        },
+      }),
+    );
+  }
+}
+
+export function settingsOverlay(actions: SettingsActions): Overlay {
+  const screen = new SettingsScreen(actions);
+  return createOverlay(el('div', { class: 'settings-layer' }, screen.element), () =>
+    screen.dispose(),
+  );
+}
+
+function qualityRow(): HTMLElement {
+  const copy = i18n.t.features.quality;
+  return settingRow(
+    copy.title,
+    choiceChips({
+      label: copy.title,
+      choices: QUALITY_CHOICES,
+      current: readQualityChoice(),
+      names: copy.options,
+      onPick: saveQualityChoice,
+    }),
+    copy.hint,
+  );
+}
+
+function soundEffectsRow(): HTMLElement {
+  const label = i18n.t.features.settings.effects;
+  return switchRow(
+    label,
+    switchToggle({ label, enabled: sfx.enabled, onChange: (on) => sfx.setEnabled(on) }),
+  );
+}
+
+function musicRow(): HTMLElement {
+  const label = i18n.t.features.settings.music;
+  return switchRow(
+    label,
+    switchToggle({ label, enabled: music.enabled, onChange: (on) => music.setEnabled(on) }),
+  );
+}
+
+function keyboardRow(): HTMLElement {
+  const copy = i18n.t.features.settings.keyboard;
+  return settingRow(
+    copy.title,
+    choiceChips({
+      label: copy.title,
+      choices: ON_SCREEN_KEYBOARD_CHOICES,
+      current: readOnScreenKeyboard(),
+      names: copy.options,
+      onPick: saveOnScreenKeyboard,
+    }),
+    copy.hint,
+  );
+}
+
+function motionRow(): HTMLElement {
+  const copy = i18n.t.features.settings.motion;
+  return settingRow(
+    copy.title,
+    choiceChips({
+      label: copy.title,
+      choices: REDUCED_MOTION_CHOICES,
+      current: readReducedMotion(),
+      names: copy.options,
+      onPick: saveReducedMotion,
+    }),
+    copy.hint,
+  );
+}
+
+function settingRow(title: string, control: HTMLElement, hint?: string): HTMLElement {
+  return el('div', { class: 'settings-row' }, rowText(title, hint), control);
+}
+
+function switchRow(title: string, control: HTMLElement): HTMLElement {
+  return el('div', { class: 'settings-row is-inline' }, rowText(title), control);
+}
+
+function rowText(title: string, hint?: string): HTMLElement {
+  return el(
+    'div',
+    { class: 'settings-text' },
+    el('h2', { class: 'settings-label', text: title }),
+    hint ? el('p', { class: 'settings-hint', text: hint }) : null,
+  );
+}
