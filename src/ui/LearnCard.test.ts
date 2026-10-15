@@ -40,11 +40,11 @@ describe('learnCard', () => {
     expect(element.querySelector('.hands')).toBeNull();
   });
 
-  it('says in one line what a review level is', () => {
+  it('says in one line what a review level is and that a mini boss waits', () => {
     const element = card('polana-8');
     expect(element.querySelector('.eyebrow')?.textContent).toBe('Powtórka');
     expect(element.querySelector('.learn-hint')?.textContent).toBe(
-      i18n.t.features.course.hints.review,
+      'Powtarzamy wszystkie poznane klawisze. Na końcu czeka Mały Strażnik!',
     );
     expect(keys(element)).toEqual(['D', 'K']);
   });

@@ -46,13 +46,13 @@ describe('WorldMap', () => {
     expect(map.querySelector('.level-node.is-current')?.classList).toContain('is-review');
   });
 
-  it('marks learn and review levels with a badge', () => {
+  it('marks learn levels and the mini boss of review levels with a badge', () => {
     const profile = createProfile('Ola', 'a');
     const map = mapOf({ ...profile, levelResults: { 'polana-1': DONE, 'polana-2': DONE } });
     const badges = nodes(map)
       .slice(0, 3)
       .map((node) => node.querySelector('.node-kind')?.textContent ?? null);
-    expect(badges).toEqual(['✨', null, '🔁']);
+    expect(badges).toEqual(['✨', null, '👑']);
   });
 
   it('shows a dimmed arena gate and a locked header button before the Polana boss', () => {

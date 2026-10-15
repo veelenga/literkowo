@@ -27,7 +27,7 @@ import './worldMap.css';
 const STAR_BASE_DELAY_MS = 260;
 const STAR_STAGGER_MS = 110;
 const BOSS_FACE = '🌑';
-const KIND_BADGES: Readonly<Partial<Record<LevelKind, string>>> = { learn: '✨', review: '🔁' };
+const KIND_BADGES: Readonly<Partial<Record<LevelKind, string>>> = { learn: '✨', review: '👑' };
 const HALF = 2;
 const STOP_CLASS = 'journey-stop';
 const STOP_SELECTOR = `.${STOP_CLASS}`;
