@@ -86,7 +86,7 @@ Owners: `src/app/App.ts`, `src/course/progress.ts`, `src/game/RunPlan.ts`, `src/
 The game runs a run plan: its phases by index, its lives, its XP factor, and the keys and word lengths of each phase (`src/course/wordRules.ts`). `src/game/LevelPlan.ts` builds the plan of a course level.
 
 1. Story card. The intro plays before the first level. A boss scene plays before each boss. An after scene plays when a boss is beaten with at least one star. The finale replaces the after scene for the last boss of the course. Each scene plays once per profile. Speakers are Sowa Klara, Felek and Mrok (`src/story/story.ts`).
-2. Learn card, for every level except bosses (`src/ui/LearnCard.ts`). Enter starts the level.
+2. Learn card, for every level except bosses (`src/ui/LearnCard.ts`). Enter starts the level. The ✕ button in the top right corner, a 44 px touch target with the label "Wróć do mapy" / "Повернутися до мапи", and Escape close the card and go back to the map without starting the level. Like Enter, Escape waits 600 ms after the card opens. A story card before the level still plays first and stays seen when the learn card is closed.
    - Learn level: "Nowy klawisz" / "Нова клавіша" ("Nowe klawisze" / "Нові клавіші" for `f` `j`), the new key with its finger and mastery status, the hands diagram and the hint to put the fingers on the home row.
    - Practice level: "Trening" / "Тренування", the key and one line: "Ćwiczymy w krótkich słowach. Najpierw dokładnie, potem szybko!" / "Тренуємося на коротких словах. Спершу точно, потім швидко!".
    - Review level: "Powtórka" / "Повторення", the reviewed keys and one line: "Powtarzamy wszystkie poznane klawisze. Dasz radę!" / "Повторюємо всі вивчені клавіші. Ти впораєшся!".
@@ -94,7 +94,7 @@ The game runs a run plan: its phases by index, its lives, its XP factor, and the
 4. Warm-up. Single letters from the level's focus keys. A letter that reaches the player is removed and costs nothing.
 5. Main phase. A learn level runs a learn phase, practice and review levels run a words phase. A word that reaches the player costs a life and counts as a mistake. Counts, speeds and lengths are in [Difficulty](#difficulty).
 6. Boss, for boss levels only, with no learn card and no warm-up. One boss that needs the number of words in [Difficulty](#difficulty). Each hit knocks it back and makes it 12% faster. When it reaches the player, it jumps back to distance 9 and the player loses a life (`src/game/Boss.ts`).
-7. Result card. It shows stars, score, accuracy, words per minute and letters freed, the XP bar with the XP and coins earned, the keys row (see [Key mastery](#key-mastery)), and buttons for the next level when there is one, retry and map (`src/ui/LevelResult.ts`, `src/ui/ResultProgress.ts`). Enter presses the main button, marked with ⏎: the next level when there is one, retry after a run without stars and the map otherwise, and, like Enter on the learn card, it is ignored for the first 600 ms so keys pressed at the end of the level do not skip either card.
+7. Result card. It shows stars, score, accuracy, words per minute and letters freed, the XP bar with the XP and coins earned, the keys row (see [Key mastery](#key-mastery)), the treasure chips (see [Shop](#shop)), and buttons for the next level when there is one, retry and map (`src/ui/LevelResult.ts`, `src/ui/ResultProgress.ts`). Enter presses the main button, marked with ⏎: the next level when there is one, retry after a run without stars and the map otherwise, and, like Enter on the learn card, it is ignored for the first 600 ms so keys pressed at the end of the level do not skip either card.
 
 Rules during a level:
 
@@ -102,7 +102,7 @@ Rules during a level:
 - The player has 3 lives (`LEVEL_LIVES` in `src/game/LevelPlan.ts`). Losing the last life ends the level as lost.
 - The progress bar counts a spawn as done once every enemy it turned into has left the board, so a spawn that becomes twins or a special enemy still counts as one. Enemies that features add later, such as power words or bombers, do not change it (`src/game/SpawnGroups.ts`).
 - Typing follows every enemy whose word starts with the letters typed so far, a key that fits none of them is a mistake, and when a word is done every enemy with that same word is done too while the others go back to untyped (`src/game/Targeting.ts`).
-- Escape pauses and resumes. Pause also suspends audio. The pause card also has a resume button and the key heatmap, and touch screens get a pause button in the HUD.
+- Escape pauses and resumes. Pause also suspends audio. The pause card also has a resume button, a quiet "Ustawienia" / "Налаштування" button with a gear and the key heatmap, and touch screens get a pause button in the HUD. The settings button opens the [Settings](#settings) screen over the paused level. Graphics quality is picked there, not on the pause card.
 - Every correct letter fires a bolt from the hero to the nearest enemy being typed, and every finished word gets a lightning strike with a soft crack and a small camera punch, 30 ms apart when several words finish on one key (`src/game/mechanics/HeroStrikes.ts`). The strikes turn from the world's accent colour toward gold as the combo grows and are fully golden in fever, while a glow under the hero charges with the combo up to 15.
 - Words (`src/course/WordSource.ts`): when at least 12 words from `src/course/wordLists.ts` fit the allowed keys and the length limits of the level, about half of the words are real words, preferring words with a focus key. The rest are generated strings within the generated length limits, where about half of the letters come from the focus keys. Boss words are real words of 4 or more letters when at least 12 fit, otherwise generated strings of 5 to 7 letters. New words and warm-up letters prefer a first letter that no enemy on the board is waiting for. Generated letters and real words lean toward the player's weak keys, see [Key mastery](#key-mastery).
 - The learn phase teaches the new key in two halves. In the first half every enemy is a combo of 1 or 2 letters with the new key and maybe a known key, for example `f` `j` `fj` `jf` `ff` `jj`. In the second half the words have 2 or 3 letters with the new key: a real word about half of the time when at least 3 such words fit, otherwise a generated one.
@@ -206,7 +206,7 @@ Owners: `src/profiles/Profile.ts`, `src/profiles/profileSchema.ts`, `src/profile
 - Equipped: at most one pet and one hat. An id the inventory does not own is dropped on load.
 - Word language is set per profile. Today the choices are Polish (default) and English (`WORD_LANGUAGES` in `src/profiles/Profile.ts`).
 - Avatars are character skins: 18 Kenney Blocky Characters with ids `a` to `r`. Portraits are in `public/characters`, 3D models in `public/models/characters` (`src/game/Player.ts`). The skins `a` to `f` are free. The new profile picker shows the other 12 with a lock badge: the price in coins, or the level where the rank opens them. Locked skins cannot be picked there, they come from the shop.
-- Other keys: `literkowo.activeProfile`, `literkowo.uiLanguage`, `literkowo.sound`, `literkowo.music`, `literkowo.reloadedAfterPreloadError`, `literkowo.rotateHintSeen`.
+- Other keys: `literkowo.activeProfile`, `literkowo.uiLanguage`, `literkowo.sound`, `literkowo.music`, `literkowo.quality`, `literkowo.onScreenKeyboard`, `literkowo.reducedMotion`, `literkowo.reloadedAfterPreloadError`, `literkowo.rotateHintSeen`. The settings among them belong to the device, not to a profile, see [Settings](#settings).
 - When localStorage is blocked, storage falls back to memory for the session (`src/storage.ts`).
 
 ## Scoring
@@ -431,7 +431,18 @@ Weak keys in words (`src/course/WordSource.ts`, `keyWeight` in `src/course/maste
 
 Owners: `src/course/shop.ts` (catalogue and prices), `src/course/inventory.ts` (buying and equipping), `src/course/trophies.ts`, `src/ui/ShopScreen.ts`, copy in `src/i18n/features/shop.ts`.
 
-The shop opens from the bag button "Sklep" / "Крамниця" in the map header. A green dot on the button means something can be bought or claimed right now. The back button returns to the map.
+The shop opens from several places, and its back button returns to where it was opened from and names it (`ShopExit` in `src/ui/ShopScreen.ts`):
+
+| Opened from                                                                      | Back button         | Opens on      |
+| -------------------------------------------------------------------------------- | ------------------- | ------------- |
+| the bag button "Sklep" / "Крамниця" in the map header                            | "Mapa" / "Мапа"     | the first tab |
+| the quiet "Sklep" / "Крамниця" link next to Play on the profile screen           | "Gracze" / "Гравці" | the first tab |
+| the shop link next to the coins in the arena screen header                       | "Arena" / "Арена"   | the first tab |
+| a trophy chip on the result card of a level                                      | "Mapa" / "Мапа"     | the trophies  |
+| the "Nowość w sklepie" / "Новинка в крамниці" chip on the result card of a level | "Mapa" / "Мапа"     | the first tab |
+| a trophy chip or the news chip on the arena result card                          | "Arena" / "Арена"   | as above      |
+
+A green dot on the map header button means something can be bought or claimed right now. Leaving a level result for the shop still plays the after scene of a beaten boss first. Coming back to the arena screen keeps the chosen key set and preset.
 
 Layout:
 
@@ -502,7 +513,7 @@ Trophies are awarded after every attempt and when an older profile is migrated. 
 
 The trophy tab shows "Trofea: 3 z 13" / "Трофеї: 3 з 13", earned trophies in their colour and the others in grey with their hint.
 
-The result card adds a chip "Nowy skarb: Polana" / "Новий скарб: Галявина" for each trophy of the attempt, and "Nowość w sklepie" / "Новинка в крамниці" when an item became affordable or claimable.
+The result card adds a chip "Nowy skarb: Polana" / "Новий скарб: Галявина" for each trophy of the attempt, and "Nowość w sklepie" / "Новинка в крамниці" when an item became affordable or claimable. These chips are buttons with a small › mark that open the shop as in the table above (`src/ui/resultTreasures.ts`). The "Arena otwarta!" / "Арену відкрито!" chip is not a link. On touch screens each chip button reaches 44 px tall without changing the card layout.
 
 ## Arena
 
@@ -566,7 +577,7 @@ Coins and XP (`src/arena/economy.ts`):
 
 Arena screen (`src/ui/arena/ArenaScreen.ts`):
 
-- It copies the shop: a header with the back button "Mapa" / "Мапа", the title and the coins. On the left the hero in 3D with the equipped hat and pet, and under it the best wave and medal of the chosen key set for each open preset.
+- It copies the shop: a header with the back button "Mapa" / "Мапа", the title, a quiet shop link with the bag and "Sklep" / "Крамниця" (only the bag on phones) and the coins. On the left the hero in 3D with the equipped hat and pet, and under it the best wave and medal of the chosen key set for each open preset.
 - On the right: the key set chips with region names and the keys under them, the difficulty chips, and the mode card "Bez końca" / "Без кінця" with its rule line, the best wave of the chosen key set and preset ("Rekord: fala 9" / "Рекорд: хвиля 9", or "Jeszcze bez rekordu" / "Ще без рекорду") with its medal, and a gold Play button. The mode grid has room for the planned cards.
 - Phones: one column, the hero as a 64 px strip with record pills, the difficulty chips 2 by 2 and the mode card at full width.
 - Coming back from a run keeps the chosen key set and preset.
@@ -641,6 +652,8 @@ Profile screen:
 - The selected card lifts, glows and shows the hero in 3D with the equipped hat and pet, swaying slowly. It uses the same outfit view as the shop (`src/ui/portraits/OutfitView.ts`). The play panel opens right under the row of the selected card, and cards from later rows move below it. The panel has a big Play button, then the word language chips and the delete button in a quieter row.
 - The dashed new profile card opens the create panel in its place: a large live preview of the chosen character that switches with every pick, the name field, the 18 characters and a Create button.
 - Long names and rank names end with an ellipsis on the cards.
+- The top right corner holds the interface language switch "PL" / "UA" and a round gear button that opens the [Settings](#settings).
+- The play panel has a quiet "Sklep" / "Крамниця" link with the bag next to Play. It opens the shop for the selected profile.
 
 Map:
 
@@ -649,7 +662,7 @@ Map:
 - Each band starts with a sign: the chapter number, the region name, a short mood line (`src/i18n/features/worldMap.ts`), the stars earned out of the total and the mastery meter. Signs switch sides from band to band, and the path passes each sign on the other side.
 - Levels are round badges on the path with their focus keys. Learn levels carry a ✨ badge and review levels a 🔁 badge, and the title names the kind and the keys, for example "Trening D" / "Тренування D" (`src/ui/levelKind.ts`). Unlocked learn, practice and review levels show the key dots under the keys, see [Key mastery](#key-mastery). Bosses have a crown. Locked levels show a lock. Levels with stars glow in the region colour and show their stars. The current level pulses, has a Play tag, and the hero stands on it.
 - The hero on the current level wears the equipped hat and has the equipped pet in front of its hip, a little larger than in the game. The hero is framed like the plain portrait, so it keeps the same size, and a hat rises above the marker. It is a rendered image, not a live 3D view, so the map stays light on phones (`src/ui/OutfitAvatar.ts`, `src/ui/portraits/OutfitStudio.ts`). Until the image is ready, and when it cannot be rendered, the plain portrait shows. Each outfit is rendered once per session and kept in memory, so reopening the map shows it at once. With nothing equipped the hero is the plain portrait.
-- The header stays at the top: the avatar with the level number, the name, the rank and a thin XP bar, then stars, coins, the arena button, the shop button and the sound toggle. A tap on the avatar goes back to the profiles. The shop button has the bag and the label "Sklep" / "Крамниця", only the bag on phones, and the green dot when something can be bought or claimed.
+- The header stays at the top: the avatar with the level number, the name, the rank and a thin XP bar, then stars, coins, the arena button, the shop button, the settings gear and the sound toggle. A tap on the avatar goes back to the profiles. The settings gear has the label "Ustawienia" / "Налаштування" only on screens wider than 1100 px, so the player name keeps its room on tablets. The shop button has the bag and the label "Sklep" / "Крамниця", only the bag on phones, and the green dot when something can be bought or claimed.
 - On open the map scrolls smoothly to the current level, or to the last open level when all levels have stars. Levels pop in as they scroll into view. With reduced motion the scroll is instant and nothing pops in.
 - The silhouettes of each band move at different speeds while scrolling, except in the low quality preset.
 
@@ -664,13 +677,43 @@ Owners: `src/audio/Sfx.ts`, `src/audio/Music.ts`, `src/audio/music/themes.ts`.
 - Up to 8 music voices play at once. Tracks crossfade over 1.5 seconds.
 - Intensity runs from 0 to 1. It follows `combo / 20` and is 1 during fever (`src/app/App.ts`). Higher intensity brightens the mix and brings in a sparkle layer.
 - Sound effects: hit (pitch climbs a pentatonic scale with the combo), mistake, word, callout, fever, life lost, boss hit, level complete and level failed.
-- One sound toggle, in the HUD and on the map, switches music and effects together (`src/ui/SoundToggle.ts`).
+- One sound toggle, in the HUD and on the map, switches music and effects together (`src/ui/SoundToggle.ts`). The [Settings](#settings) screen switches effects and music one by one.
+
+## Settings
+
+Owners: `src/ui/SettingsScreen.ts`, `src/ui/settingsControls.ts`, `src/ui/settingsParts.ts`, `src/ui/settings.css`, copy in `src/i18n/features/settings.ts`.
+
+The settings screen "Ustawienia" / "Налаштування" opens from three places:
+
+- the gear in the map header, next to the sound toggle,
+- the round gear next to the language switch on the profile screen,
+- the "Ustawienia" / "Налаштування" button on the pause card. There it opens on its own layer over the paused level, which stays paused.
+
+It reuses the shop header: the back button "Wróć" / "Назад" and the title, without coins. The back button and Escape return to where the screen was opened from: the map, the profile screen or the pause card. Escape on the settings screen never reaches the level underneath, so it does not resume the game.
+
+Each setting is a row with a label, an optional hint, and segmented chips or a switch. Settings belong to the device and are shared by all profiles.
+
+| Setting                                          | Choices                      | Storage key                  | Applies             |
+| ------------------------------------------------ | ---------------------------- | ---------------------------- | ------------------- |
+| "Jakość grafiki" / "Якість графіки"              | Auto, Wysoka, Średnia, Niska | `literkowo.quality`          | from the next level |
+| "Efekty dźwiękowe" / "Звукові ефекти"            | switch, on by default        | `literkowo.sound`            | at once             |
+| "Muzyka" / "Музика"                              | switch, on by default        | `literkowo.music`            | at once             |
+| "Język gry" / "Мова гри"                         | Polski, Українська           | `literkowo.uiLanguage`       | at once             |
+| "Klawiatura na ekranie" / "Клавіатура на екрані" | Auto, Zawsze, Nigdy          | `literkowo.onScreenKeyboard` | from the next level |
+| "Mniej animacji" / "Менше анімації"              | Auto, Zawsze                 | `literkowo.reducedMotion`    | at once             |
+
+- Graphics quality: Auto picks a preset for the device (`src/game/quality.ts`). The hint says "Nowa jakość zadziała od następnego poziomu" / "Нова якість діятиме з наступного рівня".
+- Sound effects and music switch one by one. The sound toggle on the map and in the HUD still switches both together.
+- Interface language: the screen redraws in the chosen language right away. Language names are written in their own language.
+- On screen keyboard, with the hint "Na telefonie. Zadziała od następnego poziomu" / "На телефоні. Діятиме з наступного рівня": see Touch input in [Mobile and tablets](#mobile-and-tablets).
+- Reduced motion, with the hint "Auto słucha ustawień urządzenia" / "Авто враховує налаштування пристрою": Auto follows the system setting, Zawsze turns reduced motion on whatever the system says.
+- Phones: one column. Chip rows put the chips under the label at full width, switch rows keep the switch next to the label.
 
 ## Interface languages
 
 Owners: `src/i18n/translations.ts`, `src/i18n/i18n.ts`.
 
-- Today the interface is in Polish (default) and Ukrainian. The language switch is on the profile screen. The choice is saved under `literkowo.uiLanguage`.
+- Today the interface is in Polish (default) and Ukrainian. The language switch is on the profile screen and on the [Settings](#settings) screen. The choice is saved under `literkowo.uiLanguage`.
 - Interface language and word language are separate settings.
 - Region names and story lines carry every interface language next to the data (`src/course/catalog.ts`, `src/story/story.ts`).
 - A new interface language needs a new entry in `src/i18n/translations.ts` and text in the region and story data.
@@ -700,7 +743,7 @@ Touch input:
 
 - With a coarse pointer, a level adds a hidden input to the stage. It has `enterkeyhint="done"` and sits outside any form.
 - Characters from its `input` events go to `Game.typeCharacter`, the same path that `keydown` uses. During a composition only the new characters count. Backspace does nothing.
-- Phones with a coarse pointer type on the built-in keyboard by default: a compact QWERTY with three rows (`qwertyuiop`, `asdfghjkl;`, `zxcvbnm,.` and a right Alt), lower case labels, fixed at the bottom above the safe area. Keys are 32 to 46 px tall, 40 px at most in landscape, and the keyboard takes at most 40% of the screen height, or 34% in landscape, unless that would make the keys shorter than 32 px. The stage sits above it. The next expected key glows as on the keyboard hint.
+- Phones with a coarse pointer type on the built-in keyboard by default. The on screen keyboard setting changes that, see [Settings](#settings): Auto keeps this rule, Zawsze shows the built-in keyboard on every phone sized screen, also without a coarse pointer, and Nigdy types on the native keyboard, which a tap on the stage or the HUD keyboard button opens, as on tablets. The choice is read when a level starts (`usesBuiltInKeyboard` in `src/ui/formFactor.ts`). The built-in keyboard is a compact QWERTY with three rows (`qwertyuiop`, `asdfghjkl;`, `zxcvbnm,.` and a right Alt), lower case labels, fixed at the bottom above the safe area. Keys are 32 to 46 px tall, 40 px at most in landscape, and the keyboard takes at most 40% of the screen height, or 34% in landscape, unless that would make the keys shorter than 32 px. The stage sits above it. The next expected key glows as on the keyboard hint.
 - When a boss casts darkness, the built-in keyboard stays on the screen and can still be tapped, but its keys lose the finger colours and the next key glow until the darkness ends, while the keyboard hint on bigger screens fades out.
 - The keyboard button in the phone HUD opens the native keyboard and closes it on the second tap. While the native keyboard is open the built-in one hides, the level screen reaches down to the bottom of the page so the scene shows behind the keyboard accessory bar, and the arena is framed above the keyboard.
 - On tablets the keyboard hint is tappable, and a tap on the stage or on the "Stuknij, aby pisać" pill focuses the hidden input and opens the native keyboard. Phones have no pill and stage taps do nothing.
@@ -715,6 +758,7 @@ Performance:
 - In auto quality, touch screens get the low preset: pixel ratio at most 1, dynamic resolution down to 0.75, no MSAA, no bloom and a 512 px shadow map (`src/game/quality.ts`).
 - On touch screens and with reduced motion, the 3D hero on the profile screen is a still frame (`src/ui/LivePreview.ts`). Until the model loads, the portrait shows.
 - In the low preset the profile screen backdrop and the map layers stand still (`src/ui/menuMotion.ts`).
+- Reduced motion means the system asks for it or the "Mniej animacji" / "Менше анімації" setting is on Zawsze (`prefersReducedMotion` in `src/ui/motionPreference.ts`). When it is forced, the page gets the `data-reduced-motion` attribute and every CSS animation and transition is cut to 1 ms, as with the system setting.
 
 Install and offline:
 
