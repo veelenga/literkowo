@@ -110,7 +110,7 @@ Rules during a level:
 - The player has 3 lives (`LEVEL_LIVES` in `src/game/LevelPlan.ts`). Losing the last life ends the level as lost.
 - The progress bar counts a spawn as done once every enemy it turned into has left the board, so a spawn that becomes twins or a special enemy still counts as one. Enemies that features add later, such as power words or bombers, do not change it (`src/game/SpawnGroups.ts`).
 - Typing follows every enemy whose word starts with the letters typed so far, a key that fits none of them is a mistake, and when a word is done every enemy with that same word is done too while the others go back to untyped (`src/game/Targeting.ts`).
-- Escape pauses and resumes. Pause also suspends audio. The pause card also has a resume button, a quiet "Ustawienia" / "Налаштування" button with a gear and the key heatmap, and touch screens get a pause button in the HUD. The settings button opens the [Settings](#settings) screen over the paused level. Graphics quality is picked there, not on the pause card.
+- Escape pauses and resumes, and Enter resumes too. Pause also suspends audio. The pause card also has a resume button, a quiet "Ustawienia" / "Налаштування" button with a gear and the key heatmap, and touch screens get a pause button in the HUD. The settings button opens the [Settings](#settings) screen over the paused level, and while it is open Escape goes back to the pause card. Graphics quality is picked there, not on the pause card.
 - Every correct letter fires a bolt from the hero to the nearest enemy being typed, and every finished word gets a lightning strike with a soft crack and a small camera punch, 30 ms apart when several words finish on one key (`src/game/mechanics/HeroStrikes.ts`). The strikes turn from the world's accent colour toward gold as the combo grows and are fully golden in fever, while a glow under the hero charges with the combo up to 15.
 - Words (`src/course/WordSource.ts`): the main phase of a level runs its word stages in order, see [Difficulty](#difficulty). Each stage takes a share of the phase's words and has its own kind and length limits (`src/course/wordStages.ts`). In the first half of a stage the longest word is one letter shorter, as long as the stage keeps at least two lengths, so `2 to 4` starts as `2 to 3`.
   - `combos`: a generated string with at least one focus key, the other letters from the focus keys about half of the time and from all known keys otherwise, for example `f` `fj` `jf` `fjj`.
@@ -776,6 +776,32 @@ Map:
 - On open the map scrolls smoothly to the current level, or to the last open level when all levels have stars. Levels pop in as they scroll into view, at most 12 steps of 70 ms apart. With reduced motion the scroll is instant and nothing pops in.
 - Tab moves through the levels in course order, learn satellites included.
 - The silhouettes of each band move at different speeds while scrolling, except in the low quality preset.
+
+## Keyboard control
+
+Owners: `onShortcutKeys` in `src/ui/overlay.ts`, `src/ui/shortcutHint.ts` and the screens below.
+
+A typing game never needs the mouse, so every menu works with the keyboard alone.
+
+- Shortcut keys listen while their screen or card is shown and stop when it closes.
+- They do nothing while an overlay covers the screen, while Ctrl, Alt or Meta is held, or while a text field has focus. Escape still works in a text field.
+- Enter on a focused button presses that button instead. Held arrow keys repeat, other keys do not.
+
+| Screen      | Keys                                                                                                                                                                                                                        |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Profiles    | Left and Right pick the previous or next profile and wrap around, Enter plays, Escape closes the create panel                                                                                                               |
+| Map         | Enter plays the current level, or the last open level when all have stars. The arrow keys move the focus along the road through the open levels, Right and Down forward, Left and Up back. Escape goes back to the profiles |
+| Arena       | Left and Right change the key set, Up picks a harder and Down an easier open level, Enter plays, Escape goes back to the map                                                                                                |
+| Shop        | Escape goes back to where the shop was opened from                                                                                                                                                                          |
+| Story card  | Enter or Space shows the next line                                                                                                                                                                                          |
+| Learn card  | Enter starts the level and Escape goes back to the map, both ignored for the first 600 ms                                                                                                                                   |
+| Level       | Escape pauses                                                                                                                                                                                                               |
+| Pause card  | Enter or Escape resumes                                                                                                                                                                                                     |
+| Settings    | Escape goes back to where the settings were opened from, and from the pause card it never resumes the level                                                                                                                 |
+| Result card | Enter presses the main button, ignored for the first 600 ms                                                                                                                                                                 |
+
+- Key hints: the Play button of the profiles, the Play tag on the map, the Play button of the arena, the learn card, the pause card and both result cards show ⏎. The back buttons of the shop and the arena show Esc.
+- Hints hide on touch screens without a mouse (`--touch-only` in `src/ui/screenSizes.css`) and on phones.
 
 ## Audio
 
