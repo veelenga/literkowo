@@ -25,6 +25,7 @@ export interface EndlessAttempt {
   readonly lettersFreed: number;
   readonly xp: number;
   readonly runCoins: number;
+  readonly coinBoost: number;
   readonly keyStats: KeyStats;
   readonly tally: Tally;
   readonly date: string;
@@ -43,6 +44,7 @@ export function recordEndlessRun(profile: Profile, attempt: EndlessAttempt): End
   const newBestWave = isNewBestWave(profile.arena, run);
   const payout = arenaPayout({
     runCoins: attempt.runCoins,
+    coinBoost: attempt.coinBoost,
     paidMedal: paidMedal(profile.arena, run.key),
     medal: run.medal,
     newBestWave,

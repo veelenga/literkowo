@@ -33,7 +33,8 @@ import { Player } from './Player';
 import { currentQuality } from './quality';
 import { renderHost, type Viewport } from './RenderHost';
 import type { Phase, PhaseKind, RunPhase, RunPlan } from './RunPlan';
-import { RunRewards, type RewardBoost, type Rewards } from './RunRewards';
+import type { RewardBoost } from '../course/powers';
+import { RunRewards, type Rewards } from './RunRewards';
 import { RunTally } from './RunTally';
 import { SessionStats } from './SessionStats';
 import { SpawnGroups } from './SpawnGroups';
@@ -76,6 +77,7 @@ export interface GameResult {
   lettersFreed: number;
   xp: number;
   coins: number;
+  coinBoost: number;
   keys: KeyReport;
   phasesCleared: number;
   tally: Tally;
@@ -559,6 +561,7 @@ export class Game {
       lettersFreed: this.lettersFreed,
       xp: this.rewards.xp,
       coins: this.rewards.coins,
+      coinBoost: this.rewards.coinBoost,
       keys: this.keys.report(),
       phasesCleared: this.phaseIndex,
       tally: this.tally.snapshot(),

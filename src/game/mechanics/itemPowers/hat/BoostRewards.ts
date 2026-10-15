@@ -1,6 +1,5 @@
-import type { HatPower } from '../../../../course/powers';
+import { NO_BOOST, type HatPower, type RewardBoost } from '../../../../course/powers';
 import type { HatSpec } from '../../../../course/shop';
-import { NO_BOOST, type RewardBoost } from '../../../RunRewards';
 import type { Mechanic, MechanicContext } from '../../Mechanic';
 import { boostCallout } from '../callouts';
 

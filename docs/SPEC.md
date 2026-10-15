@@ -380,8 +380,8 @@ Ranks by level band, names in `src/i18n/features/progression.ts`:
 
 Coins are a separate counter. They are spent in the [shop](#shop).
 
-- During a level each completed word gives 1 coin, the coins per word of the run plan. The arena pays less per word, see [Arena](#arena). Mechanics add more with `addCoins(amount)`: 15 for a treasure chest, 5 for a thief caught with its loot, 15 more for a chest doubled by the piggy. A coin hat scales the run coins, see [Item powers](#item-powers). Run coins never go down. The run total is `GameResult.coins`.
-- After the level: the run coins, plus 10 for a won level, plus 5 per star.
+- During a level each completed word gives 1 coin, the coins per word of the run plan. The arena pays less per word, see [Arena](#arena). Mechanics add more with `addCoins(amount)`: 15 for a treasure chest, 5 for a thief caught with its loot, 15 more for a chest doubled by the piggy. Run coins never go down. The run total is `GameResult.coins`, and the coin factor of the equipped hat is `GameResult.coinBoost`.
+- After the level: the run coins, plus 10 for a won level, plus 5 per star. A coin hat scales this whole sum by its share, rounded down, so "Monety +10%" is what the result card shows (`levelCoins` in `src/course/coins.ts`, see [Item powers](#item-powers)).
 
 The result card fills the XP bar from the old progress to the new one. When a level is crossed it shows a "Nowy poziom!" / "Новий рівень!" banner with the rank name, confetti that stays inside the card, and the level complete and sparkle sounds. The coins earned sit in a pill next to the XP. The map header and the profile cards show the level, the rank, a thin XP bar and the coins.
 
@@ -467,7 +467,7 @@ Item states and actions:
 - Every change is saved to the profile right away.
 - Arena goals count any key set and difficulty: the most waves cleared in one endless run, or a gold medal in any of them (`hasReachedArenaGoal` in `src/arena/goals.ts`).
 
-Economy. With the gradual course a won level pays about 35 coins: about 33 with one star, 38 with two and 43 with three, so the whole Polish course pays about 3300, 3800 and 4300 coins. The first hat takes about 2 levels and the first pet 4 to 6. Every coin item together costs 12135 coins, about three times the whole course, so the full shop takes many weeks of levels, replays and arena coins. `src/course/shop.test.ts` checks the first pet and these totals.
+Economy. With the gradual course a won level pays about 35 coins: about 33 with one star, 38 with two and 43 with three, so the whole Polish course pays about 3300, 3800 and 4300 coins. The first hat takes about 2 levels and the first pet 4 to 6. Every coin item together costs 12135 coins, about three times the whole course, so the full shop takes many weeks of levels, replays and arena coins. `src/course/shop.test.ts` checks the first pet and these totals. Coin hats raise every payout by at most 25%, so even the crown cuts the time to the full shop by only a fifth.
 
 Pets act in the level and hats work all the time, see [Item powers](#item-powers) for each rule. The strength is a count per level, seconds, a share or simply on.
 
@@ -611,6 +611,7 @@ Coins and XP (`src/arena/economy.ts`):
 - Each word pays half a coin times the preset's coin factor, and the run's word coins are rounded down. Chests and caught thieves pay as in a level.
 - Each medal pays once per key set and difficulty: bronze 20, silver 40, gold 80. A run that skips a medal pays every medal up to the new one.
 - A new best wave, more waves cleared than before on that key set and difficulty, pays 15.
+- A coin hat scales the whole payout of the run, words, chests, thieves, medals and the new best wave together, rounded down (`arenaPayout`).
 - XP is word XP times the preset's XP factor. Faster presets pay less XP per word, so they never pay more XP per minute.
 - Rule: arena XP per minute stays within 1.25 times the course practice XP per minute at the same accuracy and course position (`XP_RATE_CAP`). `src/arena/xpPerMinute.test.ts` simulates the real XP formulas at 93, 95 and 97% accuracy, for every key set, preset and run length up to 60 waves, against the last practice level of the key set's region.
 - XP, score, letters freed, key statistics and counters are added to the profile after every run, and trophies are awarded, as after a level (`src/arena/progress.ts`). Item powers that work a number of times per level start again at every wave.
@@ -665,7 +666,7 @@ Every pet and every hat has exactly one power, as a kind and a strength in the c
 
 - Strength units (`STRENGTH_UNITS`): a count per level from 1 to 3, seconds, a share where `0.2` means 20%, or `1` for a power that is simply on.
 - A count per level starts again at every arena wave.
-- Limits: XP boosts at most 10% and coin boosts at most 25% (`MAX_BOOST` in `src/game/RunRewards.ts`, also checked by `src/course/shop.test.ts`). No power raises accuracy or stars and no power types for the player. A power that keeps a heart still counts the hit as a mistake and breaks the combo.
+- Limits: XP boosts at most 10% and coin boosts at most 25% (`MAX_BOOST` in `src/course/powers.ts`, also checked by `src/course/shop.test.ts`). No power raises accuracy or stars and no power types for the player. A power that keeps a heart still counts the hit as a mistake and breaks the combo.
 - Each power shows when it works: a callout in the item's colour, and for pets a pounce with a bolt in the pet's colour.
 - The card line uses "Raz" / "Раз", "Dwa razy" / "Двічі" and "Trzy razy" / "Тричі" for the count, for example "Dwa razy na poziom łapie nietoperza" / "Двічі за рівень ловить кажана".
 
@@ -692,7 +693,7 @@ Enemies that can cost a heart are all but power words, thieves and balloons.
 
 | Hat power     | Callout (pl / uk)                      | Rule                                                                                                                                                                                                                                                   |
 | ------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `coins`       | Monety +20% / Монети +20%              | The coins collected in the run (words, chests and thieves) grow by the share, rounded down. The bonus for winning, the star bonus and arena medal payouts stay the same. The callout shows when the level starts.                                      |
+| `coins`       | Monety +20% / Монети +20%              | The whole coin payout of the run grows by the share, rounded down: words, chests, thieves, the bonus for winning and the stars, and in the arena the medals and the new best wave. The callout shows when the level starts.                            |
 | `xp`          | XP +10% / XP +10%                      | The XP of the run grows by the share, rounded. The pop over each word still shows the word's own XP. The callout shows when the level starts.                                                                                                          |
 | `solidGhosts` | Duch nie zniknie! / Привид не зникне!  | Ghosts stay solid and their labels stay visible. The callout shows for the first ghost.                                                                                                                                                                |
 | `longFreeze`  | Mocny mróz! / Міцний мороз!            | The Mróz power word freezes for 3 × (1 + share) seconds.                                                                                                                                                                                               |

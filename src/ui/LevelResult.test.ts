@@ -16,6 +16,7 @@ const WON: GameResult = {
   lettersFreed: 30,
   xp: 20,
   coins: 5,
+  coinBoost: 1,
   phasesCleared: 2,
   tally: EMPTY_TALLY,
   keys: { practised: {}, weakest: [], mastered: [] },

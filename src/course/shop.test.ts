@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { levelPhases } from '../game/LevelPlan';
-import { MAX_BOOST, NO_BOOST } from '../game/RunRewards';
 import { AVATARS, STARTER_SKINS } from '../profiles/Profile';
 import { levelCoins } from './coins';
 import { courseFor } from './course';
-import { MAX_TIMES, STRENGTH_UNITS, SWITCH_ON, type ItemPower } from './powers';
+import {
+  MAX_BOOST,
+  MAX_TIMES,
+  NO_BOOST,
+  STRENGTH_UNITS,
+  SWITCH_ON,
+  type ItemPower,
+} from './powers';
 import { HATS, PETS, SHOP_ITEMS, SKINS, TROPHIES, itemKey, priceOf, type ShopItem } from './shop';
 
 const TYPICAL_STARS = 2;
@@ -33,7 +39,7 @@ function isWithinUnit({ kind, strength }: ItemPower): boolean {
 function coinsPerLevel(stars: number): number[] {
   return courseFor('pl').levels.map((level) => {
     const words = levelPhases(level, 'pl').reduce((sum, phase) => sum + phase.count, 0);
-    return levelCoins({ runCoins: words, won: true, stars });
+    return levelCoins({ runCoins: words, won: true, stars, coinBoost: NO_BOOST.coins });
   });
 }
 

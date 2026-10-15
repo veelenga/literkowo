@@ -106,6 +106,7 @@ function endlessAttemptOf(choice: ArenaChoice, result: GameResult): EndlessAttem
     lettersFreed: result.lettersFreed,
     xp: result.xp,
     runCoins: result.coins,
+    coinBoost: result.coinBoost,
     keyStats: result.keys.practised,
     tally: result.tally,
     date: practiceDay(new Date()),

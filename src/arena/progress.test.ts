@@ -28,6 +28,7 @@ function attempt(overrides: Partial<EndlessAttempt> = {}): EndlessAttempt {
     lettersFreed: 300,
     xp: 80,
     runCoins: 30,
+    coinBoost: 1,
     keyStats: {},
     tally: EMPTY_TALLY,
     date: DAY,
@@ -48,6 +49,12 @@ describe('recordEndlessRun', () => {
       bestWpm: 0,
       skinsPlayed: ['b'],
     });
+  });
+
+  it('pays the coin hat on the whole payout of the run', () => {
+    const outcome = recordEndlessRun(createProfile('A', 'a'), attempt({ coinBoost: 1.2 }));
+    expect(outcome.payout.total).toBe(Math.floor((30 + 60 + NEW_BEST_WAVE_COINS) * 1.2));
+    expect(outcome.profile.coins).toBe(outcome.payout.total);
   });
 
   it('adds XP, score, letters and every coin of the run to the profile', () => {

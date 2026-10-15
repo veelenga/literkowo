@@ -4,7 +4,7 @@ import type { Level } from '../../course/regions';
 import type { WordSource } from '../../course/WordSource';
 import type { Equipped, WordLanguage } from '../../profiles/Profile';
 import type { Enemy } from '../Enemy';
-import type { RewardBoost } from '../RunRewards';
+import type { RewardBoost } from '../../course/powers';
 import type { Phase } from '../RunPlan';
 import type { Particles } from '../Particles';
 import type { Player } from '../Player';

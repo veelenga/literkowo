@@ -68,3 +68,25 @@ export const POWER_COMBOS = {
 export function percentOf(power: ItemPower): number {
   return Math.round(power.strength * PERCENT);
 }
+
+export interface RewardBoost {
+  readonly coins: number;
+  readonly xp: number;
+}
+
+const NO_FACTOR = 1;
+
+export const NO_BOOST: RewardBoost = { coins: NO_FACTOR, xp: NO_FACTOR };
+export const MAX_BOOST: RewardBoost = { coins: 1.25, xp: 1.1 };
+
+export function cappedBoost({ coins, xp }: RewardBoost): RewardBoost {
+  return { coins: cappedCoinBoost(coins), xp: capped(xp, MAX_BOOST.xp) };
+}
+
+export function cappedCoinBoost(coins: number): number {
+  return capped(coins, MAX_BOOST.coins);
+}
+
+function capped(factor: number, max: number): number {
+  return Math.min(max, Math.max(NO_FACTOR, factor));
+}
