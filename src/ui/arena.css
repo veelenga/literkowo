@@ -535,12 +535,16 @@
   }
 
   .arena-mode {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
     grid-template-areas:
-      'art name play'
-      'art text play'
-      'art best play';
+      'art name best play'
+      'art text text play';
     gap: 2px 14px;
+  }
+
+  .arena-mode .shop-item-text {
+    font-size: 0.8rem;
+    line-height: 1.25;
   }
 
   .arena-play {

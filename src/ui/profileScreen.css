@@ -1109,7 +1109,11 @@
 
 @media (--phone-landscape) {
   .profile-screen {
-    --stage-height: 64px;
+    --stage-height: 54px;
+  }
+
+  .profile-info {
+    padding-top: 6px;
   }
 
   .landing {
@@ -1141,6 +1145,7 @@
     grid-template-columns: minmax(0, 1fr) auto auto;
     grid-template-areas: 'title label play' 'delete languages play';
     gap: 2px 14px;
+    padding-block: 6px;
   }
 
   .play-button {
