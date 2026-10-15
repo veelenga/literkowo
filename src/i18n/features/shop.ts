@@ -112,7 +112,31 @@ const pl = {
     masteredRegion: { name: 'Mistrz klawiszy', hint: 'Opanuj wszystkie klawisze jednej krainy' },
     arenaWave: { name: 'Fala {wave}', hint: 'Przetrwaj {wave} fal na arenie' },
     arenaGold: { name: 'Złoty medal', hint: 'Zdobądź złoto na arenie' },
+    starStreak: {
+      name: 'Gwiezdna seria',
+      hint: 'Zdobądź trzy gwiazdki na {levels} kolejnych poziomach',
+    },
+    everyRegionThreeStars: {
+      name: 'Gwiazda wszystkich krain',
+      hint: 'Zdobądź trzy gwiazdki na każdym poziomie każdej krainy',
+    },
+    starterSkins: { name: 'Przebieraniec', hint: 'Zagraj każdą z pierwszych sześciu postaci' },
+    firstItem: { name: 'Pierwszy zakup', hint: 'Kup albo odbierz pierwszą rzecz w sklepie' },
+    itemsOwned: { name: 'Kolekcjoner', hint: 'Miej {count} rzeczy ze sklepu' },
+    counters: {
+      perfectLevels: { name: 'Bez pomyłki', hint: 'Ukończ poziom bez ani jednej pomyłki' },
+      bestWpm: { name: 'Tempo {goal}', hint: 'Pisz {goal} słów na minutę w poziomie z gwiazdką' },
+      wordsTyped: { name: '{goal} słów', hint: 'Napisz razem {goal} słów' },
+      bossesBeaten: { name: 'Łowca bossów', hint: 'Pokonaj {goal} bossów, także na arenie' },
+      powerWords: { name: 'Złote słowa', hint: 'Wpisz {goal} złotych słów mocy' },
+      specialEnemies: {
+        name: 'Łowca stworków',
+        hint: 'Pokonaj {goal} niezwykłych wrogów, jak nietoperze i duchy',
+      },
+      coinsEarned: { name: 'Skarbnik', hint: 'Zbierz razem {goal} monet' },
+    },
   },
+  trophyProgress: '{current} z {goal}',
 };
 
 const uk: typeof pl = {
@@ -229,7 +253,28 @@ const uk: typeof pl = {
     masteredRegion: { name: 'Майстер клавіш', hint: 'Опануй усі клавіші одного краю' },
     arenaWave: { name: 'Хвиля {wave}', hint: 'Витримай {wave} хвиль на арені' },
     arenaGold: { name: 'Золота медаль', hint: 'Здобудь золото на арені' },
+    starStreak: { name: 'Зіркова серія', hint: 'Здобудь три зірочки на {levels} рівнях поспіль' },
+    everyRegionThreeStars: {
+      name: 'Зірка всіх країв',
+      hint: 'Здобудь три зірочки на кожному рівні кожного краю',
+    },
+    starterSkins: { name: 'Перевдягайко', hint: 'Зіграй кожним із перших шести персонажів' },
+    firstItem: { name: 'Перша покупка', hint: 'Купи або забери першу річ у крамниці' },
+    itemsOwned: { name: 'Колекціонер', hint: 'Май {count} речей із крамниці' },
+    counters: {
+      perfectLevels: { name: 'Без помилок', hint: 'Пройди рівень без жодної помилки' },
+      bestWpm: { name: 'Темп {goal}', hint: 'Друкуй {goal} слів за хвилину на рівні із зірочкою' },
+      wordsTyped: { name: '{goal} слів', hint: 'Надрукуй загалом {goal} слів' },
+      bossesBeaten: { name: 'Мисливець на босів', hint: 'Перемож {goal} босів, також на арені' },
+      powerWords: { name: 'Золоті слова', hint: 'Надрукуй {goal} золотих слів сили' },
+      specialEnemies: {
+        name: 'Ловець істот',
+        hint: 'Перемож {goal} незвичайних ворогів, наприклад кажанів і привидів',
+      },
+      coinsEarned: { name: 'Скарбник', hint: 'Збери загалом {goal} монет' },
+    },
   },
+  trophyProgress: '{current} з {goal}',
 };
 
 export const shop = { pl, uk };

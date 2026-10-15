@@ -107,6 +107,7 @@ function endlessAttemptOf(choice: ArenaChoice, result: GameResult): EndlessAttem
     xp: result.xp,
     runCoins: result.coins,
     keyStats: result.keys.practised,
+    tally: result.tally,
     date: practiceDay(new Date()),
   };
 }

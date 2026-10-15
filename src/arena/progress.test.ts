@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { EMPTY_TALLY } from '../course/counters';
 import { createProfile } from '../profiles/Profile';
 import { difficultyById, type ArenaDifficulty } from './difficulty';
 import { NEW_BEST_WAVE_COINS } from './economy';
@@ -28,12 +29,27 @@ function attempt(overrides: Partial<EndlessAttempt> = {}): EndlessAttempt {
     xp: 80,
     runCoins: 30,
     keyStats: {},
+    tally: EMPTY_TALLY,
     date: DAY,
     ...overrides,
   };
 }
 
 describe('recordEndlessRun', () => {
+  it('counts the words, bosses and every coin of the run', () => {
+    const tally = { words: 40, powerWords: 3, specialEnemies: 5, bossesBeaten: 1 };
+    const outcome = recordEndlessRun(createProfile('A', 'b'), attempt({ tally }));
+    expect(outcome.profile.counters).toMatchObject({
+      wordsTyped: 40,
+      powerWords: 3,
+      specialEnemies: 5,
+      bossesBeaten: 1,
+      coinsEarned: outcome.payout.total,
+      bestWpm: 0,
+      skinsPlayed: ['b'],
+    });
+  });
+
   it('adds XP, score, letters and every coin of the run to the profile', () => {
     const profile = { ...createProfile('A', 'a'), xp: 10, coins: 5, totalScore: 100 };
     const outcome = recordEndlessRun(profile, attempt());

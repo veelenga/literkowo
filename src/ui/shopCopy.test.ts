@@ -95,4 +95,29 @@ describe('shop copy', () => {
     }
     i18n.set('pl');
   });
+
+  it('names the new trophies and their goals', () => {
+    expect(trophyCopy(trophy('words-2000'))).toEqual({
+      name: '2000 słów',
+      hint: 'Napisz razem 2000 słów',
+    });
+    expect(trophyCopy(trophy('wpm-30')).name).toBe('Tempo 30');
+    expect(trophyCopy(trophy('star-streak-5')).hint).toBe(
+      'Zdobądź trzy gwiazdki na 5 kolejnych poziomach',
+    );
+    expect(trophyCopy(trophy('first-item')).name).toBe('Pierwszy zakup');
+    expect(trophyCopy(trophy('five-items')).hint).toBe('Miej 5 rzeczy ze sklepu');
+  });
+
+  it('fills every trophy name and hint in both languages', () => {
+    for (const language of ['pl', 'uk'] as const) {
+      i18n.set(language);
+      for (const each of TROPHIES) {
+        const { name, hint } = trophyCopy(each);
+        expect(`${name} ${hint}`).not.toMatch(PLACEHOLDER);
+        expect(`${name} ${hint}`).not.toMatch(DASHES);
+      }
+    }
+    i18n.set('pl');
+  });
 });

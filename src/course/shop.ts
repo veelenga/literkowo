@@ -1,5 +1,6 @@
 import { AVATARS, STARTER_SKINS } from '../profiles/Profile';
 import { REGIONS, type ThemeId } from './catalog';
+import type { CounterId } from './counters';
 import type { HatPower, HatPowerKind, PetPower, PetPowerKind } from './powers';
 import type { RankId } from './xp';
 
@@ -50,7 +51,12 @@ export type TrophyRule =
   | { readonly kind: 'playerLevel'; readonly level: number }
   | { readonly kind: 'masteredRegion' }
   | { readonly kind: 'arenaWave'; readonly wave: number }
-  | { readonly kind: 'arenaGold' };
+  | { readonly kind: 'arenaGold' }
+  | { readonly kind: 'starStreak'; readonly levels: number }
+  | { readonly kind: 'counter'; readonly counter: CounterId; readonly goal: number }
+  | { readonly kind: 'starterSkins' }
+  | { readonly kind: 'everyRegionThreeStars' }
+  | { readonly kind: 'itemsOwned'; readonly count: number };
 
 export interface Trophy {
   readonly id: string;
@@ -160,6 +166,42 @@ const ARENA_WAVE_TROPHIES = [
   { wave: 20, color: '#5ce1ff' },
 ] as const;
 
+const STAR_STREAK_LEVELS = 5;
+
+const COUNTER_TROPHIES: readonly { counter: CounterId; goal: number; color: string }[] = [
+  { counter: 'perfectLevels', goal: 1, color: '#3ee07a' },
+  { counter: 'bestWpm', goal: 20, color: '#d98c4a' },
+  { counter: 'bestWpm', goal: 30, color: '#c9d2e3' },
+  { counter: 'bestWpm', goal: 40, color: '#ffbe2e' },
+  { counter: 'wordsTyped', goal: 500, color: '#5ce1ff' },
+  { counter: 'wordsTyped', goal: 2000, color: '#3db4ff' },
+  { counter: 'wordsTyped', goal: 5000, color: '#7c5cff' },
+  { counter: 'bossesBeaten', goal: 10, color: '#ff3d5f' },
+  { counter: 'powerWords', goal: 50, color: '#ffc53d' },
+  { counter: 'specialEnemies', goal: 100, color: '#b98cff' },
+  { counter: 'coinsEarned', goal: 1000, color: '#ffd447' },
+];
+
+const COUNTER_TROPHY_IDS: Readonly<Record<CounterId, string>> = {
+  perfectLevels: 'perfect-level',
+  bestWpm: 'wpm',
+  wordsTyped: 'words',
+  bossesBeaten: 'bosses',
+  powerWords: 'power-words',
+  specialEnemies: 'special-enemies',
+  coinsEarned: 'coins',
+};
+
+const ITEM_TROPHIES = [
+  { id: 'first-item', count: 1, color: '#7cf5a8' },
+  { id: 'five-items', count: 5, color: '#4ade80' },
+] as const;
+
+function counterTrophyId(counter: CounterId, goal: number): string {
+  const id = COUNTER_TROPHY_IDS[counter];
+  return goal > 1 ? `${id}-${goal}` : id;
+}
+
 export const TROPHIES: readonly Trophy[] = [
   { id: 'first-boss', rule: { kind: 'firstBoss' }, color: '#ff3d5f' },
   ...REGIONS.map((region) => ({
@@ -179,6 +221,23 @@ export const TROPHIES: readonly Trophy[] = [
     color,
   })),
   { id: 'arena-gold', rule: { kind: 'arenaGold' }, color: '#ffd23f' },
+  {
+    id: `star-streak-${STAR_STREAK_LEVELS}`,
+    rule: { kind: 'starStreak', levels: STAR_STREAK_LEVELS },
+    color: '#ffe066',
+  },
+  { id: 'every-region-three-stars', rule: { kind: 'everyRegionThreeStars' }, color: '#ffbe2e' },
+  ...COUNTER_TROPHIES.map(({ counter, goal, color }) => ({
+    id: counterTrophyId(counter, goal),
+    rule: { kind: 'counter', counter, goal } as const,
+    color,
+  })),
+  { id: 'starter-skins', rule: { kind: 'starterSkins' }, color: '#ff7ad9' },
+  ...ITEM_TROPHIES.map(({ id, count, color }) => ({
+    id,
+    rule: { kind: 'itemsOwned', count } as const,
+    color,
+  })),
 ];
 
 export function itemsOf(kind: ItemKind): readonly ShopItem[] {

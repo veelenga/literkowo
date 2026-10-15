@@ -427,5 +427,6 @@ function attemptOf(result: GameResult, stars: number, coins: number): Attempt {
     xp: result.xp,
     coins,
     keyStats: result.keys.practised,
+    tally: result.tally,
   };
 }

@@ -122,7 +122,7 @@ describe('normalizeProfile', () => {
       pets: [],
       hats: [],
       skins: [...STARTER_SKINS, 'k'],
-      trophies: [],
+      trophies: ['first-item'],
     });
     expect(profile?.equipped).toEqual({});
   });
@@ -208,14 +208,63 @@ describe('normalizeProfile', () => {
       xp: 120,
       coins: 9,
       keyStats: { f: { hits: 3, misses: 1 } },
-      inventory,
+      inventory: { ...inventory, trophies: ['first-item'] },
       equipped: { pet: 'bee' },
     });
   });
 
   it('gives a version 6 profile an empty arena record', () => {
     const profile = normalizeProfile({ schemaVersion: 6, id: 'x', name: 'A', coins: 12 });
-    expect(profile).toMatchObject({ schemaVersion: 7, coins: 12, arena: emptyArenaRecord() });
+    expect(profile).toMatchObject({
+      schemaVersion: PROFILE_SCHEMA_VERSION,
+      coins: 12,
+      arena: emptyArenaRecord(),
+    });
+  });
+
+  it('seeds the counters of a version 7 profile from what it already has', () => {
+    const profile = normalizeProfile({
+      schemaVersion: 7,
+      id: 'x',
+      name: 'A',
+      avatar: 'c',
+      coins: 40,
+      inventory: { pets: ['cube-cat'], hats: ['cap', 'wizard'], skins: ['g'] },
+      levelResults: {
+        'polana-1': { stars: 3, score: 10, accuracy: 1, wpm: 14 },
+        'polana-2': { stars: 0, score: 10, accuracy: 1, wpm: 40 },
+        'polana-19': { stars: 2, score: 90, accuracy: 0.95, wpm: 18 },
+      },
+    });
+    expect(profile?.counters).toEqual({
+      wordsTyped: 0,
+      powerWords: 0,
+      specialEnemies: 0,
+      bossesBeaten: 1,
+      coinsEarned: 40 + 160 + 75 + 200,
+      perfectLevels: 1,
+      bestWpm: 18,
+      skinsPlayed: ['c'],
+    });
+    expect(profile?.inventory.trophies).toEqual(
+      expect.arrayContaining(['first-boss', 'perfect-level', 'first-item']),
+    );
+  });
+
+  it('keeps the counters of a current profile and drops broken values', () => {
+    const profile = normalizeProfile({
+      schemaVersion: PROFILE_SCHEMA_VERSION,
+      id: 'x',
+      name: 'A',
+      counters: { wordsTyped: 812, bossesBeaten: -3, bestWpm: 'fast', skinsPlayed: ['a', 'a', 4] },
+    });
+    expect(profile?.counters).toMatchObject({
+      wordsTyped: 812,
+      bossesBeaten: 0,
+      bestWpm: 0,
+      skinsPlayed: ['a'],
+    });
+    expect(profile?.inventory.trophies).toEqual([]);
   });
 
   it('keeps the arena record of a current profile', () => {

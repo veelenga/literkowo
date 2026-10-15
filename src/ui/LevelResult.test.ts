@@ -3,6 +3,7 @@ import type { GameResult } from '../game/Game';
 import { i18n } from '../i18n/i18n';
 import { levelResult } from './LevelResult';
 import { KEY_READY_MS, type Overlay } from './overlay';
+import { EMPTY_TALLY } from '../course/counters';
 
 const ONE_STAR = 1;
 const NO_STARS = 0;
@@ -16,6 +17,7 @@ const WON: GameResult = {
   xp: 20,
   coins: 5,
   phasesCleared: 2,
+  tally: EMPTY_TALLY,
   keys: { practised: {}, weakest: [], mastered: [] },
 };
 const LOST: GameResult = { ...WON, won: false };

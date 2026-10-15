@@ -22,6 +22,7 @@ import {
 import { Boss } from './Boss';
 import { CameraShake } from './CameraShake';
 import { Enemy, type EnemyLook } from './Enemy';
+import type { Tally } from '../course/counters';
 import { KeyTracker, type KeyReport } from './KeyTracker';
 import { LabelLayer } from './LabelLayer';
 import { createMechanics } from './mechanics';
@@ -33,6 +34,7 @@ import { currentQuality } from './quality';
 import { renderHost, type Viewport } from './RenderHost';
 import type { Phase, PhaseKind, RunPhase, RunPlan } from './RunPlan';
 import { RunRewards, type RewardBoost, type Rewards } from './RunRewards';
+import { RunTally } from './RunTally';
 import { SessionStats } from './SessionStats';
 import { SpawnGroups } from './SpawnGroups';
 import { Targeting } from './Targeting';
@@ -76,6 +78,7 @@ export interface GameResult {
   coins: number;
   keys: KeyReport;
   phasesCleared: number;
+  tally: Tally;
 }
 
 export interface Progress {
@@ -106,6 +109,7 @@ export class Game {
   private readonly words: WordSource;
   private readonly stats = new SessionStats();
   private readonly rewards: RunRewards;
+  private readonly tally = new RunTally();
   private readonly keys: KeyTracker;
   private readonly labels: LabelLayer;
   private readonly enemies: Enemy[] = [];
@@ -557,6 +561,7 @@ export class Game {
       coins: this.rewards.coins,
       keys: this.keys.report(),
       phasesCleared: this.phaseIndex,
+      tally: this.tally.snapshot(),
     });
   }
 
@@ -592,6 +597,7 @@ export class Game {
 
   private completeWord(enemy: Enemy): void {
     this.stats.recordWord(enemy.word);
+    this.tally.recordWord(enemy.tags);
     this.rewardWord(enemy);
     this.lettersFreed += enemy.word.length;
     this.player.jump();
@@ -619,6 +625,7 @@ export class Game {
     boss.takeHit();
     this.reportProgress();
     if (!boss.isDefeated) return;
+    this.tally.recordBossBeaten();
     this.remove(boss);
     this.boss = undefined;
     this.advancePhase();

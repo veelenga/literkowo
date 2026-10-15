@@ -92,6 +92,17 @@ export function paidMedal(record: ArenaRecord, key: string): Medal {
   return record.medalsPaid[key] ?? NO_MEDAL;
 }
 
+export function bestEndlessWave(record: ArenaRecord): number {
+  return Math.max(0, ...Object.values(record.endless).map((best) => best.wave));
+}
+
+export function bestEndlessMedal(record: ArenaRecord): Medal {
+  return Object.values(record.endless).reduce<Medal>(
+    (medal, best) => higherMedal(medal, best.medal),
+    NO_MEDAL,
+  );
+}
+
 export function isNewBestWave(record: ArenaRecord, run: EndlessRun): boolean {
   return run.wavesCleared > (endlessBest(record, run.key)?.wave ?? 0);
 }

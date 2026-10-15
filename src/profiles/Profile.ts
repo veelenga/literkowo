@@ -1,4 +1,5 @@
 import { emptyArenaRecord, type ArenaRecord } from '../arena/record';
+import { emptyCounters, type Counters } from '../course/counters';
 import type { KeyStat } from '../course/keyStats';
 
 export const WORD_LANGUAGES = ['pl', 'en'] as const;
@@ -7,7 +8,7 @@ export type WordLanguage = (typeof WORD_LANGUAGES)[number];
 
 export const DEFAULT_WORD_LANGUAGE: WordLanguage = 'pl';
 
-export const PROFILE_SCHEMA_VERSION = 7;
+export const PROFILE_SCHEMA_VERSION = 8;
 
 export interface LevelResult {
   stars: number;
@@ -32,6 +33,7 @@ export interface Profile {
   inventory: Inventory;
   equipped: Equipped;
   arena: ArenaRecord;
+  counters: Counters;
 }
 
 export interface Inventory {
@@ -77,6 +79,7 @@ export function createProfile(name: string, avatar: string): Profile {
     inventory: starterInventory(avatar),
     equipped: {},
     arena: emptyArenaRecord(),
+    counters: emptyCounters(),
   };
 }
 

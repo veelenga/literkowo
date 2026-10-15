@@ -62,6 +62,18 @@ export function trophyCopy({ rule }: Trophy): TrophyCopy {
       return filled(copy.arenaWave, { wave: rule.wave });
     case 'arenaGold':
       return copy.arenaGold;
+    case 'starStreak':
+      return filled(copy.starStreak, { levels: rule.levels });
+    case 'everyRegionThreeStars':
+      return copy.everyRegionThreeStars;
+    case 'starterSkins':
+      return copy.starterSkins;
+    case 'counter':
+      return filled(copy.counters[rule.counter], { goal: rule.goal });
+    case 'itemsOwned':
+      return rule.count === FIRST_NUMBER
+        ? copy.firstItem
+        : filled(copy.itemsOwned, { count: rule.count });
   }
 }
 

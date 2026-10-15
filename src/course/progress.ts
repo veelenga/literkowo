@@ -8,6 +8,7 @@ import {
   type StoryScene,
 } from '../story/story';
 import type { Level } from './catalog';
+import { countRun, type Tally } from './counters';
 import { courseFor } from './course';
 import type { KeyStats } from './keyStats';
 import { awardTrophies } from './trophies';
@@ -17,7 +18,10 @@ export interface Attempt extends LevelResult {
   xp: number;
   coins: number;
   keyStats: KeyStats;
+  tally: Tally;
 }
+
+const PERFECT_ACCURACY = 1;
 
 export function isBetterResult(candidate: LevelResult, previous: LevelResult | undefined): boolean {
   if (!previous) return true;
@@ -41,7 +45,18 @@ export function recordResult(profile: Profile, level: Level, attempt: Attempt): 
     coins: profile.coins + attempt.coins,
     levelResults: improved ? { ...profile.levelResults, [level.id]: result } : profile.levelResults,
     keyStats: { ...profile.keyStats, ...attempt.keyStats },
+    counters: countRun(profile.counters, {
+      tally: attempt.tally,
+      coins: attempt.coins,
+      avatar: profile.avatar,
+      perfect: hasStars(attempt) && attempt.accuracy >= PERFECT_ACCURACY,
+      wpm: hasStars(attempt) ? attempt.wpm : 0,
+    }),
   });
+}
+
+function hasStars(result: LevelResult): boolean {
+  return result.stars > 0;
 }
 
 export function markStorySeen(profile: Profile, storyId: string): Profile {
