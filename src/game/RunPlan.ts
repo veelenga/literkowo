@@ -35,6 +35,7 @@ export interface RunPlan {
   readonly coinsPerWord: number;
   readonly allMechanicsUnlocked: boolean;
   readonly seed?: number;
+  readonly seconds?: number;
   phaseAt(index: number): RunPhase | undefined;
   continuesAfter?(finished: readonly PhaseRecord[]): boolean;
 }

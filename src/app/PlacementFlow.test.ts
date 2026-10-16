@@ -26,6 +26,7 @@ function result(phases: PhaseRecord[]): GameResult {
     coinBoost: 1,
     keys: { practised: { f: { ...EMPTY_KEY_STAT, hits: 9 } }, weakest: [], mastered: [] },
     phasesCleared: phases.length,
+    seconds: 36,
     phases,
     tally: { ...EMPTY_TALLY, words: 20 },
   };

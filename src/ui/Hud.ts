@@ -12,6 +12,8 @@ import { playerLevelOf, playerLevelTitle, xpGainText } from './progression';
 import { soundToggle } from './SoundToggle';
 
 const PERCENT = 100;
+const SECONDS_PER_MINUTE = 60;
+const CLOCK_DIGITS = 2;
 const BASE_MULTIPLIER = 1;
 const NO_XP = 0;
 
@@ -178,7 +180,15 @@ function progressLabel(
 }
 
 function secondsLeft(seconds: number): string {
-  return format(i18n.t.features.placement.secondsLeft, { seconds: Math.ceil(seconds) });
+  const whole = Math.ceil(seconds);
+  if (whole >= SECONDS_PER_MINUTE) return clockText(whole);
+  return format(i18n.t.features.placement.secondsLeft, { seconds: whole });
+}
+
+function clockText(seconds: number): string {
+  const minutes = Math.floor(seconds / SECONDS_PER_MINUTE);
+  const rest = String(seconds % SECONDS_PER_MINUTE).padStart(CLOCK_DIGITS, '0');
+  return `${minutes}:${rest}`;
 }
 
 function keyboardButton(onKeyboard: () => void): HTMLElement {
