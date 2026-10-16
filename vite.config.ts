@@ -16,6 +16,7 @@ const THEME_COLOR = '#070b1a';
 const BACKGROUND_COLOR = '#050816';
 const PRECACHE_PATTERNS = ['**/*.{js,css,html,svg,png,woff2}'];
 const MODEL_FILES = /\/models\/.+\.(?:glb|png)$/;
+const FILE_REQUEST = /\/[^/?]+\.[a-z0-9]+(?:\?.*)?$/i;
 const MODEL_CACHE = 'literkowo-models';
 const MODEL_CACHE_ENTRIES = 64;
 const CACHEABLE_STATUSES = [0, 200];
@@ -74,6 +75,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         globPatterns: PRECACHE_PATTERNS,
         globIgnores: ['models/**'],
+        navigateFallbackDenylist: [FILE_REQUEST],
         runtimeCaching: [
           {
             urlPattern: MODEL_FILES,

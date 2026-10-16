@@ -902,6 +902,7 @@ Install and offline:
 
 - `vite-plugin-pwa` writes the web manifest: name Literkowo, standalone display, theme colour `#070b1a`, background `#050816`, start URL and scope from the base path.
 - The service worker precaches the build and caches files under `models/` at runtime, cache first. It registers only in production builds (`src/app/serviceWorker.ts`).
+- The precache takes scripts, styles, HTML, SVG, PNG and fonts only. Navigation requests for a path with a file extension skip the app shell fallback (`FILE_REQUEST` in `vite.config.ts`), so `robots.txt`, `sitemap.xml`, `llms.txt` and the JPEG images always come fresh from the network.
 - Icons come from `public/icon.svg` and `public/icon-maskable.svg` through `npm run icons`.
 
 ## Dev shortcut
