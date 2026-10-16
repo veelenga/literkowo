@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { SCREENSHOT, SITE_DESCRIPTION, SITE_LANGUAGE, SITE_NAME } from './src/seo/site';
 import { seoPlugin } from './src/seo/vitePlugin';
 
 const THREE_CHUNK_LIMIT_KB = 670;
@@ -8,8 +9,9 @@ const PAGES_BASE = '/literkowo/';
 const ROOT_BASE = '/';
 const base = process.env.GITHUB_PAGES ? PAGES_BASE : ROOT_BASE;
 
-const APP_NAME = 'Literkowo';
-const APP_DESCRIPTION = 'Przygoda, w której klawiatura jest twoją różdżką';
+const APP_CATEGORIES = ['education', 'games', 'kids'];
+const WIDE_FORM_FACTOR = 'wide';
+const SCREENSHOT_TYPE = 'image/jpeg';
 const THEME_COLOR = '#070b1a';
 const BACKGROUND_COLOR = '#050816';
 const PRECACHE_PATTERNS = ['**/*.{js,css,html,svg,png,woff2}'];
@@ -36,10 +38,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: false,
       manifest: {
-        name: APP_NAME,
-        short_name: APP_NAME,
-        description: APP_DESCRIPTION,
-        lang: 'pl',
+        name: SITE_NAME,
+        short_name: SITE_NAME,
+        description: SITE_DESCRIPTION,
+        lang: SITE_LANGUAGE,
+        categories: APP_CATEGORIES,
         theme_color: THEME_COLOR,
         background_color: BACKGROUND_COLOR,
         display: 'standalone',
@@ -55,6 +58,15 @@ export default defineConfig({
             purpose: 'maskable',
           },
           { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml' },
+        ],
+        screenshots: [
+          {
+            src: SCREENSHOT.path,
+            sizes: `${SCREENSHOT.width}x${SCREENSHOT.height}`,
+            type: SCREENSHOT_TYPE,
+            form_factor: WIDE_FORM_FACTOR,
+            label: SCREENSHOT.alt,
+          },
         ],
       },
       workbox: {
