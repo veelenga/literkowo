@@ -94,6 +94,7 @@ export interface GameResult {
   phasesCleared: number;
   phases: readonly PhaseRecord[];
   tally: Tally;
+  seconds: number;
 }
 
 export interface Progress {
@@ -103,6 +104,11 @@ export interface Progress {
   timed: boolean;
   wave?: number;
   stage?: StageMark;
+}
+
+interface ProgressClock {
+  readonly limit: number;
+  readonly spent: number;
 }
 
 export interface GameEvents {
@@ -148,6 +154,7 @@ export class Game {
   private spawned = 0;
   private scriptSpawn: number | undefined;
   private phaseSeconds = 0;
+  private runSeconds = 0;
   private calm: number;
   private boss: Boss | undefined;
   private lives: number;
@@ -374,6 +381,7 @@ export class Game {
     const worldDelta = delta * this.timeScale;
     if (!this.inIntro) this.spawnIfDue(worldDelta);
     if (!this.inIntro) this.countPhaseTime(delta);
+    if (!this.inIntro) this.countRunTime(delta);
     this.updateEnemies(worldDelta);
     this.stats.addActiveTime(delta);
     const focus = this.focus;
@@ -437,7 +445,29 @@ export class Game {
     const step = progressStep(this.phaseSeconds);
     this.phaseSeconds += delta;
     if (this.phaseSeconds >= limit) return this.advancePhase();
-    if (progressStep(this.phaseSeconds) !== step) this.reportProgress();
+    if (!this.isTimedRun && progressStep(this.phaseSeconds) !== step) this.reportProgress();
+  }
+
+  private countRunTime(delta: number): void {
+    if (this.finished) return;
+    const step = progressStep(this.runSeconds);
+    this.runSeconds += delta;
+    const limit = this.config.plan.seconds;
+    if (limit === undefined) return;
+    if (this.runSeconds >= limit) return this.finish(true);
+    if (progressStep(this.runSeconds) !== step) this.reportProgress();
+  }
+
+  private get isTimedRun(): boolean {
+    return this.config.plan.seconds !== undefined;
+  }
+
+  private progressClock(): ProgressClock | undefined {
+    const runLimit = this.config.plan.seconds;
+    if (runLimit !== undefined) return { limit: runLimit, spent: this.runSeconds };
+    const phaseLimit = this.phase.seconds;
+    if (phaseLimit === undefined) return undefined;
+    return { limit: phaseLimit, spent: this.phaseSeconds };
   }
 
   private restsInCalm(delta: number): boolean {
@@ -620,10 +650,11 @@ export class Game {
   }
 
   private reportProgress(): void {
-    const { kind, wave, stage, seconds } = this.phase;
-    if (seconds !== undefined) {
-      const done = Math.min(seconds, progressStep(this.phaseSeconds) / PROGRESS_STEPS_PER_SECOND);
-      return this.events.onProgress({ kind, done, total: seconds, timed: true, wave, stage });
+    const { kind, wave, stage } = this.phase;
+    const clock = this.progressClock();
+    if (clock) {
+      const done = Math.min(clock.limit, progressStep(clock.spent) / PROGRESS_STEPS_PER_SECOND);
+      return this.events.onProgress({ kind, done, total: clock.limit, timed: true, wave, stage });
     }
     const total = this.phase.count;
     const done = this.boss
@@ -657,6 +688,7 @@ export class Game {
       phasesCleared: this.phaseIndex,
       phases: [...this.records],
       tally: this.tally.snapshot(),
+      seconds: this.runSeconds,
     });
   }
 

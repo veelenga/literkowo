@@ -6,6 +6,8 @@ export type PhaseKind = 'warmup' | 'learn' | 'words' | 'boss' | 'test';
 
 export type HitCost = 'life' | 'combo';
 
+export type Modifier = 'fog' | 'darkness' | 'oneHeart' | 'longWords';
+
 export interface StageMark {
   readonly number: number;
   readonly count: number;
@@ -21,6 +23,7 @@ export interface Phase extends Pace {
   readonly boardSize?: number;
   readonly specialShare?: number;
   readonly events?: number;
+  readonly modifiers?: readonly Modifier[];
 }
 
 export interface RunPhase extends Phase {
@@ -35,6 +38,7 @@ export interface RunPlan {
   readonly coinsPerWord: number;
   readonly allMechanicsUnlocked: boolean;
   readonly seed?: number;
+  readonly seconds?: number;
   phaseAt(index: number): RunPhase | undefined;
   continuesAfter?(finished: readonly PhaseRecord[]): boolean;
 }

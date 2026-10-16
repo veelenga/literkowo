@@ -109,10 +109,15 @@ function starsRow(stars: number): HTMLElement {
   );
 }
 
-export function statTile(label: string, value: number, unit?: string): StatTile {
+export function statTile(
+  label: string,
+  value: number,
+  unit?: string,
+  show?: (value: number) => string,
+): StatTile {
   const counter = new Counter(
     el('strong', { class: 'result-stat-value' }),
-    undefined,
+    show,
     COUNTER_DURATION_MS,
   );
   const element = el(

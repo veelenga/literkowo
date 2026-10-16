@@ -7,6 +7,7 @@ import { HeroStrikes } from './HeroStrikes';
 import { ItemPowers } from './ItemPowers';
 import type { Mechanic, MechanicContext, MechanicType } from './Mechanic';
 import { MergeEnemies } from './MergeEnemies';
+import { Modifiers } from './Modifiers';
 import { PlacementStages } from './PlacementStages';
 import { PowerWords } from './PowerWords';
 import { SpeedSurge } from './SpeedSurge';
@@ -27,6 +28,7 @@ const MECHANICS: readonly MechanicType[] = [
   ItemPowers,
   ArenaWaves,
   PlacementStages,
+  Modifiers,
 ];
 
 export function createMechanics(context: MechanicContext): Mechanic[] {

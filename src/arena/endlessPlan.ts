@@ -85,7 +85,7 @@ function wavePace(wave: number, start: Pace): Pace {
   };
 }
 
-function startingPace(bossLevel: Level, difficulty: ArenaDifficulty): Pace {
+export function startingPace(bossLevel: Level, difficulty: ArenaDifficulty): Pace {
   const { start } = levelTempo(bossLevel);
   return {
     count: WAVE_WORDS.first,
@@ -94,12 +94,12 @@ function startingPace(bossLevel: Level, difficulty: ArenaDifficulty): Pace {
   };
 }
 
-function bossPace(bossLevel: Level, difficulty: ArenaDifficulty): Pace {
+export function bossPace(bossLevel: Level, difficulty: ArenaDifficulty): Pace {
   const { main } = difficultyFor(bossLevel);
   return { ...main, speed: main.speed * difficulty.speedFactor };
 }
 
-function waveRules(keys: string): (wave: number) => WordRules {
+export function waveRules(keys: string): (wave: number) => WordRules {
   const byLongest = new Map<number, WordRules>();
   return (wave) => {
     const longest = longestWord(wave);

@@ -6,9 +6,10 @@ import {
   type ArenaDifficulty,
 } from '../../arena/difficulty';
 import type { ArenaChoice } from '../../arena/endlessPlan';
-import { defaultKeySet, keySetsFor, openKeySets } from '../../arena/keySets';
+import { defaultKeySet, keySetsFor, openKeySets, type KeySet } from '../../arena/keySets';
 import { NO_MEDAL } from '../../arena/medals';
 import { arenaKey, endlessBest, type EndlessBest } from '../../arena/record';
+import { todayOf } from '../../arena/week';
 import { format } from '../../i18n/format';
 import { i18n } from '../../i18n/i18n';
 import type { Profile } from '../../profiles/Profile';
@@ -22,11 +23,19 @@ import { shopLink } from '../shopLink';
 import { ESCAPE_LABEL, primaryHint, shortcutHint } from '../shortcutHint';
 import { hintedLockBadge, shopIcon } from '../shopParts';
 import { arenaIcon, difficultyName, medalBadge, waveLabel } from './arenaParts';
+import { dailyCard } from './DailyCard';
 
 interface ArenaActions {
   onBack: (profile: Profile) => void;
   onPlay: (profile: Profile, choice: ArenaChoice) => void;
+  onDaily: (profile: Profile, keySet: KeySet, choice: ArenaChoice) => void;
   onShop: (profile: Profile, choice: ArenaChoice) => void;
+}
+
+export interface ArenaScreenOptions {
+  readonly previous?: ArenaChoice;
+  readonly family?: readonly Profile[];
+  readonly today?: string;
 }
 
 const DEFAULT_DIFFICULTY_ID = 'normal';
@@ -40,14 +49,18 @@ export class ArenaScreen {
   private readonly records = el('div', { class: 'arena-records' });
   private readonly setup = el('section', { class: 'arena-setup' });
   private choice: ArenaChoice;
+  private readonly family: readonly Profile[];
+  private readonly today: string;
   private readonly stopKeys: () => void;
 
   constructor(
     private readonly profile: Profile,
     private readonly actions: ArenaActions,
-    previous?: ArenaChoice,
+    { previous, family = [profile], today = todayOf() }: ArenaScreenOptions = {},
   ) {
     this.choice = initialChoice(profile, previous);
+    this.family = family;
+    this.today = today;
     this.stopKeys = onShortcutKeys(this.element, {
       ArrowLeft: () => this.stepKeySet(PREVIOUS),
       ArrowRight: () => this.stepKeySet(NEXT),
@@ -99,7 +112,12 @@ export class ArenaScreen {
   private refresh(entering = false): void {
     this.setup.classList.toggle(ENTERING_CLASS, entering);
     this.records.replaceChildren(...this.recordRows());
-    this.setup.replaceChildren(this.keySetField(), this.difficultyField(), this.modes());
+    this.setup.replaceChildren(
+      this.keySetField(),
+      this.dailyCard(),
+      this.difficultyField(),
+      this.endlessCard(),
+    );
   }
 
   private stepKeySet(direction: number): void {
@@ -124,10 +142,11 @@ export class ArenaScreen {
   private keySetField(): HTMLElement {
     const { keySet } = this.choice;
     return field(
+      'arena-keys-field',
       i18n.t.features.arena.keySets,
       el(
         'nav',
-        { class: 'segmented arena-chips' },
+        { class: 'segmented arena-chips', 'aria-label': i18n.t.features.arena.keySets },
         ...openKeySets(this.profile).map((option) =>
           chip(option.region.name[i18n.current], option.id === keySet.id, () =>
             this.choose({ keySet: option }),
@@ -143,10 +162,14 @@ export class ArenaScreen {
       (text) => text !== undefined,
     );
     return field(
+      'arena-difficulty-field',
       i18n.t.features.arena.difficulty,
       el(
         'nav',
-        { class: 'segmented arena-chips arena-difficulties' },
+        {
+          class: 'segmented arena-chips arena-difficulties',
+          'aria-label': i18n.t.features.arena.difficulty,
+        },
         ...DIFFICULTIES.map((difficulty) => this.difficultyChip(difficulty)),
       ),
       hint ? el('p', { class: 'arena-hint', text: hint }) : null,
@@ -168,8 +191,14 @@ export class ArenaScreen {
     return chip(name, active, () => this.choose({ difficulty }));
   }
 
-  private modes(): HTMLElement {
-    return el('div', { class: 'arena-modes' }, this.endlessCard());
+  private dailyCard(): HTMLElement {
+    const view = {
+      profile: this.profile,
+      family: this.family,
+      today: this.today,
+      chosen: this.choice.keySet,
+    };
+    return dailyCard(view, (keySet) => this.actions.onDaily(this.profile, keySet, this.choice));
   }
 
   private endlessCard(): HTMLElement {
@@ -239,10 +268,10 @@ function initialChoice(profile: Profile, previous: ArenaChoice | undefined): Are
   return { keySet, difficulty };
 }
 
-function field(label: string, ...children: Array<HTMLElement | null>): HTMLElement {
+function field(area: string, label: string, ...children: Array<HTMLElement | null>): HTMLElement {
   return el(
     'div',
-    { class: 'arena-field' },
+    { class: `arena-field ${area}` },
     el('h2', { class: 'arena-field-label', text: label }),
     ...children,
   );

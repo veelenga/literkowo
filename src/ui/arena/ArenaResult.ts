@@ -5,7 +5,7 @@ import type { GameResult } from '../../game/Game';
 import { i18n } from '../../i18n/i18n';
 import { confetti } from '../confetti';
 import { el, prefersReducedMotion } from '../dom';
-import { statTile, type LevelRewards } from '../LevelResult';
+import { statTile, type LevelRewards, type StatTile } from '../LevelResult';
 import { createOverlay, KEY_READY_MS, onWindowKeyAfter, type Overlay } from '../overlay';
 import { ResultProgress } from '../ResultProgress';
 import { treasuresNote, type OpenShop } from '../resultTreasures';
@@ -13,7 +13,7 @@ import { primaryHint } from '../shortcutHint';
 import { medalBadge, nextMedalHint } from './arenaParts';
 
 const REVEAL_DELAY_MS = 700;
-const RETRY_KEY = 'Enter';
+const PRIMARY_KEY = 'Enter';
 
 export interface ArenaRunSummary {
   readonly result: GameResult;
@@ -29,40 +29,79 @@ interface ArenaResultActions {
   onShop: OpenShop;
 }
 
+export interface ResultButton {
+  readonly label: string;
+  readonly run: () => void;
+}
+
+export interface MedalCard {
+  readonly variant: string;
+  readonly title: string;
+  readonly medal: Medal;
+  readonly hint: string;
+  readonly tiles: readonly StatTile[];
+  readonly earned: LevelRewards;
+  readonly won: boolean;
+  readonly celebrate: boolean;
+  readonly details?: HTMLElement | null;
+  readonly secondary?: ResultButton;
+  readonly note?: string;
+  readonly primary: ResultButton;
+  readonly onShop: OpenShop;
+}
+
 export function arenaResult(summary: ArenaRunSummary, actions: ArenaResultActions): Overlay {
   const t = i18n.t;
   const { result, medal, newRecord, earned } = summary;
-  const progress = new ResultProgress(earned);
-  const tiles = [
-    statTile(t.features.arena.waves, summary.wavesCleared),
-    statTile(t.score, result.score),
-    statTile(t.accuracy, accuracyPercent(result.accuracy), '%'),
-  ];
+  return medalResult({
+    variant: 'arena-result',
+    title: titleOf(summary),
+    medal,
+    hint: nextMedalHint(medal),
+    tiles: [
+      statTile(t.features.arena.waves, summary.wavesCleared),
+      statTile(t.score, result.score),
+      statTile(t.accuracy, accuracyPercent(result.accuracy), '%'),
+    ],
+    earned,
+    won: newRecord || medal > NO_MEDAL,
+    celebrate: newRecord,
+    secondary: { label: t.features.arena.title, run: actions.onArena },
+    primary: { label: t.features.arena.again, run: actions.onRetry },
+    onShop: actions.onShop,
+  });
+}
+
+export function medalResult(card: MedalCard): Overlay {
+  const progress = new ResultProgress(card.earned);
   const panel = el(
     'div',
-    { class: `panel panel-center result-panel arena-result ${outcomeClass(summary)}` },
-    el('h2', { class: 'result-title', text: titleOf(summary) }),
-    medalBadge(medal, 'medal medal-large'),
-    el('p', { class: 'result-hint', text: nextMedalHint(medal) }),
-    el('div', { class: 'result-stats' }, ...tiles.map((tile) => tile.element)),
+    {
+      class: `panel panel-center result-panel ${card.variant} ${card.won ? 'is-won' : 'is-lost'}`,
+    },
+    el('h2', { class: 'result-title', text: card.title }),
+    medalBadge(card.medal, 'medal medal-large'),
+    el('p', { class: 'result-hint', text: card.hint }),
+    el('div', { class: 'result-stats' }, ...card.tiles.map((tile) => tile.element)),
     progress.element,
-    treasuresNote(earned.treasures, actions.onShop),
-    actionsRow(actions),
+    card.details ?? null,
+    treasuresNote(card.earned.treasures, card.onShop),
+    actionsRow(card),
   );
   const revealTimer = window.setTimeout(
     () => {
-      tiles.forEach((tile) => tile.reveal());
+      card.tiles.forEach((tile) => tile.reveal());
       progress.reveal();
-      if (newRecord) celebrate(panel);
+      if (card.celebrate) celebrate(panel);
     },
     prefersReducedMotion() ? 0 : REVEAL_DELAY_MS,
   );
   return createOverlay(
     el('div', { class: 'overlay' }, panel),
-    retryOnKey(actions.onRetry),
+    primaryOnKey(card.primary.run),
     () => window.clearTimeout(revealTimer),
     () => progress.stop(),
-    ...tiles.map((tile) => tile.stop),
+    ...card.tiles.map((tile) => tile.stop),
   );
 }
 
@@ -72,39 +111,38 @@ function titleOf({ newRecord, medal }: ArenaRunSummary): string {
   return medal > NO_MEDAL ? copy.goodRun : i18n.t.levelFailed;
 }
 
-function outcomeClass({ newRecord, medal }: ArenaRunSummary): string {
-  return newRecord || medal > NO_MEDAL ? 'is-won' : 'is-lost';
-}
-
 function celebrate(panel: HTMLElement): void {
   panel.append(confetti());
   sfx.sparkle();
 }
 
-function actionsRow(actions: ArenaResultActions): HTMLElement {
+function actionsRow({ secondary, note, primary }: MedalCard): HTMLElement {
   return el(
     'div',
     { class: 'actions result-actions' },
-    el('button', {
-      class: 'button button-ghost',
-      text: i18n.t.features.arena.title,
-      onClick: actions.onArena,
-    }),
+    secondary
+      ? el('button', {
+          class: 'button button-ghost',
+          text: secondary.label,
+          onClick: secondary.run,
+        })
+      : null,
+    note ? el('p', { class: 'result-note', text: note }) : null,
     el(
       'button',
-      { class: 'button button-primary button-large', onClick: actions.onRetry },
-      i18n.t.features.arena.again,
+      { class: 'button button-primary button-large', onClick: primary.run },
+      primary.label,
       primaryHint(),
     ),
   );
 }
 
-function retryOnKey(onRetry: () => void): () => void {
+function primaryOnKey(run: () => void): () => void {
   const stopListening = onWindowKeyAfter(KEY_READY_MS, (event) => {
-    if (event.key !== RETRY_KEY || event.repeat) return;
+    if (event.key !== PRIMARY_KEY || event.repeat) return;
     event.preventDefault();
     stopListening();
-    onRetry();
+    run();
   });
   return stopListening;
 }

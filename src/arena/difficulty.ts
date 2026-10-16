@@ -80,6 +80,12 @@ export function difficultyById(id: string): ArenaDifficulty | undefined {
   return DIFFICULTIES.find((difficulty) => difficulty.id === id);
 }
 
+export function presetOf(id: DifficultyId): ArenaDifficulty {
+  const preset = difficultyById(id);
+  if (!preset) throw new Error(`Unknown arena difficulty: ${id}`);
+  return preset;
+}
+
 export function difficultyAtLevel(level: number): ArenaDifficulty | undefined {
   return DIFFICULTIES.find((difficulty) => difficulty.level === level);
 }

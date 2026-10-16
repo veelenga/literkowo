@@ -10,6 +10,7 @@ import {
   type WordLanguage,
 } from '../profiles/Profile';
 import type { ProfileStore } from '../profiles/ProfileStore';
+import { dailyMedalDot } from './arena/arenaParts';
 import { avatarPicker } from './AvatarPicker';
 import { characterAvatar } from './CharacterAvatar';
 import { releasePortraits } from './CharacterPortraits';
@@ -183,6 +184,7 @@ export class ProfileScreen {
             el('strong', { text: String(stars) }),
           ),
           coinPill(String(profile.coins), 'meta-pill meta-coins'),
+          dailyMedalDot(profile),
         ),
       ),
     );

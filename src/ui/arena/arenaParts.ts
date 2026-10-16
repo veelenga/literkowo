@@ -1,6 +1,8 @@
 import type { ArenaDifficulty } from '../../arena/difficulty';
+import { dailyDay, hasFinishedToday } from '../../arena/daily';
 import { isArenaOpen, type ArenaProfile } from '../../arena/keySets';
-import { nextMedalGoal, type Medal } from '../../arena/medals';
+import { NO_MEDAL, nextMedalGoal, type Medal } from '../../arena/medals';
+import { todayOf } from '../../arena/week';
 import { format } from '../../i18n/format';
 import { i18n } from '../../i18n/i18n';
 import { el, icon, svg } from '../dom';
@@ -60,20 +62,45 @@ export function waveLabel(wave: number): string {
   return format(i18n.t.features.arena.wave, { wave });
 }
 
-export function arenaButton(profile: ArenaProfile, onOpen: () => void): HTMLElement {
+export function arenaButton(
+  profile: ArenaProfile,
+  onOpen: () => void,
+  today: string = todayOf(),
+): HTMLElement {
   const copy = i18n.t.features.arena;
   const open = isArenaOpen(profile);
-  const label = open ? copy.open : `${copy.open}. ${copy.locked}`;
+  const waiting = open && !hasFinishedToday(profile.arena.daily, today);
   return el(
     'button',
     {
       class: open ? 'header-button arena-button' : 'header-button arena-button is-locked',
-      title: label,
-      'aria-label': label,
+      title: arenaButtonLabel(open, waiting),
+      'aria-label': arenaButtonLabel(open, waiting),
       onClick: onOpen,
     },
     arenaIcon('header-button-icon'),
     el('span', { class: 'header-button-label', text: copy.open }),
     open ? null : hintedLockBadge(copy.locked),
+    waiting ? el('span', { class: 'header-button-dot daily-dot', 'aria-hidden': 'true' }) : null,
   );
+}
+
+export function dailyMedalDot(
+  profile: ArenaProfile,
+  today: string = todayOf(),
+): HTMLElement | null {
+  const day = dailyDay(profile.arena.daily, today);
+  if (day.tries === 0) return null;
+  const medal = day.best?.medal ?? NO_MEDAL;
+  const label = format(i18n.t.features.daily.doneToday, { medal: medalName(medal) });
+  const dot = medalBadge(medal, 'medal daily-medal-dot');
+  dot.title = label;
+  dot.setAttribute('aria-label', label);
+  return dot;
+}
+
+function arenaButtonLabel(open: boolean, waiting: boolean): string {
+  const copy = i18n.t.features;
+  if (!open) return `${copy.arena.open}. ${copy.arena.locked}`;
+  return waiting ? `${copy.arena.open}. ${copy.daily.waiting}` : copy.arena.open;
 }

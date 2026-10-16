@@ -92,7 +92,7 @@ Every review in the table ends with a mini boss.
 
 Owners: `src/app/App.ts`, `src/course/progress.ts`, `src/game/RunPlan.ts`, `src/game/LevelPlan.ts`, `src/game/Game.ts`.
 
-The game runs a run plan: its phases by index, its lives, what a hit on the hero costs (`hitCost`: a life, or only the combo), its XP factor, and the keys and word lengths of each phase (`src/course/wordRules.ts`). A phase can have a time limit in seconds (`seconds`): it then ends when the time is up instead of when its words are cleared. A plan can stop early from the records of the finished phases (`continuesAfter`). `src/game/LevelPlan.ts` builds the plan of a course level.
+The game runs a run plan: its phases by index, its lives, what a hit on the hero costs (`hitCost`: a life, or only the combo), its XP factor, and the keys and word lengths of each phase (`src/course/wordRules.ts`). A phase can have a time limit in seconds (`seconds`): it then ends when the time is up instead of when its words are cleared. A whole plan can have a time limit too (`seconds` on the plan): the run then ends as won when that much play time has passed, the HUD progress shows the time left of the run instead of the phase, and `GameResult.seconds` holds the play time without the intro. A plan can stop early from the records of the finished phases (`continuesAfter`). A plan can carry run modifiers, see [Run modifiers](#run-modifiers). `src/game/LevelPlan.ts` builds the plan of a course level.
 
 1. Story card. The intro plays before the first level. A boss scene plays before each boss. An after scene plays when a boss is beaten with at least one star. The finale replaces the after scene for the last boss of the course. Each scene plays once per profile. Speakers are Sowa Klara, Felek and Mrok (`src/story/story.ts`).
 2. Learn card, for every level except bosses (`src/ui/LearnCard.ts`). Enter starts the level. The ✕ button in the top right corner, a 44 px touch target with the label "Wróć do mapy" / "Повернутися до мапи", and Escape close the card and go back to the map without starting the level. Like Enter, Escape waits 600 ms after the card opens. A story card before the level still plays first and stays seen when the learn card is closed.
@@ -134,11 +134,24 @@ Stars, with the current thresholds (`src/course/scoring.ts`). They are judged on
 - Accuracy is `hits / (hits + mistakes)`. Words per minute is correct letters divided by 5, per active minute (`src/game/SessionStats.ts`).
 - The best result per level is kept, compared by stars first and score second. Total score and letters freed add up on every attempt (`src/course/progress.ts`).
 
+### Run modifiers
+
+Owners: `src/game/modifiers.ts`, `src/game/mechanics/Modifiers.ts`.
+
+`withModifiers(plan, modifiers)` marks every phase of a plan with its modifiers (`modifiers` on the phase) and applies the plan side. The `Modifiers` mechanic applies the board side. The daily challenge uses them, and modifiers in free play can reuse them later.
+
+| Modifier    | Effect                                                                                                                                                                                                                           |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fog`       | Every word label shows the typed part and the next letter, the rest is dots, the same labels as the boss fog (`firstLetter`)                                                                                                     |
+| `darkness`  | The boss darkness for the whole run: the keyboard hint on bigger screens fades out and the built-in phone keyboard stays usable without finger colours or the next key glow. The mechanic keeps it on after a boss darkness ends |
+| `oneHeart`  | The plan has at most one heart                                                                                                                                                                                                   |
+| `longWords` | Words and generated words have 5 to 8 letters (`LONG_WORDS`), without staged lengths, and the spawn gap is twice as long (`LONG_WORD_GAP`)                                                                                       |
+
 ### Seeded runs
 
 Owners: `src/random.ts`, `src/game/SpawnScript.ts`, `src/game/Game.ts`.
 
-A run plan can carry a `seed`, a whole number. `hashSeed` in `src/random.ts` makes one from parts such as a date and a key set. Course levels, the arena and the placement test have no seed and stay random. With a seed:
+A run plan can carry a `seed`, a whole number. `hashSeed` in `src/random.ts` makes one from parts such as a date and a key set. Course levels, the endless arena and the placement test have no seed and stay random. The [Daily challenge](#daily-challenge) is seeded with `hashSeed([local date, key set])`. With a seed:
 
 - The same on every device, whatever the child types: the words of the run's own spawns, their order, their angles on the spawn arc and their spawn index (`spawnIndex` on the enemy, counted from 0 over the whole run, the boss included). Every key weighs the same and spawns do not avoid letters already on the board, so weak keys and the board never change the words.
 - The same timing inside a phase: a spawn comes at the same moment after its phase starts, unless the board is full or a power slows time. A phase starts when the one before is cleared, so a slower child meets the same words a little later.
@@ -566,6 +579,8 @@ Trophies are awarded after every attempt, after buying or claiming an item and w
 | `mastered-region`                       | Mistrz klawiszy          | Майстер клавіш     | every new key of one region mastered                     |
 | `arena-wave-10`, `arena-wave-20`        | Fala 10                  | Хвиля 10           | the waves cleared in one arena run                       |
 | `arena-gold`                            | Złoty medal              | Золота медаль      | a gold medal in the arena                                |
+| `stamps-7`, `stamps-30`                 | 7 pieczątek              | 7 печаток          | daily challenge stamps in total                          |
+| `week-streak-4`                         | 4 tygodnie z rzędu       | 4 тижні поспіль    | the best run of weeks in a row with 3 daily stamps       |
 | `star-streak-5`                         | Gwiezdna seria           | Зіркова серія      | three stars on 5 levels in a row of the profile's course |
 | `every-region-three-stars`              | Gwiazda wszystkich krain | Зірка всіх країв   | three stars on every level of the profile's course       |
 | `perfect-level`                         | Bez pomyłki              | Без помилок        | a level won at 100% accuracy                             |
@@ -592,7 +607,7 @@ Counters (`src/course/counters.ts`, `src/game/RunTally.ts`). The game tallies ea
 | `bestWpm`        | the best words per minute of a level with at least one star, arena runs excluded |
 | `skinsPlayed`    | the skins a level or arena run was played with                                   |
 
-The trophy tab shows "Trofea: 3 z 29" / "Трофеї: 3 з 29" and every trophy with its name and the rule as its hint. Earned trophies glow in their colour. Locked ones are grey, and when the rule can be measured they show a bar in the trophy's colour with "312 z 500" / "312 з 500" (`trophyProgress` in `src/course/trophies.ts`). The first boss, the mastered region and the arena gold show "Jeszcze przed tobą" / "Ще попереду" instead.
+The trophy tab shows "Trofea: 3 z 32" / "Трофеї: 3 з 32" and every trophy with its name and the rule as its hint. Earned trophies glow in their colour. Locked ones are grey, and when the rule can be measured they show a bar in the trophy's colour with "312 z 500" / "312 з 500" (`trophyProgress` in `src/course/trophies.ts`). The first boss, the mastered region and the arena gold show "Jeszcze przed tobą" / "Ще попереду" instead.
 
 The result card adds a chip "Nowy skarb: Polana" / "Новий скарб: Галявина" for each trophy of the attempt, and "Nowość w sklepie" / "Новинка в крамниці" when an item became affordable or claimable. These chips are buttons with a small › mark that open the shop as in the table above (`src/ui/resultTreasures.ts`). The "Arena otwarta!" / "Арену відкрито!" chip is not a link. On touch screens each chip button reaches 44 px tall without changing the card layout.
 
@@ -605,7 +620,7 @@ The arena, "Arena" / "Арена", is extra play next to the course. Its first m
 Opening:
 
 - The arena opens with at least one star on the Polana boss (`polana-19`), or with a placement in the profile's arena record, which the [Placement test](#placement-test) writes (`isArenaOpen` in `src/arena/keySets.ts`).
-- Map header: the "Arena" / "Арена" button sits next to the shop button in the same style, only the icon on phones. While the arena is closed it is dimmed, has a lock badge and the hint "Pokonaj bossa Polany" / "Переможи боса Галявини", and a tap scrolls the map to the gate.
+- Map header: the "Arena" / "Арена" button sits next to the shop button in the same style, only the icon on phones. While the arena is open and today's [Daily challenge](#daily-challenge) has no finished try, it shows a small green dot. While the arena is closed it is dimmed, has a lock badge and the hint "Pokonaj bossa Polany" / "Переможи боса Галявини", and a tap scrolls the map to the gate.
 - Map gate: a round badge as big as a boss node in the footer of the Polana band, one row below the boss and across from it (`gatePoint` in `src/ui/map/journeyLayout.ts`). While closed it is dimmed with a lock and shows the same hint. Once open it shows "Arena" and opens the arena screen.
 - The result card of the attempt that opens the arena shows the chip "Arena otwarta!" / "Арену відкрито!".
 
@@ -660,9 +675,11 @@ Coins and XP (`src/arena/economy.ts`):
 Arena screen (`src/ui/arena/ArenaScreen.ts`):
 
 - It copies the shop: a header with the back button "Mapa" / "Мапа", the title, a quiet shop link with the bag and "Sklep" / "Крамниця" (only the bag on phones) and the coins. On the left the hero in 3D with the equipped hat and pet, and under it the best wave and medal of the chosen key set for each open preset.
-- On the right: the key set chips with region names and the keys under them, the difficulty chips, and the mode card "Bez końca" / "Без кінця" with its rule line, the best wave of the chosen key set and preset ("Rekord: fala 9" / "Рекорд: хвиля 9", or "Jeszcze bez rekordu" / "Ще без рекорду") with its medal, and a gold Play button. The mode grid has room for the planned cards.
-- The screen fills the window without scrolling, with the hero column and the setup side by side, also on phones in landscape. The hero shrinks to the height that is left.
-- Phones in portrait: one column, the hero as a 64 px strip with record pills, the difficulty chips 2 by 2 and the mode card at full width. On phones the mode card is a row: the icon, the name and the rule, then the record and Play. In landscape the labels sit next to their chips, the record sits next to the mode name and Play at the right of the mode card.
+- On the right: the key set chips with region names and the keys under them across the top. Below them two columns: the [Daily challenge](#daily-challenge) card on the left, and on the right the difficulty chips over the mode card "Bez końca" / "Без кінця" with its rule line, the best wave of the chosen key set and preset ("Rekord: fala 9" / "Рекорд: хвиля 9", or "Jeszcze bez rekordu" / "Ще без рекорду") with its medal, and a gold Play button. The daily card is as tall as that column, with its Play at the bottom.
+- The screen fills the window without scrolling, with the hero column and the setup side by side. The hero shrinks to the height that is left.
+- Tablets in portrait: the hero is a strip on top, with the portrait on the left and the record pills next to it.
+- Phones in portrait: one column without the hero, in this order: the key set chips with the keys on one line, the daily card, the difficulty chips in one row, and the mode card. The field labels hide and the chip rows carry them as their names for screen readers. The mode card shows the name and the rule, then the record and Play in one row.
+- Phones in landscape: no hero column. The key set chips and the difficulty chips share the top row, without labels, the keys line and the hint under the difficulty chips. Then the daily card as one row and the mode card as one row: the icon, the name with the record, the rule, and Play at the right.
 - Coming back from a run keeps the chosen key set and preset.
 
 Result card (`src/ui/arena/ArenaResult.ts`), in the result panel of a level:
@@ -670,6 +687,7 @@ Result card (`src/ui/arena/ArenaResult.ts`), in the result panel of a level:
 - The title is "Nowy rekord!" / "Новий рекорд!" on a new best wave, with confetti and a sparkle. Otherwise it is "Dobra robota!" / "Гарна робота!" with a medal and "Mrok był szybszy" / "Морок був швидший" without one.
 - The medal takes the place of the stars, with a hint naming what the next medal needs: "Srebro. Złoto: fala 10 i 97%" / "Срібло. Золото: хвиля 10 і 97%", or "Złoto! To najlepszy medal" / "Золото! Це найкраща медаль".
 - Tiles for "Fale" / "Хвилі" (waves cleared), points and accuracy. The XP bar and the coins of the run with every payout, trophy chips, then "Jeszcze raz" / "Ще раз" as the main button and "Arena" back to the arena screen. Enter presses the main button 600 ms after the card opens (`KEY_READY_MS` in `src/ui/overlay.ts`).
+- On phones in landscape the medal sits next to the title, at 44 px, like the stars of a level.
 
 Record, part of profile schema 7 (`src/arena/record.ts`):
 
@@ -697,12 +715,98 @@ interface EndlessBest {
 ```
 
 - The best run has the most waves cleared, then the most points.
-- `daily`, `tracks`, `shadowWins` and `modifierWins` stay empty until the planned modes fill them. Their shapes (`DailyRecord`, `TrackBest` with its `GhostRun`) are read and checked on load already, so those modes need no new schema version.
+- `daily` is filled by the [Daily challenge](#daily-challenge). `tracks`, `shadowWins` and `modifierWins` stay empty until the planned modes fill them. Their shapes (`TrackBest` with its `GhostRun`) are read and checked on load already, so those modes need no new schema version.
 - Broken entries are dropped on load.
+
+## Daily challenge
+
+Owners: `src/arena/daily.ts` (tries, stamps, chests, weeks in a row), `src/arena/formats.ts` (formats and medals), `src/arena/dailyPlan.ts`, `src/arena/dailyProgress.ts`, `src/arena/week.ts` (local days and ISO weeks), `src/arena/timeAttack.ts`, `src/app/ArenaFlow.ts`, `src/ui/arena/DailyCard.ts`, `src/ui/arena/stampRow.ts`, `src/ui/arena/DailyResult.ts`, `src/ui/daily.css`, copy in `src/i18n/features/daily.ts`.
+
+"Wyzwanie dnia" / "Виклик дня" is a short run with a new rule every day, on the arena screen. It is there to bring a child back for a few minutes a day, without punishing a missed day.
+
+The day:
+
+- One challenge per key set per local day. Days and weeks follow the local clock of the device. Weeks run from Monday to Sunday and are named by their ISO week, for example `2026-W42`. All date logic takes an injectable clock, so tests cover midnight, the turn of a week and of a year.
+- The run is seeded with the local date and the key set (`dailySeed` in `src/arena/dailyPlan.ts`), so brothers and sisters on the same key set get the same words at the same moments, see [Seeded runs](#seeded-runs). Every try of the day replays the same words.
+- The run uses the Normalnie values: speed, spawn gap, special enemies, events, coins and XP, see [Arena](#arena). There is no difficulty choice.
+- A child gets 3 tries a day (`DAILY_TRIES`) and the best one counts: the higher medal, then the higher score.
+- A try counts when the run ends by time, by losing all hearts, or by beating the last boss on Saturday. Leaving through the pause card or the map button does not use a try.
+- The first finished try fixes the key set of the day. After that the daily card stays on that key set whatever chip is chosen, and its key set pill names it. The next day the card follows the chip again.
+
+Formats, by weekday (`DAILY_FORMATS`):
+
+| Day | Format (pl / uk)           | Length    | Rule                                                                                                                                                                                                                                                                                                                                                                      |
+| --- | -------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mon | Mgła / Туман               | 3 minutes | Arena waves with the `fog` modifier: labels show only the next letter                                                                                                                                                                                                                                                                                                     |
+| Tue | Dwie minuty / Дві хвилини  | 2 minutes | Time attack: one `test` phase, as in the placement test, with no hearts. The board keeps 4 real words (`TIME_ATTACK_BOARD`) of 3 to 5 letters and refills as soon as one leaves. They walk at 0.8 times the speed of the region's last practice level. An enemy that reaches the hero vanishes and breaks the combo. Special enemies, events and other mechanics stay off |
+| Wed | Ciemność / Темрява         | 3 minutes | Arena waves with the `darkness` modifier: no keyboard hint for the whole run                                                                                                                                                                                                                                                                                              |
+| Thu | Długie słowa / Довгі слова | 3 minutes | Arena waves with the `longWords` modifier at the Spokojnie speed factor                                                                                                                                                                                                                                                                                                   |
+| Fri | Jedno serce / Одне серце   | 3 minutes | Arena waves with the `oneHeart` modifier at the Spokojnie speed factor                                                                                                                                                                                                                                                                                                    |
+| Sat | Bossowie / Боси            | 3 minutes | Three short boss fights in a row: 6 words, Mały Strażnik with 4 hits, 6 words, Mały Strażnik with 5 hits, 6 words, then the region boss with its words but at most 8 hits (`BOSS_FIGHTS`). Breaks after the first start with 3 calm seconds, and a beaten boss grants the arena shield. Beating the last boss ends the try                                                |
+| Sun | Wielka fala / Велика хвиля | 3 minutes | Plain arena waves                                                                                                                                                                                                                                                                                                                                                         |
+
+- The run plan has the length as its time limit, so the HUD bar and count show the time left of the whole run, "2:41". On phones the count shows also below 400 px. Losing all hearts ends a try early.
+- Words, waves, calm seconds and mid-wave events follow the endless waves of the key set, see [Arena](#arena).
+
+Medal (`dailyMedal` in `src/arena/formats.ts`):
+
+- The lower of two grades, as in the arena. Time: 1, 2 or 3 minutes survived (`MINUTE_GRADES`), and a try that ended by time or by beating the last boss gets the full grade. Tuesday grades the pace instead: 10, 15 or 20 words per minute (`PACE_GRADES`), the speed the HUD shows. Accuracy: the star thresholds on the rounded percent, 85, 93 and 97.
+
+Stamps and chests (`withDailyTry` in `src/arena/daily.ts`):
+
+- The first finished try of a day puts a stamp on the week card. There is no daily streak and missing a day never takes anything away.
+- 3 stamps in a week open a chest with 40 coins and 5 stamps another with 100 (`WEEK_CHESTS`). Each chest pays once per week.
+- "Tygodnie z rzędu" / "Тижнів поспіль" counts weeks in a row with at least 3 stamps. It grows when the third stamp of a week comes, starting again at 1 when last week had fewer. The card shows it while this or last week has 3 stamps, and hides it at 0.
+- The family chest, "Rodzinna skrzynia" / "Сімейна скриня": when all the profiles on the device together have 10 stamps in a week, every profile that stamped that week gets 30 coins, once per week (`FAMILY_CHEST`). A profile gets it when it opens the arena screen or finishes a daily, whichever comes first.
+
+Coins and XP (`dailyPayout` in `src/arena/economy.ts`):
+
+- The run pays as in the arena: half a coin per word times the Normalnie coin factor, chests and thieves as in a level, and a coin hat scales them. XP is word XP times 0.4.
+- Flat amounts on top, never scaled by a hat: 20 for the stamp, 10, 20 or 40 for a bronze, silver or gold medal, the chests and the family chest. A better medal later that day pays only the difference, so a medal never pays twice.
+- XP, score, letters freed, key statistics, counters and trophies are added after every finished try, as after an arena run.
+
+Daily card (`src/ui/arena/DailyCard.ts`), first on the arena screen:
+
+- A calendar icon on bigger screens, "Wyzwanie dnia: Mgła" / "Виклик дня: Туман", the rule of the format, the week as 7 stamp circles under "Pn Wt Śr Cz Pt So Nd" / "Пн Вт Ср Чт Пт Сб Нд": gold with a check when stamped, an accent ring for today, dim for the days ahead. The circles are 36 px, 32 px on phones.
+- A row with the length "3 minuty" / "3 хвилини" or "2 minuty" / "2 хвилини", the key set, "Próby: 1 z 3" / "Спроби: 1 з 3" (tries used) and "Tygodnie z rzędu: 2" / "Тижнів поспіль: 2".
+- "Dziś: Ola złoto, Staś brąz" / "Сьогодні: Оля золото, Стась бронза": every profile on the device that finished a try today with its best medal, hidden when nobody did.
+- With two profiles or more, a thin bar "Rodzinna skrzynia" / "Сімейна скриня" with "6 z 10" / "6 з 10", green once this profile's family chest of the week is open.
+- Play, or after the third try a quiet note "Nowe wyzwanie jutro" / "Новий виклик завтра". There is no countdown.
+- On phones the card is a compact grid: the stamps sit next to Play. In landscape it is one row and the device board and the family bar hide.
+
+Result card (`src/ui/arena/DailyResult.ts`), the arena result card with a daily variant:
+
+- "Najlepsza próba dnia!" / "Найкраща спроба дня!" when the try is the best of the day and has a medal, with confetti. Otherwise "Dobra robota!" / "Гарна робота!" with a medal and "Mrok był szybszy" / "Морок був швидший" without one.
+- The medal with the next goal: "Srebro. Złoto: 3 minuty i 97%" / "Срібло. Золото: 3 хвилини і 97%", or on Tuesday "Brąz. Srebro: 15 słów na minutę i 93%" / "Бронза. Срібло: 15 слів за хвилину і 93%".
+- Tiles for words, the time survived as "2:41" (the pace on Tuesday) and accuracy, the XP bar, then the coins: "Za słowa" / "За слова", "Pieczątka" / "Печатка", "Medal" / "Медаль", "Skrzynia" / "Скриня" and "Rodzinna skrzynia" / "Сімейна скриня", each shown when it paid.
+- "Jeszcze raz" / "Ще раз" as the main button while tries remain, with "Arena" next to it. After the third try "Nowe wyzwanie jutro" / "Новий виклик завтра" stands in its place and "Arena" is the main button.
+
+Signals:
+
+- The map arena button shows a small green dot, without the pulse of the shop dot, while the arena is open and today's daily has no finished try. Its label adds "Wyzwanie dnia czeka" / "Виклик дня чекає".
+- The profile card shows a 22 px medal in its top right corner once today's daily is done, with "Wyzwanie dnia: Złoto" / "Виклик дня: Золото" as its label.
+
+Record (`DailyRecord` in `src/arena/record.ts`):
+
+```ts
+interface DailyRecord {
+  date: string; // local day of the last finished try
+  keySet: string; // the key set of that day
+  tries: number; // finished tries that day
+  best?: { score: number; accuracy: number; seconds: number; medal: Medal };
+  stamps: string[]; // stamped days of this and last week
+  chests: string[]; // chests paid in this and last week: "2026-W42/3", "2026-W42/5", "2026-W42/family"
+  weekStreak: number;
+  bestWeekStreak: number;
+  totalStamps: number;
+}
+```
+
+- A new day starts with 3 tries and no best try. Only finished tries write the record, so it always has the key set of its day.
 
 ## Placement test
 
-Owners: `src/arena/placement.ts` (stages, words, pass rules), `src/arena/placementPlan.ts`, `src/arena/placementProgress.ts`, `src/game/PhaseMeter.ts`, `src/game/mechanics/PlacementStages.ts`, `src/app/PlacementFlow.ts`, `src/ui/placement` (`PlacementIntro.ts`, `PlacementResult.ts`, `FingersCard.ts`), `src/ui/placement.css`, copy in `src/i18n/features/placement.ts`.
+Owners: `src/arena/placement.ts` (stages, words, pass rules), `src/arena/placementPlan.ts`, `src/arena/timeAttack.ts` (the time attack phase, shared with the daily challenge), `src/arena/placementProgress.ts`, `src/game/PhaseMeter.ts`, `src/game/mechanics/PlacementStages.ts`, `src/app/PlacementFlow.ts`, `src/ui/placement` (`PlacementIntro.ts`, `PlacementResult.ts`, `FingersCard.ts`), `src/ui/placement.css`, copy in `src/i18n/features/placement.ts`.
 
 The placement test, "Sprawdzian" / "Перевірка", lets a child who can already type skip the regions they know. It is short, it uses real words only, and it can only move a child forward.
 
@@ -828,7 +932,7 @@ Profile screen:
 
 - Layered hills drift slowly behind the logo, and glowing letters float and twinkle over them. On devices that can hover, the hills lean a little toward the pointer.
 - With reduced motion or the low quality preset the hills stand still and there are no letters (`src/ui/menuMotion.ts`).
-- Each profile is a card with the rendered portrait under a spotlight, the name, the level, the rank, a thin XP bar, and pills for stars and coins.
+- Each profile is a card with the rendered portrait under a spotlight, the name, the level, the rank, a thin XP bar, pills for stars and coins, and the medal of today's [Daily challenge](#daily-challenge) once it is done.
 - The selected card lifts, glows and shows the hero in 3D with the equipped hat and pet, swaying slowly. It uses the same outfit view as the shop (`src/ui/portraits/OutfitView.ts`). The play panel opens right under the row of the selected card, and cards from later rows move below it. The panel has a big Play button, then the word language chips and the delete button in a quieter row.
 - The narrow dashed new profile card opens the create panel, which takes the place of the cards until the profile is created or the panel is cancelled: a large live preview of the chosen character that switches with every pick, the name field, the 18 characters, the main button "Zacznij naukę" / "Почни навчання" and next to it "Umiem już pisać" / "Я вже вмію друкувати", which also creates the profile and opens the [Placement test](#placement-test). On narrow phones the cancel button moves to the top right corner of the panel.
 - With four profiles the cards fit in one row, and the screen fits without scrolling from 1280 by 720 up. Screens up to 900 px tall get a smaller logo and tighter spacing, and screens up to 800 px tall also smaller cards, a smaller create panel and 9 characters per row.
@@ -941,7 +1045,7 @@ Layout:
 
 - Phones are screens up to 600 px wide or up to 480 px tall. Tablets are up to 1024 px wide. The screen size breakpoints are named once in `src/ui/screenSizes.css` as custom media (`postcss-custom-media`), and `src/ui/formFactor.ts` mirrors the phone query for code.
 - On tablets the HUD shows score, combo, hearts and progress.
-- On phones the HUD is one translucent strip 44 px tall at the top: avatar with the player level, score, combo, hearts, and small buttons for the native keyboard, pause and sound. The progress bar is a 3 px line along the bottom edge of the strip. The phase name is hidden, except the stage of the placement test, the count shows when the screen is at least 400 px wide, and the XP of the run shows next to the score when it is wider than 600 px. Buttons in the strip are 36 px wide and as tall as the strip.
+- On phones the HUD is one translucent strip 44 px tall at the top: avatar with the player level, score, combo, hearts, and small buttons for the native keyboard, pause and sound. The progress bar is a 3 px line along the bottom edge of the strip. The phase name is hidden, except in a timed phase or run such as the placement test and the daily challenge, the count shows when the screen is at least 400 px wide or the progress is timed, and the XP of the run shows next to the score when it is wider than 600 px. Buttons in the strip are 36 px wide and as tall as the strip.
 - The keyboard hint is smaller on tablets in portrait.
 - On a phone the learn card and the result card fit without scrolling, at 390 by 660 px in portrait and 750 by 342 px in landscape, also with landscape safe area insets of 47 px at the sides and 21 px at the bottom.
 - In portrait both cards use smaller keycaps, a smaller hands diagram and full width buttons. Each result shows its label and value on one line. When the rank, the XP and the coins do not fit in one row of the result, the XP and the coins move to a second row.
@@ -1001,14 +1105,15 @@ Owners: `src/app/devShortcut.ts`, `src/app/App.ts`.
 - In development only, `?level=<id>` starts a level directly, for example `http://localhost:5173/?level=jaskinia-24` for the cave boss. Every level id is in the table under [Regions and levels](#regions-and-levels).
 - It uses a temporary profile named Test with Polish words. It takes the character, the inventory and the equipped pet and hat of the active profile, or the first character without items when there is none. Story and learn cards are skipped. Results are not saved.
 - In development only, `?arena=<key set>-<difficulty>` starts an endless arena run directly, for example `http://localhost:5173/?arena=las-2` for Las on Normalnie. The key set is a region id and the difficulty is the preset level from 1 to 4, see [Arena](#arena). It uses the same temporary profile, so the arena does not need to be open and results are not saved.
+- In development only, `?daily=<key set>` starts today's [Daily challenge](#daily-challenge) directly, for example `http://localhost:5173/?daily=las`, and `&weekday=<0..6>` forces the format of a weekday, 0 for Monday, for example `?daily=las&weekday=1` for Dwie minuty. It uses the same temporary profile, so results are not saved.
 - In development only, `?placement=1` starts the [Placement test](#placement-test) directly with the same temporary profile and Polish words, without the intro card. Results are not saved.
-- An unknown id or arena value opens the profile screen. Production builds ignore the parameters.
+- An unknown id, arena value or daily key set opens the profile screen. Production builds ignore the parameters.
 
 ## Planned
 
 Not built yet. In this order:
 
-1. More arena modes: a daily challenge, a race against a shadow and modifiers.
+1. More arena modes: a race against a shadow and modifiers in free play.
 2. Daily training: short sessions built from weak keys, with spaced repetition and streaks.
 3. Typing test with certificates.
 4. New chapters after the letters: capitals, numbers, punctuation, sentences and speed.

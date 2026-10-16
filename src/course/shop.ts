@@ -76,6 +76,8 @@ export type TrophyRule =
   | { readonly kind: 'masteredRegion' }
   | { readonly kind: 'arenaWave'; readonly wave: number }
   | { readonly kind: 'arenaGold' }
+  | { readonly kind: 'stamps'; readonly stamps: number }
+  | { readonly kind: 'weekStreak'; readonly weeks: number }
   | { readonly kind: 'starStreak'; readonly levels: number }
   | { readonly kind: 'counter'; readonly counter: CounterId; readonly goal: number }
   | { readonly kind: 'starterSkins' }
@@ -227,6 +229,13 @@ const ARENA_WAVE_TROPHIES = [
   { wave: 20, color: '#5ce1ff' },
 ] as const;
 
+const STAMP_TROPHIES = [
+  { stamps: 7, color: '#7cf5a8' },
+  { stamps: 30, color: '#3ee07a' },
+] as const;
+
+const WEEK_STREAK_TROPHY = { weeks: 4, color: '#ffc63a' } as const;
+
 const STAR_STREAK_LEVELS = 5;
 
 const COUNTER_TROPHIES: readonly { counter: CounterId; goal: number; color: string }[] = [
@@ -282,6 +291,16 @@ export const TROPHIES: readonly Trophy[] = [
     color,
   })),
   { id: 'arena-gold', rule: { kind: 'arenaGold' }, color: '#ffd23f' },
+  ...STAMP_TROPHIES.map(({ stamps, color }) => ({
+    id: `stamps-${stamps}`,
+    rule: { kind: 'stamps', stamps } as const,
+    color,
+  })),
+  {
+    id: `week-streak-${WEEK_STREAK_TROPHY.weeks}`,
+    rule: { kind: 'weekStreak', weeks: WEEK_STREAK_TROPHY.weeks },
+    color: WEEK_STREAK_TROPHY.color,
+  },
   {
     id: `star-streak-${STAR_STREAK_LEVELS}`,
     rule: { kind: 'starStreak', levels: STAR_STREAK_LEVELS },

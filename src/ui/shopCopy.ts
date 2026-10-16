@@ -68,6 +68,10 @@ export function trophyCopy({ rule }: Trophy): TrophyCopy {
       return filled(copy.arenaWave, { wave: rule.wave });
     case 'arenaGold':
       return copy.arenaGold;
+    case 'stamps':
+      return filled(copy.stamps, { stamps: rule.stamps });
+    case 'weekStreak':
+      return filled(copy.weekStreak, { weeks: rule.weeks });
     case 'starStreak':
       return filled(copy.starStreak, { levels: rule.levels });
     case 'everyRegionThreeStars':
