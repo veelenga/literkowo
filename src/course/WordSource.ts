@@ -1,4 +1,5 @@
 import type { WordLanguage } from '../profiles/Profile';
+import { systemRandom, type RandomSource } from '../random';
 import type { LetterRange, WordStageKind } from './difficulty';
 import { typability } from './typability';
 import type { WordRules } from './wordRules';
@@ -29,7 +30,7 @@ interface WordPools {
   readonly realWords: readonly string[];
 }
 
-const EVEN_WEIGHTS: KeyWeights = { weightOf: () => EVEN_WEIGHT };
+export const EVEN_WEIGHTS: KeyWeights = { weightOf: () => EVEN_WEIGHT };
 
 export class WordSource {
   private pools: WordPools;
@@ -39,6 +40,7 @@ export class WordSource {
     private readonly language: WordLanguage,
     rules: WordRules,
     private readonly weights: KeyWeights = EVEN_WEIGHTS,
+    private readonly random: RandomSource = systemRandom(),
   ) {
     this.pools = poolsFor(language, rules);
   }
@@ -49,7 +51,7 @@ export class WordSource {
 
   singleLetter(takenStarts = NO_STARTS): string {
     const open = [...this.fresh].filter((char) => !takenStarts.has(char)).join('');
-    return randomChar(open || this.fresh);
+    return this.randomChar(open || this.fresh);
   }
 
   next(takenStarts = NO_STARTS): string {
@@ -111,7 +113,7 @@ export class WordSource {
 
   private realWord(lengths: LetterRange): string | undefined {
     const fitting = this.wordsWithin(lengths);
-    if (fitting.length < MIN_REAL_WORDS || isGeneratedTurn()) return undefined;
+    if (fitting.length < MIN_REAL_WORDS || this.isGeneratedTurn()) return undefined;
     const fresh = fitting.filter((word) => usesFresh(word, this.fresh));
     return this.pickWord(fresh) ?? this.pickWord(fitting);
   }
@@ -119,7 +121,7 @@ export class WordSource {
   private focusWord(lengths: LetterRange): string {
     const words = this.wordsWithin(lengths).filter((word) => usesFresh(word, this.fresh));
     const hasWords = words.length >= MIN_FOCUS_WORDS;
-    const word = hasWords && !isGeneratedTurn() ? this.pickWord(words) : undefined;
+    const word = hasWords && !this.isGeneratedTurn() ? this.pickWord(words) : undefined;
     return word ?? this.focused(lengths);
   }
 
@@ -137,11 +139,11 @@ export class WordSource {
     const weakness = (word: string) =>
       Math.max(...[...word].map((char) => weights.get(char) ?? EVEN_WEIGHT));
     const ease = (word: string) => TYPABILITY_FLOOR + typability(word, this.fresh);
-    return weightedPick(words, (word) => weakness(word) * ease(word));
+    return this.weightedPick(words, (word) => weakness(word) * ease(word));
   }
 
   private pickChar(pool: string): string {
-    return weightedPick([...pool], (char) => this.weightOf(char)) ?? randomChar(pool);
+    return this.weightedPick([...pool], (char) => this.weightOf(char)) ?? this.randomChar(pool);
   }
 
   private weightOf(char: string): number {
@@ -154,14 +156,14 @@ export class WordSource {
 
   private generate(range: LetterRange, pool = this.allowed): string {
     const fresh = [...this.fresh].filter((char) => pool.includes(char)).join('') || pool;
-    const length = randomInt(range.min, range.max);
+    const length = this.randomInt(range.min, range.max);
     return easiestOf(() => Array.from({ length }, () => this.biasedChar(pool, fresh)).join(''));
   }
 
   private focused(range: LetterRange): string {
-    const length = randomInt(range.min, range.max);
+    const length = this.randomInt(range.min, range.max);
     return easiestOf(() => {
-      const anchor = randomInt(0, length - 1);
+      const anchor = this.randomInt(0, length - 1);
       return Array.from({ length }, (_, index) =>
         index === anchor ? this.pickChar(this.fresh) : this.biasedChar(this.allowed, this.fresh),
       ).join('');
@@ -169,7 +171,28 @@ export class WordSource {
   }
 
   private biasedChar(pool: string, fresh: string): string {
-    return Math.random() < NEW_KEY_BIAS ? this.pickChar(fresh) : this.pickChar(pool);
+    return this.random.next() < NEW_KEY_BIAS ? this.pickChar(fresh) : this.pickChar(pool);
+  }
+
+  private weightedPick<T>(items: readonly T[], weightOf: (item: T) => number): T | undefined {
+    const weights = items.map(weightOf);
+    const total = weights.reduce((sum, weight) => sum + weight, 0);
+    if (total <= 0) return items.length ? this.random.pick(items) : undefined;
+    let remaining = this.random.next() * total;
+    const index = weights.findIndex((weight) => (remaining -= weight) < 0);
+    return items[index < 0 ? items.length - 1 : index];
+  }
+
+  private randomChar(pool: string): string {
+    return pool[this.random.int(pool.length)];
+  }
+
+  private isGeneratedTurn(): boolean {
+    return this.random.next() <= NEW_KEY_BIAS;
+  }
+
+  private randomInt(min: number, max: number): number {
+    return min + this.random.int(max - min + 1);
   }
 }
 
@@ -202,31 +225,6 @@ function drawAvoiding(takenStarts: ReadonlySet<string>, draw: () => string): str
   return word;
 }
 
-function weightedPick<T>(items: readonly T[], weightOf: (item: T) => number): T | undefined {
-  const weights = items.map(weightOf);
-  const total = weights.reduce((sum, weight) => sum + weight, 0);
-  if (total <= 0) return pick(items);
-  let remaining = Math.random() * total;
-  const index = weights.findIndex((weight) => (remaining -= weight) < 0);
-  return items[index < 0 ? items.length - 1 : index];
-}
-
-function pick<T>(items: readonly T[]): T | undefined {
-  return items.length ? items[Math.floor(Math.random() * items.length)] : undefined;
-}
-
-function randomChar(pool: string): string {
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
-function isGeneratedTurn(): boolean {
-  return Math.random() <= NEW_KEY_BIAS;
-}
-
 function isWithin(word: string, range: LetterRange): boolean {
   return word.length >= range.min && word.length <= range.max;
-}
-
-function randomInt(min: number, max: number): number {
-  return min + Math.floor(Math.random() * (max - min + 1));
 }

@@ -1,6 +1,7 @@
 import type * as THREE from 'three';
 import { format } from '../../i18n/format';
 import { i18n } from '../../i18n/i18n';
+import type { RandomSource } from '../../random';
 import { Enemy } from '../Enemy';
 import type { PhaseKind } from '../RunPlan';
 import { hasForestMechanics } from './actionEvents/regions';
@@ -16,13 +17,12 @@ import {
 import { SparkArc } from './twins/SparkArc';
 import { TwinEnemy, type TwinGroup } from './twins/TwinEnemy';
 
-export type Random = () => number;
-
 export const TWIN_CHANCE = 1 / 8;
 export const TWIN_COUNT = { min: 2, max: 4 };
 export const CHAIN_MIN_TWINS = 2;
 
 const TWIN_PHASE: PhaseKind = 'words';
+const RANDOM_STREAM = 'twins';
 const SHAPES: readonly FormationShape[] = ['line', 'vee'];
 const FULL_TURN = Math.PI * 2;
 const CHAIN_NOTES = [72, 76, 79, 84, 88, 91, 96] as const;
@@ -36,11 +36,10 @@ export class Twins implements Mechanic {
   private readonly enabled: boolean;
   private readonly paid = new WeakSet<Enemy>();
   private readonly hurtBy = new WeakSet<TwinGroup>();
+  private readonly random: RandomSource;
 
-  constructor(
-    private readonly context: MechanicContext,
-    private readonly random: Random = Math.random,
-  ) {
+  constructor(private readonly context: MechanicContext) {
+    this.random = context.random.stream(RANDOM_STREAM);
     this.enabled = hasForestMechanics(context);
     context.scene.add(this.arc.group);
   }
@@ -50,7 +49,7 @@ export class Twins implements Mechanic {
   }
 
   onSpawn(enemy: Enemy): void {
-    if (!this.canReplace(enemy) || this.random() >= TWIN_CHANCE) return;
+    if (!this.canReplace(enemy) || this.random.next() >= TWIN_CHANCE) return;
     this.replace(enemy);
   }
 
@@ -87,7 +86,7 @@ export class Twins implements Mechanic {
   private replace(enemy: Enemy): void {
     const { context } = this;
     const anchor = enemy.object.position.clone();
-    const group: TwinGroup = { bobPhase: this.random() * FULL_TURN };
+    const group: TwinGroup = { bobPhase: this.random.next() * FULL_TURN };
     for (const slot of formationSlots(this.twinCount(), this.shape())) {
       const twin = this.createTwin(enemy.word, anchor, slot, group);
       twin.object.position.copy(slotPosition(anchor, slot));
@@ -110,11 +109,11 @@ export class Twins implements Mechanic {
 
   private twinCount(): number {
     const { min, max } = TWIN_COUNT;
-    return min + Math.floor(this.random() * (max - min + 1));
+    return min + this.random.int(max - min + 1);
   }
 
   private shape(): FormationShape {
-    return SHAPES[Math.floor(this.random() * SHAPES.length)];
+    return this.random.pick(SHAPES);
   }
 
   private completingWith(enemy: TwinEnemy): TwinEnemy[] {

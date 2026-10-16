@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { allowedKeysFor } from '../../course/regions';
 import { i18n } from '../../i18n/i18n';
+import type { RandomSource } from '../../random';
 import { MAX_ENEMIES } from '../board';
 import { Boss } from '../Boss';
 import type { Enemy } from '../Enemy';
@@ -13,7 +14,6 @@ import {
   WAVE_EVENT_KINDS,
   type EventKit,
   type EventPlan,
-  type Random,
   type WaveEventKind,
 } from './waveEvents/events';
 import { EVENT_SOUNDS, type EventCue } from './waveEvents/sounds';
@@ -23,6 +23,7 @@ export const CHEST_COINS = 15;
 export const DEFAULT_EVENTS = 1;
 
 const EVENT_PHASE: PhaseKind = 'words';
+const RANDOM_STREAM = 'waveEvents';
 const LETTER = /\p{L}/u;
 const ACCENTS: Readonly<Record<WaveEventKind, string>> = {
   rush: '#7dd3ff',
@@ -38,12 +39,12 @@ interface ActiveEvent {
   sinceLast: number;
 }
 
-export function eventDelays(phase: Phase, random: Random): number[] {
+export function eventDelays(phase: Phase, random: RandomSource): number[] {
   const events = phase.events ?? DEFAULT_EVENTS;
   const slot = (EVENT_WINDOW.end - EVENT_WINDOW.start) / events;
   return Array.from({ length: events }, (_, index) => {
     const start = EVENT_WINDOW.start + slot * index;
-    const share = THREE.MathUtils.lerp(start, start + slot, random());
+    const share = THREE.MathUtils.lerp(start, start + slot, random.next());
     return phase.count * phase.spawnInterval * share;
   });
 }
@@ -55,11 +56,11 @@ export class WaveEvents implements Mechanic {
   private clock = 0;
   private active: ActiveEvent | undefined;
   private fired = false;
+  private random: RandomSource;
+  private phaseCount = 0;
 
-  constructor(
-    private readonly context: MechanicContext,
-    private readonly random: Random = Math.random,
-  ) {
+  constructor(private readonly context: MechanicContext) {
+    this.random = context.random.stream(RANDOM_STREAM);
     this.kit = this.createKit();
   }
 
@@ -75,6 +76,8 @@ export class WaveEvents implements Mechanic {
   }
 
   onPhaseChange(phase: Phase): void {
+    this.random = this.context.random.stream(RANDOM_STREAM, this.phaseCount);
+    this.phaseCount += 1;
     this.active = undefined;
     this.clock = 0;
     this.schedule = phase.kind === EVENT_PHASE ? eventDelays(phase, this.random) : [];
@@ -106,7 +109,7 @@ export class WaveEvents implements Mechanic {
   }
 
   private pickKind(): WaveEventKind {
-    return WAVE_EVENT_KINDS[Math.floor(this.random() * WAVE_EVENT_KINDS.length)];
+    return this.random.pick(WAVE_EVENT_KINDS);
   }
 
   private start(kind: WaveEventKind): void {
@@ -149,6 +152,7 @@ export class WaveEvents implements Mechanic {
 
   private createKit(): EventKit {
     const { context } = this;
+    const random = (): RandomSource => this.random;
     const host: EventHost = {
       dismiss: (enemy) => context.removeEnemy(enemy),
       land: (position, color) => this.land(position, color),
@@ -164,7 +168,9 @@ export class WaveEvents implements Mechanic {
       look: { shape: context.theme.enemyShape, colors: context.theme.enemyColors },
       enemies: context.enemies,
       host,
-      random: this.random,
+      get random() {
+        return random();
+      },
       createLabel: () => context.createLabel(),
     };
   }

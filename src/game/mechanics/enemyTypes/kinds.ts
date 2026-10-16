@@ -1,6 +1,7 @@
 import { courseFor } from '../../../course/course';
 import { REGIONS, allowedKeysFor, type Level } from '../../../course/regions';
 import type { WordLanguage } from '../../../profiles/Profile';
+import type { RandomSource } from '../../../random';
 import type { MechanicContext } from '../Mechanic';
 
 export type EnemyKind =
@@ -15,7 +16,6 @@ export type EnemyKind =
   | 'bull'
   | 'nest'
   | 'thief';
-export type Random = () => number;
 export type KindsContext = Pick<MechanicContext, 'level' | 'language' | 'allMechanicsUnlocked'>;
 
 const ENEMY_KINDS: readonly EnemyKind[] = [
@@ -108,10 +108,10 @@ export function specialCap(context: KindsContext): number {
 
 export function rollKind(
   kinds: readonly EnemyKind[],
-  random: Random,
+  random: RandomSource,
   share = SPECIAL_SHARE,
 ): EnemyKind | undefined {
-  const roll = random();
+  const roll = random.next();
   if (kinds.length === 0 || roll >= share) return undefined;
   const total = kinds.reduce((sum, kind) => sum + KIND_WEIGHTS[kind], 0);
   let position = (roll / share) * total;
@@ -126,8 +126,8 @@ export function kindLimit(kind: EnemyKind): number {
   return KIND_LIMITS[kind] ?? Number.POSITIVE_INFINITY;
 }
 
-export function randomInt(min: number, max: number, random: Random): number {
-  return min + Math.floor(random() * (max - min + 1));
+export function randomInt(min: number, max: number, random: RandomSource): number {
+  return min + random.int(max - min + 1);
 }
 
 function reachableUnlock(unlock: Unlock, language: WordLanguage): Unlock {

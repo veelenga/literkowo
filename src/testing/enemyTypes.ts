@@ -10,6 +10,7 @@ import {
 } from '../game/mechanics/enemyTypes/kinds';
 import type { MechanicContext } from '../game/mechanics/Mechanic';
 import type { WordLanguage } from '../profiles/Profile';
+import { randomFrom } from '../random';
 import { fakeBoard } from './enemyBoard';
 import { levelWords, requireLevel } from './levels';
 
@@ -52,9 +53,10 @@ export function enemyTypesBoard(
     loseLife,
     shakeCamera,
     announce,
+    random: randomFrom(random),
     ...overrides,
   });
-  const mechanic = new EnemyTypes(board.context, random);
+  const mechanic = new EnemyTypes(board.context);
   const spawn = (enemy: Enemy = board.enemyAt(SPAWN_RADIUS)): Enemy => {
     mechanic.onSpawn(enemy);
     return board.enemies[board.enemies.length - 1];

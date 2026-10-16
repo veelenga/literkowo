@@ -1,11 +1,12 @@
 import * as THREE from 'three';
 import { allowedKeysFor } from '../../course/regions';
+import type { RandomSource } from '../../random';
 import { SPAWN_RADIUS } from '../board';
 import type { Enemy } from '../Enemy';
 import type { PhaseKind } from '../RunPlan';
 import { hasForestMechanics } from './actionEvents/regions';
 import { BomberEnemy, EMBER_COLOR } from './bombers/BomberEnemy';
-import { bomberWord, type Random } from './bombers/bomberWord';
+import { bomberWord } from './bombers/bomberWord';
 import { BLAST_RADIUS, Detonations } from './bombers/Detonations';
 import { Knockback } from './bombers/Knockback';
 import { Shockwaves } from './bombers/Shockwaves';
@@ -18,6 +19,7 @@ export const BOMBER_SPEED_SHARE = 0.55;
 export const BLOWBACK_DISTANCE = 4;
 
 const BOMBER_PHASES: ReadonlySet<PhaseKind> = new Set(['words', 'boss']);
+const RANDOM_STREAM = 'bombers';
 const BLOWBACK_SHAKE = { strength: 0.45, seconds: 0.6 };
 const WAVE_MARGIN = 1.5;
 const WAVE: WaveStyle = {
@@ -34,12 +36,11 @@ export class Bombers implements Mechanic {
   private readonly detonations: Detonations;
   private readonly enabled: boolean;
   private readonly allowedKeys: string;
+  private readonly random: RandomSource;
   private countdown: number;
 
-  constructor(
-    private readonly context: MechanicContext,
-    private readonly random: Random = Math.random,
-  ) {
+  constructor(private readonly context: MechanicContext) {
+    this.random = context.random.stream(RANDOM_STREAM);
     this.enabled = hasForestMechanics(context);
     this.allowedKeys = allowedKeysFor(context.level, context.language);
     this.knockback = new Knockback((enemy) => context.enemies.includes(enemy));
@@ -112,6 +113,6 @@ export class Bombers implements Mechanic {
 
   private nextInterval(): number {
     const { min, max } = BOMBER_INTERVAL;
-    return min + this.random() * (max - min);
+    return min + this.random.next() * (max - min);
   }
 }

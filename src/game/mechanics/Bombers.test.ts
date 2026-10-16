@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
 import { fakeBoard } from '../../testing/enemyBoard';
+import { randomFrom } from '../../random';
 import { requireLevel } from '../../testing/levels';
 import { Boss } from '../Boss';
 import type { Enemy } from '../Enemy';
@@ -16,7 +17,7 @@ import type { MechanicContext } from './Mechanic';
 const FRAME = 1 / 30;
 const FOREST = requireLevel('las-2');
 const MEADOW = requireLevel('polana-2');
-const ALWAYS_LOW = () => 0;
+const ALWAYS_LOW = randomFrom(() => 0);
 const BOSS_PHASE: Phase = { kind: 'boss', count: 6, speed: 0.4, spawnInterval: 0 };
 const WARMUP: Phase = { kind: 'warmup', count: 8, speed: 0.55, spawnInterval: 1.5 };
 const BOMBER_WORD = 'kasztan';
@@ -25,8 +26,15 @@ function setup(overrides: Partial<MechanicContext> = {}) {
   const announce = vi.fn<MechanicContext['announce']>();
   const setTimeScale = vi.fn<MechanicContext['setTimeScale']>();
   const shakeCamera = vi.fn<MechanicContext['shakeCamera']>();
-  const board = fakeBoard({ announce, setTimeScale, shakeCamera, level: FOREST, ...overrides });
-  const bombers = new Bombers(board.context, ALWAYS_LOW);
+  const board = fakeBoard({
+    announce,
+    setTimeScale,
+    shakeCamera,
+    level: FOREST,
+    random: ALWAYS_LOW,
+    ...overrides,
+  });
+  const bombers = new Bombers(board.context);
   const bomberAt = (distance: number): BomberEnemy => {
     const bomber = new BomberEnemy(BOMBER_WORD, board.context.createLabel(), 1, 'crystal');
     bomber.object.position.set(0, 0, -distance);

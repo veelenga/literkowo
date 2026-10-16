@@ -99,6 +99,7 @@ export class Enemy {
   readonly object = new THREE.Group();
   readonly color: THREE.Color;
   readonly tags = new Set<string>();
+  spawnIndex?: number;
   protected readonly rig = new THREE.Group();
   protected readonly outward = new THREE.Vector3();
   protected readonly face: GlowingFace | undefined;

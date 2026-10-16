@@ -1,4 +1,5 @@
 import { i18n } from '../../i18n/i18n';
+import type { RandomSource } from '../../random';
 import { Enemy } from '../Enemy';
 import type { PhaseKind } from '../RunPlan';
 import { createSpecial } from './enemyTypes/factory';
@@ -10,7 +11,6 @@ import {
   rollKind,
   specialCap,
   type EnemyKind,
-  type Random,
 } from './enemyTypes/kinds';
 import { SpecialEnemy } from './enemyTypes/SpecialEnemy';
 import { Stage } from './enemyTypes/Stage';
@@ -18,6 +18,7 @@ import type { Mechanic, MechanicContext } from './Mechanic';
 import { wordPoints } from './mergeEnemies/scoring';
 
 const REPLACING_PHASE: PhaseKind = 'words';
+const RANDOM_STREAM = 'enemyTypes';
 const ACCENTS: Readonly<Record<EnemyKind, string>> = {
   jumper: '#7dff4f',
   balloon: '#ff7ad9',
@@ -37,11 +38,10 @@ export class EnemyTypes implements Mechanic {
   private readonly cap: number;
   private readonly stage: Stage;
   private readonly introduced = new Set<EnemyKind>();
+  private readonly random: RandomSource;
 
-  constructor(
-    private readonly context: MechanicContext,
-    private readonly random: Random = Math.random,
-  ) {
+  constructor(private readonly context: MechanicContext) {
+    this.random = context.random.stream(RANDOM_STREAM);
     this.kinds = availableKinds(context);
     this.cap = specialCap(context);
     this.stage = new Stage(context);

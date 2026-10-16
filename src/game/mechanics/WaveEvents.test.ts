@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
 import { fakeBoard } from '../../testing/enemyBoard';
+import { randomFrom } from '../../random';
 import { levelWords, requireLevel } from '../../testing/levels';
 import { MAX_ENEMIES, SPAWN_RADIUS } from '../board';
 import { Boss } from '../Boss';
@@ -31,8 +32,9 @@ function eventBoard(roll: number, phase: Phase = WORDS) {
     words: levelWords(level, 'pl'),
     announce,
     addCoins,
+    random: randomFrom(() => roll),
   });
-  const mechanic = new WaveEvents(board.context, () => roll);
+  const mechanic = new WaveEvents(board.context);
   mechanic.onPhaseChange(phase);
   const wait = (seconds: number) => {
     for (let time = 0; time < seconds; time += FRAME) {
@@ -40,7 +42,13 @@ function eventBoard(roll: number, phase: Phase = WORDS) {
       for (const enemy of [...board.enemies]) enemy.update(FRAME, time, VIEWER);
     }
   };
-  const untilEvent = () => wait(eventDelays(phase, () => roll)[0] + FRAME);
+  const untilEvent = () =>
+    wait(
+      eventDelays(
+        phase,
+        randomFrom(() => roll),
+      )[0] + FRAME,
+    );
   const pieces = () => board.enemies.filter((enemy) => enemy.tags.has(WAVE_EVENT_TAG));
   return { ...board, mechanic, announce, addCoins, wait, untilEvent, pieces };
 }
@@ -110,7 +118,10 @@ describe('WaveEvents timing', () => {
   });
 
   it('spreads several events over the middle third of the phase', () => {
-    const [first, second] = eventDelays({ ...WORDS, events: 2 }, () => 0);
+    const [first, second] = eventDelays(
+      { ...WORDS, events: 2 },
+      randomFrom(() => 0),
+    );
     const length = WORDS.count * WORDS.spawnInterval;
     expect(first).toBeCloseTo(length * EVENT_WINDOW.start);
     expect(second).toBeCloseTo(length / 2);

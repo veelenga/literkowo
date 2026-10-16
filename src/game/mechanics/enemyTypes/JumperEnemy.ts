@@ -23,10 +23,12 @@ export class JumperEnemy extends SpecialEnemy {
   private readonly pounce = new Envelope();
   private readonly ground = new THREE.Vector3();
   private readonly stretchScale = new THREE.Vector3();
-  private cycle = Math.random();
   private letters = 0;
 
-  constructor(spec: SpecialSpec) {
+  constructor(
+    spec: SpecialSpec,
+    private cycle: number,
+  ) {
     super({ ...spec, speed: 0 }, LOOK, jumperBody());
     this.hopSpeed = spec.speed;
   }

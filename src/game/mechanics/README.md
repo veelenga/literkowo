@@ -6,7 +6,7 @@ A mechanic is one gameplay feature in one module. The game owns the rules (spawn
 
 1. Create `src/game/mechanics/<Name>.ts` with a class that implements `Mechanic` and takes `MechanicContext` (or a `Pick` of it) in the constructor.
 2. Add it to `MECHANICS` in `index.ts`. That is the only shared line you touch here.
-3. Add a test next to it. Use `fakeMechanicContext(overrides)` from `src/testing/mechanicContext.ts`, so no WebGL is needed.
+3. Add a test next to it. Use `fakeMechanicContext(overrides)` from `src/testing/mechanicContext.ts`, so no WebGL is needed. Pass `random: randomFrom(() => value)` from `src/random.ts` to choose the rolls.
 
 ## Hooks
 
@@ -33,6 +33,7 @@ Read only:
 - `phase` (the current phase of the run plan, `src/game/RunPlan.ts`), `playing`, `shields`, `guards`, `theme`, `sfx`, `words` (the run's `WordSource`, with the keys and lengths of the current phase), `level` and `language` (the profile word language).
 - `allMechanicsUnlocked`: true when the run plan opens every mechanic, as the arena does. A mechanic that unlocks by `level` must then run as unlocked, see `hasForestMechanics` in `actionEvents/regions.ts` and `availableKinds` in `enemyTypes/kinds.ts`.
 - `equipped`: the ids of the pet and the hat the profile wears (`src/course/shop.ts` has their specs). The game already puts the hat on the hero.
+- `random`: the `RandomSource` of the run (`src/random.ts`). Take your own stream in the constructor with `context.random.stream('<name>')` and draw every choice that changes gameplay from it: words, kinds, directions, timers. A run with a seed (`seed` in the run plan) then plays the same on every device, and one mechanic never shifts the draws of another. Purely visual effects may keep `Math.random`.
 
 Actions:
 
@@ -51,7 +52,7 @@ Actions:
 - `boostRewards({ coins, xp })`: scales the XP of the whole run and the coin payout of the run, for example `1.2` for 20% more. The XP grows during the run. The coin factor reaches `GameResult.coinBoost` and scales the whole payout after the run, bonuses included (`levelCoins` in `src/course/coins.ts`, `arenaPayout` in `src/arena/economy.ts`). Each factor stays between 1 and the cap in `MAX_BOOST` (`src/course/powers.ts`).
 - `stats.keepFeverOnSlips(slips)`: the next `slips` mistakes during the fever keep it going. They still count as mistakes and still break the combo.
 
-Enemies also offer `tags` (a `Set<string>` for your own markers), `typedLength` (letters typed so far), `setSpeedScale(scale)`, `freeze(seconds)` (stops and dims), `isFrozen`, `burstPosition` and `setLabelMode('full' | 'firstLetter' | 'hidden')`. `firstLetter` shows the typed part and the next letter and masks the rest.
+Enemies also offer `tags` (a `Set<string>` for your own markers), `spawnIndex` (the number of the spawn in the run's spawn script, from 0, the same for every run with the same seed; enemies that replace a spawn as it lands, such as special enemies and twins, share its number, and enemies a mechanic adds on its own have none), `typedLength` (letters typed so far), `setSpeedScale(scale)`, `freeze(seconds)` (stops and dims), `isFrozen`, `burstPosition` and `setLabelMode('full' | 'firstLetter' | 'hidden')`. `firstLetter` shows the typed part and the next letter and masks the rest.
 
 ## Composition points
 
