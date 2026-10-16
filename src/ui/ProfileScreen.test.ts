@@ -15,6 +15,7 @@ vi.mock('./menuMotion', () => ({
 
 const ACTIVE_KEY = 'literkowo.activeProfile';
 const NAMES = ['Ola', 'Kuba', 'Zosia'];
+const WON = { stars: 1, score: 10, accuracy: 0.9, wpm: 10 };
 
 function setup(profiles: Profile[] = []) {
   const store = new ProfileStore();
@@ -24,6 +25,7 @@ function setup(profiles: Profile[] = []) {
     onPlay: vi.fn<(profile: Profile) => void>(),
     onSettings: vi.fn(),
     onShop: vi.fn<(profile: Profile) => void>(),
+    onPlacement: vi.fn<(profile: Profile) => void>(),
   };
   const screen = new ProfileScreen(store, actions);
   return { store, screen, ...actions };
@@ -99,6 +101,41 @@ describe('ProfileScreen', () => {
     link?.click();
     expect(onShop).toHaveBeenCalledWith(ola);
     expect(onPlay).not.toHaveBeenCalled();
+  });
+
+  it('offers the placement test from a quiet button until a star past Polana', () => {
+    const ola = createProfile('Ola', 'a');
+    const { screen, onPlacement, onPlay } = open([ola]);
+    const button = screen.element.querySelector<HTMLButtonElement>('.play-panel .placement-link');
+    expect(button?.textContent).toBe('Sprawdzian');
+    expect(button?.classList).toContain('button-ghost');
+    button?.click();
+    expect(onPlacement).toHaveBeenCalledWith(ola);
+    expect(onPlay).not.toHaveBeenCalled();
+    dispose?.();
+    const kuba = { ...createProfile('Kuba', 'b'), levelResults: { 'las-1': WON } };
+    const later = open([kuba]);
+    expect(later.screen.element.querySelector('.placement-link')).toBeNull();
+  });
+
+  it('creates a profile and starts learning or the placement test', () => {
+    const { screen, store, onPlacement } = open();
+    const panel = () => screen.element.querySelector('.create-panel');
+    screen.element.querySelector<HTMLButtonElement>('.profile-card-new')?.click();
+    const buttons = [
+      ...(panel()?.querySelectorAll<HTMLButtonElement>('.create-actions .button') ?? []),
+    ];
+    expect(buttons.map((button) => button.textContent)).toEqual([
+      'Anuluj',
+      'Umiem już pisać',
+      'Zacznij naukę',
+    ]);
+    const input = panel()?.querySelector('input');
+    if (input) input.value = 'Ola';
+    buttons[1].click();
+    const [created] = store.all();
+    expect(created.name).toBe('Ola');
+    expect(onPlacement).toHaveBeenCalledWith(created);
   });
 
   describe('keys', () => {

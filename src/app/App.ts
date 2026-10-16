@@ -54,6 +54,7 @@ import { ArenaFlow, type Screen } from './ArenaFlow';
 import type { GameRun } from './GameRun';
 import { loadGameModule, prefetchGameModule, type GameModule } from './gameModule';
 import { PageAttention } from './PageAttention';
+import { PlacementFlow } from './PlacementFlow';
 
 const COMBO_FOR_FULL_INTENSITY = 20;
 const FULL_INTENSITY = 1;
@@ -67,6 +68,14 @@ export class App {
     showMenu: (create) => this.showMenu(create),
     showMap: (profile) => this.showMap(profile),
     showShop: (profile, exit, tab) => this.showShop(profile, exit, tab),
+    startRun: (profile, run) => this.startRun(profile, run),
+    openOverlay: (overlay) => this.overlays.open(overlay),
+    dismissThen: (next) => this.dismissThen(next),
+    save: (profile) => this.save(profile),
+  });
+  private readonly placement = new PlacementFlow({
+    showMap: (profile) => this.showMap(profile),
+    showArena: (profile) => this.arena.show(profile),
     startRun: (profile, run) => this.startRun(profile, run),
     openOverlay: (overlay) => this.overlays.open(overlay),
     dismissThen: (next) => this.dismissThen(next),
@@ -118,6 +127,10 @@ export class App {
           onBack: () => this.showProfiles(),
           backLabel: i18n.t.features.shop.backToProfiles,
         });
+      },
+      onPlacement: (profile) => {
+        sfx.unlock();
+        this.placement.offer(profile, () => undefined);
       },
     });
     this.showScreen(screen.element);
