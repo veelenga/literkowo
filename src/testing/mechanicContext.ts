@@ -3,6 +3,7 @@ import { Sfx } from '../audio/Sfx';
 import type { Phase } from '../game/RunPlan';
 import type { MechanicContext } from '../game/mechanics/Mechanic';
 import { SessionStats } from '../game/SessionStats';
+import { systemRandom } from '../random';
 import { themeFor } from '../game/themes';
 import { levelWords, requireLevel } from './levels';
 
@@ -35,6 +36,7 @@ export function fakeMechanicContext(overrides: Partial<MechanicContext> = {}): M
     allMechanicsUnlocked: false,
     language: 'pl',
     equipped: {},
+    random: systemRandom(),
     createLabel: unavailable('createLabel'),
     addEnemy: noop,
     removeEnemy: noop,

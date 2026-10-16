@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
 import { fakeBoard } from '../../testing/enemyBoard';
+import { randomFrom } from '../../random';
 import type { Phase } from '../RunPlan';
 import type { MechanicContext } from './Mechanic';
 import { POWER_SPEED_SCALE, PowerWords } from './PowerWords';
@@ -15,8 +16,8 @@ const VIEWER = { x: 0, y: 10, z: 10 };
 
 function setup(overrides: Partial<MechanicContext> = {}, random = ALWAYS_LOW) {
   const announce = vi.fn<MechanicContext['announce']>();
-  const board = fakeBoard({ announce, ...overrides });
-  const powerWords = new PowerWords(board.context, random);
+  const board = fakeBoard({ announce, random: randomFrom(random), ...overrides });
+  const powerWords = new PowerWords(board.context);
   board.enemyAt(8);
   const powerEnemies = () => board.enemies.filter((enemy) => enemy === powerWords.powerEnemy);
   return { ...board, announce, powerWords, powerEnemies };

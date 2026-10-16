@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import { fakeBoard } from '../../testing/enemyBoard';
+import { randomFrom } from '../../random';
 import { requireLevel } from '../../testing/levels';
 import { Enemy, type EnemyLook } from '../Enemy';
 import type { Phase } from '../RunPlan';
@@ -33,8 +34,13 @@ function countAndShape(count: number, shape: 'line' | 'vee'): number[] {
 
 function setup(rolls: number[], overrides: Partial<MechanicContext> = {}) {
   const announce = vi.fn<MechanicContext['announce']>();
-  const board = fakeBoard({ announce, level: FOREST, ...overrides });
-  const twins = new Twins(board.context, scripted(...rolls));
+  const board = fakeBoard({
+    announce,
+    level: FOREST,
+    random: randomFrom(scripted(...rolls)),
+    ...overrides,
+  });
+  const twins = new Twins(board.context);
   const spawn = (word = 'dom'): Enemy => {
     const enemy = board.enemyAt(11, word);
     twins.onSpawn(enemy);

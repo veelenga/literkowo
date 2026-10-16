@@ -1,9 +1,10 @@
 import { SPAWN_RADIUS } from '../board';
 import { allowedKeysFor } from '../../course/regions';
+import type { RandomSource } from '../../random';
 import type { Enemy } from '../Enemy';
 import type { PhaseKind } from '../RunPlan';
 import type { Mechanic, MechanicContext } from './Mechanic';
-import { choosePower, choosePowerWord, type PowerWord, type Random } from './powerWords/choice';
+import { choosePower, choosePowerWord, type PowerWord } from './powerWords/choice';
 import { bannerFor, decoratePowerLabel } from './powerWords/label';
 import { PowerEnemy } from './powerWords/PowerEnemy';
 import { powerAccent, powersFor, type Power } from './powerWords/powers';
@@ -15,6 +16,7 @@ export const SUMMON_INTERVAL = { min: 18, max: 28 };
 export const POWER_SPEED_SCALE = 0.8;
 
 const POWER_PHASES: ReadonlySet<PhaseKind> = new Set(['words', 'boss']);
+const RANDOM_STREAM = 'powerWords';
 
 interface Summoned {
   readonly enemy: PowerEnemy;
@@ -24,14 +26,13 @@ interface Summoned {
 export class PowerWords implements Mechanic {
   private readonly spells: Record<Power, Spell>;
   private readonly allowedKeys: string;
+  private readonly random: RandomSource;
   private summoned: Summoned | undefined;
   private lastPower: Power | undefined;
   private countdown: number;
 
-  constructor(
-    private readonly context: MechanicContext,
-    private readonly random: Random = Math.random,
-  ) {
+  constructor(private readonly context: MechanicContext) {
+    this.random = context.random.stream(RANDOM_STREAM);
     this.spells = createSpells(context);
     this.allowedKeys = allowedKeysFor(context.level, context.language);
     this.countdown = this.nextInterval();
@@ -98,6 +99,6 @@ export class PowerWords implements Mechanic {
 
   private nextInterval(): number {
     const { min, max } = SUMMON_INTERVAL;
-    return min + this.random() * (max - min);
+    return min + this.random.next() * (max - min);
   }
 }

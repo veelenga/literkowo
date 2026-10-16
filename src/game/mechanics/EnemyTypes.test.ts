@@ -10,6 +10,7 @@ import {
 } from '../../testing/enemyTypes';
 import { REGIONS, regionsFor } from '../../course/regions';
 import { WORD_LANGUAGES, type WordLanguage } from '../../profiles/Profile';
+import { randomFrom } from '../../random';
 import { requireLevel } from '../../testing/levels';
 import { SPAWN_RADIUS } from '../board';
 import { Boss } from '../Boss';
@@ -90,10 +91,25 @@ describe('EnemyTypes unlocks', () => {
 
   it('turns about one spawn in four into a special enemy', () => {
     const kinds = unlockedKinds(requireLevel('gory-5'), 'pl');
-    expect(rollKind(kinds, () => SPECIAL_SHARE - 0.001)).toBe(kinds.at(-1));
-    expect(rollKind(kinds, () => 0)).toBe('jumper');
-    expect(rollKind(kinds, NO_SPECIAL)).toBeUndefined();
-    expect(rollKind([], () => 0)).toBeUndefined();
+    expect(
+      rollKind(
+        kinds,
+        randomFrom(() => SPECIAL_SHARE - 0.001),
+      ),
+    ).toBe(kinds.at(-1));
+    expect(
+      rollKind(
+        kinds,
+        randomFrom(() => 0),
+      ),
+    ).toBe('jumper');
+    expect(rollKind(kinds, randomFrom(NO_SPECIAL))).toBeUndefined();
+    expect(
+      rollKind(
+        [],
+        randomFrom(() => 0),
+      ),
+    ).toBeUndefined();
   });
 });
 

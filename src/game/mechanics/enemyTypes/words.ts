@@ -1,5 +1,6 @@
 import type { WordSource } from '../../../course/WordSource';
-import { randomInt, type Random } from './kinds';
+import type { RandomSource } from '../../../random';
+import { randomInt } from './kinds';
 
 export interface LetterRange {
   readonly min: number;
@@ -21,11 +22,11 @@ export function keyOf(words: WordSource, length: number): string {
   return Array.from({ length }, () => words.singleLetter()).join('');
 }
 
-export function repeatedKey(words: WordSource, range: LetterRange, random: Random): string {
+export function repeatedKey(words: WordSource, range: LetterRange, random: RandomSource): string {
   return words.singleLetter().repeat(randomInt(range.min, range.max, random));
 }
 
-export function lettersWithin(words: WordSource, range: LetterRange, random: Random): string {
+export function lettersWithin(words: WordSource, range: LetterRange, random: RandomSource): string {
   return letters(words, randomInt(range.min, range.max, random));
 }
 

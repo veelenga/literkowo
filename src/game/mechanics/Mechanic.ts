@@ -3,6 +3,7 @@ import type { Sfx } from '../../audio/Sfx';
 import type { Level } from '../../course/regions';
 import type { WordSource } from '../../course/WordSource';
 import type { Equipped, WordLanguage } from '../../profiles/Profile';
+import type { RandomSource } from '../../random';
 import type { Enemy } from '../Enemy';
 import type { RewardBoost } from '../../course/powers';
 import type { Phase } from '../RunPlan';
@@ -41,6 +42,7 @@ export interface MechanicContext {
   readonly allMechanicsUnlocked: boolean;
   readonly language: WordLanguage;
   readonly equipped: Readonly<Equipped>;
+  readonly random: RandomSource;
   createLabel(): HTMLElement;
   addEnemy(enemy: Enemy, radius?: number): void;
   removeEnemy(enemy: Enemy): void;

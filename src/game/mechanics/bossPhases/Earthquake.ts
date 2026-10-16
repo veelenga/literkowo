@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { RandomSource } from '../../../random';
 import { Boss } from '../../Boss';
 import type { Enemy } from '../../Enemy';
 import type { MechanicContext } from '../Mechanic';
@@ -10,11 +11,19 @@ const DUST_COLOR = new THREE.Color(0xc9a77c);
 const DUST_HEIGHT = 0.3;
 const DUST_RING = { count: 6, radius: 4 };
 const FULL_TURN = Math.PI * 2;
+const RANDOM_STREAM = 'earthquake';
 
-export type EarthquakeContext = Pick<MechanicContext, 'enemies' | 'shakeCamera' | 'particles'>;
+export type EarthquakeContext = Pick<
+  MechanicContext,
+  'enemies' | 'shakeCamera' | 'particles' | 'random'
+>;
 
 export class Earthquake implements BossAttack {
-  constructor(private readonly context: EarthquakeContext) {}
+  private readonly random: RandomSource;
+
+  constructor(private readonly context: EarthquakeContext) {
+    this.random = context.random.stream(RANDOM_STREAM);
+  }
 
   strike(): void {
     this.context.shakeCamera(QUAKE_SHAKE.strength, QUAKE_SHAKE.seconds);
@@ -26,7 +35,7 @@ export class Earthquake implements BossAttack {
 
   private scramble(enemy: Enemy): void {
     const distance = enemy.distanceToCenter;
-    const angle = SCRAMBLE_ARC.from + Math.random() * SCRAMBLE_ARC.span;
+    const angle = SCRAMBLE_ARC.from + this.random.next() * SCRAMBLE_ARC.span;
     enemy.object.position.setX(Math.cos(angle) * distance).setZ(Math.sin(angle) * distance);
     this.puff(enemy.object.position.x, enemy.object.position.z);
   }

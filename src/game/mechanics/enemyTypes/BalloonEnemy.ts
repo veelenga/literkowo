@@ -19,14 +19,16 @@ const DRIFT = { speed: 0.55, reach: 0.35 };
 const LEAVING_CLASS = 'is-leaving';
 
 export class BalloonEnemy extends SpecialEnemy {
-  private readonly driftPhase = Math.random() * Math.PI * 2;
   private readonly position = new THREE.Vector3();
   private rise = 0;
   private fading = 0;
   private time = 0;
   private leaving = false;
 
-  constructor(spec: SpecialSpec) {
+  constructor(
+    spec: SpecialSpec,
+    private readonly driftPhase: number,
+  ) {
     super({ ...spec, speed: 0 }, LOOK, balloonBody());
     this.rig.add(createString());
   }

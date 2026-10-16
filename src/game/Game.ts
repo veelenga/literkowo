@@ -6,6 +6,7 @@ import { allowedKeysFor, type Level } from '../course/regions';
 import { hatSpec } from '../course/shop';
 import { WordSource } from '../course/WordSource';
 import type { Equipped, WordLanguage } from '../profiles/Profile';
+import { seededRandom, systemRandom, type RandomSource } from '../random';
 import { xpPop } from '../ui/progression';
 import {
   BOSS_SPAWN_RADIUS,
@@ -120,6 +121,7 @@ export class Game {
   private readonly player: Player;
   private readonly particles = new Particles(this.scene);
   private readonly world: World;
+  private readonly random: RandomSource;
   private readonly words: WordSource;
   private readonly stats = new SessionStats();
   private readonly rewards: RunRewards;
@@ -161,6 +163,7 @@ export class Game {
     private readonly config: GameConfig,
     private readonly events: GameEvents,
   ) {
+    this.random = runRandom(config.plan.seed);
     this.player = new Player(config.character);
     this.player.setHat(hatSpec(config.equipped.hat));
     this.keys = new KeyTracker(
@@ -273,6 +276,7 @@ export class Game {
       allMechanicsUnlocked: this.config.plan.allMechanicsUnlocked,
       language: this.config.language,
       equipped: this.config.equipped,
+      random: this.random,
       get phase() {
         return phase();
       },
@@ -725,6 +729,10 @@ function firstPhase(plan: RunPlan): RunPhase {
   const phase = plan.phaseAt(FIRST_PHASE);
   if (!phase) throw new Error('A run plan needs at least one phase');
   return phase;
+}
+
+function runRandom(seed: number | undefined): RandomSource {
+  return seed === undefined ? systemRandom() : seededRandom(seed);
 }
 
 function progressStep(seconds: number): number {

@@ -1,4 +1,5 @@
 import type { WordSource } from '../../../course/WordSource';
+import type { RandomSource } from '../../../random';
 import type { Phase } from '../../RunPlan';
 import { BalloonEnemy } from './BalloonEnemy';
 import { BatEnemy } from './BatEnemy';
@@ -7,7 +8,7 @@ import { ChameleonEnemy } from './ChameleonEnemy';
 import { GhostEnemy } from './GhostEnemy';
 import { JumperEnemy } from './JumperEnemy';
 import { NestEnemy } from './NestEnemy';
-import type { EnemyKind, Random } from './kinds';
+import type { EnemyKind } from './kinds';
 import type { SpecialEnemy, SpecialHost, SpecialSpec } from './SpecialEnemy';
 import { KEY_LENGTH, ShieldEnemy } from './ShieldEnemy';
 import { SplitterEnemy } from './SplitterEnemy';
@@ -40,6 +41,7 @@ const SPEED_SHARES = {
 };
 
 const HALF = 0.5;
+const FULL_TURN = Math.PI * 2;
 
 export interface SpawnSource {
   readonly words: WordSource;
@@ -51,23 +53,24 @@ type SpecFor = (word: string) => SpecialSpec;
 
 interface Recipe {
   readonly speedShare: number;
-  create(spec: SpecFor, words: WordSource, random: Random): SpecialEnemy;
+  create(spec: SpecFor, words: WordSource, random: RandomSource): SpecialEnemy;
 }
 
 const RECIPES: Readonly<Record<EnemyKind, Recipe>> = {
   jumper: {
     speedShare: SPEED_SHARES.jumper,
     create: (spec, words, random) =>
-      new JumperEnemy(spec(repeatedKey(words, JUMPER_LETTERS, random))),
+      new JumperEnemy(spec(repeatedKey(words, JUMPER_LETTERS, random)), random.next()),
   },
   balloon: {
     speedShare: 0,
-    create: (spec, words) => new BalloonEnemy(spec(wordWithin(words, BALLOON_LETTERS))),
+    create: (spec, words, random) =>
+      new BalloonEnemy(spec(wordWithin(words, BALLOON_LETTERS)), random.next() * FULL_TURN),
   },
   bat: {
     speedShare: SPEED_SHARES.bat,
     create: (spec, words, random) =>
-      new BatEnemy(spec(words.shortWord()), random() < HALF ? 1 : -1),
+      new BatEnemy(spec(words.shortWord()), random.next() < HALF ? 1 : -1),
   },
   swarm: {
     speedShare: SPEED_SHARES.swarm,
@@ -89,7 +92,7 @@ const RECIPES: Readonly<Record<EnemyKind, Recipe>> = {
   ghost: {
     speedShare: SPEED_SHARES.ghost,
     create: (spec, words, random) =>
-      new GhostEnemy(spec(wordWithin(words, GHOST_LETTERS)), random() < HALF ? 1 : -1),
+      new GhostEnemy(spec(wordWithin(words, GHOST_LETTERS)), random.next() < HALF ? 1 : -1),
   },
   chameleon: {
     speedShare: SPEED_SHARES.chameleon,
@@ -121,7 +124,7 @@ export function createSpecial(
   kind: EnemyKind,
   source: SpawnSource,
   host: SpecialHost,
-  random: Random,
+  random: RandomSource,
 ): SpecialEnemy {
   const recipe = RECIPES[kind];
   const spec: SpecFor = (word) => ({
