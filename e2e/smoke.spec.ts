@@ -9,6 +9,8 @@ const PROFILES_KEY = 'literkowo.profiles';
 const ACTIVE_PROFILE_KEY = 'literkowo.activeProfile';
 const KEYBOARD_PROFILE_ID = 'keyboard-walk';
 const CARD_KEY_READY_MS = 700;
+const PLACEMENT_STAGES = 5;
+const FIRST_STAGE_LABEL = 'Etap 1 z 5';
 const FIRST_LEVEL_DONE = {
   'polana-1': { stars: 3, score: 120, accuracy: 0.98, wpm: 8 },
 };
@@ -147,6 +149,38 @@ test('walks from the profiles into a level and back from pause with the keyboard
     await page.keyboard.press('Enter');
     await expect(page.locator('.pause-panel')).toHaveCount(0);
   });
+
+  expect(consoleErrors).toEqual([]);
+});
+
+test('starts the placement test from the create form', async ({ page }) => {
+  const consoleErrors = collectConsoleErrors(page);
+
+  await test.step('creates a profile with the placement button', async () => {
+    await page.goto('/');
+    await page.locator('.profile-card-new').click();
+    const panel = page.locator('.create-panel');
+    await panel.getByRole('textbox').fill(PROFILE_NAME);
+    await panel.locator('.knows-typing').click();
+    await expect(page.locator('.placement-intro .stage-chip')).toHaveCount(PLACEMENT_STAGES);
+  });
+
+  await test.step(
+    'runs the first stage with real words',
+    async () => {
+      await page.waitForTimeout(CARD_KEY_READY_MS);
+      await page.keyboard.press('Enter');
+      await expect(stageCanvas(page)).toBeVisible({ timeout: LEVEL_START_TIMEOUT_MS });
+      await expect(page.locator('.progress-label')).toHaveText(FIRST_STAGE_LABEL);
+      await expect(page.locator('.word-label').first()).toHaveText(/\S/, {
+        timeout: LEVEL_START_TIMEOUT_MS,
+      });
+      const word = await page.locator('.word-label').first().innerText();
+      await page.keyboard.type(word.trim());
+      await expect(hudScore(page)).not.toHaveText(INITIAL_SCORE);
+    },
+    { timeout: LEVEL_START_TIMEOUT_MS },
+  );
 
   expect(consoleErrors).toEqual([]);
 });
