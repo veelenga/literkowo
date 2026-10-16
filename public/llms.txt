@@ -1,0 +1,36 @@
+# Literkowo
+
+> Literkowo is a free browser typing game for children aged 9 and up. Kids learn touch typing with all ten fingers, one new key per level, from the home row to the Polish letters, in a blocky 3D adventure with special enemies, bosses, an arena and a shop. The interface is in Polish and Ukrainian, and the typing words are in Polish and English.
+
+In Polish: "Literkowo: gra do nauki pisania na klawiaturze dla dzieci". In Ukrainian: "Literkowo: гра для навчання друку для дітей".
+
+**What it is.** A typing tutor that plays like a game. Words walk toward the hero on a 3D board, and the child defeats them by typing them. Accuracy comes before speed: stars come from accuracy and a mistake breaks the combo, so careful typing is always the best way to win. It is free, has no ads, needs no account and runs in any modern browser: on a computer, on a tablet with a keyboard, or on a phone with a keyboard on the screen. It can be installed as an app and then works offline.
+
+**Who it is for.** Children from about 9 years old who are learning to type, and parents and teachers looking for a free Polish typing course. Several children can share one device, each with their own profile. Progress stays in the browser and nothing is sent to a server.
+
+**The course.** Every level adds one new key, with the finger and a hands diagram shown before it. The first level teaches f and j together. Levels come in four kinds: learn, practice, review and boss. Every review ends with a mini boss, and every region ends with a boss. The five regions are Polana (meadow: f j d k s l a ;), Las (forest: g h e i r u), Góry (mountains: t y w o q p), Jaskinia (cave: v m c n x z b , .) and Wyspa Ogonków (island: the Polish letters ą ę ó ł ś ć ż ź ń, typed with right Alt). Profiles that type Polish words get 99 levels, profiles that type English words get 75. Stars need 85%, 93% and 97% accuracy.
+
+**Enemies and bosses.** Eleven special enemy types unlock along the course: jumper, balloon, bat, ghost, thief, swarm, splitter, shield, bull, chameleon and nest. Power words, bombers, twins, merging enemies and mid wave events (a rush of short words, a meteor shower, a treasure chest) keep levels lively. Each region boss fights in three phases, with attacks such as darkness, fog and an earthquake.
+
+**Arena.** Opens after the first region boss. Endless waves on the keys of any region the child has finished, four difficulties (Spokojnie, Normalnie, Szybko, Szaleństwo), bronze, silver and gold medals for waves cleared and accuracy, and a boss every fifth wave on the two fastest difficulties.
+
+**Shop.** Coins from levels and the arena buy pets, hats and characters for the hero. Every pet and hat has one small power, such as catching a bat or giving a heart back. No power types for the player or raises accuracy. Trophies mark milestones.
+
+**Languages.** Interface in Polish (default) and Ukrainian. Typing words in Polish or English, chosen per profile.
+
+**Tech and licence.** TypeScript, Vite, three.js and Web Audio, with music and sound generated live. An installable web app through vite-plugin-pwa, tested with Vitest and Playwright. The source code is public on GitHub. The repository has no licence file, so reusing the code needs the author's permission. Characters are "Blocky Characters" by Kenney (CC0), fonts are Nunito and JetBrains Mono (OFL). Made by Vitalii Elenhaupt.
+
+## Play
+
+- [Literkowo](https://veelenga.github.io/literkowo/): the live game, free in the browser
+
+## Docs
+
+- [README](https://raw.githubusercontent.com/veelenga/literkowo/main/README.md): overview, how to run it locally and credits
+- [Intent](https://raw.githubusercontent.com/veelenga/literkowo/main/docs/INTENT.md): the goals of the game, who it is for and how it compares with other typing tutors
+- [Spec](https://raw.githubusercontent.com/veelenga/literkowo/main/docs/SPEC.md): how the game works today, with every level, enemy, rule and number
+
+## Optional
+
+- [Full description](https://veelenga.github.io/literkowo/llms-full.txt): this summary with a short description of every feature
+- [Source code](https://github.com/veelenga/literkowo): the GitHub repository
