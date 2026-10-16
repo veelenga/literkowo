@@ -1,5 +1,5 @@
 import type { HtmlTagDescriptor } from 'vite';
-import { escapeHtml, jsonForScript } from './html';
+import { escapeHtml, jsonForScript } from './html.ts';
 import {
   ALTERNATE_LOCALES,
   AUTHOR,
@@ -12,8 +12,8 @@ import {
   SQUARE_IMAGE,
   siteUrl,
   type SiteImage,
-} from './site';
-import { structuredData } from './structuredData';
+} from './site.ts';
+import { structuredData } from './structuredData.ts';
 
 const ROBOTS = 'index, follow, max-image-preview:large';
 const OPEN_GRAPH_TYPE = 'website';

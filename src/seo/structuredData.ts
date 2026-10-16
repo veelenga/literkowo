@@ -11,7 +11,7 @@ import {
   SQUARE_IMAGE,
   siteUrl,
   type SiteImage,
-} from './site';
+} from './site.ts';
 
 const SCHEMA_CONTEXT = 'https://schema.org';
 const GAME_TYPES = ['VideoGame', 'WebApplication'];

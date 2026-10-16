@@ -1,7 +1,7 @@
 import type { HtmlTagDescriptor } from 'vite';
 import { describe, expect, it } from 'vitest';
-import { headTags } from './headTags';
-import { SHARE_IMAGE, SITE_DESCRIPTION, SITE_TITLE, SITE_URL, siteUrl } from './site';
+import { headTags } from './headTags.ts';
+import { SHARE_IMAGE, SITE_DESCRIPTION, SITE_TITLE, SITE_URL, siteUrl } from './site.ts';
 
 const ABSOLUTE_URL = /^https:\/\//;
 

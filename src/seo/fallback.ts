@@ -1,5 +1,5 @@
-import { escapeHtml } from './html';
-import { FALLBACK_TEXTS, NOSCRIPT_TEXTS, SITE_NAME, type LocalizedText } from './site';
+import { escapeHtml } from './html.ts';
+import { FALLBACK_TEXTS, NOSCRIPT_TEXTS, SITE_NAME, type LocalizedText } from './site.ts';
 
 export const APP_ROOT = '<div id="app"></div>';
 

@@ -1,4 +1,4 @@
-import { SCREENSHOT, SHARE_IMAGE, SITE_URL, siteUrl } from './site';
+import { SCREENSHOT, SHARE_IMAGE, SITE_URL, siteUrl } from './site.ts';
 
 export const SITEMAP_FILE = 'sitemap.xml';
 

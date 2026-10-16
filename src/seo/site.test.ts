@@ -11,7 +11,7 @@ import {
   SITE_URL,
   SQUARE_IMAGE,
   siteUrl,
-} from './site';
+} from './site.ts';
 
 const MAX_TITLE_LENGTH = 60;
 const MIN_DESCRIPTION_LENGTH = 120;

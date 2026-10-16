@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
-import { SCREENSHOT, SITE_DESCRIPTION, SITE_LANGUAGE, SITE_NAME } from './src/seo/site';
-import { seoPlugin } from './src/seo/vitePlugin';
+import { SCREENSHOT, SITE_DESCRIPTION, SITE_LANGUAGE, SITE_NAME } from './src/seo/site.ts';
+import { seoPlugin } from './src/seo/vitePlugin.ts';
 
 const THREE_CHUNK_LIMIT_KB = 670;
 

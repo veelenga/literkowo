@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { SCREENSHOT, SHARE_IMAGE, SITE_URL, siteUrl } from './site';
-import { sitemapXml } from './sitemap';
+import { SCREENSHOT, SHARE_IMAGE, SITE_URL, siteUrl } from './site.ts';
+import { sitemapXml } from './sitemap.ts';
 
 const BUILD_DATE = new Date('2026-10-16T12:00:00Z');
 

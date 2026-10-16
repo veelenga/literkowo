@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { APP_ROOT } from './fallback';
-import { withSeo } from './vitePlugin';
+import { APP_ROOT } from './fallback.ts';
+import { withSeo } from './vitePlugin.ts';
 
 const PAGE = `<html><head></head><body>${APP_ROOT}</body></html>`;
 

@@ -1,7 +1,7 @@
 import type { HtmlTagDescriptor, Plugin } from 'vite';
-import { APP_ROOT, appRootWithFallback } from './fallback';
-import { headTags } from './headTags';
-import { SITEMAP_FILE, sitemapXml } from './sitemap';
+import { APP_ROOT, appRootWithFallback } from './fallback.ts';
+import { headTags } from './headTags.ts';
+import { SITEMAP_FILE, sitemapXml } from './sitemap.ts';
 
 const PLUGIN_NAME = 'literkowo-seo';
 

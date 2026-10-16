@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { appRootWithFallback } from './fallback';
-import { escapeHtml } from './html';
-import { FALLBACK_TEXTS, NOSCRIPT_TEXTS } from './site';
+import { appRootWithFallback } from './fallback.ts';
+import { escapeHtml } from './html.ts';
+import { FALLBACK_TEXTS, NOSCRIPT_TEXTS } from './site.ts';
 
 const APP_ROOT_MARKUP = /^<div id="app">.+<\/div>$/s;
 
