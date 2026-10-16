@@ -136,6 +136,15 @@
 }
 
 @media (--phone) {
+  .hud-progress:has(.progress-fill.is-timed) .progress-head {
+    gap: 6px;
+  }
+
+  .hud-progress:has(.progress-fill.is-timed) .progress-label {
+    display: inline;
+    white-space: nowrap;
+  }
+
   .stage-chips {
     gap: 5px;
     margin: 10px 0 4px;
