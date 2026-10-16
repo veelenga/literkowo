@@ -10,6 +10,7 @@ import {
   recordPlacement,
   showsFingersCard,
   skippedKeys,
+  startRegion,
   type PlacementAttempt,
 } from '../arena/placementProgress';
 import type { Region } from '../course/catalog';
@@ -62,12 +63,13 @@ export class PlacementFlow {
     const outcome = placementOutcome(stages, result.phases);
     const updated = this.host.save(recordPlacement(profile, attemptOf(outcome, result)));
     const leave = (then: Leave) => this.host.dismissThen(() => this.afterResult(updated, then));
+    const start = startRegion(updated);
     this.host.openOverlay(
       placementResult(
-        { outcome, regions: regionsOf(stages) },
+        { outcome, regions: regionsOf(stages), start },
         {
           onMap: leave((current) => this.host.showMap(current)),
-          onArena: outcome.placed ? leave((current) => this.host.showArena(current)) : undefined,
+          onArena: start ? leave((current) => this.host.showArena(current)) : undefined,
         },
       ),
     );

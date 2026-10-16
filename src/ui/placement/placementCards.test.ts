@@ -75,15 +75,16 @@ describe('placementIntro', () => {
 });
 
 describe('placementResult', () => {
-  function open(records: PhaseRecord[], withArena = true) {
-    const actions = { onMap: vi.fn(), onArena: withArena ? vi.fn() : undefined };
+  function open(records: PhaseRecord[], startId?: string) {
+    const actions = { onMap: vi.fn(), onArena: startId ? vi.fn() : undefined };
     const outcome = placementOutcome(STAGES, records);
-    overlay = placementResult({ outcome, regions: REGIONS }, actions);
+    const start = REGIONS.find((region) => region.id === startId);
+    overlay = placementResult({ outcome, regions: REGIONS, start }, actions);
     return { ...actions, element: overlay.element };
   }
 
   it('says where the child starts with the passed stages lit', () => {
-    const { element } = open([PASS, PASS, FAIL]);
+    const { element } = open([PASS, PASS, FAIL], 'gory');
     expect(element.querySelector('.result-title')?.textContent).toBe('Zaczynasz tutaj: Góry');
     expect(chips(element)).toEqual([
       'Polana lit',
@@ -98,7 +99,7 @@ describe('placementResult', () => {
   });
 
   it('starts a beginner from the beginning without an arena button', () => {
-    const { element } = open([FAIL], false);
+    const { element } = open([FAIL]);
     expect(element.querySelector('.result-title')?.textContent).toBe(
       'Zaczniemy od początku. Tak będzie najlepiej!',
     );
@@ -108,7 +109,7 @@ describe('placementResult', () => {
   });
 
   it('offers the arena next to the map and goes to the map on Enter or Escape', () => {
-    const { element, onMap, onArena } = open([PASS, PASS, PASS, PASS, PASS]);
+    const { element, onMap, onArena } = open([PASS, PASS, PASS, PASS, PASS], 'wyspa');
     expect(element.querySelector('.result-title')?.textContent).toBe(
       'Zaczynasz tutaj: Wyspa Ogonków',
     );

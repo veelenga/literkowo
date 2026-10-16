@@ -10,6 +10,7 @@ import {
   recordPlacement,
   showsFingersCard,
   skippedKeys,
+  startRegion,
   type PlacementAttempt,
 } from './placementProgress';
 
@@ -67,6 +68,19 @@ describe('recordPlacement', () => {
     const higher = recordPlacement(placed, attempt(5, { date: LATER }));
     expect(higher.arena.placement).toEqual({ regionId: 'wyspa', date: LATER });
     expect(openKeySets(higher)).toHaveLength(5);
+  });
+});
+
+describe('startRegion', () => {
+  it('starts the child in the region after the placement, or the last one', () => {
+    expect(startRegion(createProfile('A', 'b'))).toBeUndefined();
+    expect(startRegion(recordPlacement(createProfile('A', 'b'), attempt(1)))?.id).toBe('las');
+    expect(startRegion(recordPlacement(createProfile('A', 'b'), attempt(5)))?.id).toBe('wyspa');
+    const english = {
+      ...recordPlacement(createProfile('A', 'b'), attempt(5)),
+      wordLanguage: 'en' as const,
+    };
+    expect(startRegion(english)?.id).toBe('jaskinia');
   });
 });
 

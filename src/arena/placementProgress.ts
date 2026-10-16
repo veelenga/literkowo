@@ -69,6 +69,14 @@ export function skippedKeys(profile: Profile): string {
     .join('');
 }
 
+export function startRegion(profile: Profile): Region | undefined {
+  const placed = regionOrder(profile.arena.placement?.regionId);
+  if (placed === NOT_PLACED) return undefined;
+  const { regions } = courseFor(profile.wordLanguage);
+  const last = regions.findLastIndex((region) => regionOrder(region.id) <= placed);
+  return regions[Math.min(last + 1, regions.length - 1)];
+}
+
 export function showsFingersCard(profile: Profile): boolean {
   return !profile.seenStories.includes(FINGERS_CARD_ID) && skippedKeys(profile).length > 0;
 }

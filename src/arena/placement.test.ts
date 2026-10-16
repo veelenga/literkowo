@@ -130,22 +130,20 @@ describe('placementOutcome', () => {
     expect(passedStages(POLISH, [])).toBe(0);
   });
 
-  it('places the kid in the last passed region and starts them in the next one', () => {
+  it('places the kid in the last passed region', () => {
     const outcome = placementOutcome(POLISH, [GOOD, failed]);
     expect(outcome).toMatchObject({ stages: 5, passed: 1 });
     expect(outcome.placed?.id).toBe('polana');
-    expect(outcome.start?.id).toBe('las');
   });
 
-  it('starts a kid who passed everything in the last region', () => {
+  it('places a kid who passed everything in the last region', () => {
     const outcome = placementOutcome(ENGLISH, [GOOD, GOOD, GOOD, GOOD]);
     expect(outcome.placed?.id).toBe('jaskinia');
-    expect(outcome.start?.id).toBe('jaskinia');
   });
 
   it('leaves a beginner without a place', () => {
     const outcome = placementOutcome(POLISH, [failed]);
-    expect(outcome).toMatchObject({ passed: 0, placed: undefined, start: undefined });
+    expect(outcome).toMatchObject({ passed: 0, placed: undefined });
   });
 
   it('sums accuracy and speed over every played stage', () => {

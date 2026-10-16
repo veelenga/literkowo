@@ -34,7 +34,6 @@ export interface PlacementOutcome {
   readonly stages: number;
   readonly passed: number;
   readonly placed: Region | undefined;
-  readonly start: Region | undefined;
   readonly accuracy: number;
   readonly wpm: number;
 }
@@ -89,12 +88,10 @@ export function placementOutcome(
 ): PlacementOutcome {
   const passed = passedStages(stages, records);
   const placed = passed > 0 ? stages[passed - 1].keySet.region : undefined;
-  const start = passed > 0 ? stages[Math.min(passed, stages.length - 1)].keySet.region : undefined;
   return {
     stages: stages.length,
     passed,
     placed,
-    start,
     accuracy: accuracyOf(records),
     wpm: wpmOf(records),
   };

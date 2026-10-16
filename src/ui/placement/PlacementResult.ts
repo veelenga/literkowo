@@ -16,6 +16,7 @@ const REVEAL_DELAY_MS = 600;
 export interface PlacementSummary {
   readonly outcome: PlacementOutcome;
   readonly regions: readonly Region[];
+  readonly start: Region | undefined;
 }
 
 export interface PlacementResultActions {
@@ -29,8 +30,7 @@ export function placementResult(
 ): Overlay {
   const t = i18n.t;
   const copy = t.features.placement;
-  const { outcome, regions } = summary;
-  const start = outcome.start;
+  const { outcome, regions, start } = summary;
   const tiles = [
     statTile(t.accuracy, accuracyPercent(outcome.accuracy), '%'),
     statTile(t.speed, outcome.wpm, t.wpm),

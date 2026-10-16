@@ -106,6 +106,20 @@ describe('PlacementFlow', () => {
     overlays.forEach((overlay) => overlay.dispose());
   });
 
+  it('names the start of the kept placement after a weaker retake', () => {
+    const { flow, runs, overlays, saved } = setup();
+    flow.start(createProfile('Ola', 'a'));
+    runs[0].onFinished(result([PASS, PASS, PASS, FAIL]));
+    flow.start(saved[0]);
+    runs[1].onFinished(result([FAIL]));
+    expect(saved[1].arena.placement?.regionId).toBe('gory');
+    const card = overlays.at(-1)?.element;
+    expect(card?.querySelector('.result-title')?.textContent).toBe('Zaczynasz tutaj: Jaskinia');
+    expect(card?.querySelectorAll('.stage-chip.is-lit')).toHaveLength(0);
+    expect(card?.querySelector('.result-actions .button-ghost')?.textContent).toBe('Arena');
+    overlays.forEach((overlay) => overlay.dispose());
+  });
+
   it('sends a beginner to the map with the course untouched', () => {
     const { flow, host, runs, overlays, saved } = setup();
     flow.start(createProfile('Ola', 'a'));
