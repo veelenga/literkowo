@@ -36,6 +36,7 @@
     "vitest": "^5.0.4"
   },
   "dependencies": {
+    "pure-rand": "^8.4.2",
     "three": "^0.186.1"
   }
 }

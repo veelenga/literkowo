@@ -1,6 +1,6 @@
 import type { ThemeId } from '../../course/regions';
 import { BUTTERWORTH_Q_DB } from '../synthesis';
-import { hashSeed } from './random';
+import { hashSeed } from '../../random';
 import type { Arrangement, LayerSpec, MotifSpec, MusicMood, ThemeSpec } from './specs';
 
 const BOSS_TEMPO_FACTOR = 1.15;
@@ -436,7 +436,7 @@ const THEMES: Record<ThemeId, ThemeSpec> = {
 export function arrangementFor(themeId: ThemeId, mood: MusicMood): Arrangement {
   const theme = THEMES[themeId];
   const isBoss = mood === 'boss';
-  const themeSeed = hashSeed(themeId);
+  const themeSeed = hashSeed([themeId]);
   return {
     tempo: isBoss ? theme.tempo * BOSS_TEMPO_FACTOR : theme.tempo,
     swing: theme.swing,
