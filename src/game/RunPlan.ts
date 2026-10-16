@@ -18,6 +18,7 @@ export interface Phase extends Pace {
   readonly wave?: number;
   readonly stage?: StageMark;
   readonly seconds?: number;
+  readonly boardSize?: number;
   readonly specialShare?: number;
   readonly events?: number;
 }

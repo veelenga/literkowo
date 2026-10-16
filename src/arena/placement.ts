@@ -10,6 +10,8 @@ import type { WordLanguage } from '../profiles/Profile';
 import { keySetsFor, type KeySet } from './keySets';
 
 export const STAGE_SECONDS = 12;
+export const STAGE_BOARD_SIZE = 3;
+export const STAGE_WORD_LIMIT = 20;
 export const PASS_ACCURACY_PERCENT = 95;
 export const MAX_REACHED = 1;
 export const MIN_STAGE_WORDS = 12;

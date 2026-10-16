@@ -698,7 +698,7 @@ Stages:
 
 - One stage per region of the profile's word language: five for Polish words, four for English words. Each stage lasts 12 seconds (`STAGE_SECONDS`).
 - Stage `k` uses the allowed keys of the boss level of region `k`, so every key up to and including that region. Its focus keys are the keys of region `k`.
-- The pace is steady, with no ramp: the speed and spawn interval the last practice level of the region ends with (`stagePracticeTempo`). The stage sends as many words as fit in 12 seconds at that interval: 3 in Polana, 4 in Las and Góry, 5 in Jaskinia and 7 in Wyspa Ogonków. Words that are still on the board when a stage ends stay and keep walking into the next stage.
+- The board keeps up to 3 words (`STAGE_BOARD_SIZE`, `boardSize` in the run plan), and as soon as a word leaves the board the next one comes, like a time attack. When the child is slower, a new word still comes after the stage's gap, at most 20 words a stage (`STAGE_WORD_LIMIT`). The pace is steady, with no ramp: the speed and spawn gap the last practice level of the region ends with (`stagePracticeTempo`), a gap of 4.2 seconds in Polana down to 1.9 in Wyspa Ogonków. So a child at the mastery pace meets about 6 words in Polana and a fast typist more than 10. Words that are still on the board when a stage ends stay and keep walking into the next stage.
 - No hearts are lost (`hitCost: 'combo'` in the run plan). An enemy that reaches the hero vanishes, counts once for the stage and breaks the combo. It is not a mistake.
 - Every mechanic is off: the stages are `test` phases, where special enemies, events, surges, bombers, twins, power words and merging never run and pets rest. Each stage starts with a chime and the banner "Etap 2: Las" / "Етап 2: Ліс".
 

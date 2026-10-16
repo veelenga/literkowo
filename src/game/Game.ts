@@ -419,8 +419,13 @@ export class Game {
     return (
       this.spawned < this.phase.count &&
       this.sinceSpawn >= this.phase.spawnInterval &&
-      this.enemies.length < MAX_ENEMIES
+      this.enemies.length < Math.min(MAX_ENEMIES, this.phase.boardSize ?? MAX_ENEMIES)
     );
+  }
+
+  private refillBoard(): void {
+    if (this.phase.boardSize === undefined) return;
+    this.sinceSpawn = Math.max(this.sinceSpawn, this.phase.spawnInterval);
   }
 
   private nextSpawnWord(): string {
@@ -556,6 +561,7 @@ export class Game {
 
   private clearEnemy(enemy: Enemy): void {
     if (!this.remove(enemy)) return;
+    this.refillBoard();
     this.reportProgress();
     if (this.isPhaseCleared()) this.advancePhase();
   }
