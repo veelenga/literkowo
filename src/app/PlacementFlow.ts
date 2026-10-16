@@ -22,11 +22,14 @@ import type { Overlay } from '../ui/overlay';
 import { fingersCard } from '../ui/placement/FingersCard';
 import { placementIntro } from '../ui/placement/PlacementIntro';
 import { placementResult } from '../ui/placement/PlacementResult';
+import type { ShopExit, ShopTab } from '../ui/ShopScreen';
+import { earnedOf } from './earned';
 import type { GameRun } from './GameRun';
 
 export interface PlacementHost {
   showMap(profile: Profile): void;
   showArena(profile: Profile): void;
+  showShop(profile: Profile, exit: ShopExit, tab?: ShopTab): void;
   startRun(profile: Profile, run: GameRun): void;
   openOverlay(overlay: Overlay): void;
   dismissThen(next: () => void): () => void;
@@ -61,18 +64,25 @@ export class PlacementFlow {
 
   private finish(profile: Profile, stages: readonly PlacementStage[], result: GameResult): void {
     const outcome = placementOutcome(stages, result.phases);
-    const updated = this.host.save(recordPlacement(profile, attemptOf(outcome, result)));
+    const record = recordPlacement(profile, attemptOf(outcome, result));
+    const updated = this.host.save(record.profile);
+    const earned = earnedOf(profile, updated, result.xp, record.coins);
     const leave = (then: Leave) => this.host.dismissThen(() => this.afterResult(updated, then));
     const start = startRegion(updated);
     this.host.openOverlay(
       placementResult(
-        { outcome, regions: regionsOf(stages), start },
+        { outcome, regions: regionsOf(stages), start, earned },
         {
           onMap: leave((current) => this.host.showMap(current)),
           onArena: start ? leave((current) => this.host.showArena(current)) : undefined,
+          onShop: (tab) => this.host.dismissThen(() => this.openShop(updated, tab))(),
         },
       ),
     );
+  }
+
+  private openShop(profile: Profile, tab?: ShopTab): void {
+    this.host.showShop(profile, { onBack: (current) => this.host.showMap(current) }, tab);
   }
 
   private afterResult(profile: Profile, then: Leave): void {
@@ -88,5 +98,15 @@ function regionsOf(stages: readonly PlacementStage[]): Region[] {
 }
 
 function attemptOf(outcome: PlacementOutcome, result: GameResult): PlacementAttempt {
-  return { outcome, keyStats: result.keys.practised, date: practiceDay(new Date()) };
+  return {
+    outcome,
+    keyStats: result.keys.practised,
+    date: practiceDay(new Date()),
+    score: result.score,
+    lettersFreed: result.lettersFreed,
+    xp: result.xp,
+    runCoins: result.coins,
+    coinBoost: result.coinBoost,
+    tally: result.tally,
+  };
 }

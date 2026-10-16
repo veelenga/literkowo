@@ -1,8 +1,10 @@
 import { music } from '../audio/Music';
 import { sfx } from '../audio/Sfx';
 import { QUALITY_CHOICES, readQualityChoice, saveQualityChoice } from '../game/quality';
+import { format } from '../i18n/format';
 import { i18n } from '../i18n/i18n';
 import type { UiLanguage } from '../i18n/translations';
+import type { Profile } from '../profiles/Profile';
 import { el } from './dom';
 import {
   ON_SCREEN_KEYBOARD_CHOICES,
@@ -17,8 +19,14 @@ import { shopIcon } from './shopParts';
 
 const UI_LANGUAGES: readonly UiLanguage[] = ['pl', 'uk'];
 
+export interface ProfileSettings {
+  readonly profile: Profile;
+  readonly onDelete: () => void;
+}
+
 export interface SettingsActions {
   readonly onBack: () => void;
+  readonly profile?: ProfileSettings;
 }
 
 export class SettingsScreen {
@@ -49,6 +57,7 @@ export class SettingsScreen {
           this.languageRow(),
           keyboardRow(),
           motionRow(),
+          this.profileRow(),
         ),
       ),
     );
@@ -69,6 +78,10 @@ export class SettingsScreen {
     );
   }
 
+  private profileRow(): HTMLElement | null {
+    return this.actions.profile ? profileRow(this.actions.profile) : null;
+  }
+
   private languageRow(): HTMLElement {
     const copy = i18n.t.features.settings;
     return settingRow(
@@ -85,6 +98,23 @@ export class SettingsScreen {
       }),
     );
   }
+}
+
+function profileRow(settings: ProfileSettings): HTMLElement {
+  const copy = i18n.t.features.settings;
+  const remove = () => {
+    if (confirm(i18n.t.confirmDelete)) settings.onDelete();
+  };
+  return settingRow(
+    copy.profile,
+    el('button', {
+      class: 'button button-danger delete-profile',
+      type: 'button',
+      text: i18n.t.deleteProfile,
+      onClick: remove,
+    }),
+    format(copy.profileHint, { name: settings.profile.name }),
+  );
 }
 
 export function settingsOverlay(actions: SettingsActions): Overlay {

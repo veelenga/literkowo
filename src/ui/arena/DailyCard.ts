@@ -16,6 +16,7 @@ import { i18n } from '../../i18n/i18n';
 import type { Profile } from '../../profiles/Profile';
 import { el, svg } from '../dom';
 import { xpBar } from '../progression';
+import { primaryHint } from '../shortcutHint';
 import { medalName } from './arenaParts';
 import { stampRow } from './stampRow';
 import '../daily.css';
@@ -40,14 +41,17 @@ export function dailyKeySet(view: DailyCardView): KeySet {
   return pinned ?? view.chosen;
 }
 
+export function isDailyPinned(profile: Profile, today: string): boolean {
+  return dailyDay(profile.arena.daily, today).keySet !== undefined;
+}
+
 export function dailyCard(view: DailyCardView, onPlay: (keySet: KeySet) => void): HTMLElement {
   const copy = i18n.t.features.daily;
   const daily = formatOn(view.today);
   const keySet = dailyKeySet(view);
   return el(
     'article',
-    { class: 'shop-item daily-card', 'data-mode': 'daily', 'data-format': daily.id },
-    el('div', { class: 'shop-item-art arena-mode-art daily-art' }, dailyIcon()),
+    { class: 'shop-item arena-panel daily-card', 'data-mode': 'daily', 'data-format': daily.id },
     el('h3', {
       class: 'shop-item-name daily-title',
       text: format(copy.title, { format: formatName(daily) }),
@@ -70,10 +74,10 @@ export function minutesText(seconds: number): string {
   return minutes[Math.round(seconds / SECONDS_PER_MINUTE) - FIRST_MINUTE] ?? minutes[0];
 }
 
-function dailyIcon(): SVGSVGElement {
+export function dailyIcon(className: string): SVGSVGElement {
   return svg(
     'svg',
-    { viewBox: '0 0 24 24', class: 'arena-mode-icon', 'aria-hidden': 'true' },
+    { viewBox: '0 0 24 24', class: className, 'aria-hidden': 'true' },
     svg('path', { d: DAILY_ICON_PATH, 'fill-rule': 'evenodd' }),
   );
 }
@@ -137,9 +141,10 @@ function playOrWait({ profile, today }: DailyCardView, onPlay: () => void): HTML
   if (triesLeft(profile.arena.daily, today) === 0) {
     return el('p', { class: 'daily-tomorrow', text: i18n.t.features.daily.tomorrow });
   }
-  return el('button', {
-    class: 'button button-primary button-large daily-play',
-    text: i18n.t.play,
-    onClick: onPlay,
-  });
+  return el(
+    'button',
+    { class: 'button button-primary button-large arena-play daily-play', onClick: onPlay },
+    i18n.t.play,
+    primaryHint(),
+  );
 }

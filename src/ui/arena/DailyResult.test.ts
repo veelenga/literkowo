@@ -34,7 +34,7 @@ function summary(overrides: Partial<DailyRunSummary> = {}): DailyRunSummary {
       xpBefore: 50,
       xp: 70,
       coins: PAYOUT.total,
-      treasures: { trophies: [], newItems: false, arenaOpened: false },
+      treasures: { trophies: [], newItems: false },
     },
     ...overrides,
   };

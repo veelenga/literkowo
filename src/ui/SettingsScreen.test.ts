@@ -3,6 +3,7 @@ import { music } from '../audio/Music';
 import { sfx } from '../audio/Sfx';
 import { readQualityChoice } from '../game/quality';
 import { i18n } from '../i18n/i18n';
+import { createProfile, type Profile } from '../profiles/Profile';
 import { removeStorage } from '../storage';
 import { ON_SCREEN_KEYBOARD_KEY, readOnScreenKeyboard } from './formFactor';
 import { readReducedMotion, REDUCED_MOTION_KEY } from './motionPreference';
@@ -11,9 +12,10 @@ import { SettingsScreen, settingsOverlay } from './SettingsScreen';
 
 const QUALITY_KEY = 'literkowo.quality';
 
-function setup() {
+function setup(profile?: Profile) {
   const onBack = vi.fn();
-  const screen = new SettingsScreen({ onBack });
+  const onDelete = vi.fn();
+  const screen = new SettingsScreen({ onBack, profile: profile && { profile, onDelete } });
   const rows = () => [...screen.element.querySelectorAll<HTMLElement>('.settings-row')];
   const row = (title: string) => {
     const found = rows().find(
@@ -37,7 +39,7 @@ function setup() {
     chips(title)
       .filter((item) => item.classList.contains('is-active'))
       .map((item) => item.textContent);
-  return { screen, onBack, rows, row, chips, chip, toggle, active };
+  return { screen, onBack, onDelete, rows, row, chips, chip, toggle, active };
 }
 
 function pressEscape(): void {
@@ -62,8 +64,8 @@ describe('SettingsScreen', () => {
     vi.unstubAllGlobals();
   });
 
-  function open() {
-    const parts = setup();
+  function open(profile?: Profile) {
+    const parts = setup(profile);
     dispose = () => parts.screen.dispose();
     return parts;
   }
@@ -138,6 +140,27 @@ describe('SettingsScreen', () => {
     chip('Mniej animacji', 'Zawsze').click();
     expect(readReducedMotion()).toBe('always');
     expect(document.documentElement.hasAttribute('data-reduced-motion')).toBe(true);
+  });
+
+  it('deletes the profile it was opened for, after a confirmation', () => {
+    const { row, rows, onDelete } = open(createProfile('Ola', 'a'));
+    expect(rows().at(-1)?.querySelector('.settings-label')?.textContent).toBe('Profil');
+    expect(row('Profil').querySelector('.settings-hint')?.textContent).toBe(
+      'Ola. Usunięcie kasuje cały postęp na tym urządzeniu',
+    );
+    const button = row('Profil').querySelector<HTMLButtonElement>('.delete-profile');
+    expect(button?.textContent).toBe('Usuń profil');
+    vi.stubGlobal('confirm', () => false);
+    button?.click();
+    expect(onDelete).not.toHaveBeenCalled();
+    vi.stubGlobal('confirm', () => true);
+    button?.click();
+    expect(onDelete).toHaveBeenCalledOnce();
+  });
+
+  it('has no profile row when opened without a profile', () => {
+    const { screen } = open();
+    expect(screen.element.querySelector('.delete-profile')).toBeNull();
   });
 
   it('goes back from the back button', () => {

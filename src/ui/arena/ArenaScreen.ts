@@ -1,3 +1,4 @@
+import { hasFinishedToday } from '../../arena/daily';
 import {
   DIFFICULTIES,
   difficultyById,
@@ -6,8 +7,10 @@ import {
   type ArenaDifficulty,
 } from '../../arena/difficulty';
 import type { ArenaChoice } from '../../arena/endlessPlan';
-import { defaultKeySet, keySetsFor, openKeySets, type KeySet } from '../../arena/keySets';
+import { defaultKeySet, openKeySets, type KeySet } from '../../arena/keySets';
 import { NO_MEDAL } from '../../arena/medals';
+import { placementStages, STAGE_SECONDS } from '../../arena/placement';
+import { startRegion } from '../../arena/placementProgress';
 import { arenaKey, endlessBest, type EndlessBest } from '../../arena/record';
 import { todayOf } from '../../arena/week';
 import { format } from '../../i18n/format';
@@ -17,27 +20,36 @@ import { releasePortraits } from '../CharacterPortraits';
 import { el } from '../dom';
 import { keyLabel } from '../levelKind';
 import { onShortcutKeys, stepWithin } from '../overlay';
+import { stageChips } from '../placement/placementParts';
 import { coinPill } from '../progression';
 import { ShopHero } from '../ShopHero';
 import { shopLink } from '../shopLink';
 import { ESCAPE_LABEL, primaryHint, shortcutHint } from '../shortcutHint';
 import { hintedLockBadge, shopIcon } from '../shopParts';
 import { arenaIcon, difficultyName, medalBadge, waveLabel } from './arenaParts';
-import { dailyCard } from './DailyCard';
+import { dailyCard, dailyIcon, isDailyPinned } from './DailyCard';
+import { testIcon } from './testIcon';
+
+export const ARENA_MODES = ['test', 'daily', 'endless'] as const;
+
+export type ArenaMode = (typeof ARENA_MODES)[number];
 
 interface ArenaActions {
   onBack: (profile: Profile) => void;
   onPlay: (profile: Profile, choice: ArenaChoice) => void;
   onDaily: (profile: Profile, keySet: KeySet, choice: ArenaChoice) => void;
+  onTest: (profile: Profile, choice: ArenaChoice) => void;
   onShop: (profile: Profile, choice: ArenaChoice) => void;
 }
 
 export interface ArenaScreenOptions {
   readonly previous?: ArenaChoice;
+  readonly mode?: ArenaMode;
   readonly family?: readonly Profile[];
   readonly today?: string;
 }
 
+const DEFAULT_MODE: ArenaMode = 'endless';
 const DEFAULT_DIFFICULTY_ID = 'normal';
 const ENTERING_CLASS = 'is-entering';
 const PREVIOUS = -1;
@@ -49,6 +61,7 @@ export class ArenaScreen {
   private readonly records = el('div', { class: 'arena-records' });
   private readonly setup = el('section', { class: 'arena-setup' });
   private choice: ArenaChoice;
+  private mode: ArenaMode;
   private readonly family: readonly Profile[];
   private readonly today: string;
   private readonly stopKeys: () => void;
@@ -56,9 +69,15 @@ export class ArenaScreen {
   constructor(
     private readonly profile: Profile,
     private readonly actions: ArenaActions,
-    { previous, family = [profile], today = todayOf() }: ArenaScreenOptions = {},
+    {
+      previous,
+      mode = DEFAULT_MODE,
+      family = [profile],
+      today = todayOf(),
+    }: ArenaScreenOptions = {},
   ) {
     this.choice = initialChoice(profile, previous);
+    this.mode = mode;
     this.family = family;
     this.today = today;
     this.stopKeys = onShortcutKeys(this.element, {
@@ -66,7 +85,7 @@ export class ArenaScreen {
       ArrowRight: () => this.stepKeySet(NEXT),
       ArrowUp: () => this.stepDifficulty(NEXT),
       ArrowDown: () => this.stepDifficulty(PREVIOUS),
-      Enter: () => this.actions.onPlay(this.profile, this.choice),
+      Enter: () => this.playMode(),
       Escape: () => this.actions.onBack(this.profile),
     });
     this.hero.element.append(this.records);
@@ -112,15 +131,16 @@ export class ArenaScreen {
   private refresh(entering = false): void {
     this.setup.classList.toggle(ENTERING_CLASS, entering);
     this.records.replaceChildren(...this.recordRows());
-    this.setup.replaceChildren(
-      this.keySetField(),
-      this.dailyCard(),
-      this.difficultyField(),
-      this.endlessCard(),
-    );
+    this.setup.replaceChildren(this.modeTabs(), this.modePanel());
+  }
+
+  private playMode(): void {
+    const play = this.setup.querySelector<HTMLButtonElement>('.arena-play');
+    play?.click();
   }
 
   private stepKeySet(direction: number): void {
+    if (!this.usesKeySet()) return;
     const keySets = openKeySets(this.profile);
     const index = keySets.findIndex((option) => option.id === this.choice.keySet.id);
     const keySet = keySets[stepWithin(index, direction, keySets.length)];
@@ -128,15 +148,64 @@ export class ArenaScreen {
   }
 
   private stepDifficulty(direction: number): void {
+    if (this.mode !== 'endless') return;
     const open = DIFFICULTIES.filter((difficulty) => isDifficultyOpen(difficulty, this.profile));
     const index = open.findIndex((difficulty) => difficulty.id === this.choice.difficulty.id);
     const difficulty = open[stepWithin(index, direction, open.length)];
     if (difficulty.id !== this.choice.difficulty.id) this.choose({ difficulty });
   }
 
+  private usesKeySet(): boolean {
+    if (this.mode === 'endless') return true;
+    return this.mode === 'daily' && !isDailyPinned(this.profile, this.today);
+  }
+
   private choose(choice: Partial<ArenaChoice>): void {
     this.choice = { ...this.choice, ...choice };
     this.refresh();
+  }
+
+  private pick(mode: ArenaMode): void {
+    if (mode === this.mode) return;
+    this.mode = mode;
+    this.refresh();
+  }
+
+  private modeTabs(): HTMLElement {
+    return el(
+      'nav',
+      { class: 'arena-modes', 'aria-label': i18n.t.features.arena.mode },
+      ...ARENA_MODES.map((mode) => this.modeTab(mode)),
+    );
+  }
+
+  private modeTab(mode: ArenaMode): HTMLElement {
+    const active = mode === this.mode;
+    const waiting = mode === 'daily' && !hasFinishedToday(this.profile.arena.daily, this.today);
+    return el(
+      'button',
+      {
+        class: active ? 'arena-mode-tab is-active' : 'arena-mode-tab',
+        type: 'button',
+        'data-mode': mode,
+        'aria-pressed': String(active),
+        onClick: () => this.pick(mode),
+      },
+      el('span', { class: 'arena-mode-art' }, modeIcon(mode)),
+      el('span', { class: 'arena-mode-name', text: modeName(mode) }),
+      waiting ? el('span', { class: 'header-button-dot daily-dot', 'aria-hidden': 'true' }) : null,
+    );
+  }
+
+  private modePanel(): HTMLElement {
+    switch (this.mode) {
+      case 'test':
+        return this.testPanel();
+      case 'daily':
+        return this.dailyPanel();
+      case 'endless':
+        return this.endlessPanel();
+    }
   }
 
   private keySetField(): HTMLElement {
@@ -191,40 +260,59 @@ export class ArenaScreen {
     return chip(name, active, () => this.choose({ difficulty }));
   }
 
-  private dailyCard(): HTMLElement {
+  private dailyPanel(): HTMLElement {
     const view = {
       profile: this.profile,
       family: this.family,
       today: this.today,
       chosen: this.choice.keySet,
     };
-    return dailyCard(view, (keySet) => this.actions.onDaily(this.profile, keySet, this.choice));
+    const card = dailyCard(view, (keySet) =>
+      this.actions.onDaily(this.profile, keySet, this.choice),
+    );
+    if (!isDailyPinned(this.profile, this.today)) card.prepend(this.keySetField());
+    return card;
   }
 
-  private endlessCard(): HTMLElement {
+  private endlessPanel(): HTMLElement {
     const copy = i18n.t.features.arena;
     const best = this.bestOf(this.choice.difficulty);
     return el(
       'article',
-      { class: 'shop-item arena-mode', 'data-mode': 'endless' },
-      el('div', { class: 'shop-item-art arena-mode-art' }, arenaIcon('arena-mode-icon')),
-      el('h3', { class: 'shop-item-name', text: copy.endless.name }),
-      el('p', { class: 'shop-item-text', text: copy.endless.rule }),
+      { class: 'shop-item arena-panel', 'data-mode': 'endless' },
+      this.keySetField(),
+      this.difficultyField(),
+      el('p', { class: 'shop-item-text arena-rule', text: copy.endless.rule }),
       el(
         'div',
         { class: 'arena-mode-best' },
         el('span', { class: 'stat-pill arena-best', text: bestText(best) }),
         best && best.medal > NO_MEDAL ? medalBadge(best.medal) : null,
       ),
-      el(
-        'button',
-        {
-          class: 'button button-primary button-large arena-play',
-          onClick: () => this.actions.onPlay(this.profile, this.choice),
-        },
-        i18n.t.play,
-        primaryHint(),
-      ),
+      playButton(() => this.actions.onPlay(this.profile, this.choice)),
+    );
+  }
+
+  private testPanel(): HTMLElement {
+    const copy = i18n.t.features.placement;
+    const regions = placementStages(this.profile.wordLanguage).map((stage) => stage.keySet.region);
+    const start = startRegion(this.profile);
+    return el(
+      'article',
+      { class: 'shop-item arena-panel', 'data-mode': 'test' },
+      stageChips(regions),
+      el('p', {
+        class: 'shop-item-text arena-rule',
+        text: format(copy.rule, { seconds: STAGE_SECONDS }),
+      }),
+      el('p', { class: 'shop-item-text arena-rule', text: i18n.t.placeFingers }),
+      start
+        ? el('span', {
+            class: 'stat-pill arena-best',
+            text: format(copy.startsHere, { region: start.name[i18n.current] }),
+          })
+        : null,
+      playButton(() => this.actions.onTest(this.profile, this.choice)),
     );
   }
 
@@ -258,14 +346,44 @@ export class ArenaScreen {
 }
 
 function initialChoice(profile: Profile, previous: ArenaChoice | undefined): ArenaChoice {
-  const keySets = openKeySets(profile);
   const keySet =
-    keySets.find((option) => option.id === previous?.keySet.id) ??
-    defaultKeySet(profile) ??
-    keySetsFor(profile.wordLanguage)[0];
+    openKeySets(profile).find((option) => option.id === previous?.keySet.id) ??
+    defaultKeySet(profile);
   const wanted = previous?.difficulty ?? difficultyById(DEFAULT_DIFFICULTY_ID);
   const difficulty = wanted && isDifficultyOpen(wanted, profile) ? wanted : DIFFICULTIES[0];
   return { keySet, difficulty };
+}
+
+function modeName(mode: ArenaMode): string {
+  const copy = i18n.t.features;
+  switch (mode) {
+    case 'test':
+      return copy.placement.title;
+    case 'daily':
+      return copy.daily.name;
+    case 'endless':
+      return copy.arena.endless.name;
+  }
+}
+
+function modeIcon(mode: ArenaMode): SVGSVGElement {
+  switch (mode) {
+    case 'test':
+      return testIcon('arena-mode-icon');
+    case 'daily':
+      return dailyIcon('arena-mode-icon');
+    case 'endless':
+      return arenaIcon('arena-mode-icon');
+  }
+}
+
+function playButton(onPlay: () => void): HTMLElement {
+  return el(
+    'button',
+    { class: 'button button-primary button-large arena-play', onClick: onPlay },
+    i18n.t.play,
+    primaryHint(),
+  );
 }
 
 function field(area: string, label: string, ...children: Array<HTMLElement | null>): HTMLElement {

@@ -6,8 +6,10 @@ import { format } from '../../i18n/format';
 import { i18n } from '../../i18n/i18n';
 import { confetti } from '../confetti';
 import { el, prefersReducedMotion } from '../dom';
-import { statTile } from '../LevelResult';
+import { statTile, type LevelRewards } from '../LevelResult';
 import { createOverlay, type Overlay } from '../overlay';
+import { ResultProgress } from '../ResultProgress';
+import { treasuresNote, type OpenShop } from '../resultTreasures';
 import { primaryHint } from '../shortcutHint';
 import { CLOSE_KEY, onCardKeys, stageChips, START_KEY } from './placementParts';
 
@@ -17,11 +19,13 @@ export interface PlacementSummary {
   readonly outcome: PlacementOutcome;
   readonly regions: readonly Region[];
   readonly start: Region | undefined;
+  readonly earned: LevelRewards;
 }
 
 export interface PlacementResultActions {
   readonly onMap: () => void;
   readonly onArena?: () => void;
+  readonly onShop: OpenShop;
 }
 
 export function placementResult(
@@ -30,11 +34,12 @@ export function placementResult(
 ): Overlay {
   const t = i18n.t;
   const copy = t.features.placement;
-  const { outcome, regions, start } = summary;
+  const { outcome, regions, start, earned } = summary;
   const tiles = [
     statTile(t.accuracy, accuracyPercent(outcome.accuracy), '%'),
     statTile(t.speed, outcome.wpm, t.wpm),
   ];
+  const progress = new ResultProgress(earned);
   const panel = el(
     'div',
     { class: `panel panel-center result-panel placement-result ${start ? 'is-won' : 'is-calm'}` },
@@ -42,11 +47,14 @@ export function placementResult(
     stageChips(regions, outcome.passed),
     el('p', { class: 'result-hint', text: start ? copy.skippedHint : copy.beginnerHint }),
     el('div', { class: 'result-stats' }, ...tiles.map((tile) => tile.element)),
+    progress.element,
+    treasuresNote(earned.treasures, actions.onShop),
     actionsRow(actions),
   );
   const revealTimer = window.setTimeout(
     () => {
       tiles.forEach((tile) => tile.reveal());
+      progress.reveal();
       if (start) celebrate(panel);
     },
     prefersReducedMotion() ? 0 : REVEAL_DELAY_MS,
@@ -60,6 +68,7 @@ export function placementResult(
       ]),
     ),
     () => window.clearTimeout(revealTimer),
+    () => progress.stop(),
     ...tiles.map((tile) => tile.stop),
   );
 }

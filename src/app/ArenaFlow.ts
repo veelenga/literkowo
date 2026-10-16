@@ -6,18 +6,16 @@ import { formatOn, type DailyFormat } from '../arena/formats';
 import type { KeySet } from '../arena/keySets';
 import { recordEndlessRun, type EndlessAttempt, type EndlessOutcome } from '../arena/progress';
 import { systemClock, todayOf, type Clock } from '../arena/week';
-import { hasNewItems } from '../course/inventory';
 import { practiceDay } from '../course/keyStats';
-import { freshTrophies } from '../course/trophies';
 import type { GameResult } from '../game/Game';
 import { i18n } from '../i18n/i18n';
 import type { Profile } from '../profiles/Profile';
 import { arenaResult, type ArenaRunSummary } from '../ui/arena/ArenaResult';
-import { ArenaScreen } from '../ui/arena/ArenaScreen';
+import { ArenaScreen, type ArenaMode } from '../ui/arena/ArenaScreen';
 import { dailyResult } from '../ui/arena/DailyResult';
-import type { LevelRewards } from '../ui/LevelResult';
 import type { Overlay } from '../ui/overlay';
 import type { ShopExit, ShopTab } from '../ui/ShopScreen';
+import { earnedOf } from './earned';
 import type { GameRun } from './GameRun';
 
 export interface Screen {
@@ -34,6 +32,7 @@ export interface ArenaHost {
   dismissThen(next: () => void): () => void;
   save(profile: Profile): Profile;
   profiles(): readonly Profile[];
+  startTest(profile: Profile): void;
 }
 
 export interface DailyStart {
@@ -48,7 +47,7 @@ export class ArenaFlow {
     private readonly clock: Clock = systemClock,
   ) {}
 
-  show(profile: Profile, previous?: ArenaChoice): void {
+  show(profile: Profile, previous?: ArenaChoice, mode?: ArenaMode): void {
     const today = todayOf(this.clock);
     const paid = payFamilyChest(profile, this.familyOf(profile), today);
     const current = paid.coins > 0 ? this.host.save(paid.profile) : profile;
@@ -61,9 +60,10 @@ export class ArenaFlow {
             onPlay: (shown, choice) => this.start(shown, choice),
             onDaily: (shown, keySet, choice) =>
               this.startDaily(shown, { keySet, previous: choice }),
-            onShop: (shown, choice) => this.openShop(shown, choice),
+            onTest: (shown) => this.host.startTest(shown),
+            onShop: (shown, choice) => this.openShop(shown, choice, undefined, mode),
           },
-          { previous, family: this.familyOf(current), today },
+          { previous, mode, family: this.familyOf(current), today },
         ),
     );
   }
@@ -80,7 +80,8 @@ export class ArenaFlow {
 
   startDaily(profile: Profile, start: DailyStart): void {
     const day = todayOf(this.clock);
-    if (triesLeft(profile.arena.daily, day) === 0) return this.show(profile, start.previous);
+    if (triesLeft(profile.arena.daily, day) === 0)
+      return this.show(profile, start.previous, 'daily');
     const choice = { keySet: start.keySet, format: start.format ?? formatOn(day), day };
     this.host.startRun(profile, {
       level: start.keySet.bossLevel,
@@ -96,9 +97,10 @@ export class ArenaFlow {
     const updated = this.host.save(outcome.profile);
     this.host.openOverlay(
       arenaResult(summaryOf(profile, updated, result, outcome), {
-        onArena: this.host.dismissThen(() => this.show(updated, choice)),
+        onArena: this.host.dismissThen(() => this.show(updated, choice, 'endless')),
         onRetry: this.host.dismissThen(() => this.start(updated, choice)),
-        onShop: (tab) => this.host.dismissThen(() => this.openShop(updated, choice, tab))(),
+        onShop: (tab) =>
+          this.host.dismissThen(() => this.openShop(updated, choice, tab, 'endless'))(),
       }),
     );
   }
@@ -117,19 +119,20 @@ export class ArenaFlow {
       dailyResult(
         { result, format: choice.format, outcome, earned },
         {
-          onArena: this.host.dismissThen(() => this.show(updated, previous)),
+          onArena: this.host.dismissThen(() => this.show(updated, previous, 'daily')),
           onRetry: this.host.dismissThen(() => this.startDaily(updated, start)),
-          onShop: (tab) => this.host.dismissThen(() => this.openShop(updated, previous, tab))(),
+          onShop: (tab) =>
+            this.host.dismissThen(() => this.openShop(updated, previous, tab, 'daily'))(),
         },
       ),
     );
   }
 
-  private openShop(profile: Profile, choice?: ArenaChoice, tab?: ShopTab): void {
+  private openShop(profile: Profile, choice?: ArenaChoice, tab?: ShopTab, mode?: ArenaMode): void {
     const backLabel = i18n.t.features.arena.title;
     this.host.showShop(
       profile,
-      { onBack: (current) => this.show(current, choice), backLabel },
+      { onBack: (current) => this.show(current, choice, mode), backLabel },
       tab,
     );
   }
@@ -153,15 +156,6 @@ function summaryOf(
     newRecord: outcome.newBestWave,
     earned: earnedOf(before, after, result.xp, outcome.payout.total),
   };
-}
-
-function earnedOf(before: Profile, after: Profile, xp: number, coins: number): LevelRewards {
-  const treasures = {
-    trophies: freshTrophies(before, after),
-    newItems: hasNewItems(before, after),
-    arenaOpened: false,
-  };
-  return { xpBefore: before.xp, xp, coins, treasures };
 }
 
 function endlessAttemptOf(choice: ArenaChoice, result: GameResult): EndlessAttempt {

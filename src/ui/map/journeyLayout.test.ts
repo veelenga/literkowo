@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import type { LevelKind } from '../../course/catalog';
 import {
   JOURNEY_SPACING,
-  gatePoint,
   journeyLayout,
   journeyPath,
   stopRoles,
@@ -21,8 +20,8 @@ const REGION_KINDS: readonly LevelKind[] = [
   'boss',
 ];
 const PAIR_COUNT = 3;
-const FIRST_BAND: BandSpec = { roles: stopRoles(REGION_KINDS), gate: true };
-const NEXT_BAND: BandSpec = { roles: stopRoles(REGION_KINDS), gate: false };
+const FIRST_BAND: BandSpec = { roles: stopRoles(REGION_KINDS) };
+const NEXT_BAND: BandSpec = { roles: stopRoles(REGION_KINDS) };
 const COURSE = [FIRST_BAND, NEXT_BAND, NEXT_BAND];
 const PRECISION = 6;
 const LEFT = 30;
@@ -105,15 +104,6 @@ describe('journeyLayout', () => {
     expect(focused.road[1].y).toBe(plain.road[1].y);
     expect(focused.road[2].y - plain.road[2].y).toBe(JOURNEY_SPACING.heroRoom);
     expect(focused.height - plain.height).toBe(JOURNEY_SPACING.heroRoom);
-  });
-
-  it('puts the gate one row below the boss, across from it and inside the band', () => {
-    const [band, next] = journeyLayout(COURSE).bands;
-    const boss = band.road.at(-1);
-    const gate = gatePoint(band);
-    expect(gate.x).toBeCloseTo(100 - (boss?.x ?? 0), PRECISION);
-    expect(gate.y).toBe((boss?.y ?? 0) + JOURNEY_SPACING.row);
-    expect(gate.y).toBeLessThan(next.top);
   });
 
   it('keeps every stop inside the track', () => {
