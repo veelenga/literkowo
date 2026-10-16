@@ -9,6 +9,7 @@ These instructions are for AI agents and for people.
 
 - Read `docs/INTENT.md` and `docs/SPEC.md` before you change gameplay.
 - When behaviour changes, update `docs/SPEC.md` in the same pull request.
+- When a feature is added or changes, update `public/llms.txt` and `public/llms-full.txt` in the same pull request.
 - Accuracy comes before speed. A new mechanic must keep careful typing as the best way to win.
 
 ## Commands
@@ -23,6 +24,7 @@ These instructions are for AI agents and for people.
 - `npm run format` fixes formatting.
 - `npm run build` type checks and builds into `dist`.
 - `npm run icons` renders the app icons in `public` from `icon.svg` and `icon-maskable.svg`. Commit the PNG files it writes.
+- `npm run og` plays an island arena run in Chromium and renders the share images `public/og.jpg` and `public/og-square.jpg`, the screenshot `public/screenshot.jpg` and the README image `docs/screenshot.jpg`. Run `npx playwright install chromium` once before the first run. The run is live, so every render is a little different. Look at the images and commit them.
 
 ## Workflow
 

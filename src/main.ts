@@ -6,6 +6,7 @@ import '@fontsource/jetbrains-mono/600.css';
 import '@fontsource/jetbrains-mono/700.css';
 import '@fontsource/jetbrains-mono/800.css';
 import './styles.css';
+import './seo/fallback.css';
 import { App } from './app/App';
 import { reloadOnceOnPreloadError } from './app/preloadRecovery';
 import { registerServiceWorker } from './app/serviceWorker';

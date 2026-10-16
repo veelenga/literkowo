@@ -900,9 +900,23 @@ Performance:
 
 Install and offline:
 
-- `vite-plugin-pwa` writes the web manifest: name Literkowo, standalone display, theme colour `#070b1a`, background `#050816`, start URL and scope from the base path.
+- `vite-plugin-pwa` writes the web manifest: name Literkowo, the site description, the categories education, games and kids, a wide screenshot, standalone display, theme colour `#070b1a`, background `#050816`, start URL and scope from the base path.
 - The service worker precaches the build and caches files under `models/` at runtime, cache first. It registers only in production builds (`src/app/serviceWorker.ts`).
+- The precache takes scripts, styles, HTML, SVG, PNG and fonts only. Navigation requests for a path with a file extension skip the app shell fallback (`FILE_REQUEST` in `vite.config.ts`), so `robots.txt`, `sitemap.xml`, `llms.txt` and the JPEG images always come fresh from the network.
 - Icons come from `public/icon.svg` and `public/icon-maskable.svg` through `npm run icons`.
+
+## Search and sharing
+
+Owners: `src/seo/site.ts` (every string, url and image), `src/seo/vitePlugin.ts`, `src/seo/headTags.ts`, `src/seo/structuredData.ts`, `src/seo/fallback.ts`, `src/seo/sitemap.ts`, `public/robots.txt`, `public/llms.txt`, `public/llms-full.txt`, `scripts/og.mjs`.
+
+- The page has one URL, `https://veelenga.github.io/literkowo/`, in Polish (`lang="pl"`). The interface language switches inside the page, so there are no `hreflang` links. Open Graph names `pl_PL` as the locale and `uk_UA` and `en_US` as alternates.
+- A Vite plugin adds to the head: the title "Literkowo: gra do nauki pisania na klawiaturze dla dzieci", the Polish description, `robots` with index and follow, the canonical link, Open Graph and Twitter card tags with `og.jpg` (1200 by 630) first and `og-square.jpg` (1200 by 1200), and structured data typed `VideoGame` and `WebApplication`: free, for players from 9, interface in Polish and Ukrainian.
+- The search phrases in Polish, English and Ukrainian are in `SEARCH_PHRASES`. They fill the keywords of the structured data, and the fallback text and `llms.txt` use them in sentences. There is no meta keywords tag.
+- Until the game mounts, the app root holds a short description in Polish, Ukrainian and English and a noscript note. The app replaces it on start.
+- The build writes `sitemap.xml` with the build date and the share images. `robots.txt` allows every crawler, points to the sitemap and sets the content signals `search=yes, ai-input=yes, ai-train=no`.
+- Crawlers read `robots.txt` only at the root of a host. On GitHub Pages that is the `veelenga.github.io` user site, so its `robots.txt` needs the sitemap line and the content signals as well. The file here takes over on a custom domain.
+- `llms.txt` follows llmstxt.org, and `llms-full.txt` adds a short description of every feature. Both are written by hand, so a pull request that adds or changes a feature updates them too.
+- `npm run og` renders the share images, `public/screenshot.jpg` and the README image from a live island arena run with a hero in the wizard hat and the dragon pet. The image alt texts in `src/seo/site.ts` describe that scene.
 
 ## Dev shortcut
 

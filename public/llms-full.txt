@@ -1,0 +1,159 @@
+# Literkowo
+
+> Literkowo is a free browser typing game for children aged 9 and up. Kids learn touch typing with all ten fingers, one new key per level, from the home row to the Polish letters, in a blocky 3D adventure with special enemies, bosses, an arena and a shop. The interface is in Polish and Ukrainian, and the typing words are in Polish and English.
+
+In Polish: "Literkowo: gra do nauki pisania na klawiaturze dla dzieci". In Ukrainian: "Literkowo: гра для навчання друку для дітей".
+
+Play it at https://veelenga.github.io/literkowo/. The source is at https://github.com/veelenga/literkowo. This file is the long version of https://veelenga.github.io/literkowo/llms.txt.
+
+## What it is
+
+Literkowo is a typing tutor that plays like a game. The child's hero stands in the middle of a blocky 3D board, a look kids know from games like Minecraft and Roblox. Enemies carry words and walk toward the hero. Typing a word fires bolts and a lightning strike that shatter the enemy. A word that reaches the hero costs one of three hearts.
+
+The idea behind it:
+
+- Type quickly and correctly with all ten fingers, not by hunting for keys with two.
+- Stay fun for a long time, so children come back on their own.
+- Open in a browser on any device with nothing to install.
+- Teach finger placement and hand position properly from the first level.
+- Accuracy before speed. Stars come from accuracy, a mistake breaks the combo, and every new mechanic keeps careful typing as the best way to win.
+
+It is free, has no ads and needs no account.
+
+## Who it is for
+
+Children from about 9 years old who are learning to type, and the parents and teachers who look for a free typing course in Polish. Several children can share one device, each with their own profile, character, stars, coins and items. The course assumes a physical keyboard, so a computer or a tablet with a keyboard works best, and phones get a keyboard on the screen.
+
+## How a level works
+
+1. A story card with Sowa Klara the owl, Felek and the shadowy Mrok, before the first level and around each boss.
+2. A learn card: the new key, which finger presses it, a hands diagram and the hint to rest the fingers on the home row.
+3. A warm up with single letters of the new keys.
+4. The main phase with words. At most six enemies are on the board at once.
+5. A boss or a mini boss at the end of boss and review levels.
+6. A result card with stars, score, accuracy, words per minute, XP, coins and the two weakest keys of the run.
+
+Stars: one at 85% accuracy, two at 93%, three at 97%. A lost level earns no stars. Escape pauses the game, and the pause card shows a heatmap of the keyboard tinted by accuracy.
+
+## The course
+
+Every level adds one new key, except the first, which teaches f and j together. A learn level introduces a key, a practice level right after it uses real words with that key, a review after every two keys mixes everything learned so far and ends with a mini boss, and a boss level closes each region. A level opens when the levels before it are won, and the child can try up to three levels ahead. Polish letters are typed with right Alt, and AltGr works on Windows.
+
+| Region        | Polish and Ukrainian name        | Theme     | New keys          | Levels |
+| ------------- | -------------------------------- | --------- | ----------------- | ------ |
+| Meadow        | Polana / Галявина                | meadow    | f j d k s l a ;   | 19     |
+| Forest        | Las / Ліс                        | forest    | g h e i r u       | 16     |
+| Mountains     | Góry / Гори                      | mountains | t y w o q p       | 16     |
+| Cave          | Jaskinia / Печера                | cave      | v m c n x z b , . | 24     |
+| Island        | Wyspa Ogonków / Острів Хвостиків | island    | ą ę ó ł ś ć ż ź ń | 24     |
+
+Profiles that type Polish words play all 99 levels. Profiles that type English words play 75, since the island teaches Polish letters. Every region has its own landscape, colours, enemy shape and music.
+
+Words fit the keys taught so far. Early levels use short letter combinations that are easy to type, later levels use real words from Polish and English word lists that are safe for kids. The pace grows smoothly along the course.
+
+## Key mastery
+
+The game keeps statistics for every key: hits, misses, the last 30 keystrokes, speed and the days it was practised. Each key is new, learning, solid (90% over the last 30 keystrokes) or mastered (97%, on target speed, practised on three different days). The map shows how many keys of each region are mastered, and words lean toward the keys the child finds hardest.
+
+## Enemies
+
+Eleven special enemy types unlock along the course. In the arena all of them can appear from the first wave.
+
+- Jumper (Skoczek): one key typed several times; each letter makes it hop and shrink.
+- Balloon (Balonik): floats up and away; popped in time, it pays double points.
+- Bat (Nietoperz): flies an arc and drops a bomb unless it is typed first.
+- Ghost (Duch): fades in and out; its word shows only while it is solid.
+- Thief (Złodziej): runs in, steals points and runs away; typed on the way out, it gives them back with coins.
+- Swarm (Rój): a cloud of bugs, one letter per bug, typed in order.
+- Splitter (Rozszczep): two short words joined; typed, it splits into two faster halves.
+- Shield (Tarczownik): a key on a shield hides the word until the shield is knocked off.
+- Bull (Byk): stamps, then charges; each correct letter knocks it back.
+- Chameleon (Kameleon): swaps its word every few seconds until the first letter locks it.
+- Nest (Gniazdo): sits still and hatches chicks with two letter words.
+
+More things that keep levels lively:
+
+- Power words: a golden enemy that casts a power when typed. Frost (Mróz) freezes the board, Storm (Burza) strikes the three nearest enemies with lightning, Quake (Wstrząs) pushes every enemy back and Shield (Tarcza) protects the next heart.
+- Bombers: a big enemy with a lit fuse; typing it blasts every enemy nearby.
+- Twins: two to four small enemies sharing one word, finished together.
+- Merging enemies: two plain enemies that drift together fuse into a bigger one that carries both words and pays triple points.
+- Speed surges: for a few seconds every enemy moves faster.
+- Mid wave events: a rush of short words, a meteor shower of single letters, or a treasure chest that walks across the board.
+- Fever: from a combo of 15 the points double, a gold ring spins around the hero and the strikes turn golden, until the next mistake.
+
+## Bosses
+
+Each region ends with a boss fight. The boss knocks back with every typed word and gets a little faster. It fights in three phases: armour, a weak point that slows the world for a moment, and rage with helper minions. Bosses after the first region also use signature attacks: darkness hides the keyboard hint, fog hides all but the next letter of every word, and an earthquake shuffles the enemies. Every review level ends with a smaller mini boss, Mały Strażnik (the Little Guardian).
+
+## Progression
+
+Every completed word gives XP, and XP never goes down, also not in a lost level. XP raises the player level and the rank: Pisklę (chick), Uczeń (apprentice), Łowca Liter (letter hunter), Strażnik Słów (word guardian), Mistrz Klawiatury (keyboard master) and Legenda (legend). Words and won levels also pay coins for the shop.
+
+## Arena
+
+The arena opens after the first region boss. Its first mode, Bez końca (endless), sends waves of words until the last heart is gone.
+
+- Key sets: the keys of every region the child has finished, so the arena never asks for keys the course has not taught.
+- Four difficulties: Spokojnie (calm), Normalnie (normal), Szybko (fast) and Szaleństwo (frenzy). Faster ones bring more special enemies and more events, and Szaleństwo leaves a single heart. The two fastest add a region boss every fifth wave.
+- Each wave is a little longer and faster than the one before.
+- Medals: bronze, silver and gold for 3, 6 and 10 waves cleared, each also needing 85%, 93% or 97% accuracy, so rushing never earns gold.
+- Medals and new records pay coins, and arena goals unlock special items in the shop.
+
+The course stays the only place where new keys are learned.
+
+## Shop and item powers
+
+Coins buy items for the hero, and the hero wears them in levels, on the map and in the menus.
+
+- Pets (Zwierzaki): ten pets, such as a cube cat, a bee, a puppy, a penguin and a dragon. A pet floats next to the hero and helps in levels, for example by catching a bat, chasing a ghost, stopping a thief, freezing the board once or giving a heart back after a long combo.
+- Hats (Czapki): ten hats, such as a cap, headphones, a wizard hat, a helmet and a crown. A hat works all the time, for example with a few more coins or XP, solid ghosts, a guard against the boss or a defused bomber.
+- Characters (Postacie): eighteen blocky characters to play as.
+- Trophies (Trofea): rewards for milestones such as the first boss, whole regions, star streaks and arena waves.
+
+Some items unlock with a rank or an arena goal instead of coins. No power types for the player, and no power raises accuracy or stars.
+
+## Profiles and privacy
+
+There are no accounts and no server. Profiles, progress, key statistics and items are saved in the browser's local storage on the device, and nothing leaves the browser. Each profile picks its typing language, Polish or English.
+
+## Phones and tablets
+
+The game fits phones, tablets and desktops. A tablet with a Bluetooth keyboard is the main target. Phones get a built in keyboard on the screen with the finger colours, and right Alt is sticky on screen so Polish letters work too. The game can be installed as an app and then works offline.
+
+## Settings
+
+Graphics quality, sound effects and music, the interface language, the keyboard on the screen and reduced motion. Settings belong to the device and are shared by all profiles.
+
+## Audio
+
+All music and sound effects are generated live in the browser with Web Audio. There are no audio files. Every region has its own music. It brightens as the combo grows and switches to a tense mood in boss fights.
+
+## Languages
+
+- Interface: Polish (default) and Ukrainian, switched on the profile screen or in the settings.
+- Typing words: Polish or English, chosen per profile.
+- More interface and typing languages may come later.
+
+## Tech stack
+
+- TypeScript and Vite.
+- three.js for the 3D world, with bloom, shadows and quality presets for slower devices.
+- Web Audio for generated music and sound.
+- vite-plugin-pwa for the installable, offline web app.
+- Vitest for unit tests and Playwright for browser tests.
+- Hosted on GitHub Pages and deployed from the main branch.
+
+## Licence and credits
+
+The source code is public on GitHub. The repository has no licence file, so reusing the code needs the author's permission. Made by Vitalii Elenhaupt (https://github.com/veelenga).
+
+- Characters: "Blocky Characters" by Kenney (kenney.nl), CC0.
+- Fonts: Nunito and JetBrains Mono through Fontsource, OFL.
+
+## Links
+
+- Play: https://veelenga.github.io/literkowo/
+- Source: https://github.com/veelenga/literkowo
+- README: https://raw.githubusercontent.com/veelenga/literkowo/main/README.md
+- Intent: https://raw.githubusercontent.com/veelenga/literkowo/main/docs/INTENT.md
+- Spec: https://raw.githubusercontent.com/veelenga/literkowo/main/docs/SPEC.md
