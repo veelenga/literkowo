@@ -47,6 +47,7 @@ import { WorldMap } from '../ui/WorldMap';
 import {
   devArenaFromUrl,
   devLevelFromUrl,
+  devPlacementFromUrl,
   devProfile,
   unlockAudioOnFirstInput,
 } from './devShortcut';
@@ -99,6 +100,7 @@ export class App {
       if (level) return this.startDevLevel(level);
       const arena = devArenaFromUrl();
       if (arena) return this.startDevArena(arena);
+      if (devPlacementFromUrl()) return this.startDevPlacement();
     }
     this.showProfiles();
   }
@@ -111,6 +113,11 @@ export class App {
   private startDevArena(choice: ArenaChoice): void {
     unlockAudioOnFirstInput();
     this.arena.start(devProfile(this.store.active()), choice);
+  }
+
+  private startDevPlacement(): void {
+    unlockAudioOnFirstInput();
+    this.placement.start(devProfile(this.store.active()));
   }
 
   private showProfiles(): void {
