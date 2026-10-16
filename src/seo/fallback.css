@@ -1,0 +1,28 @@
+.app-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  box-sizing: border-box;
+  max-width: 64ch;
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 24px 16px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.app-fallback-title {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-size: 2.6rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.app-fallback p {
+  margin: 0;
+}

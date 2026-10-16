@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { seoPlugin } from './src/seo/vitePlugin';
 
 const THREE_CHUNK_LIMIT_KB = 670;
 
@@ -30,6 +31,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    seoPlugin(),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: false,
