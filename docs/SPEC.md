@@ -609,24 +609,31 @@ Counters (`src/course/counters.ts`, `src/game/RunTally.ts`). The game tallies ea
 
 The trophy tab shows "Trofea: 3 z 32" / "Трофеї: 3 з 32" and every trophy with its name and the rule as its hint. Earned trophies glow in their colour. Locked ones are grey, and when the rule can be measured they show a bar in the trophy's colour with "312 z 500" / "312 з 500" (`trophyProgress` in `src/course/trophies.ts`). The first boss, the mastered region and the arena gold show "Jeszcze przed tobą" / "Ще попереду" instead.
 
-The result card adds a chip "Nowy skarb: Polana" / "Новий скарб: Галявина" for each trophy of the attempt, and "Nowość w sklepie" / "Новинка в крамниці" when an item became affordable or claimable. These chips are buttons with a small › mark that open the shop as in the table above (`src/ui/resultTreasures.ts`). The "Arena otwarta!" / "Арену відкрито!" chip is not a link. On touch screens each chip button reaches 44 px tall without changing the card layout.
+The result card adds a chip "Nowy skarb: Polana" / "Новий скарб: Галявина" for each trophy of the attempt, and "Nowość w sklepie" / "Новинка в крамниці" when an item became affordable or claimable. These chips are buttons with a small › mark that open the shop as in the table above (`src/ui/resultTreasures.ts`). On touch screens each chip button reaches 44 px tall without changing the card layout.
 
 ## Arena
 
 Owners: `src/arena` (`keySets.ts`, `difficulty.ts`, `endlessPlan.ts`, `medals.ts`, `economy.ts`, `record.ts`, `progress.ts`), `src/game/mechanics/ArenaWaves.ts`, `src/app/ArenaFlow.ts`, `src/ui/arena/ArenaScreen.ts`, `src/ui/arena/ArenaResult.ts`, `src/ui/arena/arenaParts.ts`, `src/ui/arena.css`, copy in `src/i18n/features/arena.ts`.
 
-The arena, "Arena" / "Арена", is extra play next to the course. Its first mode is "Bez końca" / "Без кінця": waves that never end, until the last heart is gone. The course stays the only place to learn new keys.
+The arena, "Arena" / "Арена", is extra play next to the course, open from the first day so that a child who can already type is never bored. It holds three modes: the [Placement test](#placement-test) "Sprawdzian" / "Перевірка", the [Daily challenge](#daily-challenge) "Wyzwanie dnia" / "Виклик дня" and "Bez końca" / "Без кінця": waves that never end, until the last heart is gone. The course stays the only place to learn new keys.
 
 Opening:
 
-- The arena opens with at least one star on the Polana boss (`polana-19`), or with a placement in the profile's arena record, which the [Placement test](#placement-test) writes (`isArenaOpen` in `src/arena/keySets.ts`).
-- Map header: the "Arena" / "Арена" button sits next to the shop button in the same style, only the icon on phones. While the arena is open and today's [Daily challenge](#daily-challenge) has no finished try, it shows a small green dot. While the arena is closed it is dimmed, has a lock badge and the hint "Pokonaj bossa Polany" / "Переможи боса Галявини", and a tap scrolls the map to the gate.
-- Map gate: a round badge as big as a boss node in the footer of the Polana band, one row below the boss and across from it (`gatePoint` in `src/ui/map/journeyLayout.ts`). While closed it is dimmed with a lock and shows the same hint. Once open it shows "Arena" and opens the arena screen.
-- The result card of the attempt that opens the arena shows the chip "Arena otwarta!" / "Арену відкрито!".
+- The arena is always open. Map header: the "Arena" / "Арена" button sits next to the shop button in the same style, only the icon on phones. While today's daily challenge has no finished try, it shows a small green dot.
+
+Screen:
+
+- The hero card on the left shows the hero in 3D and the endless records of the chosen key set, one row per open difficulty.
+- Three mode tabs sit at the top, with an icon and a name: "Sprawdzian" / "Перевірка", "Wyzwanie dnia" / "Виклик дня" and "Bez końca" / "Без кінця". The daily tab carries the green dot while today waits. The screen opens on "Bez końca", or on the mode the child just played when it comes back from a result card or the shop.
+- One panel under the tabs shows the chosen mode, and it has the one big Play button of the screen. Enter plays the chosen mode, Escape goes back to the map.
+- "Bez końca": the key set chips with the keys of the chosen set, the difficulty chips with the lock hint, the rule line, the best wave with its medal, and Play.
+- "Wyzwanie dnia": the key set chips while the day has no finished try, then the daily card (see [Daily challenge](#daily-challenge)).
+- "Sprawdzian": a chip per stage with the region names, the rule "Pisz słowa, które widzisz. Każdy etap trwa 12 sekund." / "Друкуй слова, які бачиш. Кожен етап триває 12 секунд.", the home row hint, the pill "Zaczynasz tutaj: Las" / "Починаєш тут: Ліс" once the profile has a placement, and Play, which starts the test at once.
+- On phones the tabs stack the icon over the name and the panel fills the width. In landscape the hero card hides and the endless panel puts the key set and the difficulty side by side.
 
 Key sets:
 
-- One key set per region whose keys the course has taught: a region counts once its boss level is open, which means every key of the region was introduced. A placement opens the boss levels of every placed region, so it opens their key sets too.
+- The first region is always open. Every other region opens once its boss level is open, which means every key of the region was introduced. A placement opens the boss levels of every placed region, so it opens their key sets too.
 - A key set holds the allowed keys of its region's boss level, so every key up to and including that region. English word profiles never get Wyspa Ogonków.
 - The screen starts on the highest key set. The theme, the music and the boss of a run are those of the key set's region. The game runs the run with that boss level as its level.
 
@@ -847,9 +854,9 @@ What a placement opens (`recordPlacement`, `src/course/course.ts`):
 - Every level of the placed regions opens, and the first level of the next region too. The current level is that first level, for example `las-1` after a placement in Polana. After a placement in the last region every level is open and the current level is the first level of that region without a star, `wyspa-1` for Polish words and `jaskinia-1` for English words. Wins open the usual window from there.
 - A placement in a region the word language does not have counts as the last region before it, so Wyspa Ogonków counts as Jaskinia for English words.
 - Stars, trophies and boss stories still need real play. The skipped levels have no stars, and the boss scenes still play before each boss.
-- The arena opens, with a key set for every placed region (see [Arena](#arena)).
+- The arena gets a key set for every placed region (see [Arena](#arena)).
 - The keystrokes of the test go into the key statistics like those of a level, so weak keys get more weight later.
-- The test pays nothing else, so a retake cannot farm anything: its XP factor is 0 (`PLACEMENT_XP_FACTOR`), it pays no coins, and the total score, letters freed and the counters stay as they were. Words show no XP pop, and the HUD hides the XP of the run.
+- The test pays like an arena run on Normalnie: XP at the Normalnie factor (`PLACEMENT_XP_FACTOR`), coins per word at the Normalnie rate (`PLACEMENT_COINS_PER_WORD`), boosted by the equipped items, and the score, the letters freed and the counters grow as in any run (`withArenaRun`). It gives no stars and no medal.
 
 Map:
 
@@ -858,8 +865,8 @@ Map:
 Screens:
 
 - Create form: "Zacznij naukę" / "Почни навчання" creates the profile as before, and "Umiem już pisać" / "Я вже вмію друкувати" next to it creates the profile and opens the test. On narrow phones the two sit side by side and the cancel button moves to the top right corner of the panel.
-- Play panel: a quiet "Sprawdzian" / "Перевірка" button in the row with the word language. It shows until the profile has a star past Polana or a placement in the last region of its word language (`offersPlacement`).
-- Intro card, in the learn card panel: "Sprawdzian" / "Перевірка", a chip per stage with the region names, "Pisz słowa, które widzisz. Każdy etap trwa 12 sekund." / "Друкуй слова, які бачиш. Кожен етап триває 12 секунд.", the home row hint and the Start button "Zaczynamy" / "Починаємо". Enter starts, Escape and the ✕ button "Zamknij" / "Закрити" close the card and stay on the profile screen.
+- Arena: the "Sprawdzian" / "Перевірка" tab of the [Arena](#arena) shows the stages and starts the test with Play, always, so a child can retake it any time.
+- Intro card, in the learn card panel, only on the way from the create form: "Sprawdzian" / "Перевірка", a chip per stage with the region names, "Pisz słowa, które widzisz. Każdy etap trwa 12 sekund." / "Друкуй слова, які бачиш. Кожен етап триває 12 секунд.", the home row hint and the Start button "Zaczynamy" / "Починаємо". Enter starts, Escape and the ✕ button "Zamknij" / "Закрити" close the card and stay on the profile screen.
 - During the test the HUD progress label shows "Etap 2 z 5" / "Етап 2 з 5", also on phones, and the bar is a time bar that empties over the 12 seconds, with the seconds left as the count. The HUD has no hearts.
 - Result card, in the result panel: the headline "Zaczynasz tutaj: Las" / "Починаєш тут: Ліс" with the region after the profile's placement, which an earlier and better test may have set (the last region after a full pass), or "Zaczniemy od początku. Tak będzie najlepiej!" / "Почнемо з початку. Так буде найкраще!" without a placement. A row of region chips, lit for each passed stage and dim for the others, one hint line, the accuracy tile and the speed tile in words per minute from the typing time of the test. Buttons: "Na mapę" / "На мапу", the main button, and "Arena" / "Арена" when the profile has a placement. Confetti and a sparkle play after a placement.
 - Fingers card, once per profile after the first placement (stored as `placement-fingers` in the seen stories): "Palce na start" / "Пальці на старт", a small keyboard with every skipped key in its finger colour and the Polish letters as marks on their base keys, the hands with those fingers lit, "Tak palce sięgają do pominiętych klawiszy. Każdy kolor to jeden palec." / "Так пальці дістають до пропущених клавіш. Кожен колір означає один палець." and the Start button. Start, Enter, Escape and ✕ all continue to where the result card was left for, the map or the arena. Skipped keys are the keys of the learn levels the placement covered that have no star.
@@ -932,14 +939,13 @@ Profile screen:
 
 - Layered hills drift slowly behind the logo, and glowing letters float and twinkle over them. On devices that can hover, the hills lean a little toward the pointer.
 - With reduced motion or the low quality preset the hills stand still and there are no letters (`src/ui/menuMotion.ts`).
-- Each profile is a card with the rendered portrait under a spotlight, the name, the level, the rank, a thin XP bar, pills for stars and coins, and the medal of today's [Daily challenge](#daily-challenge) once it is done.
-- The selected card lifts, glows and shows the hero in 3D with the equipped hat and pet, swaying slowly. It uses the same outfit view as the shop (`src/ui/portraits/OutfitView.ts`). The play panel opens right under the row of the selected card, and cards from later rows move below it. The panel has a big Play button, then the word language chips and the delete button in a quieter row.
-- The narrow dashed new profile card opens the create panel, which takes the place of the cards until the profile is created or the panel is cancelled: a large live preview of the chosen character that switches with every pick, the name field, the 18 characters, the main button "Zacznij naukę" / "Почни навчання" and next to it "Umiem już pisać" / "Я вже вмію друкувати", which also creates the profile and opens the [Placement test](#placement-test). On narrow phones the cancel button moves to the top right corner of the panel.
+- Each profile is a card with the rendered portrait under a spotlight, a small tag in the top left corner with the language of its words ("Słowa po polsku" / "Слова польською" or "Słowa po angielsku" / "Слова англійською"), the name, the level, the rank, a thin XP bar, pills for stars and coins, and the medal of today's [Daily challenge](#daily-challenge) once it is done. The tag hides on phones.
+- The selected card lifts, glows and shows the hero in 3D with the equipped hat and pet, swaying slowly. It uses the same outfit view as the shop (`src/ui/portraits/OutfitView.ts`). The play panel opens right under the row of the selected card, and cards from later rows move below it. The panel holds only the name, the line "Słowa po polsku" / "Слова польською" or "Słowa po angielsku" / "Слова англійською" under it, and the big Play button. Enter plays.
+- The narrow dashed new profile card opens the create panel, which takes the place of the cards until the profile is created or the panel is cancelled: a large live preview of the chosen character that switches with every pick, the name field, the word language chips "Język słów" / "Мова слів" with "Polski" / "Польська" and "Angielski" / "Англійська", the 18 characters, the main button "Zacznij naukę" / "Почни навчання" and next to it "Umiem już pisać" / "Я вже вмію друкувати", which also creates the profile and opens the [Placement test](#placement-test). On narrow phones the cancel button moves to the top right corner of the panel.
 - With four profiles the cards fit in one row, and the screen fits without scrolling from 1280 by 720 up. Screens up to 900 px tall get a smaller logo and tighter spacing, and screens up to 800 px tall also smaller cards, a smaller create panel and 9 characters per row.
 - Long names and rank names end with an ellipsis on the cards.
 - The top right corner holds the interface language switch "PL" / "UA" and a round gear button that opens the [Settings](#settings).
-- The play panel has a quiet "Sklep" / "Крамниця" link with the bag next to Play. It opens the shop for the selected profile.
-- The play panel has a quiet "Sprawdzian" / "Перевірка" button next to the word language until the profile has a star past Polana or a placement in its last region. It opens the [Placement test](#placement-test).
+- The word language belongs to a profile for good: it is chosen when the profile is created, and a child who wants the other words makes another profile. The shop, the placement test and the deletion live inside the profile: the shop and the [Arena](#arena) in the map header, the delete button in the [Settings](#settings) opened from the map.
 
 Map:
 
@@ -1010,6 +1016,8 @@ It reuses the shop header: the back button "Wróć" / "Назад" and the title
 
 Each setting is a row with a label, an optional hint, and segmented chips or a switch. Settings belong to the device and are shared by all profiles.
 
+When the screen opens from the map it ends with the row "Profil" / "Профіль": the hint names the profile, "Ola. Usunięcie kasuje cały postęp na tym urządzeniu" / "Ola. Видалення стирає весь поступ на цьому пристрої", and the quiet red button "Usuń profil" / "Видалити профіль" asks "Na pewno usunąć ten profil?" / "Точно видалити цей профіль?" and then removes the profile and returns to the profile screen. The row is absent when the settings open from the profile screen or the pause card.
+
 | Setting                                          | Choices                      | Storage key                  | Applies             |
 | ------------------------------------------------ | ---------------------------- | ---------------------------- | ------------------- |
 | "Jakość grafiki" / "Якість графіки"              | Auto, Wysoka, Średnia, Niska | `literkowo.quality`          | from the next level |
@@ -1031,7 +1039,7 @@ Each setting is a row with a label, an optional hint, and segmented chips or a s
 Owners: `src/i18n/translations.ts`, `src/i18n/i18n.ts`.
 
 - Today the interface is in Polish (default) and Ukrainian. The language switch is on the profile screen and on the [Settings](#settings) screen. The choice is saved under `literkowo.uiLanguage`.
-- Interface language and word language are separate settings.
+- Interface language and word language are separate settings. The word language is fixed per profile at creation.
 - Region names and story lines carry every interface language next to the data (`src/course/catalog.ts`, `src/story/story.ts`).
 - A new interface language needs a new entry in `src/i18n/translations.ts` and text in the region and story data.
 
@@ -1051,7 +1059,7 @@ Layout:
 - In portrait both cards use smaller keycaps, a smaller hands diagram and full width buttons. Each result shows its label and value on one line. When the rank, the XP and the coins do not fit in one row of the result, the XP and the coins move to a second row.
 - In landscape the learn card puts the hands diagram next to the keycaps. The result card puts the stars next to the title, the four results in one row, the XP bar in one row with the level and the rewards, and the buttons side by side. It hides the stars hint and shows the level up banner on one line. Overlays keep an 8 px margin above and below. The pause card puts the key heatmap next to the title and the resume button.
 - Menus and overlays fit without a page scroll at 1280 by 720 and larger, at 1024 by 768, on a tablet in portrait and on phones in both orientations, also after a level up with every treasure chip. Only the journey map, the shop list and the trophy list scroll. On screens up to 900 px tall the result card is wider, with the four results in one row, the buttons side by side and smaller chips. On screens up to 800 px tall the learn card and the pause card are smaller too.
-- On phones the profile screen shows a smaller logo and no tagline. The profile cards sit three in a row in portrait and five in a row in landscape, with the level and the stars under the name. The play panel keeps the shop link and Play next to the name, with the word language and the delete button under them. In landscape the section title is hidden, and the logo hides while the create panel is open.
+- On phones the profile screen shows a smaller logo and no tagline. The profile cards sit three in a row in portrait and five in a row in landscape, with the level and the stars under the name. The play panel keeps the name, the word language line and Play in one row. In landscape the section title is hidden, and the logo hides while the create panel is open.
 - Touch targets are at least 44 px on touch screens, except the 36 px wide HUD buttons on phones. Hover effects apply only on devices that can hover.
 - The app is `100dvh` tall. The HUD, the keyboard hint, the map header and overlays stay inside the safe area insets.
 - The camera keeps a horizontal field of view of at least 62 degrees, so the whole spawn arc stays in frame on narrow and portrait screens. The vertical field of view grows when needed and never drops below 42 degrees (`src/game/board.ts`).

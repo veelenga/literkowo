@@ -91,9 +91,9 @@ Every completed word gives XP, and XP never goes down, also not in a lost level.
 
 ## Arena
 
-The arena opens after the first region boss. Its first mode, Bez końca (endless), sends waves of words until the last heart is gone.
+The arena is open from the first day and holds three modes: Sprawdzian (the placement test, which a child can retake any time), Wyzwanie dnia (the daily challenge) and Bez końca (endless), which sends waves of words until the last heart is gone. All three pay XP and coins.
 
-- Key sets: the keys of every region the child has finished, so the arena never asks for keys the course has not taught.
+- Key sets: the keys of the first region, and of every region the child has finished, so the arena never asks for keys the course has not taught.
 - Four difficulties: Spokojnie (calm), Normalnie (normal), Szybko (fast) and Szaleństwo (frenzy). Faster ones bring more special enemies and more events, and Szaleństwo leaves a single heart. The two fastest add a region boss every fifth wave.
 - Each wave is a little longer and faster than the one before.
 - Medals: bronze, silver and gold for 3, 6 and 10 waves cleared, each also needing 85%, 93% or 97% accuracy, so rushing never earns gold.
@@ -130,7 +130,7 @@ The game fits phones, tablets and desktops. A tablet with a Bluetooth keyboard i
 
 ## Settings
 
-Graphics quality, sound effects and music, the interface language, the keyboard on the screen and reduced motion. Settings belong to the device and are shared by all profiles.
+Graphics quality, sound effects and music, the interface language, the keyboard on the screen and reduced motion. Settings belong to the device and are shared by all profiles. Opened from the map, the settings also hold the button that deletes the current profile.
 
 ## Audio
 
@@ -139,6 +139,7 @@ All music and sound effects are generated live in the browser with Web Audio. Th
 ## Languages
 
 - Interface: Polish (default) and Ukrainian, switched on the profile screen or in the settings.
+- Typing words: Polish or English, chosen once when a profile is created. A child who wants the other words makes another profile.
 - Typing words: Polish or English, chosen per profile.
 - More interface and typing languages may come later.
 
