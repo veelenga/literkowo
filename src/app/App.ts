@@ -439,5 +439,5 @@ function attemptOf(result: GameResult, stars: number, coins: number): Attempt {
 function openNext(profile: Profile, level: Level): Level | undefined {
   const course = courseFor(profile.wordLanguage);
   const next = course.next(level);
-  return next && course.isUnlocked(next, profile.levelResults) ? next : undefined;
+  return next && course.isUnlocked(next, profile) ? next : undefined;
 }
