@@ -26,6 +26,13 @@ const FOCUS_WORD_RULES: WordRules = {
   generatedLengths: { min: 3, max: 6 },
   stages: [{ kind: 'focusWords', share: 1, lengths: { min: 3, max: 6 } }],
 };
+const LISTED_RULES: WordRules = {
+  allowedKeys: 'fjdksla;gheiru',
+  focusKeys: 'gheiru',
+  lengths: { min: 3, max: 5 },
+  generatedLengths: { min: 3, max: 5 },
+  realWordsOnly: true,
+};
 const PHASE_RULES: WordRules = {
   allowedKeys: 'kot',
   focusKeys: 'k',
@@ -51,6 +58,26 @@ function share(items: readonly string[], matches: (item: string) => boolean): nu
 }
 
 describe('WordSource', () => {
+  it('gives only listed words when the rules ask for real words', () => {
+    const words = new WordSource('pl', LISTED_RULES);
+    const listed = new Set(WORD_LISTS.pl);
+    const drawn = Array.from({ length: SAMPLES }, () => words.next());
+    expect(drawn.every((word) => listed.has(word))).toBe(true);
+    expect(drawn.every((word) => word.length >= 3 && word.length <= 5)).toBe(true);
+    expect(drawn.every((word) => [...word].some((char) => 'gheiru'.includes(char)))).toBe(true);
+  });
+
+  it('falls back to any fitting listed word when no word has a focus key', () => {
+    const words = new WordSource('en', {
+      ...LISTED_RULES,
+      allowedKeys: 'fjdksla;',
+      focusKeys: 'g',
+    });
+    const listed = new Set(WORD_LISTS.en);
+    const drawn = Array.from({ length: SAMPLES }, () => words.next());
+    expect(drawn.every((word) => listed.has(word))).toBe(true);
+  });
+
   it('only uses keys unlocked so far', () => {
     for (const level of LEVELS.filter((candidate) => !candidate.isBoss)) {
       const allowed = allowedKeysFor(level);
