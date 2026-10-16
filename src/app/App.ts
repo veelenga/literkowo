@@ -46,12 +46,13 @@ import { TouchTyping } from '../ui/TouchTyping';
 import { WorldMap } from '../ui/WorldMap';
 import {
   devArenaFromUrl,
+  devDailyFromUrl,
   devLevelFromUrl,
   devPlacementFromUrl,
   devProfile,
   unlockAudioOnFirstInput,
 } from './devShortcut';
-import { ArenaFlow, type Screen } from './ArenaFlow';
+import { ArenaFlow, type DailyStart, type Screen } from './ArenaFlow';
 import type { GameRun } from './GameRun';
 import { loadGameModule, prefetchGameModule, type GameModule } from './gameModule';
 import { PageAttention } from './PageAttention';
@@ -73,6 +74,7 @@ export class App {
     openOverlay: (overlay) => this.overlays.open(overlay),
     dismissThen: (next) => this.dismissThen(next),
     save: (profile) => this.save(profile),
+    profiles: () => this.store.all(),
   });
   private readonly placement = new PlacementFlow({
     showMap: (profile) => this.showMap(profile),
@@ -100,6 +102,8 @@ export class App {
       if (level) return this.startDevLevel(level);
       const arena = devArenaFromUrl();
       if (arena) return this.startDevArena(arena);
+      const daily = devDailyFromUrl();
+      if (daily) return this.startDevDaily(daily);
       if (devPlacementFromUrl()) return this.startDevPlacement();
     }
     this.showProfiles();
@@ -113,6 +117,11 @@ export class App {
   private startDevArena(choice: ArenaChoice): void {
     unlockAudioOnFirstInput();
     this.arena.start(devProfile(this.store.active()), choice);
+  }
+
+  private startDevDaily(start: DailyStart): void {
+    unlockAudioOnFirstInput();
+    this.arena.startDaily(devProfile(this.store.active()), start);
   }
 
   private startDevPlacement(): void {

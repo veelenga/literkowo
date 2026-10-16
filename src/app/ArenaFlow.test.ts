@@ -2,6 +2,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { difficultyById } from '../arena/difficulty';
 import { keySetById } from '../arena/keySets';
+import { FAMILY_CHEST } from '../arena/daily';
+import { dailySeed } from '../arena/dailyPlan';
 import { SILVER } from '../arena/medals';
 import { arenaKey, withEndlessRun } from '../arena/record';
 import { LEVELS } from '../course/catalog';
@@ -64,7 +66,9 @@ function lasPlayer(): Profile {
   return { ...profile, arena: withEndlessRun(profile.arena, silver) };
 }
 
-function setup() {
+const FRIDAY = new Date(2026, 9, 16, 17, 30);
+
+function setup(family: Profile[] = []) {
   const runs: GameRun[] = [];
   const overlays: Overlay[] = [];
   const screens: Screen[] = [];
@@ -81,8 +85,10 @@ function setup() {
       saved.push(profile);
       return profile;
     },
+    profiles: () => family,
   };
-  return { flow: new ArenaFlow(host), runs, overlays, screens, saved, shops };
+  const flow = new ArenaFlow(host, () => FRIDAY);
+  return { flow, runs, overlays, screens, saved, shops };
 }
 
 describe('ArenaFlow', () => {
@@ -152,4 +158,104 @@ describe('ArenaFlow', () => {
     const active = screens[1].element.querySelectorAll('.chip.is-active');
     expect([...active].map((item) => item.textContent)).toEqual(['Las', 'Szybko']);
   });
+
+  it('runs the daily of the day on the key set, seeded and capped in time', () => {
+    const { flow, runs } = setup();
+    flow.startDaily(lasPlayer(), { keySet: CHOICE.keySet });
+    const [run] = runs;
+    expect(run.level.id).toBe('las-16');
+    expect(run.plan).toMatchObject({
+      lives: 1,
+      seconds: 180,
+      seed: dailySeed('2026-10-16', 'las'),
+    });
+  });
+
+  it('records a finished try, shows the daily result and plays again', () => {
+    const { flow, runs, overlays, saved } = setup();
+    flow.startDaily(lasPlayer(), { keySet: CHOICE.keySet, previous: CHOICE });
+    runs[0].onFinished({ ...RESULT, won: true, seconds: 180 });
+    expect(saved[0].arena.daily).toMatchObject({
+      date: '2026-10-16',
+      keySet: 'las',
+      tries: 1,
+      stamps: ['2026-10-16'],
+    });
+    const card = overlays[0].element;
+    expect(card.querySelector('.daily-result')).not.toBeNull();
+    expect(card.querySelector('.result-title')?.textContent).toBe('Najlepsza próba dnia!');
+    card.querySelector<HTMLButtonElement>('.button-primary')?.click();
+    expect(runs).toHaveLength(2);
+    overlays[0].dispose();
+  });
+
+  it('goes back to the arena screen with the same choice after a daily', () => {
+    const { flow, runs, overlays, screens } = setup();
+    flow.startDaily(lasPlayer(), { keySet: CHOICE.keySet, previous: CHOICE });
+    runs[0].onFinished(RESULT);
+    overlays[0].element.querySelector<HTMLButtonElement>('.button-ghost')?.click();
+    const active = screens[0].element.querySelectorAll('.chip.is-active');
+    expect([...active].map((chip) => chip.textContent)).toEqual(['Las', 'Szybko']);
+    expect(screens[0].element.querySelector('.daily-tries')?.textContent).toBe('Próby: 1 z 3');
+    overlays[0].dispose();
+  });
+
+  it('starts the daily from its card with the key set of the chip', () => {
+    const { flow, runs, screens } = setup();
+    flow.show(lasPlayer(), CHOICE);
+    screens[0].element.querySelector<HTMLButtonElement>('.daily-play')?.click();
+    expect(runs[0].level.id).toBe('las-16');
+    expect(runs[0].plan.seconds).toBe(180);
+  });
+
+  it('opens the arena screen instead of a fourth try', () => {
+    const { flow, runs, screens } = setup();
+    flow.startDaily(savedAfterTries(3), { keySet: CHOICE.keySet });
+    expect(runs).toHaveLength(0);
+    expect(screens[0].element.querySelector('.daily-tomorrow')?.textContent).toBe(
+      'Nowe wyzwanie jutro',
+    );
+  });
+
+  it('pays the family chest when a profile opens the arena', () => {
+    const stas = withStamps(createProfile('Staś', 'b'), 5);
+    const ola = withStamps(lasPlayer(), 5);
+    const { flow, saved } = setup([ola, stas]);
+    flow.show(ola, CHOICE);
+    expect(saved[0].coins).toBe(ola.coins + FAMILY_CHEST.coins);
+    expect(saved[0].arena.daily?.chests).toContain('2026-W42/family');
+  });
 });
+
+function savedAfterTries(tries: number): Profile {
+  const profile = lasPlayer();
+  const daily = {
+    date: '2026-10-16',
+    keySet: 'las',
+    tries,
+    stamps: ['2026-10-16'],
+    chests: [],
+    weekStreak: 0,
+    bestWeekStreak: 0,
+    totalStamps: 1,
+  };
+  return { ...profile, arena: { ...profile.arena, daily } };
+}
+
+function withStamps(profile: Profile, days: number): Profile {
+  const stamps = ['2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15', '2026-10-16'].slice(
+    0,
+    days,
+  );
+  const daily = {
+    date: stamps[stamps.length - 1],
+    keySet: 'las',
+    tries: 1,
+    stamps,
+    chests: [],
+    weekStreak: 0,
+    bestWeekStreak: 0,
+    totalStamps: days,
+  };
+  return { ...profile, arena: { ...profile.arena, daily } };
+}

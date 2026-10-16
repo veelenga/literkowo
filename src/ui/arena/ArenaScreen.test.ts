@@ -5,6 +5,7 @@ import { arenaKey, withEndlessRun } from '../../arena/record';
 import { LEVELS } from '../../course/catalog';
 import { createProfile, type Profile } from '../../profiles/Profile';
 import type { ArenaChoice } from '../../arena/endlessPlan';
+import type { KeySet } from '../../arena/keySets';
 import { ArenaScreen } from './ArenaScreen';
 
 vi.mock('../ShopHero', () => ({
@@ -42,7 +43,8 @@ function setup(profile: Profile, previous?: ArenaChoice) {
   const onPlay = vi.fn<(profile: Profile, choice: ArenaChoice) => void>();
   const onBack = vi.fn<(profile: Profile) => void>();
   const onShop = vi.fn<(profile: Profile, choice: ArenaChoice) => void>();
-  const screen = new ArenaScreen(profile, { onPlay, onBack, onShop }, previous);
+  const onDaily = vi.fn<(profile: Profile, keySet: KeySet, choice: ArenaChoice) => void>();
+  const screen = new ArenaScreen(profile, { onPlay, onBack, onShop, onDaily }, { previous });
   screens.push(screen);
   const chips = (selector: string) => [
     ...screen.element.querySelectorAll<HTMLButtonElement>(`${selector} .chip`),
@@ -51,7 +53,7 @@ function setup(profile: Profile, previous?: ArenaChoice) {
   const difficultyChips = () => chips('.arena-difficulties');
   const play = () => screen.element.querySelector<HTMLButtonElement>('.arena-play')?.click();
   const lastChoice = () => onPlay.mock.lastCall?.[1];
-  return { screen, keySetChips, difficultyChips, play, lastChoice, onBack, onShop };
+  return { screen, keySetChips, difficultyChips, play, lastChoice, onBack, onShop, onDaily };
 }
 
 function press(key: string): void {
@@ -96,7 +98,7 @@ describe('ArenaScreen', () => {
   it('shows the best wave and medal of the chosen combination', () => {
     const profile = withBest(profileUpTo('las-16'), 'las', 'normal', SILVER);
     const { screen, difficultyChips } = setup(profile);
-    const card = () => screen.element.querySelector('.arena-mode');
+    const card = () => screen.element.querySelector("[data-mode='endless']");
     expect(card()?.querySelector('.arena-best')?.textContent).toBe('Rekord: fala 7');
     expect(card()?.querySelector('.medal.is-silver')).not.toBeNull();
     expect(difficultyChips()[2].disabled).toBe(false);
@@ -156,5 +158,15 @@ describe('ArenaScreen', () => {
       press('Escape');
       expect(onBack).toHaveBeenCalledOnce();
     });
+  });
+
+  it('puts the daily card first and plays it with the chosen key set', () => {
+    const { screen, keySetChips, onDaily } = setup(profileUpTo('gory-16'));
+    const cards = [...screen.element.querySelectorAll('[data-mode]')];
+    expect(cards.map((card) => card.getAttribute('data-mode'))).toEqual(['daily', 'endless']);
+    keySetChips()[1].click();
+    screen.element.querySelector<HTMLButtonElement>('.daily-play')?.click();
+    expect(onDaily.mock.lastCall?.[1].id).toBe('las');
+    expect(onDaily.mock.lastCall?.[2].keySet.id).toBe('las');
   });
 });

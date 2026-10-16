@@ -1,0 +1,325 @@
+@import './screenSizes.css';
+
+.daily-card {
+  --stamp-size: 36px;
+  gap: 10px;
+  padding: 18px 20px 20px;
+}
+
+.daily-card .daily-title {
+  font-size: 1.3rem;
+}
+
+.daily-card .daily-tag {
+  min-height: 0;
+  padding: 3px 11px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.stamp-row {
+  display: flex;
+  gap: 6px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stamp {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+}
+
+.stamp-day {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.stamp-mark {
+  display: grid;
+  place-items: center;
+  width: var(--stamp-size);
+  height: var(--stamp-size);
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  background: var(--surface-sunken);
+}
+
+.stamp.is-stamped .stamp-mark {
+  border-color: var(--accent-light);
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.6), transparent 46%), var(--accent);
+  box-shadow: 0 3px 0 var(--accent-edge);
+}
+
+.stamp-check {
+  width: 64%;
+  height: 64%;
+  fill: var(--accent-ink);
+}
+
+.stamp.is-today .stamp-mark {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 3px var(--accent-soft),
+    0 0 12px var(--accent-glow);
+}
+
+.stamp.is-today.is-stamped .stamp-mark {
+  box-shadow:
+    0 3px 0 var(--accent-edge),
+    0 0 0 3px var(--accent-soft),
+    0 0 12px var(--accent-glow);
+}
+
+.stamp.is-today .stamp-day {
+  color: var(--accent-light);
+}
+
+.stamp.is-ahead {
+  opacity: 0.4;
+}
+
+.daily-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 8px;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.daily-streak {
+  color: var(--accent-light);
+}
+
+.daily-board {
+  max-width: 100%;
+  margin: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.daily-family {
+  display: grid;
+  grid-template-columns: auto minmax(48px, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.daily-family-bar {
+  width: 100%;
+}
+
+.daily-family.is-open .daily-family-label,
+.daily-family.is-open .daily-family-count {
+  color: var(--success);
+}
+
+.daily-play {
+  align-self: stretch;
+  margin-top: auto;
+}
+
+.daily-tomorrow {
+  align-self: stretch;
+  margin: auto 0 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-pill);
+  border: 2px dashed var(--border-strong);
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.daily-coins {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.daily-coin {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px 3px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  border: 2px solid var(--border);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.daily-coin-pill {
+  padding: 2px 8px;
+  font-size: 0.82rem;
+}
+
+.result-note {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 900;
+}
+
+@media (--low-screen) {
+  .daily-card {
+    gap: 7px;
+    padding: 14px 16px 16px;
+  }
+
+  .daily-card .daily-title {
+    font-size: 1.15rem;
+  }
+}
+
+@media (--phone) {
+  .daily-art {
+    display: none;
+  }
+
+  .daily-card {
+    --stamp-size: 32px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'title title'
+      'rule rule'
+      'stamps play'
+      'info info'
+      'board board'
+      'family family';
+    align-items: center;
+    gap: 6px 8px;
+    padding: 10px 10px 12px;
+    text-align: left;
+  }
+
+  .daily-card .daily-title {
+    grid-area: title;
+    font-size: 1.05rem;
+  }
+
+  .daily-rule {
+    grid-area: rule;
+    font-size: 0.8rem;
+  }
+
+  .stamp-row {
+    grid-area: stamps;
+    gap: 2px;
+    margin: 0;
+  }
+
+  .stamp-day {
+    font-size: 0.66rem;
+  }
+
+  .daily-info {
+    grid-area: info;
+    justify-content: flex-start;
+    font-size: 0.8rem;
+  }
+
+  .daily-card .daily-tag {
+    padding: 2px 8px;
+    font-size: 0.74rem;
+  }
+
+  .daily-board {
+    grid-area: board;
+    font-size: 0.76rem;
+  }
+
+  .daily-family {
+    grid-area: family;
+    font-size: 0.72rem;
+  }
+
+  .daily-play,
+  .daily-tomorrow {
+    grid-area: play;
+    align-self: end;
+    margin: 0;
+  }
+
+  .daily-card .daily-play {
+    min-height: 44px;
+    padding: 0 10px;
+    font-size: 1rem;
+  }
+
+  .daily-tomorrow {
+    grid-area: auto;
+    grid-column: 1 / -1;
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    text-align: center;
+  }
+}
+
+@media (--phone-landscape) {
+  .daily-card {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'title stamps play'
+      'rule stamps play'
+      'info stamps play';
+    gap: 2px 12px;
+    padding: 5px 12px;
+  }
+
+  .daily-card .daily-tag {
+    padding: 1px 8px;
+  }
+
+  .daily-card .daily-title {
+    font-size: 0.98rem;
+  }
+
+  .daily-rule {
+    font-size: 0.76rem;
+    line-height: 1.25;
+  }
+
+  .stamp-row,
+  .daily-play,
+  .daily-tomorrow {
+    align-self: center;
+  }
+
+  .daily-board,
+  .daily-family {
+    display: none;
+  }
+}
+
+@media (--phone-landscape) {
+  .daily-coins {
+    margin-top: 4px;
+  }
+
+  .daily-coin {
+    padding-block: 1px;
+  }
+}
+
+@media (--phone) {
+  .hud-progress:has(.progress-fill.is-timed) .progress-count {
+    display: inline;
+  }
+}

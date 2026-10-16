@@ -3,6 +3,7 @@ import { bombers, speedSurge, twins } from './actionEvents';
 import { arena } from './arena';
 import { bossPhases } from './bossPhases';
 import { course } from './course';
+import { daily } from './daily';
 import { enemyTypes } from './enemyTypes';
 import { fever } from './fever';
 import { mastery } from './mastery';
@@ -36,6 +37,7 @@ export function featureTexts(language: UiLanguage) {
     worldMap: worldMap[language],
     course: course[language],
     arena: arena[language],
+    daily: daily[language],
     placement: placement[language],
     settings: settings[language],
   };

@@ -81,6 +81,27 @@
   }
 }
 
+.daily-dot {
+  top: -3px;
+  right: -3px;
+  width: 11px;
+  height: 11px;
+  animation: none;
+}
+
+.daily-medal-dot {
+  width: 22px;
+  height: 22px;
+  border-width: 2px;
+  box-shadow: 0 2px 0 var(--medal-edge);
+}
+
+.profile-meta .daily-medal-dot {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
 .arena-button.is-locked {
   border-color: var(--border);
   color: var(--muted);
@@ -130,10 +151,35 @@
 }
 
 .arena-setup {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  grid-template-areas:
+    'keys keys'
+    'daily difficulty'
+    'daily endless';
+  align-items: start;
+  align-content: start;
+  gap: 18px 20px;
   min-width: 0;
+}
+
+.arena-keys-field {
+  grid-area: keys;
+}
+
+.arena-difficulty-field {
+  grid-area: difficulty;
+}
+
+.daily-card {
+  grid-area: daily;
+  align-self: stretch;
+  border-color: rgba(255, 207, 63, 0.42);
+}
+
+.arena-mode[data-mode='endless'] {
+  grid-area: endless;
 }
 
 .arena-setup.is-entering > * {
@@ -187,12 +233,6 @@
   color: var(--muted);
   font-size: 0.9rem;
   font-weight: 700;
-}
-
-.arena-modes {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
 }
 
 .arena-mode {
@@ -377,6 +417,30 @@
   }
 }
 
+@media (--narrow-portrait) {
+  .arena-layout .shop-hero {
+    grid-template-columns: 112px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    row-gap: 8px;
+  }
+
+  .arena-layout .shop-hero-stage {
+    grid-row: 1 / span 2;
+  }
+
+  .arena-records {
+    grid-column: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: start;
+    margin-top: 0;
+  }
+
+  .arena-records-title {
+    width: 100%;
+  }
+}
+
 @media (--phone) {
   .arena-layout .shop-hero-title,
   .arena-records-title,
@@ -421,10 +485,6 @@
     flex: 1 1 auto;
     padding: 7px 8px;
     font-size: 0.9rem;
-  }
-
-  .arena-modes {
-    grid-template-columns: 1fr;
   }
 
   .arena-mode {
@@ -480,47 +540,83 @@
 }
 
 @media (--phone-narrow) {
-  .arena-layout .shop-hero {
-    grid-template-columns: 64px 1fr;
-    padding: 8px 12px;
+  .arena-layout {
+    grid-template-rows: minmax(0, 1fr);
   }
 
-  .arena-layout .shop-hero-stage {
-    width: 64px;
-    height: 64px;
-    border-radius: var(--radius-md);
+  .arena-layout .shop-hero {
+    display: none;
+  }
+
+  .arena-setup {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas:
+      'keys'
+      'daily'
+      'difficulty'
+      'endless';
+    gap: 10px;
   }
 
   .arena-field .arena-chips {
     align-self: stretch;
   }
 
-  .arena-difficulties {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+  .arena-keys {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 0.82rem;
+    letter-spacing: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .arena-field-label,
+  .arena-mode-art {
+    display: none;
   }
 
   .arena-mode {
+    grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
-      'art name'
-      'art text'
-      'best best'
-      'play play';
+      'name name'
+      'text text'
+      'best play';
+  }
+
+  .arena-difficulties {
+    flex-wrap: nowrap;
+  }
+
+  .arena-difficulties .chip {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 7px 2px;
+    font-size: 0.8rem;
   }
 }
 
 @media (--phone-landscape) {
-  .arena-records {
-    justify-content: center;
-    margin-top: 6px;
+  .arena-layout {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .arena-record-name {
+  .arena-layout .shop-hero,
+  .arena-field-label,
+  .arena-keys,
+  .arena-hint {
     display: none;
   }
 
   .arena-setup {
-    gap: 8px;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas:
+      'keys difficulty'
+      'daily daily'
+      'endless endless';
+    gap: 6px 10px;
   }
 
   .arena-field {
@@ -530,16 +626,24 @@
     column-gap: 10px;
   }
 
-  .arena-field-label {
-    min-width: 64px;
-  }
-
   .arena-mode {
     grid-template-columns: auto auto minmax(0, 1fr) auto;
     grid-template-areas:
       'art name best play'
       'art text text play';
     gap: 2px 14px;
+    padding: 6px 12px;
+  }
+
+  .arena-mode-art {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+  }
+
+  .arena-mode-icon {
+    width: 28px;
+    height: 28px;
   }
 
   .arena-mode .shop-item-text {
@@ -547,8 +651,23 @@
     line-height: 1.25;
   }
 
-  .arena-play {
+  .arena-mode .arena-best {
+    min-height: 0;
+    padding: 4px 12px;
+  }
+
+  .arena-mode .arena-play {
+    min-height: 44px;
     padding: 0 28px;
+  }
+
+  .result-panel > .medal-large {
+    grid-column: 3;
+    width: 44px;
+    height: 44px;
+    margin: 4px 0 0;
+    border-width: 3px;
+    box-shadow: 0 3px 0 var(--medal-edge);
   }
 }
 

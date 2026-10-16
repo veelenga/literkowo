@@ -7,13 +7,13 @@ import type { Rewards } from '../game/RunRewards';
 import type { SessionStats } from '../game/SessionStats';
 import type { Profile } from '../profiles/Profile';
 import { characterAvatar } from './CharacterAvatar';
+import { clockText } from './clock';
 import { Counter, el, icon, releaseFocus, restartAnimation } from './dom';
 import { playerLevelOf, playerLevelTitle, xpGainText } from './progression';
 import { soundToggle } from './SoundToggle';
 
 const PERCENT = 100;
 const SECONDS_PER_MINUTE = 60;
-const CLOCK_DIGITS = 2;
 const BASE_MULTIPLIER = 1;
 const NO_XP = 0;
 
@@ -183,12 +183,6 @@ function secondsLeft(seconds: number): string {
   const whole = Math.ceil(seconds);
   if (whole >= SECONDS_PER_MINUTE) return clockText(whole);
   return format(i18n.t.features.placement.secondsLeft, { seconds: whole });
-}
-
-function clockText(seconds: number): string {
-  const minutes = Math.floor(seconds / SECONDS_PER_MINUTE);
-  const rest = String(seconds % SECONDS_PER_MINUTE).padStart(CLOCK_DIGITS, '0');
-  return `${minutes}:${rest}`;
 }
 
 function keyboardButton(onKeyboard: () => void): HTMLElement {
