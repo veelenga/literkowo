@@ -86,6 +86,23 @@ describe('WorldMap', () => {
     expect(map.querySelectorAll('.journey-stop.is-open .journey-hero')).toHaveLength(0);
   });
 
+  it('shows the levels a placement skipped with a dashed ring and the hero after them', () => {
+    const profile = createProfile('Ola', 'a');
+    const placed = {
+      ...profile,
+      levelResults: { 'polana-4': DONE },
+      arena: { ...profile.arena, placement: { regionId: 'polana', date: '2026-10-16' } },
+    };
+    const map = mapOf(placed);
+    const polana = nodes(map).slice(0, 19);
+    expect(polana.filter((node) => node.classList.contains('is-skipped'))).toHaveLength(18);
+    expect(polana[3].classList).toContain('is-done');
+    expect(map.querySelectorAll('.journey-stop.is-skipped .level-stars')).toHaveLength(0);
+    const current = map.querySelector('.journey-stop.is-current .level-node');
+    expect(current?.getAttribute('title')).toBe('Nowy klawisz G');
+    expect(nodes(map)[20].matches(':disabled')).toBe(true);
+  });
+
   it('tells on a locked stop what to win first', () => {
     const profile = createProfile('Ola', 'a');
     const titles = nodes(mapOf({ ...profile, levelResults: { 'polana-1': DONE } })).map(

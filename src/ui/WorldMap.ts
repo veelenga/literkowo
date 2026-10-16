@@ -48,13 +48,14 @@ const NOT_FOUND = -1;
 const PREVIOUS = -1;
 const NEXT = 1;
 
-type NodeState = 'locked' | 'open' | 'current' | 'done';
+type NodeState = 'locked' | 'open' | 'current' | 'done' | 'skipped';
 
 const NODE_LOOKS: Readonly<Record<NodeState, string>> = {
   locked: 'locked',
   open: 'current',
   current: 'current',
   done: 'done',
+  skipped: 'skipped',
 };
 
 interface Actions {
@@ -364,7 +365,8 @@ export class WorldMap {
   private stateOf(level: Level): NodeState {
     if (!this.isUnlocked(level)) return 'locked';
     if (this.starsOf(level) > 0) return 'done';
-    return level.id === this.current?.id ? 'current' : 'open';
+    if (level.id === this.current?.id) return 'current';
+    return this.course.isSkipped(level, this.profile) ? 'skipped' : 'open';
   }
 
   private starsOf(level: Level): number {
