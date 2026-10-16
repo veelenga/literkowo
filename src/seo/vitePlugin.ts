@@ -1,6 +1,7 @@
 import type { HtmlTagDescriptor, Plugin } from 'vite';
 import { APP_ROOT, appRootWithFallback } from './fallback';
 import { headTags } from './headTags';
+import { SITEMAP_FILE, sitemapXml } from './sitemap';
 
 const PLUGIN_NAME = 'literkowo-seo';
 
@@ -18,5 +19,8 @@ export function seoPlugin(): Plugin {
   return {
     name: PLUGIN_NAME,
     transformIndexHtml: { order: 'pre', handler: withSeo },
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: SITEMAP_FILE, source: sitemapXml(new Date()) });
+    },
   };
 }
