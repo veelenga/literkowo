@@ -37,9 +37,10 @@ More rules:
 - Which levels are open (`src/course/course.ts`). A level is won when it has at least one star.
   - Before any win only the first level is open.
   - After that, every level up to 3 levels past the furthest won level is open (`OPEN_AHEAD`), so a child can try ahead.
+  - A placement opens every level of the placed regions and the first level of the next region, see [Placement test](#placement-test).
   - Reviews and bosses are gates, and the open window never goes past a gate without a star. A review opens only when every practice level before it in its region is won, and a boss only when the review before it is won. A gate that cannot open yet stays locked, and so do the levels after it.
   - For example, with `polana-1` won, `polana-2` is open and the review `polana-3` is locked. With `polana-1` to `polana-3` won, `polana-4`, `polana-5` and `polana-6` are open.
-  - The current level is the first open level without a star after the furthest win, or the first open level without a star when none is left ahead. The map marks it with the hero and the Play tag. The other open levels look the same but have no marker.
+  - The current level is the first open level without a star after the furthest win or the last placed level, or the first open level without a star when none is left ahead. The map marks it with the hero and the Play tag. The other open levels look the same but have no marker.
   - The result card offers the next level only when it is open.
 - Polish letters are typed with right Alt. Ctrl with Alt also counts as right Alt, so AltGr works on Windows (`src/game/Game.ts`, `src/course/fingers.ts`).
 
@@ -91,7 +92,7 @@ Every review in the table ends with a mini boss.
 
 Owners: `src/app/App.ts`, `src/course/progress.ts`, `src/game/RunPlan.ts`, `src/game/LevelPlan.ts`, `src/game/Game.ts`.
 
-The game runs a run plan: its phases by index, its lives, its XP factor, and the keys and word lengths of each phase (`src/course/wordRules.ts`). `src/game/LevelPlan.ts` builds the plan of a course level.
+The game runs a run plan: its phases by index, its lives, what a hit on the hero costs (`hitCost`: a life, or only the combo), its XP factor, and the keys and word lengths of each phase (`src/course/wordRules.ts`). A phase can have a time limit in seconds (`seconds`): it then ends when the time is up instead of when its words are cleared. A plan can stop early from the records of the finished phases (`continuesAfter`). `src/game/LevelPlan.ts` builds the plan of a course level.
 
 1. Story card. The intro plays before the first level. A boss scene plays before each boss. An after scene plays when a boss is beaten with at least one star. The finale replaces the after scene for the last boss of the course. Each scene plays once per profile. Speakers are Sowa Klara, Felek and Mrok (`src/story/story.ts`).
 2. Learn card, for every level except bosses (`src/ui/LearnCard.ts`). Enter starts the level. The ✕ button in the top right corner, a 44 px touch target with the label "Wróć do mapy" / "Повернутися до мапи", and Escape close the card and go back to the map without starting the level. Like Enter, Escape waits 600 ms after the card opens. A story card before the level still plays first and stays seen when the learn card is closed.
@@ -369,7 +370,7 @@ XP only grows. It drives the player level and the rank. A child never loses XP, 
 
 - Each completed word gives `letters × multiplier × fever bonus × tag factor` XP, rounded. The multiplier and the fever bonus are the ones from scoring, so XP follows the combo.
 - Tag factor: a boss hit 3, `merged` 3, `power-word` 2, `minion` 1. Any other or unknown tag is 1. With several tags the highest factor counts.
-- The XP of each word is then scaled by the XP factor of the run plan and rounded again. Course levels use 1 (`LEVEL_XP_FACTOR` in `src/game/LevelPlan.ts`), the arena 0.4 to 0.25 by preset. An XP hat scales the XP of the whole run by at most 10%, see [Item powers](#item-powers).
+- The XP of each word is then scaled by the XP factor of the run plan and rounded again. Course levels and the placement test use 1 (`LEVEL_XP_FACTOR` in `src/game/LevelPlan.ts`), the arena 0.4 to 0.25 by preset. An XP hat scales the XP of the whole run by at most 10%, see [Item powers](#item-powers).
 - A floating "+12 XP" rises from the enemy on each completed word, and the HUD shows the XP of the run next to the score. The level number sits on the avatar button of the HUD.
 - XP of the run is added to the profile after every attempt, won or lost.
 
@@ -424,7 +425,7 @@ Recording, during a level (`src/game/KeyTracker.ts`):
 - A hit counts for the typed key. A mistake counts for the hinted next key, the one the on screen keyboard highlights: the letter the nearest followed enemy is waiting for, or else the letter the nearest enemy is waiting for. Only with no enemy on the board does it count for the typed key.
 - A lost life is not a keystroke and does not count.
 - Speed is the time from the previous correct key to this hit. Gaps over 2 seconds are ignored. It is the plain average for the first samples and then a moving average over about 50 hits.
-- The statistics are added to the profile after every attempt, won or lost. The dev shortcut does not save them.
+- The statistics are added to the profile after every attempt, won or lost, and after every placement test. The dev shortcut does not save them.
 
 Stored per key, with no keystroke history: hits, misses, the outcome of the last 30 keystrokes as a bit mask, the moving speed with its sample count, and the last 10 days the key was practised as ISO dates in local time.
 
@@ -591,14 +592,14 @@ The arena, "Arena" / "Арена", is extra play next to the course. Its first m
 
 Opening:
 
-- The arena opens with at least one star on the Polana boss (`polana-19`), or with a placement in the profile's arena record. The placement test that writes it is planned (`isArenaOpen` in `src/arena/keySets.ts`).
+- The arena opens with at least one star on the Polana boss (`polana-19`), or with a placement in the profile's arena record, which the [Placement test](#placement-test) writes (`isArenaOpen` in `src/arena/keySets.ts`).
 - Map header: the "Arena" / "Арена" button sits next to the shop button in the same style, only the icon on phones. While the arena is closed it is dimmed, has a lock badge and the hint "Pokonaj bossa Polany" / "Переможи боса Галявини", and a tap scrolls the map to the gate.
 - Map gate: a round badge as big as a boss node in the footer of the Polana band, one row below the boss and across from it (`gatePoint` in `src/ui/map/journeyLayout.ts`). While closed it is dimmed with a lock and shows the same hint. Once open it shows "Arena" and opens the arena screen.
 - The result card of the attempt that opens the arena shows the chip "Arena otwarta!" / "Арену відкрито!".
 
 Key sets:
 
-- One key set per region whose keys the course has taught: a region counts once its boss level is open, which means every key of the region was introduced. A placement also opens every region up to the placed one.
+- One key set per region whose keys the course has taught: a region counts once its boss level is open, which means every key of the region was introduced. A placement opens the boss levels of every placed region, so it opens their key sets too.
 - A key set holds the allowed keys of its region's boss level, so every key up to and including that region. English word profiles never get Wyspa Ogonków.
 - The screen starts on the highest key set. The theme, the music and the boss of a run are those of the key set's region. The game runs the run with that boss level as its level.
 
@@ -687,6 +688,66 @@ interface EndlessBest {
 - `daily`, `tracks`, `shadowWins` and `modifierWins` stay empty until the planned modes fill them. Their shapes (`DailyRecord`, `TrackBest` with its `GhostRun`) are read and checked on load already, so those modes need no new schema version.
 - Broken entries are dropped on load.
 
+## Placement test
+
+Owners: `src/arena/placement.ts` (stages, words, pass rules), `src/arena/placementPlan.ts`, `src/arena/placementProgress.ts`, `src/game/PhaseMeter.ts`, `src/game/mechanics/PlacementStages.ts`, `src/app/PlacementFlow.ts`, `src/ui/placement` (`PlacementIntro.ts`, `PlacementResult.ts`, `FingersCard.ts`), `src/ui/placement.css`, copy in `src/i18n/features/placement.ts`.
+
+The placement test, "Sprawdzian" / "Перевірка", lets a child who can already type skip the regions they know. It is short, it uses real words only, and it can only move a child forward.
+
+Stages:
+
+- One stage per region of the profile's word language: five for Polish words, four for English words. Each stage lasts 12 seconds (`STAGE_SECONDS`).
+- Stage `k` uses the allowed keys of the boss level of region `k`, so every key up to and including that region. Its focus keys are the keys of region `k`.
+- The pace is steady, with no ramp: the speed and spawn interval the last practice level of the region ends with (`stagePracticeTempo`). The stage sends as many words as fit in 12 seconds at that interval: 3 in Polana, 4 in Las and Góry, 5 in Jaskinia and 7 in Wyspa Ogonków. Words that are still on the board when a stage ends stay and keep walking into the next stage.
+- No hearts are lost (`hitCost: 'combo'` in the run plan). An enemy that reaches the hero vanishes, counts once for the stage and breaks the combo. It is not a mistake.
+- Every mechanic is off: the stages are `test` phases, where special enemies, events, surges, bombers, twins, power words and merging never run and pets rest. Each stage starts with a chime and the banner "Etap 2: Las" / "Етап 2: Ліс".
+
+Words:
+
+- Only real words from `src/course/wordLists.ts`, never generated strings (`realWordsOnly` in the word rules). A word fits a stage when all its letters are in the stage's keys.
+- Words with a key of the stage's own region come first, picked like other real words: weak keys weigh more and words that are easy to type come more often, see [Level flow](#level-flow). A stage without such a word takes any fitting word.
+- Words have 3 to 5 letters. A stage with fewer than 12 fitting words of that length widens to 2 to 6 letters (`MIN_STAGE_WORDS`). Today no stage needs it:
+
+| Stage | Polish words of 3 to 5 letters | with a key of the region | English words of 3 to 5 letters | with a key of the region |
+| ----- | ------------------------------ | ------------------------ | ------------------------------- | ------------------------ |
+| 1     | 20                             | 20                       | 14                              | 14                       |
+| 2     | 58                             | 38                       | 50                              | 36                       |
+| 3     | 99                             | 41                       | 84                              | 34                       |
+| 4     | 147                            | 48                       | 128                             | 44                       |
+| 5     | 191                            | 44                       |                                 |                          |
+
+Pass rules (`stagePassed`). The game keeps a record per phase: correct keys, mistakes, enemies that reached the hero, and the time between correct keys (`PhaseMeter`). A key's time runs from the correct key before it, or from the moment a word lands on an empty board, so waiting for the next word never counts. A stage passes when all of these hold:
+
+- at least one correct key;
+- accuracy of at least 95% on the rounded percent, the number the cards show;
+- the mean time between correct keys is at most 900 ms, the mastery target, or 1400 ms in the Wyspa Ogonków stage, which adds the Polish letters (see [Key mastery](#key-mastery));
+- at most one enemy reached the hero.
+
+The test stops at the first failed stage, so a beginner is done after 12 seconds. The result is the last passed region, or none.
+
+What a placement opens (`recordPlacement`, `src/course/course.ts`):
+
+- A passed placement writes `profile.arena.placement = { regionId, date }` with the last passed region. A retake only moves a child forward: a lower result keeps the old placement and its date.
+- Every level of the placed regions opens, and the first level of the next region too. The current level is that first level, for example `las-1` after a placement in Polana. After a placement in the last region every level is open and the current level is the first level without a star. Wins open the usual window from there.
+- A placement in a region the word language does not have counts as the last region before it, so Wyspa Ogonków counts as Jaskinia for English words.
+- Stars, trophies and boss stories still need real play. The skipped levels have no stars, and the boss scenes still play before each boss.
+- The arena opens, with a key set for every placed region (see [Arena](#arena)).
+- The keystrokes of the test go into the key statistics like those of a level, so weak keys get more weight later. XP, score, letters freed and the counters add up too. The test pays no coins, and its XP factor is 1.
+
+Map:
+
+- A level a placement covered that has no star is skipped: it shows its normal colour face with a dashed border and a dashed ring around it, no stars and no pulse. It stays open, so a child can go back to it.
+
+Screens:
+
+- Create form: "Zacznij naukę" / "Почни навчання" creates the profile as before, and "Umiem już pisać" / "Я вже вмію друкувати" next to it creates the profile and opens the test. On narrow phones the two sit side by side and the cancel button moves to the top right corner of the panel.
+- Play panel: a quiet "Sprawdzian" / "Перевірка" button in the row with the word language. It shows until the profile has a star past Polana or a placement in the last region of its word language (`offersPlacement`).
+- Intro card, in the learn card panel: "Sprawdzian" / "Перевірка", a chip per stage with the region names, "Pisz słowa, które widzisz. Każdy etap trwa 12 sekund." / "Друкуй слова, які бачиш. Кожен етап триває 12 секунд.", the home row hint and the Start button "Zaczynamy" / "Починаємо". Enter starts, Escape and the ✕ button "Zamknij" / "Закрити" close the card and stay on the profile screen.
+- During the test the HUD progress label shows "Etap 2 z 5" / "Етап 2 з 5", also on phones, and the bar is a time bar that empties over the 12 seconds, with the seconds left as the count. The HUD has no hearts.
+- Result card, in the result panel: the headline "Zaczynasz tutaj: Las" / "Починаєш тут: Ліс" with the region of the current level after the placement (the last region after a full pass), or "Zaczniemy od początku. Tak będzie najlepiej!" / "Почнемо з початку. Так буде найкраще!" without a placement. A row of region chips, lit for each passed stage and dim for the others, one hint line, the accuracy tile and the speed tile in words per minute from the typing time of the test. Buttons: "Na mapę" / "На мапу", the main button, and "Arena" / "Арена" after a placement. Confetti and a sparkle play after a placement.
+- Fingers card, once per profile after the first placement (stored as `placement-fingers` in the seen stories): "Palce na start" / "Пальці на старт", a small keyboard with every skipped key in its finger colour and the Polish letters as marks on their base keys, the hands with those fingers lit, "Tak palce sięgają do pominiętych klawiszy. Każdy kolor to jeden palec." / "Так пальці дістають до пропущених клавіш. Кожен колір означає один палець." and the Start button. Start, Enter, Escape and ✕ all continue to where the result card was left for, the map or the arena. Skipped keys are the keys of the learn levels the placement covered that have no star.
+- All three cards ignore Enter and Escape for the first 600 ms (`KEY_READY_MS`). On the result card Enter and Escape go to the map. On phones they fit without scrolling in portrait and landscape: in landscape the fingers card puts the keyboard next to the hands.
+
 ## Item powers
 
 Owners: `src/game/mechanics/ItemPowers.ts`, `src/game/mechanics/itemPowers` (`Pet.ts` for the pet in the scene, one file per power in `pet` and `hat`), `src/course/powers.ts`, card lines and callouts in `src/i18n/features/shop.ts`.
@@ -756,11 +817,12 @@ Profile screen:
 - With reduced motion or the low quality preset the hills stand still and there are no letters (`src/ui/menuMotion.ts`).
 - Each profile is a card with the rendered portrait under a spotlight, the name, the level, the rank, a thin XP bar, and pills for stars and coins.
 - The selected card lifts, glows and shows the hero in 3D with the equipped hat and pet, swaying slowly. It uses the same outfit view as the shop (`src/ui/portraits/OutfitView.ts`). The play panel opens right under the row of the selected card, and cards from later rows move below it. The panel has a big Play button, then the word language chips and the delete button in a quieter row.
-- The narrow dashed new profile card opens the create panel, which takes the place of the cards until the profile is created or the panel is cancelled: a large live preview of the chosen character that switches with every pick, the name field, the 18 characters and a Create button.
+- The narrow dashed new profile card opens the create panel, which takes the place of the cards until the profile is created or the panel is cancelled: a large live preview of the chosen character that switches with every pick, the name field, the 18 characters, the main button "Zacznij naukę" / "Почни навчання" and next to it "Umiem już pisać" / "Я вже вмію друкувати", which also creates the profile and opens the [Placement test](#placement-test). On narrow phones the cancel button moves to the top right corner of the panel.
 - With four profiles the cards fit in one row, and the screen fits without scrolling from 1280 by 720 up. Screens up to 900 px tall get a smaller logo and tighter spacing, and screens up to 800 px tall also smaller cards, a smaller create panel and 9 characters per row.
 - Long names and rank names end with an ellipsis on the cards.
 - The top right corner holds the interface language switch "PL" / "UA" and a round gear button that opens the [Settings](#settings).
 - The play panel has a quiet "Sklep" / "Крамниця" link with the bag next to Play. It opens the shop for the selected profile.
+- The play panel has a quiet "Sprawdzian" / "Перевірка" button next to the word language until the profile has a star past Polana or a placement in its last region. It opens the [Placement test](#placement-test).
 
 Map:
 
@@ -770,7 +832,7 @@ Map:
 - A learn level is a smaller satellite of the practice level of the same key, joined to it by a short dashed link that turns gold once the learn level has a star (`stopRoles`). It hangs on the side the row comes from, so the road reads learn, then practice. Review levels and bosses are full stops on the road, bosses bigger.
 - The row of the current level gets extra room above it for the hero.
 - Each band starts with a sign: the chapter number with the stars earned out of the total and the mastery meter in one row, the region name, and a short mood line (`src/i18n/features/worldMap.ts`). Phones show the badges under the name and no mood line. The sign sits on the side away from where the road enters the band.
-- Levels are round badges with their focus keys. Learn levels carry a ✨ badge and review levels a 👑 badge for their mini boss, and the title names the kind and the keys, for example "Trening D" / "Тренування D" (`src/ui/levelKind.ts`). Unlocked learn, practice and review levels show the key dots under the keys, see [Key mastery](#key-mastery). Bosses have a crown. Locked levels show a lock, and their title says what to win first: "Wygraj poziomy przed powtórką" / "Виграй рівні перед повторенням" on a review whose practice levels are not all won, "Wygraj powtórkę przed bossem" / "Виграй повторення перед босом" on a boss whose review is not won, and "Najpierw ukończ wcześniejsze poziomy" / "Спочатку пройди попередні рівні" on any other level outside the open window (`lockReason` in `src/course/course.ts`). Levels with stars glow in the region colour and show their stars on a pill across their lower edge. The open levels pulse. The current level also has a Play tag, and the hero stands on it.
+- Levels are round badges with their focus keys. Learn levels carry a ✨ badge and review levels a 👑 badge for their mini boss, and the title names the kind and the keys, for example "Trening D" / "Тренування D" (`src/ui/levelKind.ts`). Unlocked learn, practice and review levels show the key dots under the keys, see [Key mastery](#key-mastery). Bosses have a crown. Locked levels show a lock, and their title says what to win first: "Wygraj poziomy przed powtórką" / "Виграй рівні перед повторенням" on a review whose practice levels are not all won, "Wygraj powtórkę przed bossem" / "Виграй повторення перед босом" on a boss whose review is not won, and "Najpierw ukończ wcześniejsze poziomy" / "Спочатку пройди попередні рівні" on any other level outside the open window (`lockReason` in `src/course/course.ts`). Levels with stars glow in the region colour and show their stars on a pill across their lower edge. The open levels pulse. Levels a placement skipped have a dashed ring, see [Placement test](#placement-test). The current level also has a Play tag, and the hero stands on it.
 - The hero on the current level wears the equipped hat and has the equipped pet in front of its hip, a little larger than in the game. The hero is framed like the plain portrait, so it keeps the same size, and a hat rises above the marker. It is a rendered image, not a live 3D view, so the map stays light on phones (`src/ui/OutfitAvatar.ts`, `src/ui/portraits/OutfitStudio.ts`). Until the image is ready, and when it cannot be rendered, the plain portrait shows. Each outfit is rendered once per session and kept in memory, so reopening the map shows it at once. With nothing equipped the hero is the plain portrait.
 - The header stays at the top: the avatar with the level number, the name, the rank and a thin XP bar, then stars, coins, the arena button, the shop button, the settings gear and the sound toggle. A tap on the avatar goes back to the profiles. The settings gear has the label "Ustawienia" / "Налаштування" only on screens wider than 1100 px, so the player name keeps its room on tablets. The shop button has the bag and the label "Sklep" / "Крамниця", only the bag on phones, and the green dot when something can be bought or claimed.
 - On open the map scrolls smoothly to the current level, or to the last open level when all levels have stars. Levels pop in as they scroll into view, at most 12 steps of 70 ms apart. With reduced motion the scroll is instant and nothing pops in.
@@ -795,12 +857,13 @@ A typing game never needs the mouse, so every menu works with the keyboard alone
 | Shop        | Escape goes back to where the shop was opened from                                                                                                                                                                          |
 | Story card  | Enter or Space shows the next line                                                                                                                                                                                          |
 | Learn card  | Enter starts the level and Escape goes back to the map, both ignored for the first 600 ms                                                                                                                                   |
+| Placement   | Intro and fingers card: Enter starts and Escape closes. Result card: Enter and Escape go to the map. All ignored for the first 600 ms                                                                                       |
 | Level       | Escape pauses                                                                                                                                                                                                               |
 | Pause card  | Enter or Escape resumes                                                                                                                                                                                                     |
 | Settings    | Escape goes back to where the settings were opened from, and from the pause card it never resumes the level                                                                                                                 |
 | Result card | Enter presses the main button, ignored for the first 600 ms                                                                                                                                                                 |
 
-- Key hints: the Play button of the profiles, the Play tag on the map, the Play button of the arena, the learn card, the pause card and both result cards show ⏎. The back buttons of the shop and the arena show Esc.
+- Key hints: the Play button of the profiles, the Play tag on the map, the Play button of the arena, the learn card, the placement cards, the pause card and the result cards show ⏎. The back buttons of the shop and the arena show Esc.
 - Hints hide on touch screens without a mouse (`--touch-only` in `src/ui/screenSizes.css`) and on phones.
 
 ## Audio
@@ -865,7 +928,7 @@ Layout:
 
 - Phones are screens up to 600 px wide or up to 480 px tall. Tablets are up to 1024 px wide. The screen size breakpoints are named once in `src/ui/screenSizes.css` as custom media (`postcss-custom-media`), and `src/ui/formFactor.ts` mirrors the phone query for code.
 - On tablets the HUD shows score, combo, hearts and progress.
-- On phones the HUD is one translucent strip 44 px tall at the top: avatar with the player level, score, combo, hearts, and small buttons for the native keyboard, pause and sound. The progress bar is a 3 px line along the bottom edge of the strip. The phase name is hidden, the count shows when the screen is at least 400 px wide, and the XP of the run shows next to the score when it is wider than 600 px. Buttons in the strip are 36 px wide and as tall as the strip.
+- On phones the HUD is one translucent strip 44 px tall at the top: avatar with the player level, score, combo, hearts, and small buttons for the native keyboard, pause and sound. The progress bar is a 3 px line along the bottom edge of the strip. The phase name is hidden, except the stage of the placement test, the count shows when the screen is at least 400 px wide, and the XP of the run shows next to the score when it is wider than 600 px. Buttons in the strip are 36 px wide and as tall as the strip.
 - The keyboard hint is smaller on tablets in portrait.
 - On a phone the learn card and the result card fit without scrolling, at 390 by 660 px in portrait and 750 by 342 px in landscape, also with landscape safe area insets of 47 px at the sides and 21 px at the bottom.
 - In portrait both cards use smaller keycaps, a smaller hands diagram and full width buttons. Each result shows its label and value on one line. When the rank, the XP and the coins do not fit in one row of the result, the XP and the coins move to a second row.
@@ -911,13 +974,14 @@ Owners: `src/app/devShortcut.ts`, `src/app/App.ts`.
 - In development only, `?level=<id>` starts a level directly, for example `http://localhost:5173/?level=jaskinia-24` for the cave boss. Every level id is in the table under [Regions and levels](#regions-and-levels).
 - It uses a temporary profile named Test with Polish words. It takes the character, the inventory and the equipped pet and hat of the active profile, or the first character without items when there is none. Story and learn cards are skipped. Results are not saved.
 - In development only, `?arena=<key set>-<difficulty>` starts an endless arena run directly, for example `http://localhost:5173/?arena=las-2` for Las on Normalnie. The key set is a region id and the difficulty is the preset level from 1 to 4, see [Arena](#arena). It uses the same temporary profile, so the arena does not need to be open and results are not saved.
+- In development only, `?placement=1` starts the [Placement test](#placement-test) directly with the same temporary profile and Polish words, without the intro card. Results are not saved.
 - An unknown id or arena value opens the profile screen. Production builds ignore the parameters.
 
 ## Planned
 
 Not built yet. In this order:
 
-1. More arena modes: a daily challenge, a race against a shadow, modifiers and a placement test.
+1. More arena modes: a daily challenge, a race against a shadow and modifiers.
 2. Daily training: short sessions built from weak keys, with spaced repetition and streaks.
 3. Typing test with certificates.
 4. New chapters after the letters: capitals, numbers, punctuation, sentences and speed.

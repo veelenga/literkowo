@@ -18,6 +18,7 @@ These instructions are for AI agents and for people.
 - `npm run dev` starts Vite on `http://localhost:5173`.
 - `http://localhost:5173/?level=<id>` starts a level directly in dev. Ids are `<region>-<number>`, for example `?level=polana-1` (learn), `?level=polana-2` (practice), `?level=polana-3` (review) and `?level=polana-19` (boss). The full level table is in `docs/SPEC.md`.
 - `http://localhost:5173/?arena=<key set>-<difficulty>` starts an endless arena run directly in dev, for example `?arena=las-2`. The key set is a region id and the difficulty is 1 to 4, see Arena in `docs/SPEC.md`.
+- `http://localhost:5173/?placement=1` starts the placement test directly in dev, see Placement test in `docs/SPEC.md`.
 - `npm test` runs the Vitest unit tests.
 - `npm run lint` checks types, ESLint and Prettier.
 - `npm run format` fixes formatting.
