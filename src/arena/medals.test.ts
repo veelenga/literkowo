@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { BRONZE, GOLD, NO_MEDAL, SILVER, isMedal, medalFor, nextMedalGoal } from './medals';
+import {
+  BRONZE,
+  GOLD,
+  NO_MEDAL,
+  SILVER,
+  gradeOf,
+  gradedMedal,
+  isMedal,
+  medalFor,
+  nextMedalGoal,
+} from './medals';
 
 describe('medalFor', () => {
   it('gives no medal before three waves or below 85%', () => {
@@ -41,5 +51,21 @@ describe('isMedal', () => {
     expect(isMedal(2)).toBe(true);
     expect(isMedal(4)).toBe(false);
     expect(isMedal('1')).toBe(false);
+  });
+});
+
+describe('gradedMedal', () => {
+  it('takes the lower of a grade and the accuracy grade', () => {
+    expect(gradedMedal(3, 0.95)).toBe(SILVER);
+    expect(gradedMedal(1, 1)).toBe(BRONZE);
+    expect(gradedMedal(0, 1)).toBe(NO_MEDAL);
+  });
+});
+
+describe('gradeOf', () => {
+  it('counts the thresholds a value reaches', () => {
+    expect(gradeOf(14, [10, 15, 20])).toBe(1);
+    expect(gradeOf(20, [10, 15, 20])).toBe(3);
+    expect(gradeOf(9, [10, 15, 20])).toBe(0);
   });
 });

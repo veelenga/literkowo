@@ -7,9 +7,10 @@ import {
   STAGE_WORD_LIMIT,
   type PlacementStage,
 } from './placement';
+import { TIME_ATTACK_HIT_COST, TIME_ATTACK_LIVES, timeAttackPhase } from './timeAttack';
 
-export const PLACEMENT_LIVES = 0;
-export const PLACEMENT_HIT_COST: HitCost = 'combo';
+export const PLACEMENT_LIVES = TIME_ATTACK_LIVES;
+export const PLACEMENT_HIT_COST: HitCost = TIME_ATTACK_HIT_COST;
 export const PLACEMENT_COINS_PER_WORD = 0;
 export const PLACEMENT_XP_FACTOR = 0;
 
@@ -33,13 +34,12 @@ export function placementLevel(stages: readonly PlacementStage[]): Level {
 }
 
 function stagePhase(stage: PlacementStage, count: number): RunPhase {
-  return {
-    kind: 'test',
-    count: STAGE_WORD_LIMIT,
-    ...stage.tempo,
+  return timeAttackPhase({
     seconds: STAGE_SECONDS,
     boardSize: STAGE_BOARD_SIZE,
-    stage: { number: stage.number, count, regionId: stage.keySet.region.id },
+    wordLimit: STAGE_WORD_LIMIT,
+    tempo: stage.tempo,
     words: stage.words,
-  };
+    stage: { number: stage.number, count, regionId: stage.keySet.region.id },
+  });
 }

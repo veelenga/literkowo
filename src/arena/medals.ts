@@ -23,7 +23,15 @@ export interface RunGrade {
 }
 
 export function medalFor({ wavesCleared, accuracy }: RunGrade): Medal {
-  return toMedal(Math.min(waveGrade(wavesCleared), accuracyGrade(accuracy)));
+  return gradedMedal(waveGrade(wavesCleared), accuracy);
+}
+
+export function gradedMedal(grade: number, accuracy: number): Medal {
+  return toMedal(Math.min(grade, accuracyGrade(accuracy)));
+}
+
+export function gradeOf(value: number, thresholds: readonly number[]): number {
+  return thresholds.filter((threshold) => value >= threshold).length;
 }
 
 export function nextMedalGoal(medal: Medal): MedalGoal | undefined {
@@ -38,12 +46,11 @@ export function isMedal(value: unknown): value is Medal {
 }
 
 function waveGrade(wavesCleared: number): number {
-  return MEDAL_WAVES.filter((waves) => wavesCleared >= waves).length;
+  return gradeOf(wavesCleared, MEDAL_WAVES);
 }
 
 function accuracyGrade(accuracy: number): number {
-  const shown = accuracyPercent(accuracy);
-  return starThresholdPercents().filter((threshold) => shown >= threshold).length;
+  return gradeOf(accuracyPercent(accuracy), starThresholdPercents());
 }
 
 function toMedal(grade: number): Medal {
