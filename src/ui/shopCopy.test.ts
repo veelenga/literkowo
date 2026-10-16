@@ -60,6 +60,11 @@ describe('shop copy', () => {
       hint: 'Przetrwaj 20 fal na arenie',
     });
     expect(trophyCopy(trophy('arena-gold')).name).toBe('Złoty medal');
+    expect(trophyCopy(trophy('stamps-30'))).toEqual({
+      name: '30 pieczątek',
+      hint: 'Zbierz 30 pieczątek w wyzwaniu dnia',
+    });
+    expect(trophyCopy(trophy('week-streak-4')).name).toBe('4 tygodnie z rzędu');
   });
 
   it('explains how a locked item unlocks', () => {

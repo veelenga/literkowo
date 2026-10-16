@@ -87,6 +87,32 @@ describe('earnedTrophies', () => {
     ]);
   });
 
+  it('awards daily stamps and weeks in a row', () => {
+    const daily = {
+      date: '2026-10-16',
+      keySet: 'las',
+      tries: 1,
+      stamps: ['2026-10-16'],
+      chests: [],
+      weekStreak: 1,
+      bestWeekStreak: 4,
+      totalStamps: 30,
+    };
+    const arena = { ...emptyArenaRecord(), daily };
+    expect(earnedTrophies(profileWith({ arena }))).toEqual([
+      'stamps-7',
+      'stamps-30',
+      'week-streak-4',
+    ]);
+    const fewer = { ...arena, daily: { ...daily, totalStamps: 8, bestWeekStreak: 3 } };
+    expect(earnedTrophies(profileWith({ arena: fewer }))).toEqual(['stamps-7']);
+    expect(trophyProgress(profileWith({ arena: fewer }), rule('week-streak-4'))).toEqual({
+      current: 3,
+      goal: 4,
+    });
+    expect(trophyProgress(profileWith(), rule('stamps-30'))).toEqual({ current: 0, goal: 30 });
+  });
+
   it('awards a region with every key mastered', () => {
     const keys = regionKeys(REGIONS[0]);
     const keyStats = Object.fromEntries([...keys].map((key) => [key, masteredStat()]));

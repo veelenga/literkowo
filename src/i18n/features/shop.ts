@@ -128,6 +128,11 @@ const pl = {
     masteredRegion: { name: 'Mistrz klawiszy', hint: 'Opanuj wszystkie klawisze jednej krainy' },
     arenaWave: { name: 'Fala {wave}', hint: 'Przetrwaj {wave} fal na arenie' },
     arenaGold: { name: 'Złoty medal', hint: 'Zdobądź złoto na arenie' },
+    stamps: { name: '{stamps} pieczątek', hint: 'Zbierz {stamps} pieczątek w wyzwaniu dnia' },
+    weekStreak: {
+      name: '{weeks} tygodnie z rzędu',
+      hint: 'Zbieraj po 3 pieczątki w tygodniu przez {weeks} tygodnie z rzędu',
+    },
     starStreak: {
       name: 'Gwiezdna seria',
       hint: 'Zdobądź trzy gwiazdki na {levels} kolejnych poziomach',
@@ -285,6 +290,11 @@ const uk: typeof pl = {
     masteredRegion: { name: 'Майстер клавіш', hint: 'Опануй усі клавіші одного краю' },
     arenaWave: { name: 'Хвиля {wave}', hint: 'Витримай {wave} хвиль на арені' },
     arenaGold: { name: 'Золота медаль', hint: 'Здобудь золото на арені' },
+    stamps: { name: '{stamps} печаток', hint: 'Збери {stamps} печаток у виклику дня' },
+    weekStreak: {
+      name: '{weeks} тижні поспіль',
+      hint: 'Збирай по 3 печатки на тиждень {weeks} тижні поспіль',
+    },
     starStreak: { name: 'Зіркова серія', hint: 'Здобудь три зірочки на {levels} рівнях поспіль' },
     everyRegionThreeStars: {
       name: 'Зірка всіх країв',

@@ -79,6 +79,10 @@ function measure(profile: Profile, rule: MeasuredRule): TrophyProgress {
       return { current: levelProgress(profile.xp).level, goal: rule.level };
     case 'arenaWave':
       return { current: bestEndlessWave(profile.arena), goal: rule.wave };
+    case 'stamps':
+      return { current: profile.arena.daily?.totalStamps ?? 0, goal: rule.stamps };
+    case 'weekStreak':
+      return { current: profile.arena.daily?.bestWeekStreak ?? 0, goal: rule.weeks };
     case 'starStreak':
       return { current: longestThreeStarRun(profile), goal: rule.levels };
     case 'counter':
