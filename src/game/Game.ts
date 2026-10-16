@@ -4,7 +4,7 @@ import { practiceDay, type KeyStats } from '../course/keyStats';
 import { keyWeight } from '../course/mastery';
 import { allowedKeysFor, type Level } from '../course/regions';
 import { hatSpec } from '../course/shop';
-import { WordSource } from '../course/WordSource';
+import { EVEN_WEIGHTS, WordSource, type KeyWeights } from '../course/WordSource';
 import type { Equipped, WordLanguage } from '../profiles/Profile';
 import { seededRandom, systemRandom, type RandomSource } from '../random';
 import { xpPop } from '../ui/progression';
@@ -47,6 +47,7 @@ import { RunRewards, type Rewards } from './RunRewards';
 import { RunTally } from './RunTally';
 import { SessionStats } from './SessionStats';
 import { SpawnGroups } from './SpawnGroups';
+import { SpawnScript, spawnAngle } from './SpawnScript';
 import { Targeting } from './Targeting';
 import type { Theme } from './themes';
 import { World } from './World';
@@ -59,7 +60,6 @@ const CAMERA_INTRO_SCALE = 2.2;
 const CAMERA_INTRO_DURATION = 1.8;
 const CAMERA_SWAY = 0.35;
 const CAMERA_SWAY_SPEED = 0.25;
-const SPAWN_ARC_MARGIN = 0.35;
 const MAX_FRAME_DELTA = 0.1;
 const FIRST_PHASE = 0;
 const SHAKE_DURATION = 0.25;
@@ -68,6 +68,8 @@ const SHIELD_IMPACT = 0.5;
 const FINISH_DELAY_MS = 1100;
 const NO_CALM = 0;
 const PROGRESS_STEPS_PER_SECOND = 10;
+const WORDS_STREAM = 'words';
+const PLACEMENT_STREAM = 'placement';
 
 export interface GameConfig {
   character: string;
@@ -122,7 +124,9 @@ export class Game {
   private readonly particles = new Particles(this.scene);
   private readonly world: World;
   private readonly random: RandomSource;
+  private readonly placement: RandomSource;
   private readonly words: WordSource;
+  private readonly script: SpawnScript;
   private readonly stats = new SessionStats();
   private readonly rewards: RunRewards;
   private readonly tally = new RunTally();
@@ -142,6 +146,7 @@ export class Game {
   private phase: RunPhase;
   private phaseIndex = FIRST_PHASE;
   private spawned = 0;
+  private scriptSpawn: number | undefined;
   private phaseSeconds = 0;
   private calm: number;
   private boss: Boss | undefined;
@@ -164,6 +169,7 @@ export class Game {
     private readonly events: GameEvents,
   ) {
     this.random = runRandom(config.plan.seed);
+    this.placement = this.random.stream(PLACEMENT_STREAM);
     this.player = new Player(config.character);
     this.player.setHat(hatSpec(config.equipped.hat));
     this.keys = new KeyTracker(
@@ -176,9 +182,19 @@ export class Game {
     this.calm = this.phase.calmSeconds ?? NO_CALM;
     this.lives = config.plan.lives;
     this.rewards = new RunRewards(config.plan);
-    this.words = new WordSource(config.language, this.phase.words, {
-      weightOf: (key) => keyWeight(key, this.keys.statOf(key)),
-    });
+    const seeded = config.plan.seed !== undefined;
+    const weights = seeded ? EVEN_WEIGHTS : this.adaptiveWeights();
+    const { language } = config;
+    this.words = new WordSource(
+      language,
+      this.phase.words,
+      weights,
+      this.random.stream(WORDS_STREAM),
+    );
+    this.script = new SpawnScript(
+      { language, random: this.random, weights, seeded },
+      this.phase.words,
+    );
     const quality = currentQuality();
     this.world = new World(this.scene, config.theme, quality);
     this.scene.add(this.player.object);
@@ -305,6 +321,10 @@ export class Game {
     };
   }
 
+  private adaptiveWeights(): KeyWeights {
+    return { weightOf: (key) => keyWeight(key, this.keys.statOf(key)) };
+  }
+
   private placeCameraForIntro(): void {
     this.camera.position.copy(CAMERA_POSITION).multiplyScalar(CAMERA_INTRO_SCALE);
     this.camera.lookAt(this.cameraTarget);
@@ -394,10 +414,17 @@ export class Game {
     this.sinceSpawn += delta;
     if (!this.isSpawnDue()) return;
     this.sinceSpawn = 0;
-    const word = this.nextSpawnWord();
+    const word = this.script.word(this.phase, this.spawned, this.liveStarts());
+    const angle = this.script.angle();
     this.spawned += 1;
-    this.spawnGroups.spawn(() => this.spawnWord(word));
+    this.spawnScripted(() => this.spawnGroups.spawn(() => this.spawnWord(word, angle)));
     this.retime();
+  }
+
+  private spawnScripted(spawn: () => void): void {
+    this.scriptSpawn = this.script.nextIndex();
+    spawn();
+    this.scriptSpawn = undefined;
   }
 
   private retime(): void {
@@ -432,12 +459,6 @@ export class Game {
     this.sinceSpawn = Math.max(this.sinceSpawn, this.phase.spawnInterval);
   }
 
-  private nextSpawnWord(): string {
-    const taken = this.liveStarts();
-    if (this.phase.kind === 'warmup') return this.words.singleLetter(taken);
-    return this.words.stagedWord(this.spawned / this.phase.count, taken);
-  }
-
   private nextWord(): string {
     return this.words.next(this.liveStarts());
   }
@@ -446,16 +467,16 @@ export class Game {
     return new Set(this.enemies.map((enemy) => enemy.expectedChar));
   }
 
-  private spawnWord(word = this.nextWord()): Enemy {
+  private spawnWord(word = this.nextWord(), angle?: number): Enemy {
     const enemy = new Enemy(word, this.labels.createLabel(), this.phase.speed, this.look());
-    this.addEnemy(enemy, SPAWN_RADIUS);
+    this.addEnemy(enemy, SPAWN_RADIUS, angle);
     return enemy;
   }
 
   private spawnBossOnce(): void {
     if (this.boss) return;
     const isMini = this.phase.miniBoss === true;
-    this.boss = new Boss(
+    const boss = new Boss(
       this.labels.createLabel(),
       this.phase.speed,
       this.look(),
@@ -463,16 +484,18 @@ export class Game {
       this.phase.count,
       isMini ? MINI_BOSS_SCALE : BOSS_SCALE,
     );
-    this.addEnemy(this.boss, BOSS_SPAWN_RADIUS);
+    this.boss = boss;
+    this.spawnScripted(() => this.addEnemy(boss, BOSS_SPAWN_RADIUS, this.script.angle()));
   }
 
   private look(): EnemyLook {
     return { shape: this.config.theme.enemyShape, colors: this.config.theme.enemyColors };
   }
 
-  private addEnemy(enemy: Enemy, radius?: number): void {
+  private addEnemy(enemy: Enemy, radius?: number, angle?: number): void {
     this.meter.wordReady(this.elapsed, this.enemies.length === 0);
-    if (radius !== undefined) placeOnSpawnArc(enemy, radius);
+    if (radius !== undefined) placeOnSpawnArc(enemy, radius, angle ?? spawnAngle(this.placement));
+    if (this.scriptSpawn !== undefined) enemy.spawnIndex = this.scriptSpawn;
     this.scene.add(enemy.object);
     this.enemies.push(enemy);
     this.spawnGroups.join(enemy);
@@ -587,6 +610,7 @@ export class Game {
     this.retime();
     this.calm = next.calmSeconds ?? NO_CALM;
     this.words.use(next.words);
+    this.script.startPhase(this.phaseIndex, next.words);
     this.reportProgress();
     this.mechanics.onPhaseChange(next);
   }
@@ -739,8 +763,7 @@ function progressStep(seconds: number): number {
   return Math.floor(seconds * PROGRESS_STEPS_PER_SECOND);
 }
 
-function placeOnSpawnArc(enemy: Enemy, radius: number): void {
-  const angle = Math.PI - SPAWN_ARC_MARGIN + Math.random() * (Math.PI + SPAWN_ARC_MARGIN * 2);
+function placeOnSpawnArc(enemy: Enemy, radius: number, angle: number): void {
   enemy.object.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
 }
 

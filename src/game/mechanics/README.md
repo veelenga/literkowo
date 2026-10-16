@@ -52,7 +52,7 @@ Actions:
 - `boostRewards({ coins, xp })`: scales the XP of the whole run and the coin payout of the run, for example `1.2` for 20% more. The XP grows during the run. The coin factor reaches `GameResult.coinBoost` and scales the whole payout after the run, bonuses included (`levelCoins` in `src/course/coins.ts`, `arenaPayout` in `src/arena/economy.ts`). Each factor stays between 1 and the cap in `MAX_BOOST` (`src/course/powers.ts`).
 - `stats.keepFeverOnSlips(slips)`: the next `slips` mistakes during the fever keep it going. They still count as mistakes and still break the combo.
 
-Enemies also offer `tags` (a `Set<string>` for your own markers), `typedLength` (letters typed so far), `setSpeedScale(scale)`, `freeze(seconds)` (stops and dims), `isFrozen`, `burstPosition` and `setLabelMode('full' | 'firstLetter' | 'hidden')`. `firstLetter` shows the typed part and the next letter and masks the rest.
+Enemies also offer `tags` (a `Set<string>` for your own markers), `spawnIndex` (the number of the spawn in the run's spawn script, from 0, the same for every run with the same seed; enemies that replace a spawn as it lands, such as special enemies and twins, share its number, and enemies a mechanic adds on its own have none), `typedLength` (letters typed so far), `setSpeedScale(scale)`, `freeze(seconds)` (stops and dims), `isFrozen`, `burstPosition` and `setLabelMode('full' | 'firstLetter' | 'hidden')`. `firstLetter` shows the typed part and the next letter and masks the rest.
 
 ## Composition points
 
