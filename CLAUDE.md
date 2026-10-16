@@ -9,6 +9,7 @@ These instructions are for AI agents and for people.
 
 - Read `docs/INTENT.md` and `docs/SPEC.md` before you change gameplay.
 - When behaviour changes, update `docs/SPEC.md` in the same pull request.
+- When a feature is added or changes, update `public/llms.txt` and `public/llms-full.txt` in the same pull request.
 - Accuracy comes before speed. A new mechanic must keep careful typing as the best way to win.
 
 ## Commands
