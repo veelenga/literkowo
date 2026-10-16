@@ -79,11 +79,12 @@
 .finger-keys {
   --key-size: 34px;
   --key-gap: 5px;
-  display: inline-flex;
+  display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--key-gap);
-  margin: 16px 0 10px;
+  width: fit-content;
+  margin: 16px auto 10px;
 }
 
 .finger-key {
@@ -126,7 +127,7 @@
 @media (--low-screen) {
   .finger-keys {
     --key-size: 30px;
-    margin: 10px 0 6px;
+    margin: 10px auto 6px;
   }
 
   .fingers-panel .hands {
@@ -181,7 +182,7 @@
 
   .fingers-panel > .finger-keys {
     grid-column: 2;
-    margin: 6px 0;
+    margin: 6px auto;
   }
 
   .fingers-panel > .hands {
