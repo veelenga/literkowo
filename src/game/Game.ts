@@ -685,7 +685,7 @@ export class Game {
       fever: this.stats.fever,
       multiplier: this.stats.multiplier,
     });
-    this.labels.float(enemy.label, xpPop(xp));
+    if (xp > 0) this.labels.float(enemy.label, xpPop(xp));
     this.events.onRewards(this.rewards);
   }
 

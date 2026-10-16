@@ -5,6 +5,7 @@ import {
   PLACEMENT_COINS_PER_WORD,
   PLACEMENT_HIT_COST,
   PLACEMENT_LIVES,
+  PLACEMENT_XP_FACTOR,
   placementLevel,
   placementPlan,
 } from './placementPlan';
@@ -16,14 +17,16 @@ const FAILED: PhaseRecord = { hits: 30, mistakes: 10, reached: 0, typingSeconds:
 describe('placementPlan', () => {
   const plan = placementPlan(STAGES);
 
-  it('costs no hearts and pays no coins', () => {
+  it('costs no hearts and pays no XP and no coins', () => {
     expect(plan).toMatchObject({
       lives: PLACEMENT_LIVES,
+      xpFactor: PLACEMENT_XP_FACTOR,
       hitCost: PLACEMENT_HIT_COST,
       coinsPerWord: PLACEMENT_COINS_PER_WORD,
       allMechanicsUnlocked: false,
     });
     expect(PLACEMENT_HIT_COST).toBe('combo');
+    expect(PLACEMENT_XP_FACTOR).toBe(0);
   });
 
   it('runs one timed test phase per stage that keeps a few words on the board', () => {

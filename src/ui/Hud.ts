@@ -2,7 +2,7 @@ import { accuracyPercent } from '../course/scoring';
 import { format } from '../i18n/format';
 import { i18n } from '../i18n/i18n';
 import type { Progress } from '../game/Game';
-import type { StageMark } from '../game/RunPlan';
+import type { RunPlan, StageMark } from '../game/RunPlan';
 import type { Rewards } from '../game/RunRewards';
 import type { SessionStats } from '../game/SessionStats';
 import type { Profile } from '../profiles/Profile';
@@ -13,6 +13,7 @@ import { soundToggle } from './SoundToggle';
 
 const PERCENT = 100;
 const BASE_MULTIPLIER = 1;
+const NO_XP = 0;
 
 interface HudActions {
   onMap: () => void;
@@ -41,10 +42,11 @@ export class Hud {
   constructor(
     private readonly profile: Profile,
     actions: HudActions,
-    lives: number,
+    { lives, xpFactor }: Pick<RunPlan, 'lives' | 'xpFactor'>,
   ) {
     const t = i18n.t;
     this.lives = lives;
+    this.xpGain.element.hidden = xpFactor <= NO_XP;
     this.hearts = Array.from({ length: lives }, () =>
       el('span', { class: 'heart' }, icon('heart', 'heart-icon')),
     );

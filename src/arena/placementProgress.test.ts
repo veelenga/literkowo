@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { EMPTY_TALLY } from '../course/counters';
 import { EMPTY_KEY_STAT } from '../course/keyStats';
 import { createProfile, type Profile } from '../profiles/Profile';
 import { isArenaOpen, openKeySets } from './keySets';
@@ -29,11 +28,7 @@ function outcomeAfter(passed: number): PlacementOutcome {
 function attempt(passed: number, overrides: Partial<PlacementAttempt> = {}): PlacementAttempt {
   return {
     outcome: outcomeAfter(passed),
-    score: 500,
-    lettersFreed: 120,
-    xp: 60,
     keyStats: { f: { ...EMPTY_KEY_STAT, hits: 12 } },
-    tally: { ...EMPTY_TALLY, words: 25 },
     date: DAY,
     ...overrides,
   };
@@ -47,11 +42,12 @@ describe('recordPlacement', () => {
     expect(openKeySets(profile).map((keySet) => keySet.id)).toEqual(['polana', 'las']);
   });
 
-  it('adds the keystrokes, XP and words like a level, but no coins or stars', () => {
-    const profile = recordPlacement(createProfile('A', 'b'), attempt(1));
+  it('adds the keystrokes like a level, but no XP, score, counters, coins or stars', () => {
+    const before = createProfile('A', 'b');
+    const profile = recordPlacement(before, attempt(1));
     expect(profile.keyStats.f.hits).toBe(12);
-    expect(profile).toMatchObject({ xp: 60, coins: 0, totalScore: 500, lettersFreed: 120 });
-    expect(profile.counters.wordsTyped).toBe(25);
+    expect(profile).toMatchObject({ xp: 0, coins: 0, totalScore: 0, lettersFreed: 0 });
+    expect(profile.counters).toEqual(before.counters);
     expect(profile.levelResults).toEqual({});
   });
 

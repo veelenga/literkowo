@@ -370,8 +370,8 @@ XP only grows. It drives the player level and the rank. A child never loses XP, 
 
 - Each completed word gives `letters × multiplier × fever bonus × tag factor` XP, rounded. The multiplier and the fever bonus are the ones from scoring, so XP follows the combo.
 - Tag factor: a boss hit 3, `merged` 3, `power-word` 2, `minion` 1. Any other or unknown tag is 1. With several tags the highest factor counts.
-- The XP of each word is then scaled by the XP factor of the run plan and rounded again. Course levels and the placement test use 1 (`LEVEL_XP_FACTOR` in `src/game/LevelPlan.ts`), the arena 0.4 to 0.25 by preset. An XP hat scales the XP of the whole run by at most 10%, see [Item powers](#item-powers).
-- A floating "+12 XP" rises from the enemy on each completed word, and the HUD shows the XP of the run next to the score. The level number sits on the avatar button of the HUD.
+- The XP of each word is then scaled by the XP factor of the run plan and rounded again. Course levels use 1 (`LEVEL_XP_FACTOR` in `src/game/LevelPlan.ts`), the arena 0.4 to 0.25 by preset, and the placement test 0, see [Placement test](#placement-test). An XP hat scales the XP of the whole run by at most 10%, see [Item powers](#item-powers).
+- A floating "+12 XP" rises from the enemy on each completed word that earns XP, and the HUD shows the XP of the run next to the score, unless the run plan pays no XP. The level number sits on the avatar button of the HUD.
 - XP of the run is added to the profile after every attempt, won or lost.
 
 Levels start at 1. The step from level `n` to `n + 1` costs `min(15000, round(100 × 1.12^(n - 1)))` XP.
@@ -732,7 +732,8 @@ What a placement opens (`recordPlacement`, `src/course/course.ts`):
 - A placement in a region the word language does not have counts as the last region before it, so Wyspa Ogonków counts as Jaskinia for English words.
 - Stars, trophies and boss stories still need real play. The skipped levels have no stars, and the boss scenes still play before each boss.
 - The arena opens, with a key set for every placed region (see [Arena](#arena)).
-- The keystrokes of the test go into the key statistics like those of a level, so weak keys get more weight later. XP, score, letters freed and the counters add up too. The test pays no coins, and its XP factor is 1.
+- The keystrokes of the test go into the key statistics like those of a level, so weak keys get more weight later.
+- The test pays nothing else, so a retake cannot farm anything: its XP factor is 0 (`PLACEMENT_XP_FACTOR`), it pays no coins, and the total score, letters freed and the counters stay as they were. Words show no XP pop, and the HUD hides the XP of the run.
 
 Map:
 

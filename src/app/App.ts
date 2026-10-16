@@ -234,7 +234,7 @@ export class App {
         onPause: () => this.game?.togglePause(),
         onKeyboard: () => this.touch?.toggleNativeKeyboard(),
       },
-      run.plan.lives,
+      run.plan,
     );
     const builtInKeyboard = usesBuiltInKeyboard();
     const layout = builtInKeyboard ? KEYBOARD_LAYOUTS.compact : KEYBOARD_LAYOUTS.full;

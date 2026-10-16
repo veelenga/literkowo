@@ -1,5 +1,4 @@
 import type { Level } from '../course/catalog';
-import { LEVEL_XP_FACTOR } from '../game/LevelPlan';
 import type { HitCost, RunPhase, RunPlan } from '../game/RunPlan';
 import {
   passedStages,
@@ -12,13 +11,14 @@ import {
 export const PLACEMENT_LIVES = 0;
 export const PLACEMENT_HIT_COST: HitCost = 'combo';
 export const PLACEMENT_COINS_PER_WORD = 0;
+export const PLACEMENT_XP_FACTOR = 0;
 
 export function placementPlan(stages: readonly PlacementStage[]): RunPlan {
   const phases = stages.map((stage) => stagePhase(stage, stages.length));
   return {
     lives: PLACEMENT_LIVES,
     hitCost: PLACEMENT_HIT_COST,
-    xpFactor: LEVEL_XP_FACTOR,
+    xpFactor: PLACEMENT_XP_FACTOR,
     coinsPerWord: PLACEMENT_COINS_PER_WORD,
     allMechanicsUnlocked: false,
     phaseAt: (index) => phases[index],

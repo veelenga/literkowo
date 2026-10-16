@@ -89,6 +89,8 @@ describe('PlacementFlow', () => {
     const placed = saved[0];
     expect(placed.arena.placement?.regionId).toBe('polana');
     expect(placed.keyStats.f.hits).toBe(9);
+    expect(placed).toMatchObject({ xp: 0, totalScore: 0, lettersFreed: 0, coins: 0 });
+    expect(placed.counters.wordsTyped).toBe(0);
     expect(overlays[0].element.querySelector('.result-title')?.textContent).toBe(
       'Zaczynasz tutaj: Las',
     );

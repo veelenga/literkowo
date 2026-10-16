@@ -88,13 +88,5 @@ function regionsOf(stages: readonly PlacementStage[]): Region[] {
 }
 
 function attemptOf(outcome: PlacementOutcome, result: GameResult): PlacementAttempt {
-  return {
-    outcome,
-    score: result.score,
-    lettersFreed: result.lettersFreed,
-    xp: result.xp,
-    keyStats: result.keys.practised,
-    tally: result.tally,
-    date: practiceDay(new Date()),
-  };
+  return { outcome, keyStats: result.keys.practised, date: practiceDay(new Date()) };
 }
