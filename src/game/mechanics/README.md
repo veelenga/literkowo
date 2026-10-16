@@ -31,6 +31,7 @@ Read only:
 - `player` (`object`, `jump()`, `hurt()`), `scene`, `particles.burst(position, color)`.
 - `stats`: the `SessionStats` of this run. Scoring and the fever flag live there.
 - `phase` (the current phase of the run plan, `src/game/RunPlan.ts`), `playing`, `shields`, `guards`, `theme`, `sfx`, `words` (the run's `WordSource`, with the keys and lengths of the current phase), `level` and `language` (the profile word language).
+- `phase.modifiers`: the run modifiers that `withModifiers` in `src/game/modifiers.ts` puts on every phase of a plan. That function also applies the plan side (one heart, long words), and `Modifiers.ts` applies the board side (fog labels, darkness for the whole run).
 - `allMechanicsUnlocked`: true when the run plan opens every mechanic, as the arena does. A mechanic that unlocks by `level` must then run as unlocked, see `hasForestMechanics` in `actionEvents/regions.ts` and `availableKinds` in `enemyTypes/kinds.ts`.
 - `equipped`: the ids of the pet and the hat the profile wears (`src/course/shop.ts` has their specs). The game already puts the hat on the hero.
 - `random`: the `RandomSource` of the run (`src/random.ts`). Take your own stream in the constructor with `context.random.stream('<name>')` and draw every choice that changes gameplay from it: words, kinds, directions, timers. A run with a seed (`seed` in the run plan) then plays the same on every device, and one mechanic never shifts the draws of another. Purely visual effects may keep `Math.random`.
