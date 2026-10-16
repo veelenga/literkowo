@@ -579,6 +579,13 @@
   font-size: 0.86rem;
 }
 
+.play-panel-settings .placement-link {
+  min-height: 38px;
+  padding: 0 14px;
+  font-size: 0.9rem;
+  color: var(--accent-light);
+}
+
 .create-panel {
   width: min(820px, 100%);
   padding: 24px 26px;
@@ -982,7 +989,7 @@
     grid-template-columns: minmax(0, 1fr) auto auto;
     grid-template-areas:
       'title shop play'
-      'label label delete'
+      'label placement delete'
       'languages languages delete';
     align-items: center;
     gap: 2px 10px;
@@ -1018,6 +1025,13 @@
   .play-panel-settings .field-label {
     grid-area: label;
     font-size: 0.76rem;
+  }
+
+  .play-panel-settings .placement-link {
+    grid-area: placement;
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: 0.8rem;
   }
 
   .word-language {
@@ -1148,7 +1162,7 @@
 
   .play-panel {
     grid-template-columns: minmax(0, 1fr) auto auto auto;
-    grid-template-areas: 'title label shop play' 'delete languages shop play';
+    grid-template-areas: 'title label shop play' 'delete languages placement play';
     gap: 2px 14px;
     padding-block: 6px;
   }
@@ -1214,5 +1228,34 @@
 @media (pointer: coarse) {
   .play-panel-settings .button-danger {
     min-height: var(--touch-target);
+  }
+}
+
+@media (--phone-narrow) {
+  .create-panel {
+    position: relative;
+  }
+
+  .create-actions {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  .create-actions .button-ghost {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    min-height: 40px;
+    padding: 0 12px;
+    font-size: 0.9rem;
+  }
+
+  .create-actions .button-primary,
+  .create-actions .knows-typing {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0 10px;
+    font-size: 1rem;
+    line-height: 1.15;
   }
 }

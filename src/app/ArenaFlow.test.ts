@@ -42,6 +42,7 @@ const RESULT: GameResult = {
   coinBoost: 1,
   keys: { practised: {}, weakest: [], mastered: [] },
   phasesCleared: 7,
+  phases: [],
   tally: EMPTY_TALLY,
 };
 

@@ -1,3 +1,4 @@
+import { offersPlacement } from '../arena/placementProgress';
 import { i18n } from '../i18n/i18n';
 import type { UiLanguage } from '../i18n/translations';
 import {
@@ -40,6 +41,7 @@ interface Actions {
   onPlay: (profile: Profile) => void;
   onSettings: () => void;
   onShop: (profile: Profile) => void;
+  onPlacement: (profile: Profile) => void;
 }
 
 export class ProfileScreen {
@@ -269,6 +271,7 @@ export class ProfileScreen {
           this.languageChip(profile, 'pl', t.polish),
           this.languageChip(profile, 'en', t.english),
         ),
+        this.placementLink(profile),
         el('button', {
           class: 'button button-danger',
           text: t.deleteProfile,
@@ -276,6 +279,16 @@ export class ProfileScreen {
         }),
       ),
     );
+  }
+
+  private placementLink(profile: Profile): HTMLElement | null {
+    if (!offersPlacement(profile)) return null;
+    return el('button', {
+      class: 'button button-ghost placement-link',
+      type: 'button',
+      text: i18n.t.features.placement.title,
+      onClick: () => this.actions.onPlacement(profile),
+    });
   }
 
   private createPanel(): HTMLElement {
@@ -291,12 +304,21 @@ export class ProfileScreen {
       'data-1p-ignore': 'true',
       'aria-label': t.profileName,
     });
-    const submit = () => {
+    const create = (): Profile | undefined => {
       const name = input.value.trim();
-      if (!name) return input.focus();
+      if (!name) {
+        input.focus();
+        return undefined;
+      }
       const profile = createProfile(name, avatar);
       this.store.add(profile);
       this.select(profile);
+      return profile;
+    };
+    const submit = () => void create();
+    const submitForTest = () => {
+      const profile = create();
+      if (profile) this.actions.onPlacement(profile);
     };
     input.addEventListener('keydown', (event) => event.key === 'Enter' && submit());
     const picker = avatarPicker(avatar, STARTER_SKINS, (picked) => {
@@ -326,6 +348,11 @@ export class ProfileScreen {
           class: 'button button-ghost',
           text: t.cancel,
           onClick: () => this.closeCreatePanel(),
+        }),
+        el('button', {
+          class: 'button knows-typing',
+          text: t.features.placement.knowsTyping,
+          onClick: submitForTest,
         }),
         el('button', {
           class: 'button button-primary button-large',

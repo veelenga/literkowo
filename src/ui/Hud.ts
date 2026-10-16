@@ -2,6 +2,7 @@ import { accuracyPercent } from '../course/scoring';
 import { format } from '../i18n/format';
 import { i18n } from '../i18n/i18n';
 import type { Progress } from '../game/Game';
+import type { RunPlan, StageMark } from '../game/RunPlan';
 import type { Rewards } from '../game/RunRewards';
 import type { SessionStats } from '../game/SessionStats';
 import type { Profile } from '../profiles/Profile';
@@ -12,6 +13,7 @@ import { soundToggle } from './SoundToggle';
 
 const PERCENT = 100;
 const BASE_MULTIPLIER = 1;
+const NO_XP = 0;
 
 interface HudActions {
   onMap: () => void;
@@ -40,10 +42,11 @@ export class Hud {
   constructor(
     private readonly profile: Profile,
     actions: HudActions,
-    lives: number,
+    { lives, xpFactor }: Pick<RunPlan, 'lives' | 'xpFactor'>,
   ) {
     const t = i18n.t;
     this.lives = lives;
+    this.xpGain.element.hidden = xpFactor <= NO_XP;
     this.hearts = Array.from({ length: lives }, () =>
       el('span', { class: 'heart' }, icon('heart', 'heart-icon')),
     );
@@ -109,11 +112,13 @@ export class Hud {
     restartAnimation(this.levelBadge, 'is-bumped');
   }
 
-  progress({ kind, done, total, wave }: Progress): void {
-    this.progressLabel.textContent = progressLabel(kind, wave);
-    this.progressCount.textContent = `${done}/${total}`;
-    this.progressFill.style.width = `${(done / total) * PERCENT}%`;
+  progress({ kind, done, total, timed, wave, stage }: Progress): void {
+    this.progressLabel.textContent = progressLabel(kind, wave, stage);
+    this.progressCount.textContent = timed ? secondsLeft(total - done) : `${done}/${total}`;
+    const share = timed ? (total - done) / total : done / total;
+    this.progressFill.style.width = `${share * PERCENT}%`;
     this.progressFill.classList.toggle('is-boss', kind === 'boss');
+    this.progressFill.classList.toggle('is-timed', timed);
   }
 
   private showPlayerLevel(): void {
@@ -154,11 +159,26 @@ export class Hud {
   }
 }
 
-function progressLabel(kind: Progress['kind'], wave: number | undefined): string {
+function progressLabel(
+  kind: Progress['kind'],
+  wave: number | undefined,
+  stage: StageMark | undefined,
+): string {
   const t = i18n.t;
+  if (stage) return format(t.features.placement.stage, { stage: stage.number, count: stage.count });
   if (wave !== undefined) return format(t.features.arena.wave, { wave });
-  const labels = { warmup: t.warmup, learn: t.words, words: t.words, boss: t.bossHealth };
+  const labels = {
+    warmup: t.warmup,
+    learn: t.words,
+    words: t.words,
+    boss: t.bossHealth,
+    test: t.words,
+  };
   return labels[kind];
+}
+
+function secondsLeft(seconds: number): string {
+  return format(i18n.t.features.placement.secondsLeft, { seconds: Math.ceil(seconds) });
 }
 
 function keyboardButton(onKeyboard: () => void): HTMLElement {

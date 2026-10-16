@@ -97,7 +97,16 @@ export class WordSource {
   }
 
   private anyWord(lengths: LetterRange): string {
+    if (this.pools.rules.realWordsOnly) return this.listedWord(lengths);
     return this.realWord(lengths) ?? this.generate(this.generatedWithin(lengths));
+  }
+
+  private listedWord(lengths: LetterRange): string {
+    const fitting = this.wordsWithin(lengths);
+    const fresh = fitting.filter((word) => usesFresh(word, this.fresh));
+    const word =
+      this.pickWord(fresh) ?? this.pickWord(fitting) ?? this.pickWord(this.pools.realWords);
+    return word ?? this.generate(this.generatedWithin(lengths));
   }
 
   private realWord(lengths: LetterRange): string | undefined {

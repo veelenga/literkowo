@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest';
-import { devArenaFromUrl, devLevelFromUrl } from './devShortcut';
+import { devArenaFromUrl, devLevelFromUrl, devPlacementFromUrl } from './devShortcut';
 
 function open(search: string): void {
   history.replaceState(null, '', `/${search}`);
@@ -26,5 +26,14 @@ describe('dev shortcuts', () => {
       open(`?arena=${value}`);
       expect(devArenaFromUrl()).toBeUndefined();
     }
+  });
+
+  it('starts the placement test only with placement set to 1', () => {
+    open('?placement=1');
+    expect(devPlacementFromUrl()).toBe(true);
+    open('?placement=2');
+    expect(devPlacementFromUrl()).toBe(false);
+    open('');
+    expect(devPlacementFromUrl()).toBe(false);
   });
 });

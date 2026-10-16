@@ -7,6 +7,7 @@ import { enemyTypes } from './enemyTypes';
 import { fever } from './fever';
 import { mastery } from './mastery';
 import { mergeEnemies } from './mergeEnemies';
+import { placement } from './placement';
 import { powerWords } from './powerWords';
 import { progression } from './progression';
 import { quality } from './quality';
@@ -35,6 +36,7 @@ export function featureTexts(language: UiLanguage) {
     worldMap: worldMap[language],
     course: course[language],
     arena: arena[language],
+    placement: placement[language],
     settings: settings[language],
   };
 }

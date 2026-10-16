@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { courseFor } from '../course/course';
+import { courseProgress } from '../testing/courseProgress';
 import { levelById } from '../course/catalog';
 import { gradualCourseResults } from './courseMigration';
 
@@ -81,7 +82,7 @@ describe('gradualCourseResults', () => {
     const meadow = course.regions[0].levels;
     expect(Object.keys(migrated)).toEqual(meadow.map((level) => level.id));
     const results = Object.fromEntries(meadow.map((level) => [level.id, result(2)]));
-    expect(course.isUnlocked(course.regions[1].levels[0], results)).toBe(true);
+    expect(course.isUnlocked(course.regions[1].levels[0], courseProgress(results))).toBe(true);
   });
 
   it('leaves the next new level open after a half finished region', () => {

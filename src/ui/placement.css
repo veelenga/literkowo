@@ -1,0 +1,208 @@
+@import './screenSizes.css';
+
+.stage-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 16px 0 6px;
+}
+
+.stage-chip {
+  --chip: #7cf5e0;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  border: 2px solid color-mix(in srgb, var(--chip) 55%, transparent);
+  font-size: 0.88rem;
+  font-weight: 900;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--chip) 70%, white);
+  background: color-mix(in srgb, var(--chip) 10%, transparent);
+}
+
+.stage-chip.is-meadow {
+  --chip: #6ff0a6;
+}
+
+.stage-chip.is-forest {
+  --chip: #6ff0d2;
+}
+
+.stage-chip.is-mountains {
+  --chip: #9cc4ff;
+}
+
+.stage-chip.is-cave {
+  --chip: #cbbcff;
+}
+
+.stage-chip.is-island {
+  --chip: #7ff0f0;
+}
+
+.stage-chip.is-lit {
+  color: #0b1130;
+  border-color: color-mix(in srgb, var(--chip) 55%, white);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--chip) 60%, white), var(--chip));
+  box-shadow:
+    0 3px 0 color-mix(in srgb, var(--chip) 45%, black),
+    0 0 18px color-mix(in srgb, var(--chip) 45%, transparent);
+}
+
+.stage-chip.is-dim {
+  color: rgba(255, 255, 255, 0.42);
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.placement-rule {
+  margin: 14px auto 0;
+  max-width: 44ch;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.placement-result .result-stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.placement-result.is-calm .result-title {
+  color: var(--text);
+}
+
+.progress-fill.is-timed {
+  background: linear-gradient(90deg, #2bb6d8, #7cf5e0);
+  box-shadow: 0 0 12px rgba(124, 245, 224, 0.5);
+  transition: width 100ms linear;
+}
+
+.finger-keys {
+  --key-size: 34px;
+  --key-gap: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--key-gap);
+  width: fit-content;
+  margin: 16px auto 10px;
+}
+
+.finger-key {
+  color: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.finger-key.is-lit {
+  color: #0b1130;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--finger) 60%, white), var(--finger));
+  border-color: color-mix(in srgb, var(--finger) 55%, white);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 3px 0 color-mix(in srgb, var(--finger) 50%, black);
+}
+
+.finger-key-alt {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 8px;
+  font-size: 10px;
+  line-height: 1;
+  color: #ffffff;
+  background: color-mix(in srgb, var(--finger) 70%, black);
+  box-shadow: 0 0 0 1.5px rgba(3, 6, 20, 0.85);
+}
+
+.fingers-panel .hands {
+  max-width: 360px;
+}
+
+@media (--low-screen) {
+  .finger-keys {
+    --key-size: 30px;
+    margin: 10px auto 6px;
+  }
+
+  .fingers-panel .hands {
+    max-width: 300px;
+  }
+}
+
+@media (--phone) {
+  .hud-progress:has(.progress-fill.is-timed) .progress-head {
+    gap: 6px;
+  }
+
+  .hud-progress:has(.progress-fill.is-timed) .progress-label {
+    display: inline;
+    white-space: nowrap;
+  }
+
+  .stage-chips {
+    gap: 5px;
+    margin: 10px 0 4px;
+  }
+
+  .stage-chip {
+    padding: 4px 10px;
+    font-size: 0.76rem;
+  }
+
+  .placement-rule {
+    margin-top: 10px;
+    font-size: 1rem;
+  }
+
+  .finger-keys {
+    --key-size: clamp(24px, 7.4vw, 30px);
+    --key-gap: 4px;
+  }
+
+  .finger-key-alt {
+    top: -6px;
+    right: -6px;
+    min-width: 13px;
+    height: 13px;
+    font-size: 8px;
+  }
+
+  .fingers-panel .hands {
+    max-width: 230px;
+  }
+}
+
+@media (--phone-landscape) {
+  .placement-result > .result-title {
+    grid-column: 1 / -1;
+  }
+
+  .placement-result .result-hint {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.8rem;
+  }
+
+  .fingers-panel > .finger-keys {
+    grid-column: 2;
+    margin: 6px auto;
+  }
+
+  .fingers-panel > .hands {
+    grid-column: 3;
+    width: 190px;
+    margin-left: 20px;
+  }
+
+  .placement-intro .learn-hint,
+  .fingers-panel .learn-hint {
+    margin-top: 4px;
+    font-size: 0.8rem;
+  }
+}

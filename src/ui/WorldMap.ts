@@ -48,13 +48,14 @@ const NOT_FOUND = -1;
 const PREVIOUS = -1;
 const NEXT = 1;
 
-type NodeState = 'locked' | 'open' | 'current' | 'done';
+type NodeState = 'locked' | 'open' | 'current' | 'done' | 'skipped';
 
 const NODE_LOOKS: Readonly<Record<NodeState, string>> = {
   locked: 'locked',
   open: 'current',
   current: 'current',
   done: 'done',
+  skipped: 'skipped',
 };
 
 interface Actions {
@@ -78,7 +79,7 @@ export class WorldMap {
     private readonly actions: Actions,
   ) {
     this.course = courseFor(profile.wordLanguage);
-    this.current = this.course.current(profile.levelResults);
+    this.current = this.course.current(profile);
     this.layout = journeyLayout(this.bandSpecs(), this.currentIndex());
     this.stopKeys = onShortcutKeys(this.element, {
       Enter: () => this.playFocusLevel(),
@@ -324,7 +325,7 @@ export class WorldMap {
 
   private node(level: Level, state: NodeState): HTMLElement {
     const classes = ['level-node', `is-${NODE_LOOKS[state]}`, `is-${level.kind}`];
-    const lock = this.course.lockReason(level, this.profile.levelResults);
+    const lock = this.course.lockReason(level, this.profile);
     const title = lock ? i18n.t.features.course.locks[lock] : levelTitle(level);
     return el(
       'button',
@@ -364,7 +365,8 @@ export class WorldMap {
   private stateOf(level: Level): NodeState {
     if (!this.isUnlocked(level)) return 'locked';
     if (this.starsOf(level) > 0) return 'done';
-    return level.id === this.current?.id ? 'current' : 'open';
+    if (level.id === this.current?.id) return 'current';
+    return this.course.isSkipped(level, this.profile) ? 'skipped' : 'open';
   }
 
   private starsOf(level: Level): number {
@@ -372,7 +374,7 @@ export class WorldMap {
   }
 
   private isUnlocked(level: Level): boolean {
-    return this.course.isUnlocked(level, this.profile.levelResults);
+    return this.course.isUnlocked(level, this.profile);
   }
 }
 

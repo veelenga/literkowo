@@ -4,9 +4,10 @@ import { difficultyFor } from '../course/difficulty';
 import type { Level } from '../course/regions';
 import { levelWordRules } from '../course/wordRules';
 import type { WordLanguage } from '../profiles/Profile';
-import type { PhaseKind, RunPhase, RunPlan } from './RunPlan';
+import type { HitCost, PhaseKind, RunPhase, RunPlan } from './RunPlan';
 
 export const LEVEL_LIVES = 3;
+export const LEVEL_HIT_COST: HitCost = 'life';
 export const LEVEL_XP_FACTOR = 1;
 
 const MAIN_PHASE: Readonly<Record<LevelKind, PhaseKind>> = {
@@ -30,6 +31,7 @@ export function levelPlan(level: Level, language: WordLanguage): RunPlan {
   const phases = levelPhases(level, language);
   return {
     lives: LEVEL_LIVES,
+    hitCost: LEVEL_HIT_COST,
     xpFactor: LEVEL_XP_FACTOR,
     coinsPerWord: COINS_PER_WORD,
     allMechanicsUnlocked: false,

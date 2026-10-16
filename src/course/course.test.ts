@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { courseProgress } from '../testing/courseProgress';
 import { requireLevel as level } from '../testing/levels';
 import { courseFor, OPEN_AHEAD, type LevelResults } from './course';
 
@@ -9,9 +10,10 @@ function won(...ids: string[]): LevelResults {
   return Object.fromEntries(ids.map((id) => [id, WON]));
 }
 
-function openIds(results: LevelResults): string[] {
+function openIds(results: LevelResults, placedIn?: string): string[] {
   const polish = courseFor('pl');
-  return polish.levels.filter((level) => polish.isUnlocked(level, results)).map(({ id }) => id);
+  const progress = courseProgress(results, placedIn);
+  return polish.levels.filter((level) => polish.isUnlocked(level, progress)).map(({ id }) => id);
 }
 
 function polanaUpTo(last: number): string[] {
@@ -46,14 +48,14 @@ describe('courseFor', () => {
 
   it('unlocks a level once the previous one earned a star', () => {
     const results = { 'polana-1': { stars: 1, score: 10, accuracy: 0.9, wpm: 10 } };
-    expect(polish.isUnlocked(level('polana-1'), {})).toBe(true);
-    expect(polish.isUnlocked(level('polana-2'), {})).toBe(false);
-    expect(polish.isUnlocked(level('polana-2'), results)).toBe(true);
-    expect(polish.isUnlocked(level('polana-3'), results)).toBe(false);
+    expect(polish.isUnlocked(level('polana-1'), courseProgress())).toBe(true);
+    expect(polish.isUnlocked(level('polana-2'), courseProgress())).toBe(false);
+    expect(polish.isUnlocked(level('polana-2'), courseProgress(results))).toBe(true);
+    expect(polish.isUnlocked(level('polana-3'), courseProgress(results))).toBe(false);
   });
 
   it('keeps levels from other languages locked', () => {
-    expect(english.isUnlocked(level('wyspa-1'), {})).toBe(false);
+    expect(english.isUnlocked(level('wyspa-1'), courseProgress())).toBe(false);
   });
 
   it('collects allowed keys from the course levels only', () => {
@@ -66,7 +68,7 @@ describe('courseFor', () => {
 
   it('opens only the first level before any star', () => {
     expect(openIds({})).toEqual(['polana-1']);
-    expect(polish.current({})?.id).toBe('polana-1');
+    expect(polish.current(courseProgress())?.id).toBe('polana-1');
   });
 
   it('opens the next three levels past the furthest level with a star', () => {
@@ -98,27 +100,80 @@ describe('courseFor', () => {
   });
 
   it('puts the current level on the first open level after the furthest win', () => {
-    expect(polish.current(won('polana-1'))?.id).toBe('polana-2');
-    expect(polish.current(won('polana-1', 'polana-2', 'polana-3'))?.id).toBe('polana-4');
+    expect(polish.current(courseProgress(won('polana-1')))?.id).toBe('polana-2');
+    expect(polish.current(courseProgress(won('polana-1', 'polana-2', 'polana-3')))?.id).toBe(
+      'polana-4',
+    );
     const skipped = won('polana-1', 'polana-2', 'polana-3', 'polana-4', 'polana-6');
-    expect(polish.current(skipped)?.id).toBe('polana-7');
+    expect(polish.current(courseProgress(skipped))?.id).toBe('polana-7');
   });
 
   it('goes back to a skipped level when nothing ahead is open', () => {
     const skipped = won('polana-1', 'polana-2', 'polana-3', 'polana-4', 'polana-6', 'polana-7');
-    expect(polish.current(skipped)?.id).toBe('polana-5');
+    expect(polish.current(courseProgress(skipped))?.id).toBe('polana-5');
   });
 
   it('names why a level is locked', () => {
     const results = won('polana-1');
-    expect(polish.lockReason(level('polana-2'), results)).toBeUndefined();
-    expect(polish.lockReason(level('polana-3'), results)).toBe('review');
-    expect(polish.lockReason(level('polana-4'), results)).toBe('window');
-    expect(polish.lockReason(level('polana-19'), won(...POLANA_WITHOUT_REVIEW))).toBe('boss');
+    expect(polish.lockReason(level('polana-2'), courseProgress(results))).toBeUndefined();
+    expect(polish.lockReason(level('polana-3'), courseProgress(results))).toBe('review');
+    expect(polish.lockReason(level('polana-4'), courseProgress(results))).toBe('window');
+    expect(
+      polish.lockReason(level('polana-19'), courseProgress(won(...POLANA_WITHOUT_REVIEW))),
+    ).toBe('boss');
+  });
+
+  it('opens every level of the placed regions and the first level after them', () => {
+    expect(openIds({}, 'polana')).toEqual([...polanaUpTo(19), 'las-1']);
+    expect(openIds({}, 'las').at(-1)).toBe('gory-1');
+    expect(polish.lockReason(level('las-2'), courseProgress({}, 'polana'))).toBe('window');
+  });
+
+  it('puts the current level on the first level after the placement', () => {
+    expect(polish.current(courseProgress({}, 'polana'))?.id).toBe('las-1');
+    expect(polish.current(courseProgress(won('polana-1', 'polana-2'), 'las'))?.id).toBe('gory-1');
+  });
+
+  it('puts the current level on the first level of the last region after a full pass', () => {
+    expect(polish.current(courseProgress({}, 'wyspa'))?.id).toBe('wyspa-1');
+    expect(english.current(courseProgress({}, 'jaskinia'))?.id).toBe('jaskinia-1');
+    expect(polish.current(courseProgress(won('wyspa-1'), 'wyspa'))?.id).toBe('wyspa-2');
+    expect(polish.current(courseProgress({}, 'jaskinia'))?.id).toBe('wyspa-1');
+  });
+
+  it('marks the levels a placement covered without a star as skipped', () => {
+    const progress = courseProgress(won('polana-4'), 'polana');
+    expect(polish.isSkipped(level('polana-1'), progress)).toBe(true);
+    expect(polish.isSkipped(level('polana-19'), progress)).toBe(true);
+    expect(polish.isSkipped(level('polana-4'), progress)).toBe(false);
+    expect(polish.isSkipped(level('las-1'), progress)).toBe(false);
+    expect(polish.isSkipped(level('polana-1'), courseProgress())).toBe(false);
+  });
+
+  it('opens the window past the placement after a win there', () => {
+    expect(openIds(won('las-1'), 'polana')).toEqual([
+      ...polanaUpTo(19),
+      'las-1',
+      'las-2',
+      'las-3',
+      'las-4',
+    ]);
+  });
+
+  it('keeps every level a win opened past the placement', () => {
+    const ahead = won(...polish.levels.slice(0, 40).map(({ id }) => id));
+    expect(openIds(ahead, 'polana')).toEqual(openIds(ahead));
+  });
+
+  it('reads a placement in a region the course does not have as the last region before it', () => {
+    const progress = courseProgress({}, 'wyspa');
+    expect(english.levels.every((candidate) => english.isUnlocked(candidate, progress))).toBe(true);
+    expect(english.isSkipped(level('jaskinia-24'), progress)).toBe(true);
+    expect(english.current(progress)?.id).toBe('jaskinia-1');
   });
 
   it('has no current level once the course is done', () => {
     const results = won(...english.levels.map(({ id }) => id));
-    expect(english.current(results)).toBeUndefined();
+    expect(english.current(courseProgress(results))).toBeUndefined();
   });
 });

@@ -1,7 +1,13 @@
+import type { ArenaRecord } from '../arena/record';
 import type { LevelResult, WordLanguage } from '../profiles/Profile';
-import { regionsFor, type Level, type LevelKind, type Region } from './catalog';
+import { REGIONS, regionsFor, type Level, type LevelKind, type Region } from './catalog';
 
 export type LevelResults = Readonly<Partial<Record<string, LevelResult>>>;
+
+export interface CourseProgress {
+  readonly levelResults: LevelResults;
+  readonly arena: Pick<ArenaRecord, 'placement'>;
+}
 
 export type LockReason = 'window' | 'review' | 'boss';
 
@@ -18,9 +24,10 @@ export interface Course {
   next(level: Level): Level | undefined;
   previous(level: Level): Level | undefined;
   isFirst(level: Level): boolean;
-  isUnlocked(level: Level, results: LevelResults): boolean;
-  current(results: LevelResults): Level | undefined;
-  lockReason(level: Level, results: LevelResults): LockReason | undefined;
+  isUnlocked(level: Level, progress: CourseProgress): boolean;
+  isSkipped(level: Level, progress: CourseProgress): boolean;
+  current(progress: CourseProgress): Level | undefined;
+  lockReason(level: Level, progress: CourseProgress): LockReason | undefined;
   allowedKeys(level: Level): string;
 }
 
@@ -47,15 +54,23 @@ class LanguageCourse implements Course {
     return this.positionOf(level) === 0;
   }
 
-  isUnlocked(level: Level, results: LevelResults): boolean {
+  isUnlocked(level: Level, progress: CourseProgress): boolean {
     const position = this.positionOf(level);
-    return position !== NOT_FOUND && position <= this.lastOpenPosition(results);
+    return position !== NOT_FOUND && position <= this.lastOpenPosition(progress);
   }
 
-  current(results: LevelResults): Level | undefined {
-    const open = this.levels.slice(FIRST_POSITION, this.lastOpenPosition(results) + 1);
-    const ahead = open.slice(this.furthestWon(results) + 1).find((level) => !isWon(level, results));
-    return ahead ?? open.find((level) => !isWon(level, results));
+  isSkipped(level: Level, progress: CourseProgress): boolean {
+    const position = this.positionOf(level);
+    if (position === NOT_FOUND || isWon(level, progress.levelResults)) return false;
+    return position <= this.lastPlacedPosition(progress);
+  }
+
+  current(progress: CourseProgress): Level | undefined {
+    const results = progress.levelResults;
+    const open = this.levels.slice(FIRST_POSITION, this.lastOpenPosition(progress) + 1);
+    const ahead = open.slice(this.furthestReached(progress) + 1);
+    const unwon = (level: Level) => !isWon(level, results);
+    return ahead.find(unwon) ?? open.find(unwon);
   }
 
   allowedKeys(level: Level): string {
@@ -65,10 +80,10 @@ class LanguageCourse implements Course {
       .join('');
   }
 
-  lockReason(level: Level, results: LevelResults): LockReason | undefined {
-    if (this.isUnlocked(level, results)) return undefined;
+  lockReason(level: Level, progress: CourseProgress): LockReason | undefined {
+    if (this.isUnlocked(level, progress)) return undefined;
     const isGate = level.kind === 'review' || level.kind === 'boss';
-    if (isGate && !this.isGateOpen(level, results)) return level.kind;
+    if (isGate && !this.isGateOpen(level, progress.levelResults)) return level.kind;
     return WINDOW_LOCK;
   }
 
@@ -80,7 +95,37 @@ class LanguageCourse implements Course {
     return this.levels.findLastIndex((level) => isWon(level, results));
   }
 
-  private lastOpenPosition(results: LevelResults): number {
+  private furthestReached(progress: CourseProgress): number {
+    return Math.max(this.furthestWon(progress.levelResults), this.placedStart(progress) - 1);
+  }
+
+  private placedStart(progress: CourseProgress): number {
+    const last = this.lastPlacedPosition(progress);
+    if (last === NOT_FOUND || last < this.levels.length - 1) return last + 1;
+    const first = this.placedRegion(progress)?.levels.at(0);
+    return first ? this.positionOf(first) : NOT_FOUND;
+  }
+
+  private lastPlacedPosition(progress: CourseProgress): number {
+    const region = this.placedRegion(progress);
+    const last = region?.levels.at(-1);
+    return last ? this.positionOf(last) : NOT_FOUND;
+  }
+
+  private placedRegion(progress: CourseProgress): Region | undefined {
+    const placedId = progress.arena.placement?.regionId;
+    const order = REGIONS.findIndex((region) => region.id === placedId);
+    if (order === NOT_FOUND) return undefined;
+    const covered = new Set(REGIONS.slice(0, order + 1).map((region) => region.id));
+    return this.regions.findLast((region) => covered.has(region.id));
+  }
+
+  private lastOpenPosition(progress: CourseProgress): number {
+    const placedOpen = Math.min(this.lastPlacedPosition(progress) + 1, this.levels.length - 1);
+    return Math.max(this.windowEnd(progress.levelResults), placedOpen);
+  }
+
+  private windowEnd(results: LevelResults): number {
     const furthest = this.furthestWon(results);
     if (furthest === NOT_FOUND) return FIRST_POSITION;
     const limit = Math.min(furthest + OPEN_AHEAD, this.levels.length - 1);

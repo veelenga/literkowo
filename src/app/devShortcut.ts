@@ -7,6 +7,8 @@ import { AVATARS, createProfile, DEFAULT_WORD_LANGUAGE, type Profile } from '../
 
 const LEVEL_PARAM = 'level';
 const ARENA_PARAM = 'arena';
+const PLACEMENT_PARAM = 'placement';
+const PLACEMENT_ON = '1';
 const ARENA_PATTERN = /^(\p{L}+)-(\d)$/u;
 const DEV_PROFILE_NAME = 'Test';
 
@@ -22,6 +24,10 @@ export function devArenaFromUrl(): ArenaChoice | undefined {
   const keySet = keySetById(keySetId, DEFAULT_WORD_LANGUAGE);
   const difficulty = difficultyAtLevel(Number(level));
   return keySet && difficulty ? { keySet, difficulty } : undefined;
+}
+
+export function devPlacementFromUrl(): boolean {
+  return new URLSearchParams(location.search).get(PLACEMENT_PARAM) === PLACEMENT_ON;
 }
 
 export function devProfile(active?: Profile): Profile {

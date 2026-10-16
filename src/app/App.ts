@@ -47,6 +47,7 @@ import { WorldMap } from '../ui/WorldMap';
 import {
   devArenaFromUrl,
   devLevelFromUrl,
+  devPlacementFromUrl,
   devProfile,
   unlockAudioOnFirstInput,
 } from './devShortcut';
@@ -54,6 +55,7 @@ import { ArenaFlow, type Screen } from './ArenaFlow';
 import type { GameRun } from './GameRun';
 import { loadGameModule, prefetchGameModule, type GameModule } from './gameModule';
 import { PageAttention } from './PageAttention';
+import { PlacementFlow } from './PlacementFlow';
 
 const COMBO_FOR_FULL_INTENSITY = 20;
 const FULL_INTENSITY = 1;
@@ -67,6 +69,14 @@ export class App {
     showMenu: (create) => this.showMenu(create),
     showMap: (profile) => this.showMap(profile),
     showShop: (profile, exit, tab) => this.showShop(profile, exit, tab),
+    startRun: (profile, run) => this.startRun(profile, run),
+    openOverlay: (overlay) => this.overlays.open(overlay),
+    dismissThen: (next) => this.dismissThen(next),
+    save: (profile) => this.save(profile),
+  });
+  private readonly placement = new PlacementFlow({
+    showMap: (profile) => this.showMap(profile),
+    showArena: (profile) => this.arena.show(profile),
     startRun: (profile, run) => this.startRun(profile, run),
     openOverlay: (overlay) => this.overlays.open(overlay),
     dismissThen: (next) => this.dismissThen(next),
@@ -90,6 +100,7 @@ export class App {
       if (level) return this.startDevLevel(level);
       const arena = devArenaFromUrl();
       if (arena) return this.startDevArena(arena);
+      if (devPlacementFromUrl()) return this.startDevPlacement();
     }
     this.showProfiles();
   }
@@ -102,6 +113,11 @@ export class App {
   private startDevArena(choice: ArenaChoice): void {
     unlockAudioOnFirstInput();
     this.arena.start(devProfile(this.store.active()), choice);
+  }
+
+  private startDevPlacement(): void {
+    unlockAudioOnFirstInput();
+    this.placement.start(devProfile(this.store.active()));
   }
 
   private showProfiles(): void {
@@ -118,6 +134,10 @@ export class App {
           onBack: () => this.showProfiles(),
           backLabel: i18n.t.features.shop.backToProfiles,
         });
+      },
+      onPlacement: (profile) => {
+        sfx.unlock();
+        this.placement.offer(profile, () => undefined);
       },
     });
     this.showScreen(screen.element);
@@ -214,7 +234,7 @@ export class App {
         onPause: () => this.game?.togglePause(),
         onKeyboard: () => this.touch?.toggleNativeKeyboard(),
       },
-      run.plan.lives,
+      run.plan,
     );
     const builtInKeyboard = usesBuiltInKeyboard();
     const layout = builtInKeyboard ? KEYBOARD_LAYOUTS.compact : KEYBOARD_LAYOUTS.full;
@@ -439,5 +459,5 @@ function attemptOf(result: GameResult, stars: number, coins: number): Attempt {
 function openNext(profile: Profile, level: Level): Level | undefined {
   const course = courseFor(profile.wordLanguage);
   const next = course.next(level);
-  return next && course.isUnlocked(next, profile.levelResults) ? next : undefined;
+  return next && course.isUnlocked(next, profile) ? next : undefined;
 }

@@ -9,6 +9,7 @@ export interface WordRules {
   readonly lengths: LetterRange;
   readonly generatedLengths: LetterRange;
   readonly stages?: readonly WordStage[];
+  readonly realWordsOnly?: boolean;
 }
 
 export function levelWordRules(level: Level, language: WordLanguage): WordRules {
