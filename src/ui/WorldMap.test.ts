@@ -103,6 +103,19 @@ describe('WorldMap', () => {
     expect(nodes(map)[20].matches(':disabled')).toBe(true);
   });
 
+  it('stands the hero on the first level of the last region after a full placement', () => {
+    const profile = createProfile('Ola', 'a');
+    const placed = {
+      ...profile,
+      arena: { ...profile.arena, placement: { regionId: 'wyspa', date: '2026-10-16' } },
+    };
+    const map = mapOf(placed);
+    const wyspa = courseFor('pl').regions[4].levels[0];
+    const current = map.querySelector('.journey-stop.is-current .level-node');
+    expect(current?.getAttribute('title')).toBe(levelTitle(wyspa));
+    expect(nodes(map).every((node) => !node.matches(':disabled'))).toBe(true);
+  });
+
   it('tells on a locked stop what to win first', () => {
     const profile = createProfile('Ola', 'a');
     const titles = nodes(mapOf({ ...profile, levelResults: { 'polana-1': DONE } })).map(

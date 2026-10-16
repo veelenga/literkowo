@@ -40,7 +40,7 @@ More rules:
   - A placement opens every level of the placed regions and the first level of the next region, see [Placement test](#placement-test).
   - Reviews and bosses are gates, and the open window never goes past a gate without a star. A review opens only when every practice level before it in its region is won, and a boss only when the review before it is won. A gate that cannot open yet stays locked, and so do the levels after it.
   - For example, with `polana-1` won, `polana-2` is open and the review `polana-3` is locked. With `polana-1` to `polana-3` won, `polana-4`, `polana-5` and `polana-6` are open.
-  - The current level is the first open level without a star after the furthest win or the last placed level, or the first open level without a star when none is left ahead. The map marks it with the hero and the Play tag. The other open levels look the same but have no marker.
+  - The current level is the first open level without a star after the furthest win or the placement (from the first level of the placed region when it is the last region), or the first open level without a star when none is left ahead. The map marks it with the hero and the Play tag. The other open levels look the same but have no marker.
   - The result card offers the next level only when it is open.
 - Polish letters are typed with right Alt. Ctrl with Alt also counts as right Alt, so AltGr works on Windows (`src/game/Game.ts`, `src/course/fingers.ts`).
 
@@ -728,7 +728,7 @@ The test stops at the first failed stage, so a beginner is done after 12 seconds
 What a placement opens (`recordPlacement`, `src/course/course.ts`):
 
 - A passed placement writes `profile.arena.placement = { regionId, date }` with the last passed region. A retake only moves a child forward: a lower result keeps the old placement and its date.
-- Every level of the placed regions opens, and the first level of the next region too. The current level is that first level, for example `las-1` after a placement in Polana. After a placement in the last region every level is open and the current level is the first level without a star. Wins open the usual window from there.
+- Every level of the placed regions opens, and the first level of the next region too. The current level is that first level, for example `las-1` after a placement in Polana. After a placement in the last region every level is open and the current level is the first level of that region without a star, `wyspa-1` for Polish words and `jaskinia-1` for English words. Wins open the usual window from there.
 - A placement in a region the word language does not have counts as the last region before it, so Wyspa Ogonków counts as Jaskinia for English words.
 - Stars, trophies and boss stories still need real play. The skipped levels have no stars, and the boss scenes still play before each boss.
 - The arena opens, with a key set for every placed region (see [Arena](#arena)).

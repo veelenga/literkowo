@@ -134,6 +134,13 @@ describe('courseFor', () => {
     expect(polish.current(courseProgress(won('polana-1', 'polana-2'), 'las'))?.id).toBe('gory-1');
   });
 
+  it('puts the current level on the first level of the last region after a full pass', () => {
+    expect(polish.current(courseProgress({}, 'wyspa'))?.id).toBe('wyspa-1');
+    expect(english.current(courseProgress({}, 'jaskinia'))?.id).toBe('jaskinia-1');
+    expect(polish.current(courseProgress(won('wyspa-1'), 'wyspa'))?.id).toBe('wyspa-2');
+    expect(polish.current(courseProgress({}, 'jaskinia'))?.id).toBe('wyspa-1');
+  });
+
   it('marks the levels a placement covered without a star as skipped', () => {
     const progress = courseProgress(won('polana-4'), 'polana');
     expect(polish.isSkipped(level('polana-1'), progress)).toBe(true);
@@ -162,7 +169,7 @@ describe('courseFor', () => {
     const progress = courseProgress({}, 'wyspa');
     expect(english.levels.every((candidate) => english.isUnlocked(candidate, progress))).toBe(true);
     expect(english.isSkipped(level('jaskinia-24'), progress)).toBe(true);
-    expect(english.current(progress)?.id).toBe('polana-1');
+    expect(english.current(progress)?.id).toBe('jaskinia-1');
   });
 
   it('has no current level once the course is done', () => {

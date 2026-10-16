@@ -96,7 +96,14 @@ class LanguageCourse implements Course {
   }
 
   private furthestReached(progress: CourseProgress): number {
-    return Math.max(this.furthestWon(progress.levelResults), this.lastPlacedPosition(progress));
+    return Math.max(this.furthestWon(progress.levelResults), this.placedStart(progress) - 1);
+  }
+
+  private placedStart(progress: CourseProgress): number {
+    const last = this.lastPlacedPosition(progress);
+    if (last === NOT_FOUND || last < this.levels.length - 1) return last + 1;
+    const first = this.placedRegion(progress)?.levels.at(0);
+    return first ? this.positionOf(first) : NOT_FOUND;
   }
 
   private lastPlacedPosition(progress: CourseProgress): number {
