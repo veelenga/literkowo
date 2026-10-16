@@ -4,8 +4,15 @@ import { difficultyFor, FOCUS_WORD_LENGTHS, PRACTICE_LENGTHS } from './difficult
 import { LEVELS, allowedKeysFor } from './regions';
 import { TRANSITION_SCORES, transitionScore } from './typability';
 import { WORD_LISTS } from './wordLists';
-import type { WordRules } from './wordRules';
-import { BOSS_MIN_LENGTH, SHORT_LENGTH, WordSource, type KeyWeights } from './WordSource';
+import { levelWordRules, type WordRules } from './wordRules';
+import { seededRandom } from '../random';
+import {
+  BOSS_MIN_LENGTH,
+  EVEN_WEIGHTS,
+  SHORT_LENGTH,
+  WordSource,
+  type KeyWeights,
+} from './WordSource';
 
 const SAMPLES = 200;
 const RARE_SAMPLES = 10;
@@ -18,6 +25,9 @@ const LAST_SPAWN = 0.99;
 const COMBO_SAMPLES = 2000;
 const RARE_SHARE = 0.02;
 const CLEAR_AVOIDANCE = 0.8;
+const SEED = 7;
+const OTHER_SEED = 8;
+const SEEDED_DRAWS = 40;
 const ALL_LETTERS = 'abcdefghijklmnopqrstuvwxyząćęłńóśźż';
 const FOCUS_WORD_RULES: WordRules = {
   allowedKeys: ALL_LETTERS,
@@ -283,4 +293,24 @@ describe('WordSource', () => {
     expect(share(pool, hard)).toBeGreaterThan(0);
     expect(share(picks, hard)).toBeLessThan(share(pool, hard) * CLEAR_AVOIDANCE);
   });
+
+  it('draws the same words from the same seed', () => {
+    expect(seededDraws(SEED)).toEqual(seededDraws(SEED));
+  });
+
+  it('draws other words from another seed', () => {
+    expect(seededDraws(SEED)).not.toEqual(seededDraws(OTHER_SEED));
+  });
 });
+
+function seededDraws(seed: number): string[] {
+  const rules = levelWordRules(requireLevel('las-5'), 'pl');
+  const words = new WordSource('pl', rules, EVEN_WEIGHTS, seededRandom(seed));
+  return Array.from({ length: SEEDED_DRAWS }, (_, index) => [
+    words.singleLetter(),
+    words.stagedWord(index / SEEDED_DRAWS),
+    words.next(),
+    words.shortWord(),
+    words.bossWord(),
+  ]).flat();
+}
