@@ -45,3 +45,34 @@ export function arenaPayout({
   const total = boostedCoins(runCoins + medals + newBest, coinBoost);
   return { run: runCoins, medals, newBest, total };
 }
+
+export const DAILY_STAMP_COINS = 20;
+export const DAILY_MEDAL_COINS: Readonly<Record<Medal, number>> = { 0: 0, 1: 10, 2: 20, 3: 40 };
+
+export interface DailyPayoutInput {
+  readonly runCoins: number;
+  readonly coinBoost: number;
+  readonly stamp: number;
+  readonly medal: number;
+  readonly chests: number;
+  readonly family: number;
+}
+
+export interface DailyPayout {
+  readonly run: number;
+  readonly stamp: number;
+  readonly medal: number;
+  readonly chests: number;
+  readonly family: number;
+  readonly total: number;
+}
+
+export function dailyMedalCoins(paid: Medal, earned: Medal): number {
+  return Math.max(0, DAILY_MEDAL_COINS[earned] - DAILY_MEDAL_COINS[paid]);
+}
+
+export function dailyPayout(input: DailyPayoutInput): DailyPayout {
+  const { runCoins, coinBoost, stamp, medal, chests, family } = input;
+  const run = boostedCoins(runCoins, coinBoost);
+  return { run, stamp, medal, chests, family, total: run + stamp + medal + chests + family };
+}

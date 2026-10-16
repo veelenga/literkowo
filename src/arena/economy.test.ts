@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { DIFFICULTIES } from './difficulty';
 import {
+  DAILY_MEDAL_COINS,
+  DAILY_STAMP_COINS,
   MEDAL_COINS,
   NEW_BEST_WAVE_COINS,
   arenaCoinsPerWord,
   arenaPayout,
+  dailyMedalCoins,
+  dailyPayout,
   medalCoins,
 } from './economy';
 import { NO_BOOST } from '../course/powers';
@@ -67,5 +71,30 @@ describe('arenaPayout', () => {
       coinBoost: 1.25,
     });
     expect(payout).toEqual({ run: 12, medals: 40, newBest: NEW_BEST_WAVE_COINS, total: 83 });
+  });
+});
+
+describe('dailyMedalCoins', () => {
+  it('pays 10, 20 and 40 and a better medal only the difference', () => {
+    expect([BRONZE, SILVER, GOLD].map((medal) => dailyMedalCoins(NO_MEDAL, medal))).toEqual([
+      10, 20, 40,
+    ]);
+    expect(dailyMedalCoins(BRONZE, GOLD)).toBe(30);
+    expect(dailyMedalCoins(GOLD, SILVER)).toBe(0);
+    expect(dailyMedalCoins(SILVER, SILVER)).toBe(0);
+  });
+});
+
+describe('dailyPayout', () => {
+  it('boosts the run coins and adds the flat amounts as they are', () => {
+    const payout = dailyPayout({
+      runCoins: 25,
+      coinBoost: 1.2,
+      stamp: DAILY_STAMP_COINS,
+      medal: DAILY_MEDAL_COINS[SILVER],
+      chests: 40,
+      family: 30,
+    });
+    expect(payout).toEqual({ run: 30, stamp: 20, medal: 20, chests: 40, family: 30, total: 140 });
   });
 });

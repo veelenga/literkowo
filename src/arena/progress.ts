@@ -12,6 +12,7 @@ import {
   isNewBestWave,
   paidMedal,
   withEndlessRun,
+  type ArenaRecord,
   type EndlessBest,
   type EndlessRun,
 } from './record';
@@ -29,6 +30,16 @@ export interface EndlessAttempt {
   readonly keyStats: KeyStats;
   readonly tally: Tally;
   readonly date: string;
+}
+
+export interface ArenaRunTotals {
+  readonly score: number;
+  readonly lettersFreed: number;
+  readonly xp: number;
+  readonly coins: number;
+  readonly keyStats: KeyStats;
+  readonly tally: Tally;
+  readonly arena: ArenaRecord;
 }
 
 export interface EndlessOutcome {
@@ -49,24 +60,32 @@ export function recordEndlessRun(profile: Profile, attempt: EndlessAttempt): End
     medal: run.medal,
     newBestWave,
   });
-  const updated = awardTrophies({
-    ...profile,
-    totalScore: profile.totalScore + attempt.score,
-    lettersFreed: profile.lettersFreed + attempt.lettersFreed,
-    xp: profile.xp + attempt.xp,
-    coins: profile.coins + payout.total,
-    keyStats: { ...profile.keyStats, ...attempt.keyStats },
+  const updated = withArenaRun(profile, {
+    ...attempt,
+    coins: payout.total,
     arena: withEndlessRun(profile.arena, run),
+  });
+  const best = endlessBest(updated.arena, run.key);
+  return { profile: updated, medal: run.medal, best, newBestWave, payout };
+}
+
+export function withArenaRun(profile: Profile, run: ArenaRunTotals): Profile {
+  return awardTrophies({
+    ...profile,
+    totalScore: profile.totalScore + run.score,
+    lettersFreed: profile.lettersFreed + run.lettersFreed,
+    xp: profile.xp + run.xp,
+    coins: profile.coins + run.coins,
+    keyStats: { ...profile.keyStats, ...run.keyStats },
+    arena: run.arena,
     counters: countRun(profile.counters, {
-      tally: attempt.tally,
-      coins: payout.total,
+      tally: run.tally,
+      coins: run.coins,
       avatar: profile.avatar,
       perfect: false,
       wpm: 0,
     }),
   });
-  const best = endlessBest(updated.arena, run.key);
-  return { profile: updated, medal: run.medal, best, newBestWave, payout };
 }
 
 function endlessRunOf(attempt: EndlessAttempt): EndlessRun {
