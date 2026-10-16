@@ -157,7 +157,13 @@ export class Hud {
 function progressLabel(kind: Progress['kind'], wave: number | undefined): string {
   const t = i18n.t;
   if (wave !== undefined) return format(t.features.arena.wave, { wave });
-  const labels = { warmup: t.warmup, learn: t.words, words: t.words, boss: t.bossHealth };
+  const labels = {
+    warmup: t.warmup,
+    learn: t.words,
+    words: t.words,
+    boss: t.bossHealth,
+    test: t.words,
+  };
   return labels[kind];
 }
 

@@ -46,6 +46,10 @@ export class SessionStats {
 
   recordMistake(): void {
     this.mistakes += 1;
+    this.breakCombo();
+  }
+
+  breakCombo(): void {
     this.combo = 0;
     this.fever = this.fever && this.spendFeverSlip();
   }

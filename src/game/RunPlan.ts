@@ -1,12 +1,23 @@
 import type { Pace, Tempo } from '../course/difficulty';
 import type { WordRules } from '../course/wordRules';
+import type { PhaseRecord } from './PhaseMeter';
 
-export type PhaseKind = 'warmup' | 'learn' | 'words' | 'boss';
+export type PhaseKind = 'warmup' | 'learn' | 'words' | 'boss' | 'test';
+
+export type HitCost = 'life' | 'combo';
+
+export interface StageMark {
+  readonly number: number;
+  readonly count: number;
+  readonly regionId: string;
+}
 
 export interface Phase extends Pace {
   readonly kind: PhaseKind;
   readonly miniBoss?: boolean;
   readonly wave?: number;
+  readonly stage?: StageMark;
+  readonly seconds?: number;
   readonly specialShare?: number;
   readonly events?: number;
 }
@@ -18,10 +29,12 @@ export interface RunPhase extends Phase {
 
 export interface RunPlan {
   readonly lives: number;
+  readonly hitCost: HitCost;
   readonly xpFactor: number;
   readonly coinsPerWord: number;
   readonly allMechanicsUnlocked: boolean;
   phaseAt(index: number): RunPhase | undefined;
+  continuesAfter?(finished: readonly PhaseRecord[]): boolean;
 }
 
 const NO_RAMP = 0;

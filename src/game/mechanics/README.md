@@ -43,7 +43,7 @@ Actions:
 - `setTimeScale(scale)`: slows or speeds enemy movement and spawn timers. The hero and effects keep real time. One shared value, so set it back to `1`.
 - `shakeCamera(strength, seconds)`: `0.18` for `0.25` s is a lost life.
 - `announce(text, style, accent?)`: shows text over the game. `style` is `'callout'`, `'banner'` or `'warning'`, `accent` is any CSS color.
-- `loseLife()`: costs a life like an enemy reaching the hero, unless a shield absorbs it.
+- `loseLife()`: costs a life like an enemy reaching the hero, unless a shield absorbs it. In a run plan whose `hitCost` is `combo`, such as the placement test, it only breaks the combo.
 - `absorbNextHit()`: adds one shield. Each shield cancels one `loseLife`.
 - `guardNextHit()`: adds one guard. A guard keeps the heart of the next `loseLife`, but the hit still counts as a mistake and breaks the combo, so accuracy stays the same. Guards go before shields.
 - `restoreLife()`: gives back one lost heart. Returns `false` and does nothing when every heart is still there.

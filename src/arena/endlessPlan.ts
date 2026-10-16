@@ -1,6 +1,7 @@
 import type { Level } from '../course/catalog';
 import { difficultyFor, levelTempo, type Pace } from '../course/difficulty';
 import type { WordRules } from '../course/wordRules';
+import { LEVEL_HIT_COST } from '../game/LevelPlan';
 import type { RunPhase, RunPlan } from '../game/RunPlan';
 import type { ArenaDifficulty } from './difficulty';
 import { arenaCoinsPerWord } from './economy';
@@ -42,6 +43,7 @@ export function endlessPlan(setup: ArenaChoice): EndlessPlan {
   };
   return {
     lives: difficulty.lives,
+    hitCost: LEVEL_HIT_COST,
     xpFactor: difficulty.xpFactor,
     coinsPerWord: arenaCoinsPerWord(difficulty),
     allMechanicsUnlocked: true,

@@ -19,6 +19,7 @@ import { NEAR_RADIUS, StopNear } from './StopNear';
 const FRAME = 1 / 60;
 const FREEZE_SECONDS = 2;
 const WARMUP: Phase = { kind: 'warmup', count: 8, speed: 0.5, spawnInterval: 1.5 };
+const TEST_STAGE: Phase = { kind: 'test', count: 4, speed: 0.5, spawnInterval: 3, seconds: 12 };
 const NEXT_WAVE: Phase = { kind: 'words', count: 10, speed: 1, spawnInterval: 2, wave: 2 };
 const CHEST_SIDE = 1;
 
@@ -100,6 +101,15 @@ describe('FreezeBoard', () => {
     enemies.push(word);
     freeze.update();
     expect(word.isFrozen).toBe(false);
+  });
+
+  it('stays out of a placement stage, where the kid types alone', () => {
+    const { context, pet, enemyAt, announce } = petBoard({ phase: TEST_STAGE });
+    const freeze = new FreezeBoard(power('freezeBoard', FREEZE_SECONDS), pet, context);
+    const near = enemyAt(DANGER_DISTANCE - 0.1);
+    freeze.update();
+    expect(near.isFrozen).toBe(false);
+    expect(announce).not.toHaveBeenCalled();
   });
 
   it('starts again on a new arena wave', () => {

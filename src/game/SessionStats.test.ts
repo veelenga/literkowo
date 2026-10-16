@@ -21,6 +21,13 @@ describe('SessionStats', () => {
     expect(stats.accuracy).toBeCloseTo(10 / 11);
   });
 
+  it('breaks the combo and the fever without counting a mistake', () => {
+    const stats = new SessionStats();
+    for (let i = 0; i < 15; i += 1) stats.recordHit();
+    stats.breakCombo();
+    expect(stats).toMatchObject({ fever: false, combo: 0, mistakes: 0, accuracy: 1 });
+  });
+
   it('keeps the fever through the allowed slips while each mistake still counts', () => {
     const stats = new SessionStats();
     stats.keepFeverOnSlips(1);

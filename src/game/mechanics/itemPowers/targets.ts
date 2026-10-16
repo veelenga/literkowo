@@ -7,10 +7,10 @@ import { isPowerEnemy } from '../powerWords/PowerEnemy';
 
 export const DANGER_DISTANCE = REACH_DISTANCE + 2.4;
 
-const RESTING_PHASE: Phase['kind'] = 'warmup';
+const RESTING_PHASES: ReadonlySet<Phase['kind']> = new Set(['warmup', 'test']);
 
 export function isResting(phase: Phase): boolean {
-  return phase.kind === RESTING_PHASE;
+  return RESTING_PHASES.has(phase.kind);
 }
 
 export function isOpen(enemy: Enemy): boolean {
