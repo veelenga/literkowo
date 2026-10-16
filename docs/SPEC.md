@@ -134,6 +134,18 @@ Stars, with the current thresholds (`src/course/scoring.ts`). They are judged on
 - Accuracy is `hits / (hits + mistakes)`. Words per minute is correct letters divided by 5, per active minute (`src/game/SessionStats.ts`).
 - The best result per level is kept, compared by stars first and score second. Total score and letters freed add up on every attempt (`src/course/progress.ts`).
 
+### Seeded runs
+
+Owners: `src/random.ts`, `src/game/SpawnScript.ts`, `src/game/Game.ts`.
+
+A run plan can carry a `seed`, a whole number. `hashSeed` in `src/random.ts` makes one from parts such as a date and a key set. Course levels, the arena and the placement test have no seed and stay random. With a seed:
+
+- The same on every device, whatever the child types: the words of the run's own spawns, their order, their angles on the spawn arc and their spawn index (`spawnIndex` on the enemy, counted from 0 over the whole run, the boss included). Every key weighs the same and spawns do not avoid letters already on the board, so weak keys and the board never change the words.
+- The same timing inside a phase: a spawn comes at the same moment after its phase starts, unless the board is full or a power slows time. A phase starts when the one before is cleared, so a slower child meets the same words a little later.
+- The same while the play is the same: special enemies and twins, the time and kind of mid-wave events, boss words and boss attacks. Each mechanic draws from its own stream of the seed, and every phase starts the spawn and event streams again, so a change in one never shifts another.
+- Can drift: power words and bombers use the seed too, but they wait for room on the board, so they can show up a few seconds later.
+- Not seeded: looks and sound, such as enemy colours, confetti, particles, camera shake, trails and music.
+
 ## Difficulty
 
 Owner: `src/course/difficulty.ts`. Every pace and length limit comes from the kind of the level and its place in the course.
