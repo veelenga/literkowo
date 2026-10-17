@@ -26,6 +26,7 @@ import { CameraShake } from './CameraShake';
 import { PageClasses } from './claims/PageClasses';
 import { TimeScale } from './claims/TimeScale';
 import { Enemy, type EnemyLook } from './Enemy';
+import { HeroHealth, type HitOutcome } from './HeroHealth';
 import type { Tally } from '../course/counters';
 import { KeyTracker, type KeyReport } from './KeyTracker';
 import { LabelLayer } from './LabelLayer';
@@ -162,9 +163,7 @@ export class Game {
   private runSeconds = 0;
   private calm: number;
   private boss: Boss | undefined;
-  private lives: number;
-  private shields = 0;
-  private guards = 0;
+  private readonly health: HeroHealth;
   private lettersFreed = 0;
   private elapsed = 0;
   private sinceSpawn = Number.POSITIVE_INFINITY;
@@ -191,7 +190,7 @@ export class Game {
     this.plannedPhase = firstPhase(config.plan);
     this.phase = this.plannedPhase;
     this.calm = this.phase.calmSeconds ?? NO_CALM;
-    this.lives = config.plan.lives;
+    this.health = new HeroHealth(config.plan);
     this.rewards = new RunRewards(config.plan);
     const seeded = config.plan.seed !== undefined;
     const weights = seeded ? EVEN_WEIGHTS : this.adaptiveWeights();
@@ -220,7 +219,7 @@ export class Game {
   start(): void {
     this.running = true;
     window.addEventListener('keydown', this.onKeyDown);
-    this.events.onStats(this.stats, this.lives);
+    this.reportStats();
     this.reportProgress();
     this.mechanics.onPhaseChange(this.phase);
     this.timer.reset();
@@ -299,8 +298,7 @@ export class Game {
   private createMechanicContext(): MechanicContext {
     const phase = (): Phase => this.phase;
     const playing = (): boolean => this.isPlaying;
-    const shields = (): number => this.shields;
-    const guards = (): number => this.guards;
+    const health = this.health;
     return {
       enemies: this.enemies,
       player: this.player,
@@ -322,10 +320,10 @@ export class Game {
         return playing();
       },
       get shields() {
-        return shields();
+        return health.shields;
       },
       get guards() {
-        return guards();
+        return health.guards;
       },
       createLabel: () => this.labels.createLabel(),
       addEnemy: (enemy, radius) => this.addEnemy(enemy, radius),
@@ -336,8 +334,8 @@ export class Game {
       shakeCamera: (strength, seconds) => this.shake.start(strength, seconds),
       announce: (text, style, accent) => this.events.onAnnounce(text, style, accent),
       loseLife: () => this.hitHero(),
-      absorbNextHit: () => this.addShield(),
-      guardNextHit: () => this.addGuard(),
+      absorbNextHit: () => this.health.addShield(),
+      guardNextHit: () => this.health.addGuard(),
       restoreLife: () => this.restoreLife(),
       addCoins: (amount) => this.addCoins(amount),
       boostRewards: (boost) => this.boostRewards(boost),
@@ -559,16 +557,26 @@ export class Game {
   }
 
   private hitHero(): void {
-    if (this.config.plan.hitCost === 'combo') return this.breakComboOnHit();
-    this.loseLife();
+    if (this.finished) return;
+    this.hitReactions[this.health.hit()]();
+  }
+
+  private readonly hitReactions: Readonly<Record<HitOutcome, () => void>> = {
+    comboBroken: () => this.breakComboOnHit(),
+    guarded: () => this.guardHit(),
+    shielded: () => sfx.impact(SHIELD_IMPACT),
+    lifeLost: () => this.loseLife(),
+  };
+
+  private hurtHero(): void {
+    this.shake.start(SHAKE_AMPLITUDE, SHAKE_DURATION);
+    this.player.hurt();
   }
 
   private breakComboOnHit(): void {
-    if (this.finished) return;
-    this.shake.start(SHAKE_AMPLITUDE, SHAKE_DURATION);
-    this.player.hurt();
+    this.hurtHero();
     this.stats.breakCombo();
-    this.events.onStats(this.stats, this.lives);
+    this.reportStats();
   }
 
   private resetBoss(boss: Boss): void {
@@ -577,45 +585,27 @@ export class Game {
   }
 
   private loseLife(): void {
-    if (this.finished || this.guardHit() || this.absorbHit()) return;
-    this.lives -= 1;
-    this.shake.start(SHAKE_AMPLITUDE, SHAKE_DURATION);
-    this.player.hurt();
+    this.hurtHero();
     this.recordMistake();
     sfx.lifeLost();
-    this.events.onStats(this.stats, this.lives);
-    if (this.lives <= 0) this.finish(false);
+    this.reportStats();
+    if (this.health.isLost) this.finish(false);
   }
 
-  private addShield(): void {
-    this.shields += 1;
-  }
-
-  private absorbHit(): boolean {
-    if (this.shields <= 0) return false;
-    this.shields -= 1;
-    sfx.impact(SHIELD_IMPACT);
-    return true;
-  }
-
-  private addGuard(): void {
-    this.guards += 1;
-  }
-
-  private guardHit(): boolean {
-    if (this.guards <= 0) return false;
-    this.guards -= 1;
+  private guardHit(): void {
     sfx.impact(SHIELD_IMPACT);
     this.recordMistake();
-    this.events.onStats(this.stats, this.lives);
-    return true;
+    this.reportStats();
   }
 
   private restoreLife(): boolean {
-    if (this.finished || this.lives >= this.config.plan.lives) return false;
-    this.lives += 1;
-    this.events.onStats(this.stats, this.lives);
+    if (this.finished || !this.health.restoreLife()) return false;
+    this.reportStats();
     return true;
+  }
+
+  private reportStats(): void {
+    this.events.onStats(this.stats, this.health.lives);
   }
 
   private addCoins(amount: number): void {
@@ -728,7 +718,7 @@ export class Game {
     sfx.hit(this.stats.combo);
     this.mechanics.onHit();
     if (keystroke.kind === 'complete') keystroke.items.forEach((enemy) => this.completeWord(enemy));
-    this.events.onStats(this.stats, this.lives);
+    this.reportStats();
   }
 
   private mistake(char: string): void {
@@ -737,7 +727,7 @@ export class Game {
     this.recordMistake();
     this.targeting.candidates.forEach((enemy) => enemy.flashMistake());
     sfx.mistake();
-    this.events.onStats(this.stats, this.lives);
+    this.reportStats();
   }
 
   private completeWord(enemy: Enemy): void {
