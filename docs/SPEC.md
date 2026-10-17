@@ -1115,6 +1115,17 @@ Owners: `src/seo/site.ts` (every string, url and image), `src/seo/vitePlugin.ts`
 - `llms.txt` follows llmstxt.org, and `llms-full.txt` adds a short description of every feature. Both are written by hand, so a pull request that adds or changes a feature updates them too.
 - `npm run og` renders the share images, `public/screenshot.jpg` and the README image from a live island arena run with a hero in the wizard hat and the dragon pet. The image alt texts in `src/seo/site.ts` describe that scene.
 
+## Content security policy
+
+Owner: `src/seo/contentSecurityPolicy.ts`.
+
+- GitHub Pages cannot send response headers, so the policy is a `<meta http-equiv="Content-Security-Policy">` tag. The Vite plugin puts it first in the head, in the dev server and in the build.
+- The policy is `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'`.
+- Everything loads from the site itself. Images allow `data:` because the hero, outfit and item portraits are rendered to data URLs. Fonts allow `data:` because the build inlines the smallest font files into the CSS. The character models and their textures are separate files fetched from the site, and the service worker is a script from the site.
+- Styles allow inline style attributes, which the `style` prop of `el` and the swarm label markup set, and the `<style>` tags that the dev server injects.
+- A meta tag cannot set `frame-ancestors`, `report-uri` or `sandbox`, so the page cannot forbid framing.
+- A remote origin, a blob URL, a web worker or an inline script needs a change to the policy, otherwise the browser blocks it. The browser smoke test fails on the console error that a blocked request writes.
+
 ## Dev shortcut
 
 Owners: `src/app/devShortcut.ts`, `src/app/App.ts`.

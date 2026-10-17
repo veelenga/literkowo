@@ -1,4 +1,5 @@
 import type { HtmlTagDescriptor } from 'vite';
+import { contentSecurityPolicyTag } from './contentSecurityPolicy.ts';
 import { escapeHtml, jsonForScript } from './html.ts';
 import {
   ALTERNATE_LOCALES,
@@ -49,7 +50,10 @@ export function headTags(): HtmlTagDescriptor[] {
       children: jsonForScript(structuredData()),
     },
   ];
-  return tags.map((tag) => ({ ...tag, injectTo: INJECT_TO }));
+  return [
+    contentSecurityPolicyTag(),
+    ...tags.map((tag): HtmlTagDescriptor => ({ ...tag, injectTo: INJECT_TO })),
+  ];
 }
 
 function meta(name: string, content: string): HtmlTagDescriptor {
