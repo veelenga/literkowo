@@ -138,6 +138,49 @@ describe('ProfileScreen', () => {
     expect(onPlacement).toHaveBeenCalledWith(created);
   });
 
+  describe('with another tab', () => {
+    const otherTabSaves = (change: (other: ProfileStore) => void) => {
+      change(new ProfileStore());
+      window.dispatchEvent(new StorageEvent('storage', { key: PROFILES_KEY }));
+    };
+    const names = (screen: ProfileScreen) =>
+      [
+        ...screen.element.querySelectorAll('.profile-card:not(.profile-card-new) .profile-name'),
+      ].map((name) => name.textContent);
+
+    it('shows a profile created in the other tab', () => {
+      const { screen } = open([createProfile('Ola', 'a')]);
+      otherTabSaves((other) => other.add(createProfile('Kuba', 'b')));
+      expect(names(screen)).toEqual(['Ola', 'Kuba']);
+    });
+
+    it('plays the selected profile with the progress saved in the other tab', () => {
+      const ola = createProfile('Ola', 'a');
+      const { screen, onPlay } = open([ola]);
+      otherTabSaves((other) => other.update({ ...ola, coins: 50 }));
+      screen.element.querySelector<HTMLButtonElement>('.play-panel .button-primary')?.click();
+      expect(onPlay.mock.lastCall?.[0].coins).toBe(50);
+    });
+
+    it('drops the play panel of a profile removed in the other tab', () => {
+      const ola = createProfile('Ola', 'a');
+      const { screen } = open([ola, createProfile('Kuba', 'b')]);
+      otherTabSaves((other) => other.remove(ola.id));
+      expect(names(screen)).toEqual(['Kuba']);
+      expect(screen.element.querySelector('.play-panel')).toBeNull();
+    });
+
+    it('keeps the name being typed in the create panel', () => {
+      const { nameField, openCreatePanel } = openWithKeys();
+      openCreatePanel();
+      const field = nameField();
+      if (field) field.value = 'Ada';
+      otherTabSaves((other) => other.add(createProfile('Kuba', 'b')));
+      expect(nameField()).toBe(field);
+      expect(field?.value).toBe('Ada');
+    });
+  });
+
   describe('keys', () => {
     it('picks the next and the previous profile with the arrow keys', () => {
       const { store, press, selectedName } = openWithKeys();

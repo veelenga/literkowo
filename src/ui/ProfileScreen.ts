@@ -54,6 +54,7 @@ export class ProfileScreen {
   private panelKey: string | undefined;
   private stopDock: StopDock = noDock;
   private readonly stopKeys: () => void;
+  private readonly stopSync: () => void;
 
   constructor(
     private readonly store: ProfileStore,
@@ -68,11 +69,13 @@ export class ProfileScreen {
       Enter: () => this.playSelected(),
       Escape: () => this.closeCreatePanel(),
     });
+    this.stopSync = store.onExternalChange(() => this.refresh());
     this.render();
   }
 
   dispose(): void {
     this.stopKeys();
+    this.stopSync();
     this.stopDock();
     livePreview.stop();
     releasePortraits();
@@ -107,6 +110,11 @@ export class ProfileScreen {
       ),
     );
     this.dockBelowSelectedRow(grid);
+  }
+
+  private refresh(): void {
+    this.selected = this.selected && this.store.find(this.selected.id);
+    if (!this.creating) this.render();
   }
 
   private dockBelowSelectedRow(grid: HTMLElement): void {
