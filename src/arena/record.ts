@@ -1,4 +1,4 @@
-import { isCount, isNonEmptyString, isRecord, stringsOf, type RawRecord } from '../profiles/raw';
+import { isCount, isNonEmptyString, isRecord, stringsOf } from '../profiles/raw';
 import { isMedal, NO_MEDAL, type Medal } from './medals';
 
 export interface Placement {
@@ -34,35 +34,11 @@ export interface DailyRecord {
   totalStamps: number;
 }
 
-export const GHOST_VERSION = 1;
-const GHOST_MARK_SIZE = 3;
-
-export interface GhostRun {
-  version: typeof GHOST_VERSION;
-  seed: number;
-  avatar: string;
-  hat?: string;
-  pet?: string;
-  marks: number[];
-  hearts: number[];
-}
-
-export interface TrackBest {
-  score: number;
-  accuracy: number;
-  medal: Medal;
-  date: string;
-  ghost: GhostRun;
-}
-
 export interface ArenaRecord {
   placement?: Placement;
   endless: Record<string, EndlessBest>;
   medalsPaid: Record<string, Medal>;
   daily?: DailyRecord;
-  tracks: Record<string, TrackBest>;
-  shadowWins: Record<string, string>;
-  modifierWins: Record<string, number>;
 }
 
 export interface EndlessRun {
@@ -77,7 +53,7 @@ export interface EndlessRun {
 const KEY_SEPARATOR = '/';
 
 export function emptyArenaRecord(): ArenaRecord {
-  return { endless: {}, medalsPaid: {}, tracks: {}, shadowWins: {}, modifierWins: {} };
+  return { endless: {}, medalsPaid: {} };
 }
 
 export function arenaKey(keySetId: string, difficultyId: string): string {
@@ -140,9 +116,6 @@ export function arenaRecordOf(value: unknown): ArenaRecord {
   const record: ArenaRecord = {
     endless: entriesOf(value.endless, endlessBestOf),
     medalsPaid: entriesOf(value.medalsPaid, medalOf),
-    tracks: entriesOf(value.tracks, trackBestOf),
-    shadowWins: entriesOf(value.shadowWins, nonEmptyStringOf),
-    modifierWins: entriesOf(value.modifierWins, wholeNumberOf),
   };
   const placement = placementOf(value.placement);
   if (placement) record.placement = placement;
@@ -204,44 +177,8 @@ function dailyBestOf(value: unknown): DailyBest | undefined {
   return { score, accuracy, seconds, medal };
 }
 
-function trackBestOf(value: unknown): TrackBest | undefined {
-  if (!isRecord(value)) return undefined;
-  const { score, accuracy, medal, date } = value;
-  const ghost = ghostOf(value.ghost);
-  if (!isCount(score) || !isShare(accuracy) || !isMedal(medal)) return undefined;
-  if (!isNonEmptyString(date) || !ghost) return undefined;
-  return { score, accuracy, medal, date, ghost };
-}
-
-function ghostOf(value: unknown): GhostRun | undefined {
-  if (!isRecord(value) || value.version !== GHOST_VERSION) return undefined;
-  const { seed, avatar } = value;
-  const marks = numbersOf(value.marks);
-  const hearts = numbersOf(value.hearts);
-  if (!isCount(seed) || !isNonEmptyString(avatar) || !marks || !hearts) return undefined;
-  if (marks.length % GHOST_MARK_SIZE !== 0) return undefined;
-  return withOutfit({ version: GHOST_VERSION, seed, avatar, marks, hearts }, value);
-}
-
-function withOutfit(ghost: GhostRun, raw: RawRecord): GhostRun {
-  const outfit: GhostRun = { ...ghost };
-  if (isNonEmptyString(raw.hat)) outfit.hat = raw.hat;
-  if (isNonEmptyString(raw.pet)) outfit.pet = raw.pet;
-  return outfit;
-}
-
-function numbersOf(value: unknown): number[] | undefined {
-  if (!Array.isArray(value)) return undefined;
-  const numbers = value.filter(isCount);
-  return numbers.length === value.length ? numbers : undefined;
-}
-
 function medalOf(value: unknown): Medal | undefined {
   return isMedal(value) ? value : undefined;
-}
-
-function nonEmptyStringOf(value: unknown): string | undefined {
-  return isNonEmptyString(value) ? value : undefined;
 }
 
 function wholeNumberOf(value: unknown): number | undefined {
