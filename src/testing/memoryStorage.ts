@@ -1,5 +1,9 @@
 export class MemoryStorage implements Storage {
-  private readonly items = new Map<string, string>();
+  private readonly items: Map<string, string>;
+
+  constructor(source?: MemoryStorage) {
+    this.items = new Map(source?.items);
+  }
 
   get length(): number {
     return this.items.size;
