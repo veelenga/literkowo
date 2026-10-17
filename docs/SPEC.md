@@ -115,10 +115,13 @@ Rules during a level:
 - Every correct letter fires a bolt from the hero to the nearest enemy being typed, and every finished word gets a lightning strike with a soft crack and a small camera punch, 30 ms apart when several words finish on one key (`src/game/mechanics/HeroStrikes.ts`). The strikes turn from the world's accent colour toward gold as the combo grows and are fully golden in fever, while a glow under the hero charges with the combo up to 15.
 - Words (`src/course/WordSource.ts`): the main phase of a level runs its word stages in order, see [Difficulty](#difficulty). Each stage takes a share of the phase's words and has its own kind and length limits (`src/course/wordStages.ts`). In the first half of a stage the longest word is one letter shorter, as long as the stage keeps at least two lengths, so `2 to 4` starts as `2 to 3`.
   - `combos`: a generated string with at least one focus key, the other letters from the focus keys about half of the time and from all known keys otherwise, for example `f` `fj` `jf` `fjj`.
-  - `focusWords`: a real word with a focus key about half of the time when at least 3 such words fit, otherwise a combo.
-  - `words`: when at least 12 words from `src/course/wordLists.ts` fit the allowed keys and the length limits, about half of the words are real words, preferring words with a focus key. The rest are generated strings within the generated length limits, where about half of the letters come from the focus keys.
+  - `focusWords`: a real word with a focus key when at least 3 such words are open, otherwise a combo.
+  - `words`: a real word with a focus key when at least 3 such words are open. Otherwise about half of the words are open real words of any allowed keys, and the rest are generated strings within the generated length limits, where about half of the letters come from the focus keys. When every allowed key is a focus key, as in the arena, this means a real word whenever at least 3 are open and a generated string only otherwise.
+- Real words first (`src/course/WordSource.ts`, `src/course/recentWords.ts`): real words come from `src/course/wordLists.ts` and fit the allowed keys and the length limits. A real word is open when it is not among the last 8 words of its source (`RECENT_WORDS`), generated strings included. A real word is picked only from at least 3 open words (`MIN_REAL_CHOICES`), so the weak key and easy to type weights still have a choice.
+  - So a real word never comes back within 8 words. With 11 or more fitting words every word can be real. With fewer, at most the number of fitting words minus 3 of any 8 words in a row are real, and generated strings fill the rest.
+  - The spawns of a run keep their memory from one phase to the next, so a new wave does not start with the words the last one ended with. Words that features add, boss words included, come from a second source with its own memory. That source also skips the last 8 spawned words while at least 3 other words are open, and takes them only when nothing else is open. The spawns never look at the feature words, so seeded spawns stay the same whatever the play.
 - Easy to type first (`src/course/typability.ts`): every move between two letters gets a score from the finger map in `src/course/fingers.ts`. The hands taking turns score 1, a doubled letter 0.8, two fingers of one hand 0.5 and one finger pressing two different keys 0. A word scores the average of its moves, and when focus keys are given, only the moves into and out of a focus key count. A generated string or combo is the easiest of 4 random draws of the same length, so `fj` and `jf` show often and `fr` or `ju` almost never. A real word is picked with a weight of its weak key weight times `0.25 + score` around the focus keys, so words that are easy around the new key come more often while the new key keeps its bias.
-- Boss words are real words of 4 or more letters when at least 12 fit, otherwise generated strings of 5 to 7 letters. New words and warm-up letters prefer a first letter that no enemy on the board is waiting for. Generated letters and real words lean toward the player's weak keys, see [Key mastery](#key-mastery). Words that features add, such as minions, use the full length limits of the level.
+- Boss words are real words of 4 or more letters when at least 3 are open, otherwise generated strings of 5 to 7 letters. New words and warm-up letters prefer a first letter that no enemy on the board is waiting for. Generated letters and real words lean toward the player's weak keys, see [Key mastery](#key-mastery). Words that features add, such as minions, use the full length limits of the level.
 - The learn phase is calm. Special enemies, mid-wave events, speed surges, bombers, twins, power words and merging run only in the words phase and in boss fights, so learn levels have none of them.
 - Slow motions and screen looks can overlap. The world runs at the slowest slow motion that is still on, and each one ends on its own clock, so a bomber blast never cuts a boss stun short. A screen look such as darkness or the surge glow stays on while any feature still holds it (`src/game/claims`).
 
@@ -159,6 +162,7 @@ A run plan can carry a `seed`, a whole number. `hashSeed` in `src/random.ts` mak
 - The same while the play is the same: special enemies and twins, the time and kind of mid-wave events, boss words and boss attacks. Each mechanic draws from its own stream of the seed, and every phase starts the spawn and event streams again, so a change in one never shifts another.
 - Can drift: power words and bombers use the seed too, but they wait for room on the board, so they can show up a few seconds later.
 - Not seeded: looks and sound, such as enemy colours, confetti, particles, camera shake, trails and music.
+- The spawns remember their last 8 words from one phase to the next (see [Level flow](#level-flow)), so the words of a phase also follow from the words of the phase before. A seeded words phase always sends all its words before the next phase starts and a boss phase sends none, so this stays the same on every device.
 
 ## Difficulty
 
@@ -663,6 +667,7 @@ Endless waves (`src/arena/endlessPlan.ts`):
 - The spawn interval shrinks 5% per wave, down to 85% of wave 1 (`SPAWN_GAP`). The floor keeps the XP rule below.
 - Words have at least 2 letters. The longest word has 3 letters in waves 1 to 3 and grows by one letter every three waves, up to 8 from wave 16. Generated words use the same lengths.
 - Every key of the key set is a focus key, and weak keys get more weight as in the course.
+- Waves are real words, see [Level flow](#level-flow). Every key set has 11 or more fitting words from wave 1, except Polana in waves 1 to 3, where 8 words of 2 or 3 letters fit in both languages, so about a third of those waves are generated strings. From wave 4 Polana has 14 Polish and 12 English words and is real words too.
 - Every mechanic runs from wave 1, whatever the course progress: every enemy type with up to 3 special enemies at once, bombers, twins, speed surges, power words and merging. The run plan says so with `allMechanicsUnlocked`. Special enemies replace a spawn at the preset's share.
 - Mid-wave events start at wave 3, with the preset's number of events per wave. Two events in one wave share the middle third of it, one after the other.
 - On presets with a boss, every fifth wave is the key set region's boss with its phases and signature attacks, with the region boss's number of words and its speed times the preset speed. A beaten boss wave grants a shield, the same bubble as the power word Tarcza, with the callout "Tarcza za bossa!" / "Щит за боса!".
@@ -756,7 +761,7 @@ Formats, by weekday (`DAILY_FORMATS`):
 | Sun | Wielka fala / Велика хвиля | 3 minutes | Plain arena waves                                                                                                                                                                                                                                                                                                                                                         |
 
 - The run plan has the length as its time limit, so the HUD bar and count show the time left of the whole run, "2:41". On phones the count shows also below 400 px. Losing all hearts ends a try early.
-- Words, waves, calm seconds and mid-wave events follow the endless waves of the key set, see [Arena](#arena).
+- Words, waves, calm seconds and mid-wave events follow the endless waves of the key set, see [Arena](#arena). So the words are real words, except where few fit: Polana's first three waves, which also hold the first two breaks of Saturday, and Thursday's long words of 5 to 8 letters, of which Polana has 6 Polish and 2 English words and Las 8 English words. Those mix in generated strings.
 
 Medal (`dailyMedal` in `src/arena/formats.ts`):
 
@@ -831,7 +836,7 @@ Stages:
 Words:
 
 - Only real words from `src/course/wordLists.ts`, never generated strings (`realWordsOnly` in the word rules). A word fits a stage when all its letters are in the stage's keys.
-- Words with a key of the stage's own region come first, picked like other real words: weak keys weigh more and words that are easy to type come more often, see [Level flow](#level-flow). A stage without such a word takes any fitting word.
+- Words with a key of the stage's own region come first, picked like other real words: weak keys weigh more and words that are easy to type come more often, and a word does not come back within 8 words, see [Level flow](#level-flow). A stage with fewer than 3 such words open takes any open fitting word, and a stage with fewer than 3 open fitting words repeats a fitting word rather than show a generated string.
 - Words have 3 to 5 letters. A stage with fewer than 12 fitting words of that length widens to 2 to 6 letters (`MIN_STAGE_WORDS`). Today no stage needs it:
 
 | Stage | Polish words of 3 to 5 letters | with a key of the region | English words of 3 to 5 letters | with a key of the region |

@@ -11,10 +11,15 @@ import {
   isBossWave,
   longestWord,
 } from './endlessPlan';
-import { keySetById, type KeySet } from './keySets';
+import { keySetById, keySetsFor, type KeySet } from './keySets';
+import { WORD_LANGUAGES } from '../profiles/Profile';
+import { realShare, scriptedWords } from '../testing/runWords';
 
 const PRECISION = 6;
 const FAR_WAVE_INDEX = 500;
+const WAVES = 9;
+const FIRST_ALL_REAL_POLANA_WAVE = 4;
+const ALL_REAL = 1;
 
 function requireKeySet(id: string): KeySet {
   const keySet = keySetById(id, 'pl');
@@ -114,6 +119,25 @@ describe('endlessPlan', () => {
   it('opens each wave after the first with a calm gap', () => {
     expect(waveOf(1).calmSeconds).toBe(0);
     expect(waveOf(2).calmSeconds).toBe(CALM_SECONDS);
+  });
+
+  it('fills every wave with real words once the key set has enough of them', () => {
+    for (const language of WORD_LANGUAGES) {
+      for (const keySet of keySetsFor(language).slice(1)) {
+        const words = scriptedWords(endlessPlan({ keySet, difficulty: NORMAL }), language, WAVES);
+        expect(realShare(words.flat(), language)).toBe(ALL_REAL);
+      }
+    }
+  });
+
+  it('mixes generated strings into the short first waves of Polana only', () => {
+    const plan = endlessPlan({ keySet: POLANA, difficulty: NORMAL });
+    const waves = scriptedWords(plan, 'pl', WAVES);
+    const early = waves.slice(0, FIRST_ALL_REAL_POLANA_WAVE - 1).flat();
+    const later = waves.slice(FIRST_ALL_REAL_POLANA_WAVE - 1).flat();
+    expect(realShare(early, 'pl')).toBeGreaterThan(0);
+    expect(realShare(early, 'pl')).toBeLessThan(ALL_REAL);
+    expect(realShare(later, 'pl')).toBe(ALL_REAL);
   });
 
   it('never runs out of waves', () => {
