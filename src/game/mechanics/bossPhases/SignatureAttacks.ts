@@ -23,11 +23,18 @@ const STRIKE_IMPACT = 0.85;
 
 export type SignatureContext = Pick<
   MechanicContext,
-  'theme' | 'enemies' | 'shakeCamera' | 'particles' | 'sfx' | 'announce' | 'random'
+  | 'theme'
+  | 'enemies'
+  | 'shakeCamera'
+  | 'particles'
+  | 'sfx'
+  | 'announce'
+  | 'random'
+  | 'claimPageClass'
 >;
 
 const ATTACK_FACTORIES: Record<AttackKind, (context: SignatureContext) => BossAttack> = {
-  darkness: () => new Darkness(),
+  darkness: (context) => new Darkness(context),
   fog: (context) => new Fog(context),
   earthquake: (context) => new Earthquake(context),
 };

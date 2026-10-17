@@ -11,6 +11,7 @@ import type { Particles } from '../Particles';
 import type { Player } from '../Player';
 import type { SessionStats } from '../SessionStats';
 import type { Theme } from '../themes';
+import type { Release } from '../claims/Claims';
 
 export type AnnounceStyle = 'callout' | 'banner' | 'warning';
 
@@ -47,7 +48,8 @@ export interface MechanicContext {
   addEnemy(enemy: Enemy, radius?: number): void;
   removeEnemy(enemy: Enemy): void;
   spawnWord(word?: string): Enemy;
-  setTimeScale(scale: number): void;
+  claimTimeScale(scale: number): Release;
+  claimPageClass(name: string): Release;
   shakeCamera(strength: number, seconds: number): void;
   announce(text: string, style: AnnounceStyle, accent?: string): void;
   loseLife(): void;

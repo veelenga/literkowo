@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { fakeClaims } from '../../testing/claims';
 import { fakeBoard } from '../../testing/enemyBoard';
 import { requireLevel } from '../../testing/levels';
 import { Boss } from '../Boss';
@@ -24,11 +25,13 @@ const BOSS_WORDS = 4;
 
 function setup(overrides: Partial<MechanicContext> = {}) {
   const announce = vi.fn<MechanicContext['announce']>();
-  const board = fakeBoard({ announce, ...overrides });
+  const claims = fakeClaims();
+  const board = fakeBoard({ ...claims.context, announce, ...overrides });
   const surge = new SpeedSurge(board.context);
   const enemy = board.enemyAt(9);
   const scale = vi.spyOn(enemy, 'setSpeedScale');
-  return { ...board, announce, surge, enemy, scale };
+  const isLit = () => claims.hasPageClass(SURGE_CLASS);
+  return { ...board, announce, surge, enemy, scale, isLit };
 }
 
 function play(surge: SpeedSurge, seconds: number): void {
@@ -39,11 +42,9 @@ function reachSurge(surge: SpeedSurge): void {
   play(surge, SURGE_FIRST_DELAY + SURGE_TELEGRAPH + FRAME);
 }
 
-afterEach(() => document.body.classList.remove(SURGE_CLASS));
-
 describe('SpeedSurge', () => {
   it('warns after the first 20 seconds and surges once the warning ends', () => {
-    const { surge, announce, scale } = setup();
+    const { surge, announce, scale, isLit } = setup();
     play(surge, SURGE_FIRST_DELAY - FRAME);
     expect(announce).not.toHaveBeenCalled();
     play(surge, 2 * FRAME);
@@ -53,11 +54,11 @@ describe('SpeedSurge', () => {
     play(surge, SURGE_TELEGRAPH);
     expect(surge.isSurging).toBe(true);
     expect(scale).toHaveBeenLastCalledWith(SURGE_SPEED_SCALE);
-    expect(document.body.classList.contains(SURGE_CLASS)).toBe(true);
+    expect(isLit()).toBe(true);
   });
 
   it('returns every speed scale to 1 after 7 seconds', () => {
-    const { surge, scale, enemyAt } = setup();
+    const { surge, scale, enemyAt, isLit } = setup();
     reachSurge(surge);
     const late = enemyAt(10);
     const lateScale = vi.spyOn(late, 'setSpeedScale');
@@ -67,7 +68,7 @@ describe('SpeedSurge', () => {
     expect(surge.isSurging).toBe(false);
     expect(scale).toHaveBeenLastCalledWith(1);
     expect(lateScale).toHaveBeenLastCalledWith(1);
-    expect(document.body.classList.contains(SURGE_CLASS)).toBe(false);
+    expect(isLit()).toBe(false);
   });
 
   it('leaves a short trail of cubes behind each enemy while it lasts', () => {

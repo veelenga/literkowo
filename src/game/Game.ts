@@ -22,6 +22,8 @@ import {
 } from './board';
 import { BOSS_SCALE, Boss, MINI_BOSS_SCALE } from './Boss';
 import { CameraShake } from './CameraShake';
+import { PageClasses } from './claims/PageClasses';
+import { TimeScale } from './claims/TimeScale';
 import { Enemy, type EnemyLook } from './Enemy';
 import type { Tally } from '../course/counters';
 import { KeyTracker, type KeyReport } from './KeyTracker';
@@ -142,6 +144,8 @@ export class Game {
   private readonly labels: LabelLayer;
   private readonly enemies: Enemy[] = [];
   private readonly mechanics = new MechanicGroup();
+  private readonly timeScale = new TimeScale();
+  private readonly pageClasses = new PageClasses(document.body.classList);
   private readonly spawnGroups = new SpawnGroups<Enemy>();
   private readonly shake = new CameraShake();
   private readonly targeting = new Targeting<Enemy>((enemy, isCandidate) =>
@@ -160,7 +164,6 @@ export class Game {
   private lives: number;
   private shields = 0;
   private guards = 0;
-  private timeScale = 1;
   private lettersFreed = 0;
   private elapsed = 0;
   private sinceSpawn = Number.POSITIVE_INFINITY;
@@ -270,6 +273,7 @@ export class Game {
     cancelAnimationFrame(this.frame);
     window.removeEventListener('keydown', this.onKeyDown);
     this.mechanics.dispose();
+    this.pageClasses.releaseAll();
     this.releaseEnemies();
     this.world.dispose();
     this.particles.dispose();
@@ -326,7 +330,8 @@ export class Game {
       addEnemy: (enemy, radius) => this.addEnemy(enemy, radius),
       removeEnemy: (enemy) => this.clearEnemy(enemy),
       spawnWord: (word) => this.spawnWord(word),
-      setTimeScale: (scale) => this.setTimeScale(scale),
+      claimTimeScale: (scale) => this.timeScale.claim(scale),
+      claimPageClass: (name) => this.pageClasses.claim(name),
       shakeCamera: (strength, seconds) => this.shake.start(strength, seconds),
       announce: (text, style, accent) => this.events.onAnnounce(text, style, accent),
       loseLife: () => this.hitHero(),
@@ -388,7 +393,7 @@ export class Game {
     this.mechanics.update(delta, this.elapsed);
     this.updateCamera(delta);
     if (this.finished) return;
-    const worldDelta = delta * this.timeScale;
+    const worldDelta = delta * this.timeScale.value;
     if (!this.inIntro) this.spawnIfDue(worldDelta);
     if (!this.inIntro) this.countPhaseTime(delta);
     if (!this.inIntro) this.countRunTime(delta);
@@ -620,10 +625,6 @@ export class Game {
   private boostRewards(boost: RewardBoost): void {
     this.rewards.boost(boost);
     this.events.onRewards(this.rewards);
-  }
-
-  private setTimeScale(scale: number): void {
-    this.timeScale = Math.max(0, scale);
   }
 
   private clearEnemy(enemy: Enemy): void {

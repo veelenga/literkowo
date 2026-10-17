@@ -2,9 +2,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ThemeId } from '../../course/regions';
 import { SHORT_LENGTH } from '../../course/WordSource';
+import { fakeClaims } from '../../testing/claims';
 import { levelWords, requireLevel } from '../../testing/levels';
 import { fakeMechanicContext } from '../../testing/mechanicContext';
 import { Boss } from '../Boss';
+import { NORMAL_TIME_SCALE } from '../claims/TimeScale';
 import { Enemy } from '../Enemy';
 import type { Phase } from '../RunPlan';
 import { themeFor } from '../themes';
@@ -15,6 +17,7 @@ import { QUAKE_SHAKE } from './bossPhases/Earthquake';
 import { FOG_SECONDS } from './bossPhases/Fog';
 import { MAX_MINIONS, MINION_INTERVAL, MINION_TAG } from './bossPhases/Minions';
 import { SLOW_MOTION, STUN_SECONDS } from './bossPhases/WeakPoint';
+import { SLOW_MOTION as BLAST } from './bombers/Detonations';
 import { BossPhases } from './BossPhases';
 import type { MechanicContext } from './Mechanic';
 
@@ -54,17 +57,17 @@ function setup(themeId: ThemeId = 'forest', fight: Partial<Phase> = {}) {
     return enemy;
   };
   const announce = vi.fn<MechanicContext['announce']>();
-  const setTimeScale = vi.fn<MechanicContext['setTimeScale']>();
+  const claims = fakeClaims();
   const shakeCamera = vi.fn<MechanicContext['shakeCamera']>();
   const burst = vi.fn<MechanicContext['particles']['burst']>();
   const spawnWord = vi.fn<MechanicContext['spawnWord']>((word = words.next()) => addEnemy(word));
   const context = fakeMechanicContext({
+    ...claims.context,
     enemies,
     theme,
     words,
     phase,
     announce,
-    setTimeScale,
     shakeCamera,
     spawnWord,
     particles: { burst },
@@ -89,7 +92,8 @@ function setup(themeId: ThemeId = 'forest', fight: Partial<Phase> = {}) {
     words,
     context,
     mechanic,
-    setTimeScale,
+    timeScale: claims.timeScale,
+    isDark: () => claims.hasPageClass(DARKNESS_CLASS),
     shakeCamera,
     burst,
     spawnWord,
@@ -108,16 +112,11 @@ function masked(word: string): string {
   return word[0] + MASK.repeat(word.length - 1);
 }
 
-function isDark(): boolean {
-  return document.body.classList.contains(DARKNESS_CLASS);
-}
-
 beforeEach(() => {
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
 });
 
 afterEach(() => {
-  document.body.className = '';
   vi.restoreAllMocks();
 });
 
@@ -134,25 +133,50 @@ describe('BossPhases phases', () => {
   });
 
   it('keeps armour hits plain', () => {
-    const { boss, words, setTimeScale, hit } = setup('meadow');
+    const { boss, words, timeScale, hit } = setup('meadow');
     const shortWord = vi.spyOn(words, 'shortWord');
     hit(ARMOUR_HITS);
-    expect(setTimeScale).not.toHaveBeenCalled();
+    expect(timeScale.value).toBe(NORMAL_TIME_SCALE);
     expect(shortWord).not.toHaveBeenCalled();
     expect(boss.isFrozen).toBe(false);
   });
 
   it('stuns the boss in slow motion with a short word after weak point hits', () => {
-    const { boss, setTimeScale, hit, run } = setup('meadow');
+    const { boss, timeScale, hit, run } = setup('meadow');
     hit(ARMOUR_HITS + 1);
     expect(boss.isFrozen).toBe(true);
-    expect(setTimeScale).toHaveBeenLastCalledWith(SLOW_MOTION);
+    expect(timeScale.value).toBe(SLOW_MOTION);
     expect(boss.word.length).toBeGreaterThanOrEqual(SHORT_LENGTH[0]);
     expect(boss.word.length).toBeLessThanOrEqual(SHORT_LENGTH[1]);
     run(STUN_SECONDS - STEP);
-    expect(setTimeScale).toHaveBeenLastCalledWith(SLOW_MOTION);
+    expect(timeScale.value).toBe(SLOW_MOTION);
     run(STEP);
-    expect(setTimeScale).toHaveBeenLastCalledWith(1);
+    expect(timeScale.value).toBe(NORMAL_TIME_SCALE);
+  });
+
+  it('keeps the stun slow motion when a blast slow motion ends inside it', () => {
+    const { context, timeScale, hit, run } = setup('meadow');
+    hit(ARMOUR_HITS + 1);
+    const releaseBlast = context.claimTimeScale(BLAST.scale);
+    expect(timeScale.value).toBe(BLAST.scale);
+    run(STEP);
+    releaseBlast();
+    expect(timeScale.value).toBe(SLOW_MOTION);
+    run(STUN_SECONDS - STEP * 2);
+    expect(timeScale.value).toBe(SLOW_MOTION);
+    run(STEP);
+    expect(timeScale.value).toBe(NORMAL_TIME_SCALE);
+  });
+
+  it('keeps a blast slow motion that outlasts the stun', () => {
+    const { context, timeScale, hit, run } = setup('meadow');
+    hit(ARMOUR_HITS + 1);
+    run(STUN_SECONDS - STEP);
+    const releaseBlast = context.claimTimeScale(BLAST.scale);
+    run(STEP);
+    expect(timeScale.value).toBe(BLAST.scale);
+    releaseBlast();
+    expect(timeScale.value).toBe(NORMAL_TIME_SCALE);
   });
 
   it('speeds the boss up in rage and keeps at most two minions', () => {
@@ -174,20 +198,20 @@ describe('BossPhases phases', () => {
   });
 
   it('restores time and light when the boss leaves', () => {
-    const { enemies, setTimeScale, hit, run } = setup('forest');
+    const { enemies, timeScale, isDark, hit, run } = setup('forest');
     run(FIRST_STRIKE);
     hit(ARMOUR_HITS + 1);
     expect(isDark()).toBe(true);
     enemies.length = 0;
     run(STEP);
-    expect(setTimeScale).toHaveBeenLastCalledWith(1);
+    expect(timeScale.value).toBe(NORMAL_TIME_SCALE);
     expect(isDark()).toBe(false);
   });
 });
 
 describe('BossPhases signature attacks', () => {
   it('telegraphs the attack before it strikes', () => {
-    const { texts, run } = setup('forest');
+    const { texts, isDark, run } = setup('forest');
     run(FIRST_STRIKE - TELEGRAPH_LEAD - STEP);
     expect(texts('warning')).toEqual([]);
     run(STEP);
@@ -202,7 +226,7 @@ describe('BossPhases signature attacks', () => {
   });
 
   it('darkness hides the keyboard for a while', () => {
-    const { run } = setup('forest');
+    const { isDark, run } = setup('forest');
     run(FIRST_STRIKE);
     expect(isDark()).toBe(true);
     run(DARKNESS_SECONDS - STEP);
@@ -244,7 +268,7 @@ describe('BossPhases signature attacks', () => {
   });
 
   it('the island boss rotates through every attack', () => {
-    const { boss, shakeCamera, run } = setup('island');
+    const { boss, shakeCamera, isDark, run } = setup('island');
     run(FIRST_STRIKE);
     expect(isDark()).toBe(true);
     run(STRIKE_INTERVAL);
@@ -256,7 +280,7 @@ describe('BossPhases signature attacks', () => {
   });
 
   it('the meadow boss stays gentle', () => {
-    const { shakeCamera, texts, run } = setup('meadow');
+    const { shakeCamera, texts, isDark, run } = setup('meadow');
     run(FIRST_STRIKE + STRIKE_INTERVAL * 2);
     expect(texts('warning')).toEqual([]);
     expect(shakeCamera).not.toHaveBeenCalled();
@@ -273,17 +297,17 @@ describe('BossPhases mini boss', () => {
   });
 
   it('fights in one phase without armour, weak point or rage', () => {
-    const { boss, setTimeScale, spawnWord, texts, hit, run } = setup('island', miniBoss);
+    const { boss, timeScale, spawnWord, texts, hit, run } = setup('island', miniBoss);
     hit(MINI_HITS - 1);
     run(MINION_INTERVAL * 2);
     expect(texts('banner')).toEqual([MINI_BANNER]);
-    expect(setTimeScale).not.toHaveBeenCalled();
+    expect(timeScale.value).toBe(NORMAL_TIME_SCALE);
     expect(boss.isFrozen).toBe(false);
     expect(spawnWord).not.toHaveBeenCalled();
   });
 
   it('never strikes with a signature attack', () => {
-    const { shakeCamera, texts, run } = setup('island', miniBoss);
+    const { shakeCamera, texts, isDark, run } = setup('island', miniBoss);
     run(FIRST_STRIKE + STRIKE_INTERVAL * 2);
     expect(texts('warning')).toEqual([]);
     expect(shakeCamera).not.toHaveBeenCalled();

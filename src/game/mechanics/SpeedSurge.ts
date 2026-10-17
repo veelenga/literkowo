@@ -1,6 +1,7 @@
 import '../../ui/actionEvents.css';
 import { REGIONS, type Level } from '../../course/regions';
 import { i18n } from '../../i18n/i18n';
+import { HeldClaim } from '../claims/HeldClaim';
 import { Boss } from '../Boss';
 import type { Enemy } from '../Enemy';
 import type { PhaseKind } from '../RunPlan';
@@ -28,11 +29,12 @@ type SurgeStage = 'waiting' | 'telegraph' | 'surging';
 
 export type SpeedSurgeContext = Pick<
   MechanicContext,
-  'enemies' | 'scene' | 'phase' | 'playing' | 'level' | 'sfx' | 'announce'
+  'enemies' | 'scene' | 'phase' | 'playing' | 'level' | 'sfx' | 'announce' | 'claimPageClass'
 >;
 
 export class SpeedSurge implements Mechanic {
   private readonly trail = new SurgeTrail();
+  private readonly look = new HeldClaim(() => this.context.claimPageClass(SURGE_CLASS));
   private readonly interval: number;
   private stage: SurgeStage = 'waiting';
   private timer = SURGE_FIRST_DELAY;
@@ -124,12 +126,12 @@ export class SpeedSurge implements Mechanic {
     this.timer = SURGE_DURATION;
     this.sinceTrail = TRAIL_EVERY;
     this.setScale(SURGE_SPEED_SCALE);
-    document.body.classList.add(SURGE_CLASS);
+    this.look.hold();
   }
 
   private end(): void {
     this.setScale(NORMAL_SPEED);
-    document.body.classList.remove(SURGE_CLASS);
+    this.look.release();
     this.skip();
   }
 
