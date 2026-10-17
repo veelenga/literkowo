@@ -1,7 +1,7 @@
 import type { Region } from './catalog';
 import { needsRightAlt } from './fingers';
 import { RECENT_WINDOW, recentAccuracy, type KeyStat, type KeyStats } from './keyStats';
-import { accuracyPercent } from './scoring';
+import { accuracyPercent, keystrokeAccuracy, PERFECT_ACCURACY } from './scoring';
 
 export const MASTERY_LEVELS = ['none', 'learning', 'solid', 'mastered'] as const;
 
@@ -81,8 +81,7 @@ export function newlyMastered(before: KeyStats, after: KeyStats): string[] {
 }
 
 export function tallyAccuracy({ hits, misses }: KeyTally): number {
-  const total = hits + misses;
-  return total === 0 ? 1 : hits / total;
+  return keystrokeAccuracy(hits, misses) ?? PERFECT_ACCURACY;
 }
 
 function isMastered(key: string, stat: KeyStat, accuracy: number): boolean {

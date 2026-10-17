@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_STARS, accuracyPercent, starThresholdPercents, starsFor } from './scoring';
+import {
+  MAX_STARS,
+  accuracyPercent,
+  keystrokeAccuracy,
+  starThresholdPercents,
+  starsFor,
+  wordsPerMinute,
+} from './scoring';
 
 describe('starsFor', () => {
   it('gives no stars for a lost level', () => {
@@ -33,5 +40,34 @@ describe('accuracyPercent', () => {
 describe('starThresholdPercents', () => {
   it('lists the accuracy needed for each star as whole percents', () => {
     expect(starThresholdPercents()).toEqual([85, 93, 97]);
+  });
+});
+
+describe('keystrokeAccuracy', () => {
+  it('gives the share of keystrokes that hit', () => {
+    expect(keystrokeAccuracy(9, 1)).toBe(0.9);
+    expect(keystrokeAccuracy(3, 0)).toBe(1);
+    expect(keystrokeAccuracy(0, 4)).toBe(0);
+  });
+
+  it('has no accuracy before the first keystroke', () => {
+    expect(keystrokeAccuracy(0, 0)).toBeUndefined();
+  });
+});
+
+describe('wordsPerMinute', () => {
+  it('counts five characters as one word', () => {
+    expect(wordsPerMinute(100, 60)).toBe(20);
+    expect(wordsPerMinute(50, 30)).toBe(20);
+  });
+
+  it('rounds to a whole word', () => {
+    expect(wordsPerMinute(52, 60)).toBe(10);
+    expect(wordsPerMinute(53, 60)).toBe(11);
+  });
+
+  it('has no speed without typing time', () => {
+    expect(wordsPerMinute(40, 0)).toBe(0);
+    expect(wordsPerMinute(0, 0)).toBe(0);
   });
 });
