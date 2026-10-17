@@ -1,3 +1,4 @@
+import { RecentWords } from '../course/recentWords';
 import { WordSource, type KeyWeights } from '../course/WordSource';
 import type { WordRules } from '../course/wordRules';
 import type { WordLanguage } from '../profiles/Profile';
@@ -26,6 +27,7 @@ interface PhaseScript {
 export class SpawnScript {
   private current: PhaseScript;
   private spawns = 0;
+  private readonly recent = new RecentWords();
 
   constructor(
     private readonly setup: SpawnScriptSetup,
@@ -58,7 +60,13 @@ export class SpawnScript {
   private phaseScript(phaseIndex: number, rules: WordRules): PhaseScript {
     const { language, random, weights } = this.setup;
     return {
-      words: new WordSource(language, rules, weights, random.stream(WORDS_STREAM, phaseIndex)),
+      words: new WordSource(
+        language,
+        rules,
+        weights,
+        random.stream(WORDS_STREAM, phaseIndex),
+        this.recent,
+      ),
       arc: random.stream(ARC_STREAM, phaseIndex),
     };
   }

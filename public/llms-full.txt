@@ -49,7 +49,7 @@ Every level adds one new key, except the first, which teaches f and j together. 
 
 Profiles that type Polish words play all 99 levels. Profiles that type English words play 75, since the island teaches Polish letters. Every region has its own landscape, colours, enemy shape and music.
 
-Words fit the keys taught so far. Early levels use short letter combinations that are easy to type, later levels use real words from Polish and English word lists that are safe for kids. The pace grows smoothly along the course.
+Words fit the keys taught so far. Early levels use short letter combinations that are easy to type, later levels use real words from Polish and English word lists that are safe for kids. Real words come first wherever enough of them fit the keys, and a word does not come back within the next 8 words. Letter combinations fill in where few real words fit, and in practice levels they keep the new key coming. The pace grows smoothly along the course.
 
 ## Key mastery
 
@@ -96,10 +96,11 @@ The arena is open from the first day and holds three modes: Sprawdzian (the plac
 - Key sets: the keys of the first region, and of every region the child has finished, so the arena never asks for keys the course has not taught.
 - Four difficulties: Spokojnie (calm), Normalnie (normal), Szybko (fast) and Szaleństwo (frenzy). Faster ones bring more special enemies and more events, and Szaleństwo leaves a single heart. The two fastest add a region boss every fifth wave.
 - Each wave is a little longer and faster than the one before.
+- Words are real words from the word lists, using every key of the key set. Only the first short waves on the Polana keys mix in letter combinations, since few real words fit there.
 - Medals: bronze, silver and gold for 3, 6 and 10 waves cleared, each also needing 85%, 93% or 97% accuracy, so rushing never earns gold.
 - Medals and new records pay coins, and arena goals unlock special items in the shop.
 
-Wyzwanie dnia (daily challenge) is a short run on the arena screen with a new rule every day. It lasts 3 minutes, or 2 on Tuesday, uses the Normalnie pace, and everyone on the same keys gets the same words that day.
+Wyzwanie dnia (daily challenge) is a short run on the arena screen with a new rule every day. It lasts 3 minutes, or 2 on Tuesday, uses the Normalnie pace, and everyone on the same keys gets the same real words that day.
 
 - Formats: Mgła (fog, only the next letter of each word shows) on Monday, Dwie minuty (a two minute time attack without hearts) on Tuesday, Ciemność (no keyboard hint) on Wednesday, Długie słowa (words of 5 to 8 letters, slower) on Thursday, Jedno serce (one heart, slower) on Friday, Bossowie (three short boss fights) on Saturday and Wielka fala (plain waves) on Sunday.
 - Three tries a day, and the best one counts. The medal is the lower of the time survived (or the pace on Tuesday) and the accuracy grade, so careful typing still wins.

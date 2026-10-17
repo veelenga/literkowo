@@ -15,8 +15,14 @@ import { endlessPlan } from './endlessPlan';
 import { DAILY_SECONDS, TIME_ATTACK_SECONDS, formatOnWeekday } from './formats';
 import { keySetById, type KeySet } from './keySets';
 import { stagePracticeTempo } from './placement';
+import { realShare, scriptedWords } from '../testing/runWords';
 
 const DAY = '2026-10-16';
+const NEXT_DAY = '2026-10-17';
+const WAVES = 6;
+const ALL_REAL = 1;
+const TIME_ATTACK_PHASES = 1;
+const SATURDAY_PHASES = 6;
 
 function required<T>(value: T | undefined): T {
   if (value === undefined) throw new Error('Missing test data');
@@ -109,5 +115,23 @@ describe('dailyPlan', () => {
     expect(phases[0]?.count).toBe(BOSS_BREAK_WORDS);
     expect(phases[5]?.count).toBeLessThanOrEqual(BOSS_FIGHTS[2].hits);
     expect(plan.seconds).toBe(DAILY_SECONDS);
+  });
+
+  it('gives everyone the same real words on one day and other words the next day', () => {
+    const words = (day: string) =>
+      scriptedWords(dailyPlan({ keySet: LAS, format: formatOnWeekday(6), day }), 'pl', WAVES);
+    expect(words(DAY)).toEqual(words(DAY));
+    expect(words(DAY)).not.toEqual(words(NEXT_DAY));
+    expect(realShare(words(DAY).flat(), 'pl')).toBe(ALL_REAL);
+  });
+
+  it('keeps every format of the week to real words with the Las keys', () => {
+    for (const weekday of [0, 2, 3, 4, 6]) {
+      expect(realShare(scriptedWords(planOn(weekday), 'pl', WAVES).flat(), 'pl')).toBe(ALL_REAL);
+    }
+    expect(realShare(scriptedWords(planOn(1), 'pl', TIME_ATTACK_PHASES).flat(), 'pl')).toBe(
+      ALL_REAL,
+    );
+    expect(realShare(scriptedWords(planOn(5), 'pl', SATURDAY_PHASES).flat(), 'pl')).toBe(ALL_REAL);
   });
 });

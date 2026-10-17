@@ -6,10 +6,13 @@ import { allowedKeysFor } from './course';
 import { TRANSITION_SCORES, transitionScore } from './typability';
 import { WORD_LISTS } from './wordLists';
 import { levelWordRules, type WordRules } from './wordRules';
+import type { WordLanguage } from '../profiles/Profile';
 import { seededRandom } from '../random';
+import { RECENT_WORDS } from './recentWords';
 import {
   BOSS_MIN_LENGTH,
   EVEN_WEIGHTS,
+  MIN_REAL_CHOICES,
   SHORT_LENGTH,
   WordSource,
   type KeyWeights,
@@ -50,6 +53,29 @@ const PHASE_RULES: WordRules = {
   lengths: { min: 3, max: 3 },
   generatedLengths: { min: 3, max: 3 },
 };
+const LAS_KEYS = 'fjdksla;gheiru';
+const POLANA_KEYS = 'fjdksla;';
+const SHORT_WORDS = { min: 2, max: 3 };
+const ALL_KEYS_RULES: WordRules = {
+  allowedKeys: LAS_KEYS,
+  focusKeys: LAS_KEYS,
+  lengths: SHORT_WORDS,
+  generatedLengths: SHORT_WORDS,
+};
+const FEW_WORDS_RULES: WordRules = {
+  ...ALL_KEYS_RULES,
+  allowedKeys: POLANA_KEYS,
+  focusKeys: POLANA_KEYS,
+};
+const SMALL_POOL_RULES: WordRules = {
+  allowedKeys: 'kot',
+  focusKeys: 'k',
+  lengths: { min: 2, max: 4 },
+  generatedLengths: { min: 2, max: 2 },
+};
+const MIXED_SHARE = { min: 0.4, max: 0.9 };
+const TAUGHT_SHARE = 0.6;
+const FIRST_DRAWS = 50;
 
 function weakKey(key: string): KeyWeights {
   return { weightOf: (char) => (char === key ? WEAK_WEIGHT : 1) };
@@ -66,6 +92,26 @@ function sameFingerAt(word: string, keys = word): boolean {
 
 function share(items: readonly string[], matches: (item: string) => boolean): number {
   return items.filter(matches).length / items.length;
+}
+
+function isListed(word: string, language: WordLanguage = 'pl'): boolean {
+  return WORD_LISTS[language].includes(word);
+}
+
+function fittingWords(rules: WordRules): string[] {
+  const { allowedKeys, lengths } = rules;
+  return WORD_LISTS.pl.filter(
+    (word) =>
+      word.length >= lengths.min &&
+      word.length <= lengths.max &&
+      [...word].every((char) => allowedKeys.includes(char)),
+  );
+}
+
+function recentRepeats(words: readonly string[]): string[] {
+  return words.filter((word, index) =>
+    words.slice(Math.max(0, index - RECENT_WORDS), index).includes(word),
+  );
 }
 
 describe('WordSource', () => {
@@ -278,9 +324,83 @@ describe('WordSource', () => {
       const source = levelWords(requireLevel(id), 'pl');
       for (const progress of [0, EARLY_WORDS, LAST_SPAWN]) {
         const words = Array.from({ length: COMBO_SAMPLES }, () => source.stagedWord(progress));
-        expect(share(words, (word) => sameFingerAt(word))).toBeLessThan(RARE_SHARE);
+        const generated = words.filter((word) => !isListed(word));
+        expect(share(generated, (word) => sameFingerAt(word))).toBeLessThan(RARE_SHARE);
       }
     }
+  });
+
+  it('gives only real words when enough of them fit the keys and lengths', () => {
+    expect(fittingWords(ALL_KEYS_RULES).length).toBeGreaterThanOrEqual(
+      RECENT_WORDS + MIN_REAL_CHOICES,
+    );
+    const source = new WordSource('pl', ALL_KEYS_RULES);
+    const words = Array.from({ length: SAMPLES }, () => source.next());
+    expect(words.every((word) => isListed(word))).toBe(true);
+  });
+
+  it('never shows a real word again within the last eight words', () => {
+    const source = new WordSource('pl', ALL_KEYS_RULES);
+    const words = Array.from({ length: SAMPLES }, () => source.next());
+    expect(recentRepeats(words)).toEqual([]);
+  });
+
+  it('mixes in generated strings when too few real words fit to avoid repeats', () => {
+    const fitting = fittingWords(FEW_WORDS_RULES).length;
+    expect(fitting).toBeGreaterThanOrEqual(MIN_REAL_CHOICES);
+    expect(fitting).toBeLessThan(RECENT_WORDS + MIN_REAL_CHOICES);
+    const source = new WordSource('pl', FEW_WORDS_RULES, EVEN_WEIGHTS, seededRandom(SEED));
+    const words = Array.from({ length: SAMPLES }, () => source.next());
+    const real = share(words, (word) => isListed(word));
+    expect(real).toBeGreaterThan(MIXED_SHARE.min);
+    expect(real).toBeLessThan(MIXED_SHARE.max);
+  });
+
+  it('gives only generated strings when fewer real words fit than it picks from', () => {
+    expect(fittingWords(SMALL_POOL_RULES).length).toBeLessThan(MIN_REAL_CHOICES);
+    const source = new WordSource('pl', SMALL_POOL_RULES);
+    const words = Array.from({ length: SAMPLES }, () => source.next());
+    expect(words.every((word) => word.length === SMALL_POOL_RULES.generatedLengths.max)).toBe(true);
+  });
+
+  it('opens a practice stage with real words of the new key', () => {
+    const level = requireLevel('las-2');
+    for (let i = 0; i < FIRST_DRAWS; i += 1) {
+      const word = levelWords(level, 'pl').stagedWord(LAST_SPAWN);
+      expect(isListed(word)).toBe(true);
+      expect(word).toContain('g');
+    }
+  });
+
+  it('keeps teaching the new key with generated strings once its few real words have shown', () => {
+    const rules = levelWordRules(requireLevel('las-2'), 'pl');
+    const source = new WordSource('pl', rules, EVEN_WEIGHTS, seededRandom(SEED));
+    const words = Array.from({ length: WEIGHTED_SAMPLES }, () => source.stagedWord(LAST_SPAWN));
+    const generated = words.filter((word) => !isListed(word));
+    expect(generated.length).toBeGreaterThan(0);
+    expect(share(generated, (word) => word.includes('g'))).toBeGreaterThan(TAUGHT_SHARE);
+  });
+
+  it('picks more real words with a weak key when every key is in focus', () => {
+    const rules = { ...ALL_KEYS_RULES, lengths: PRACTICE_LENGTHS };
+    const words = (weights?: KeyWeights) => {
+      const source = new WordSource('pl', rules, weights, seededRandom(SEED));
+      return Array.from({ length: WEIGHTED_SAMPLES }, () => source.next());
+    };
+    const even = share(words(), (word) => word.includes('g'));
+    const weighted = share(words(weakKey('g')), (word) => word.includes('g'));
+    expect(even).toBeGreaterThan(0);
+    expect(weighted).toBeGreaterThan(even * CLEAR_PREFERENCE);
+  });
+
+  it('prefers real words that are easy to type when every key is in focus', () => {
+    const rules = { ...ALL_KEYS_RULES, lengths: PRACTICE_LENGTHS };
+    const source = new WordSource('pl', rules, EVEN_WEIGHTS, seededRandom(SEED));
+    const picks = Array.from({ length: WEIGHTED_SAMPLES }, () => source.next());
+    const hard = (word: string) => sameFingerAt(word);
+    const pool = fittingWords(rules);
+    expect(share(pool, hard)).toBeGreaterThan(0);
+    expect(share(picks, hard)).toBeLessThan(share(pool, hard));
   });
 
   it('prefers real words that are easy to type around the focus key', () => {
