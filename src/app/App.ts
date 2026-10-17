@@ -91,7 +91,7 @@ export class App {
   });
   private readonly placement = new PlacementFlow({
     showMap: (profile) => this.showMap(profile),
-    showArena: (profile) => this.arena.show(profile),
+    showArena: (profile) => this.showArena(profile),
     showShop: (profile, exit, tab) => this.showShop(profile, exit, tab),
     startRun: (profile, run) => this.startRun(profile, run),
     openOverlay: (overlay) => this.overlays.open(overlay),
@@ -153,17 +153,22 @@ export class App {
     this.disposeScreen = () => screen.dispose();
   }
 
-  private showMap(profile: Profile): void {
+  private showMap(shown: Profile): void {
+    const profile = this.latest(shown);
     this.showMenu(
       () =>
         new WorldMap(profile, {
           onPlay: (level) => this.openLevel(profile, level),
           onSwitchPlayer: () => this.showProfiles(),
           onShop: () => this.showShop(profile, this.backToMap()),
-          onArena: () => this.arena.show(profile),
+          onArena: () => this.showArena(profile),
           onSettings: () => this.showSettings(() => this.showMap(profile), profile),
         }),
     );
+  }
+
+  private showArena(profile: Profile): void {
+    this.arena.show(this.latest(profile));
   }
 
   private showMenu(create: () => Screen): void {
@@ -190,7 +195,7 @@ export class App {
   private showShop(profile: Profile, exit: ShopExit, tab?: ShopTab): void {
     this.leaveScreen();
     const shop = new ShopScreen(
-      profile,
+      this.latest(profile),
       { ...exit, onChange: (current) => this.save(current) },
       tab,
     );
@@ -411,6 +416,10 @@ export class App {
   private showStory(scene: StoryScene, then: () => void): void {
     this.leaveScreen();
     this.overlays.open(storyCard(scene, this.dismissThen(then)));
+  }
+
+  private latest(profile: Profile): Profile {
+    return this.store.find(profile.id) ?? profile;
   }
 
   private save(profile: Profile): Profile {
