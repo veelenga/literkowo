@@ -11,17 +11,13 @@ import { seededRandom, systemRandom, type RandomSource } from '../random';
 import { xpPop } from '../ui/progression';
 import {
   BOSS_SPAWN_RADIUS,
-  CAMERA_FOV,
-  CAMERA_POSITION,
-  CAMERA_TARGET,
   NO_INSETS,
   REACH_DISTANCE,
   SPAWN_RADIUS,
-  frameBoard,
   type StageInsets,
 } from './board';
 import { BOSS_SCALE, Boss, MINI_BOSS_SCALE } from './Boss';
-import { CameraShake } from './CameraShake';
+import { CAMERA_INTRO_SECONDS, CameraRig } from './CameraRig';
 import { PageClasses } from './claims/PageClasses';
 import { TimeScale } from './claims/TimeScale';
 import { Enemy, type EnemyLook } from './Enemy';
@@ -37,7 +33,7 @@ import { PhaseMeter, type PhaseRecord } from './PhaseMeter';
 import { PhaseRunner, type Progress } from './PhaseRunner';
 import { Player } from './Player';
 import { currentQuality } from './quality';
-import { renderHost, type Viewport } from './RenderHost';
+import { renderHost } from './RenderHost';
 import type { RunPhase, RunPlan } from './RunPlan';
 import type { RewardBoost } from '../course/powers';
 import { RunRewards, type Rewards } from './RunRewards';
@@ -52,12 +48,6 @@ import { World } from './World';
 export { themeFor } from './themes';
 export type { Progress };
 
-const CAMERA_NEAR = 0.1;
-const CAMERA_FAR = 120;
-const CAMERA_INTRO_SCALE = 2.2;
-const CAMERA_INTRO_DURATION = 1.8;
-const CAMERA_SWAY = 0.35;
-const CAMERA_SWAY_SPEED = 0.25;
 const MAX_FRAME_DELTA = 0.1;
 const SHAKE_DURATION = 0.25;
 const SHAKE_AMPLITUDE = 0.18;
@@ -104,8 +94,7 @@ export interface GameEvents {
 
 export class Game {
   private readonly scene = new THREE.Scene();
-  private readonly camera = new THREE.PerspectiveCamera(CAMERA_FOV, 1, CAMERA_NEAR, CAMERA_FAR);
-  private readonly cameraTarget = new THREE.Vector3().copy(CAMERA_TARGET);
+  private readonly rig = new CameraRig();
   private readonly timer = new THREE.Timer();
   private readonly player: Player;
   private readonly particles = new Particles(this.scene);
@@ -127,7 +116,6 @@ export class Game {
   private readonly timeScale = new TimeScale();
   private readonly pageClasses = new PageClasses(document.body.classList);
   private readonly spawnGroups = new SpawnGroups<Enemy>();
-  private readonly shake = new CameraShake();
   private readonly targeting = new Targeting<Enemy>((enemy, isCandidate) =>
     enemy.setTargeted(isCandidate),
   );
@@ -175,9 +163,8 @@ export class Game {
     const quality = currentQuality();
     this.world = new World(this.scene, config.theme, quality);
     this.scene.add(this.player.object);
-    this.placeCameraForIntro();
-    renderHost.attach(container, this.scene, this.camera, quality, (viewport) =>
-      this.fitCamera(viewport),
+    renderHost.attach(container, this.scene, this.rig.camera, quality, (viewport) =>
+      this.rig.fit(viewport, this.insets),
     );
     this.labels = new LabelLayer(container);
     this.mechanics.register(createMechanics(this.createMechanicContext()));
@@ -214,7 +201,7 @@ export class Game {
 
   setInsets(insets: StageInsets): void {
     this.insets = insets;
-    this.fitCamera(renderHost.viewport);
+    this.rig.fit(renderHost.viewport, insets);
   }
 
   togglePause(): void {
@@ -255,7 +242,7 @@ export class Game {
   }
 
   private get inIntro(): boolean {
-    return this.elapsed < CAMERA_INTRO_DURATION;
+    return this.elapsed < CAMERA_INTRO_SECONDS;
   }
 
   private get phase(): RunPhase {
@@ -301,7 +288,7 @@ export class Game {
       spawnWord: (word) => this.spawnWord(word),
       claimTimeScale: (scale) => this.timeScale.claim(scale),
       claimPageClass: (name) => this.pageClasses.claim(name),
-      shakeCamera: (strength, seconds) => this.shake.start(strength, seconds),
+      shakeCamera: (strength, seconds) => this.rig.shake(strength, seconds),
       announce: (text, style, accent) => this.events.onAnnounce(text, style, accent),
       loseLife: () => this.hitHero(),
       absorbNextHit: () => this.health.addShield(),
@@ -314,11 +301,6 @@ export class Game {
 
   private adaptiveWeights(): KeyWeights {
     return { weightOf: (key) => keyWeight(key, this.keys.statOf(key)) };
-  }
-
-  private placeCameraForIntro(): void {
-    this.camera.position.copy(CAMERA_POSITION).multiplyScalar(CAMERA_INTRO_SCALE);
-    this.camera.lookAt(this.cameraTarget);
   }
 
   private releaseEnemies(): void {
@@ -349,7 +331,7 @@ export class Game {
     this.timer.update();
     const delta = Math.min(this.timer.getDelta(), MAX_FRAME_DELTA);
     this.tick(delta);
-    this.labels.position(this.enemies, this.camera, renderHost.viewport, this.insets);
+    this.labels.position(this.enemies, this.rig.camera, renderHost.viewport, this.insets);
     renderHost.render();
     if (this.isPlaying) renderHost.recordFrame(delta);
   };
@@ -360,7 +342,7 @@ export class Game {
     this.player.update(delta, this.elapsed);
     this.particles.update(delta);
     this.mechanics.update(delta, this.elapsed);
-    this.updateCamera(delta);
+    this.rig.update(this.elapsed, delta);
     if (this.finished) return;
     const worldDelta = delta * this.timeScale.value;
     if (!this.inIntro) this.spawnIfDue(worldDelta);
@@ -377,27 +359,9 @@ export class Game {
     for (const enemy of [...this.enemies]) {
       if (this.finished) return;
       if (!this.enemies.includes(enemy)) continue;
-      enemy.update(delta, this.elapsed, this.camera.position);
+      enemy.update(delta, this.elapsed, this.rig.camera.position);
       if (enemy.distanceToCenter < REACH_DISTANCE) this.enemyReached(enemy);
     }
-  }
-
-  private updateCamera(delta: number): void {
-    const introProgress = Math.min(1, this.elapsed / CAMERA_INTRO_DURATION);
-    const eased = 1 - Math.pow(1 - introProgress, 3);
-    const scale = CAMERA_INTRO_SCALE - (CAMERA_INTRO_SCALE - 1) * eased;
-    const sway = Math.sin(this.elapsed * CAMERA_SWAY_SPEED) * CAMERA_SWAY;
-    this.camera.position.copy(CAMERA_POSITION).multiplyScalar(scale);
-    this.camera.position.x += sway;
-    this.shake.apply(this.camera.position, delta);
-    this.camera.lookAt(this.cameraTarget);
-  }
-
-  private fitCamera({ width, height }: Viewport): void {
-    if (width <= 0 || height <= 0) return;
-    const framing = frameBoard({ width, height, ...this.insets });
-    this.camera.fov = framing.fov;
-    this.camera.setViewOffset(width, framing.fullHeight, 0, framing.offsetY, width, height);
   }
 
   private spawnIfDue(delta: number): void {
@@ -497,7 +461,7 @@ export class Game {
   };
 
   private hurtHero(): void {
-    this.shake.start(SHAKE_AMPLITUDE, SHAKE_DURATION);
+    this.rig.shake(SHAKE_AMPLITUDE, SHAKE_DURATION);
     this.player.hurt();
   }
 
