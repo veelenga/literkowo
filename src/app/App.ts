@@ -1,35 +1,21 @@
 import { music } from '../audio/Music';
 import type { MusicMood } from '../audio/music/specs';
 import { sfx } from '../audio/Sfx';
-import { regionOf, type Level } from '../course/catalog';
-import { levelCoins } from '../course/coins';
-import { courseFor } from '../course/course';
-import {
-  markStorySeen,
-  recordResult,
-  storyAfter,
-  storyBefore,
-  type Attempt,
-} from '../course/progress';
-import { starsFor } from '../course/scoring';
+import { regionOf } from '../course/catalog';
 import { hasCoarsePointer } from '../game/deviceProbe';
-import type { Game, GameResult } from '../game/Game';
-import { levelPlan } from '../game/LevelPlan';
+import type { Game } from '../game/Game';
 import type { PhaseKind } from '../game/RunPlan';
 import type { SessionStats } from '../game/SessionStats';
 import { i18n } from '../i18n/i18n';
 import { requestPersistentStorage } from '../persistentStorage';
 import type { Profile } from '../profiles/Profile';
 import { ProfileStore } from '../profiles/ProfileStore';
-import type { StoryScene } from '../story/story';
 import { el } from '../ui/dom';
 import { Callouts } from '../ui/Callouts';
 import { Hud } from '../ui/Hud';
 import { usesBuiltInKeyboard } from '../ui/formFactor';
 import { KeyboardHint } from '../ui/KeyboardHint';
 import { KEYBOARD_LAYOUTS } from '../ui/keyboardLayout';
-import { learnCard } from '../ui/LearnCard';
-import { levelResult } from '../ui/LevelResult';
 import { loadErrorOverlay } from '../ui/LoadErrorOverlay';
 import { Notice } from '../ui/Notice';
 import { OverlaySlot, type Overlay } from '../ui/overlay';
@@ -39,7 +25,6 @@ import { rotateHint } from '../ui/RotateHint';
 import { SettingsScreen, settingsOverlay } from '../ui/SettingsScreen';
 import { ShopScreen, type ShopExit, type ShopTab } from '../ui/ShopScreen';
 import { watchStageInsets } from '../ui/stageInsets';
-import { storyCard } from '../ui/StoryCard';
 import { TouchTyping } from '../ui/TouchTyping';
 import { WorldMap } from '../ui/WorldMap';
 import {
@@ -51,13 +36,12 @@ import {
   unlockAudioOnFirstInput,
 } from './devShortcut';
 import { ArenaFlow, type Screen } from './ArenaFlow';
-import { earnedOf } from './earned';
+import { CourseFlow } from './CourseFlow';
 import type { GameRun } from './GameRun';
 import { loadGameModule, prefetchGameModule, type GameModule } from './gameModule';
 import { PageAttention } from './PageAttention';
 import { PlacementFlow } from './PlacementFlow';
 import { progressBackupActions } from './progressBackup';
-import { runCoinsOf, runTotalsOf } from './runTotals';
 import { saveWatch } from './saveWatch';
 
 const COMBO_FOR_FULL_INTENSITY = 20;
@@ -89,6 +73,15 @@ export class App {
     save: (profile) => this.save(profile),
     profiles: () => this.store.all(),
     startTest: (profile) => this.placement.start(profile),
+  });
+  private readonly course = new CourseFlow({
+    showMap: (profile) => this.showMap(profile),
+    showShop: (profile, exit, tab) => this.showShop(profile, exit, tab),
+    startRun: (profile, run) => this.startRun(profile, run),
+    clearScreen: () => this.leaveScreen(),
+    openOverlay: (overlay) => this.overlays.open(overlay),
+    dismissThen: (next) => this.dismissThen(next),
+    save: (profile) => this.save(profile),
   });
   private readonly placement = new PlacementFlow({
     showMap: (profile) => this.showMap(profile),
@@ -128,7 +121,7 @@ export class App {
 
   private devStart(profile: Profile): (() => void) | undefined {
     const level = devLevelFromUrl();
-    if (level) return () => this.startLevel(profile, level);
+    if (level) return () => this.course.start(profile, level);
     const arena = devArenaFromUrl(profile.wordLanguage);
     if (arena) return () => this.arena.start(profile, arena);
     const daily = devDailyFromUrl(profile.wordLanguage);
@@ -159,7 +152,7 @@ export class App {
     this.showMenu(
       () =>
         new WorldMap(profile, {
-          onPlay: (level) => this.openLevel(profile, level),
+          onPlay: (level) => this.course.open(profile, level),
           onSwitchPlayer: () => this.showProfiles(),
           onShop: () => this.showShop(profile, this.backToMap()),
           onArena: () => this.showArena(profile),
@@ -206,34 +199,6 @@ export class App {
 
   private backToMap(): ShopExit {
     return { onBack: (current) => this.showMap(current) };
-  }
-
-  private openLevel(profile: Profile, level: Level): void {
-    const story = storyBefore(profile, level);
-    if (!story) return this.showLearnCard(profile, level);
-    const updated = this.save(markStorySeen(profile, story.id));
-    this.showStory(story, () => this.showLearnCard(updated, level));
-  }
-
-  private showLearnCard(profile: Profile, level: Level): void {
-    if (level.isBoss) return this.startLevel(profile, level);
-    this.overlays.open(
-      learnCard(level, profile.keyStats, {
-        onStart: this.dismissThen(() => this.startLevel(profile, level)),
-        onClose: this.dismissThen(() => this.showMap(profile)),
-      }),
-    );
-  }
-
-  private startLevel(profile: Profile, level: Level): void {
-    this.startRun(profile, {
-      level,
-      plan: levelPlan(level, profile.wordLanguage),
-      rotateHint: courseFor(profile.wordLanguage).isFirst(level),
-      canEnd: false,
-      onFinished: (result) => this.finishLevel(profile, level, result),
-      restart: () => this.startLevel(profile, level),
-    });
   }
 
   private startRun(profile: Profile, run: GameRun): void {
@@ -369,51 +334,6 @@ export class App {
     );
   }
 
-  private finishLevel(profile: Profile, level: Level, result: GameResult): void {
-    const stars = starsFor(result.accuracy, result.won);
-    const coins = levelCoins({ ...runCoinsOf(result), won: result.won, stars });
-    const updated = this.recordAttempt(profile, level, attemptOf(result, stars, coins));
-    const next = openNext(updated, level);
-    const leave = (then: (current: Profile) => void) =>
-      this.dismissThen(() => this.afterLevel(updated, level, stars, then));
-    this.overlays.open(
-      levelResult(result, stars, earnedOf(profile, updated, result.xp, coins), {
-        onNext: next ? leave((current) => this.openLevel(current, next)) : undefined,
-        onRetry: this.dismissThen(() => this.openLevel(updated, level)),
-        onMap: leave((current) => this.showMap(current)),
-        onShop: (tab) => leave((current) => this.showShop(current, this.backToMap(), tab))(),
-      }),
-    );
-  }
-
-  private recordAttempt(profile: Profile, level: Level, attempt: Attempt): Profile {
-    let updated = profile;
-    try {
-      updated = recordResult(profile, level, attempt);
-      this.store.update(updated);
-    } catch (error) {
-      reportError(error);
-    }
-    return updated;
-  }
-
-  private afterLevel(
-    profile: Profile,
-    level: Level,
-    stars: number,
-    then: (current: Profile) => void,
-  ): void {
-    const story = storyAfter(profile, level, stars);
-    if (!story) return then(profile);
-    const updated = this.save(markStorySeen(profile, story.id));
-    this.showStory(story, () => then(updated));
-  }
-
-  private showStory(scene: StoryScene, then: () => void): void {
-    this.leaveScreen();
-    this.overlays.open(storyCard(scene, this.dismissThen(then)));
-  }
-
   private latest(profile: Profile): Profile {
     return this.store.find(profile.id) ?? profile;
   }
@@ -460,20 +380,4 @@ function musicMood(kind: PhaseKind): MusicMood {
 function musicIntensity(stats: SessionStats): number {
   if (stats.fever) return FULL_INTENSITY;
   return Math.min(FULL_INTENSITY, stats.combo / COMBO_FOR_FULL_INTENSITY);
-}
-
-function attemptOf(result: GameResult, stars: number, coins: number): Attempt {
-  return {
-    ...runTotalsOf(result),
-    stars,
-    accuracy: result.accuracy,
-    wpm: result.wpm,
-    coins,
-  };
-}
-
-function openNext(profile: Profile, level: Level): Level | undefined {
-  const course = courseFor(profile.wordLanguage);
-  const next = course.next(level);
-  return next && course.isUnlocked(next, profile) ? next : undefined;
 }

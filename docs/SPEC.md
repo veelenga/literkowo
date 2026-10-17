@@ -90,7 +90,7 @@ Every review in the table ends with a mini boss.
 
 ## Level flow
 
-Owners: `src/app/App.ts`, `src/course/progress.ts`, `src/game/RunPlan.ts`, `src/game/LevelPlan.ts`, `src/game/Game.ts`, `src/game/HeroHealth.ts` (lives, shields, guards and the hit cost), `src/game/PhaseRunner.ts` (phases, spawn timing, time limits and progress).
+Owners: `src/app/CourseFlow.ts` (story, learn card, result card and their actions), `src/app/App.ts` (the run screen and the pause card), `src/course/progress.ts`, `src/game/RunPlan.ts`, `src/game/LevelPlan.ts`, `src/game/Game.ts`, `src/game/HeroHealth.ts` (lives, shields, guards and the hit cost), `src/game/PhaseRunner.ts` (phases, spawn timing, time limits and progress).
 
 The game runs a run plan: its phases by index, its lives, what a hit on the hero costs (`hitCost`: a life, or only the combo), its XP factor, and the keys and word lengths of each phase (`src/course/wordRules.ts`). A phase can have a time limit in seconds (`seconds`): it then ends when the time is up instead of when its words are cleared. A whole plan can have a time limit too (`seconds` on the plan): the run then ends as won when that much play time has passed, the HUD progress shows the time left of the run instead of the phase, and `GameResult.seconds` holds the play time without the intro. A plan can stop early from the records of the finished phases (`continuesAfter`). A plan can carry run modifiers, see [Run modifiers](#run-modifiers). `src/game/LevelPlan.ts` builds the plan of a course level.
 
