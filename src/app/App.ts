@@ -84,6 +84,7 @@ export class App {
     save: (profile) => this.save(profile),
   });
   private game: Game | undefined;
+  private run: GameRun | undefined;
   private touch: TouchTyping | undefined;
   private pauseLayer: Overlay | undefined;
   private levelToken = 0;
@@ -206,6 +207,7 @@ export class App {
       level,
       plan: levelPlan(level, profile.wordLanguage),
       rotateHint: courseFor(profile.wordLanguage).isFirst(level),
+      canEnd: false,
       onFinished: (result) => this.finishLevel(profile, level, result),
       restart: () => this.startLevel(profile, level),
     });
@@ -229,7 +231,7 @@ export class App {
     const hud = new Hud(
       profile,
       {
-        onMap: () => this.showMap(profile),
+        onMap: () => (run.canEnd ? this.game?.pause() : this.showMap(profile)),
         onPause: () => this.game?.togglePause(),
         onKeyboard: () => this.touch?.toggleNativeKeyboard(),
       },
@@ -262,6 +264,7 @@ export class App {
       keyStats: profile.keyStats,
       equipped: profile.equipped,
     };
+    this.run = run;
     this.game = new Game(stage, config, {
       onStats: (stats, lives) => {
         hud.update(stats, lives);
@@ -307,11 +310,16 @@ export class App {
   }
 
   private showPause(): void {
+    const onEnd = this.run?.canEnd ? () => this.game?.endRun() : undefined;
     this.openPauseLayer(
       pauseOverlay(
-        () => this.game?.togglePause(),
+        {
+          onResume: () => this.game?.togglePause(),
+          onSettings: () =>
+            this.openPauseLayer(settingsOverlay({ onBack: () => this.showPause() })),
+          onEnd,
+        },
         this.game?.keyStats ?? {},
-        () => this.openPauseLayer(settingsOverlay({ onBack: () => this.showPause() })),
       ),
     );
   }
@@ -415,6 +423,7 @@ export class App {
     this.levelToken += 1;
     this.game?.destroy();
     this.game = undefined;
+    this.run = undefined;
     this.touch?.dispose();
     this.touch = undefined;
     this.pauseLayer = undefined;

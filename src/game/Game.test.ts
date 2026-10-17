@@ -81,6 +81,7 @@ const DIFFICULTY = 'fast';
 const CHARACTER = 'a';
 const LANGUAGE = 'pl';
 const KEY_GAP_MS = 300;
+const FINISH_DELAY_MS = 1100;
 const SLOWER_KEY_GAP_MS = 900;
 
 function typistEvents(onNextKey: (char: string | undefined) => void): GameEvents {
@@ -100,16 +101,14 @@ function required<T>(value: T | undefined): T {
   return value;
 }
 
-function play(seed: number, keyGapMs = KEY_GAP_MS): SpawnRecord[] {
-  recorder.spawns = [];
-  let nextKey: string | undefined;
+function createGame(seed: number, events: GameEvents): Game {
   const keySet = required(keySetById(KEY_SET, LANGUAGE));
   const plan = {
     ...endlessPlan({ keySet, difficulty: required(difficultyById(DIFFICULTY)) }),
     lives: MANY_LIVES,
     seed,
   };
-  const game = new Game(
+  return new Game(
     document.createElement('div'),
     {
       character: CHARACTER,
@@ -120,6 +119,15 @@ function play(seed: number, keyGapMs = KEY_GAP_MS): SpawnRecord[] {
       keyStats: {},
       equipped: {},
     },
+    events,
+  );
+}
+
+function play(seed: number, keyGapMs = KEY_GAP_MS): SpawnRecord[] {
+  recorder.spawns = [];
+  let nextKey: string | undefined;
+  const game = createGame(
+    seed,
     typistEvents((char) => (nextKey = char)),
   );
   game.start();
@@ -149,6 +157,33 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
+});
+
+describe('Game ending a run', () => {
+  it('reports the run as lost with the waves cleared so far and leaves the pause', () => {
+    const events = { ...typistEvents(() => undefined), onPause: vi.fn(), onFinished: vi.fn() };
+    const game = createGame(SEED, events);
+    game.start();
+    vi.advanceTimersByTime(KEY_GAP_MS);
+    game.pause();
+    game.endRun();
+    vi.advanceTimersByTime(FINISH_DELAY_MS);
+    expect(events.onPause.mock.calls).toEqual([[true], [false]]);
+    expect(events.onFinished).toHaveBeenCalledOnce();
+    expect(events.onFinished.mock.calls[0][0]).toMatchObject({ won: false, phasesCleared: 0 });
+    game.destroy();
+  });
+
+  it('ends a run only once', () => {
+    const events = { ...typistEvents(() => undefined), onFinished: vi.fn() };
+    const game = createGame(SEED, events);
+    game.start();
+    game.endRun();
+    game.endRun();
+    vi.advanceTimersByTime(FINISH_DELAY_MS);
+    expect(events.onFinished).toHaveBeenCalledOnce();
+    game.destroy();
+  });
 });
 
 describe('Game with a seed', () => {

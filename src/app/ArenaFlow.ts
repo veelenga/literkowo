@@ -73,6 +73,7 @@ export class ArenaFlow {
       level: choice.keySet.bossLevel,
       plan: endlessPlan(choice),
       rotateHint: false,
+      canEnd: true,
       onFinished: (result) => this.finish(profile, choice, result),
       restart: () => this.start(profile, choice),
     });
@@ -87,6 +88,7 @@ export class ArenaFlow {
       level: start.keySet.bossLevel,
       plan: dailyPlan(choice),
       rotateHint: false,
+      canEnd: false,
       onFinished: (result) => this.finishDaily(profile, start, choice, result),
       restart: () => this.startDaily(profile, start),
     });

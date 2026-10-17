@@ -57,6 +57,7 @@ export class PlacementFlow {
       level: placementLevel(stages),
       plan: placementPlan(stages),
       rotateHint: false,
+      canEnd: false,
       onFinished: (result) => this.finish(profile, stages, result),
       restart: () => this.start(profile),
     });

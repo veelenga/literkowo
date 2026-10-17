@@ -6,6 +6,7 @@ export interface GameRun {
   readonly level: Level;
   readonly plan: RunPlan;
   readonly rotateHint: boolean;
+  readonly canEnd: boolean;
   readonly onFinished: (result: GameResult) => void;
   readonly restart: () => void;
 }

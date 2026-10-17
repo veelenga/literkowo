@@ -255,6 +255,16 @@ export class Game {
     this.events.onPause(this.paused);
   }
 
+  pause(): void {
+    if (!this.paused) this.togglePause();
+  }
+
+  endRun(): void {
+    if (this.finished) return;
+    if (this.paused) this.togglePause();
+    this.conclude(false);
+  }
+
   destroy(): void {
     this.running = false;
     cancelAnimationFrame(this.frame);
@@ -665,11 +675,15 @@ export class Game {
 
   private finish(won: boolean): void {
     if (this.finished) return;
+    if (won) sfx.levelComplete();
+    else sfx.levelFailed();
+    this.conclude(won);
+  }
+
+  private conclude(won: boolean): void {
     this.finished = true;
     this.stats.freeze();
     this.events.onNextKey(undefined);
-    if (won) sfx.levelComplete();
-    else sfx.levelFailed();
     window.setTimeout(() => this.reportResult(won), FINISH_DELAY_MS);
   }
 
