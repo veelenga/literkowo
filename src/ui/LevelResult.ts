@@ -4,17 +4,15 @@ import { format } from '../i18n/format';
 import { i18n } from '../i18n/i18n';
 import { Counter, el, icon, prefersReducedMotion } from './dom';
 import { ResultKeys } from './mastery';
-import { createOverlay, KEY_READY_MS, onWindowKeyAfter, type Overlay } from './overlay';
+import { createOverlay, onCardKeys, PRIMARY_KEY, type Overlay } from './overlay';
 import { ResultProgress, type EarnedRewards } from './ResultProgress';
 import { treasuresNote, type OpenShop, type Treasures } from './resultTreasures';
-import { primaryHint } from './shortcutHint';
+import { PRIMARY_BUTTON_CLASS, primaryButton } from './shortcutHint';
 
 const STAR_INTRO_MS = 240;
 const STAR_STAGGER_MS = 220;
 const COUNTER_START_MS = STAR_INTRO_MS + MAX_STARS * STAR_STAGGER_MS;
 const COUNTER_DURATION_MS = 900;
-const PRIMARY_KEY = 'Enter';
-const PRIMARY_BUTTON_CLASS = 'button button-primary button-large';
 
 export interface LevelRewards extends EarnedRewards {
   readonly treasures: Treasures;
@@ -84,7 +82,7 @@ export function levelResult(
   );
   return createOverlay(
     element,
-    runOnPrimaryKey(choices.primary),
+    onCardKeys(new Map([[PRIMARY_KEY, choices.primary.run]])),
     () => window.clearTimeout(revealTimer),
     () => progress.stop(),
     () => keys.stop(),
@@ -156,20 +154,5 @@ function actionButton(action: ResultAction, isPrimary: boolean): HTMLElement {
   if (!isPrimary) {
     return el('button', { class: action.secondaryClass, text: action.label, onClick: action.run });
   }
-  return el(
-    'button',
-    { class: PRIMARY_BUTTON_CLASS, onClick: action.run },
-    action.label,
-    primaryHint(),
-  );
-}
-
-function runOnPrimaryKey(action: ResultAction): () => void {
-  const stopListening = onWindowKeyAfter(KEY_READY_MS, (event) => {
-    if (event.key !== PRIMARY_KEY || event.repeat) return;
-    event.preventDefault();
-    stopListening();
-    action.run();
-  });
-  return stopListening;
+  return primaryButton(action.label, action.run);
 }

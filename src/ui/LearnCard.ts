@@ -8,7 +8,7 @@ import { handsDiagram } from './HandsDiagram';
 import { levelKindLabel } from './levelKind';
 import { keyStatus } from './mastery';
 import { createOverlay, KEY_READY_MS, onWindowKeyAfter, type Overlay } from './overlay';
-import { primaryHint } from './shortcutHint';
+import { primaryButton } from './shortcutHint';
 
 const KEY_STAGGER_MS = 90;
 const ALT_LABEL = 'Alt';
@@ -37,16 +37,7 @@ export function learnCard(level: Level, keyStats: KeyStats, actions: LearnCardAc
         ...[...level.focusKeys].map((char, index) => keycap(char, index, keyStats[char])),
       ),
       ...guidance(level),
-      el(
-        'div',
-        { class: 'actions' },
-        el(
-          'button',
-          { class: 'button button-primary button-large', onClick: onStart },
-          t.letsGo,
-          primaryHint(),
-        ),
-      ),
+      el('div', { class: 'actions' }, primaryButton(t.letsGo, onStart)),
     ),
   );
   const keyActions = new Map([

@@ -7,11 +7,11 @@ import { i18n } from '../../i18n/i18n';
 import { confetti } from '../confetti';
 import { el, prefersReducedMotion } from '../dom';
 import { statTile, type LevelRewards } from '../LevelResult';
-import { createOverlay, type Overlay } from '../overlay';
+import { CLOSE_KEY, createOverlay, onCardKeys, PRIMARY_KEY, type Overlay } from '../overlay';
 import { ResultProgress } from '../ResultProgress';
 import { treasuresNote, type OpenShop } from '../resultTreasures';
-import { primaryHint } from '../shortcutHint';
-import { CLOSE_KEY, onCardKeys, stageChips, START_KEY } from './placementParts';
+import { primaryButton } from '../shortcutHint';
+import { stageChips } from './placementParts';
 
 const REVEAL_DELAY_MS = 600;
 
@@ -63,7 +63,7 @@ export function placementResult(
     el('div', { class: 'overlay' }, panel),
     onCardKeys(
       new Map([
-        [START_KEY, actions.onMap],
+        [PRIMARY_KEY, actions.onMap],
         [CLOSE_KEY, actions.onMap],
       ]),
     ),
@@ -96,11 +96,6 @@ function actionsRow({ onMap, onArena }: PlacementResultActions): HTMLElement {
     'div',
     { class: 'actions result-actions' },
     arena,
-    el(
-      'button',
-      { class: 'button button-primary button-large', onClick: onMap },
-      i18n.t.features.placement.toMap,
-      primaryHint(),
-    ),
+    primaryButton(i18n.t.features.placement.toMap, onMap),
   );
 }

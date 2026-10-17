@@ -24,7 +24,7 @@ import { stageChips } from '../placement/placementParts';
 import { coinPill } from '../progression';
 import { ShopHero } from '../ShopHero';
 import { shopLink } from '../shopLink';
-import { ESCAPE_LABEL, primaryHint, shortcutHint } from '../shortcutHint';
+import { ESCAPE_LABEL, primaryButton, shortcutHint } from '../shortcutHint';
 import { hintedLockBadge, shopIcon } from '../shopParts';
 import { arenaIcon, difficultyName, medalBadge, waveLabel } from './arenaParts';
 import { dailyCard, dailyIcon, isDailyPinned } from './DailyCard';
@@ -378,12 +378,7 @@ function modeIcon(mode: ArenaMode): SVGSVGElement {
 }
 
 function playButton(onPlay: () => void): HTMLElement {
-  return el(
-    'button',
-    { class: 'button button-primary button-large arena-play', onClick: onPlay },
-    i18n.t.play,
-    primaryHint(),
-  );
+  return primaryButton(i18n.t.play, onPlay, 'arena-play');
 }
 
 function field(area: string, label: string, ...children: Array<HTMLElement | null>): HTMLElement {
