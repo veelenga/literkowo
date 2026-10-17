@@ -1,10 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { KEYS_PER_REVIEW, LEVELS, REGIONS, regionsFor, type Level } from './catalog';
+import {
+  KEYS_PER_REVIEW,
+  LEVELS,
+  REGIONS,
+  regionById,
+  regionName,
+  regionOrder,
+  regionsFor,
+  type Level,
+} from './catalog';
 import { courseFor } from './course';
 
 const POLISH_LEVELS = 99;
 const ENGLISH_LEVELS = 75;
 const FIRST_KEYS = 'fj';
+const UNKNOWN_REGION = 'nowhere';
 
 function keyLevels(levels: readonly Level[]): Level[] {
   return levels.filter((level) => level.kind === 'learn' || level.kind === 'practice');
@@ -58,6 +68,17 @@ describe('catalog', () => {
       region.levels.forEach((level, index) => expect(level.id).toBe(`${region.id}-${index + 1}`));
     }
     LEVELS.forEach((level, index) => expect(level.order).toBe(index));
+  });
+
+  it('looks up a region by its id', () => {
+    REGIONS.forEach((region, index) => {
+      expect(regionById(region.id)).toBe(region);
+      expect(regionOrder(region.id)).toBe(index);
+      expect(regionName(region.id, 'uk')).toBe(region.name.uk);
+    });
+    expect(regionById(UNKNOWN_REGION)).toBeUndefined();
+    expect(regionOrder(UNKNOWN_REGION)).toBe(-1);
+    expect(regionName(UNKNOWN_REGION, 'pl')).toBe(UNKNOWN_REGION);
   });
 
   it('hides the Polish letters region for English profiles', () => {

@@ -1,7 +1,7 @@
 import { GOLD } from '../arena/medals';
 import { bestEndlessMedal, bestEndlessWave } from '../arena/record';
 import { STARTER_SKINS, type Profile } from '../profiles/Profile';
-import { LEVELS, REGIONS, type Level } from './catalog';
+import { LEVELS, REGIONS, regionById, type Level } from './catalog';
 import { courseFor } from './course';
 import { masteredShare, regionKeys } from './mastery';
 import { TROPHIES, type Trophy, type TrophyRule } from './shop';
@@ -100,7 +100,7 @@ function measure(profile: Profile, rule: MeasuredRule): TrophyProgress {
 }
 
 function regionLevels(regionId: string): readonly Level[] {
-  return REGIONS.find((region) => region.id === regionId)?.levels ?? [];
+  return regionById(regionId)?.levels ?? [];
 }
 
 function levelsWithStars(

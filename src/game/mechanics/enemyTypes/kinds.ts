@@ -1,4 +1,4 @@
-import { REGIONS, type Level } from '../../../course/catalog';
+import { regionOrder, type Level } from '../../../course/catalog';
 import { allowedKeysFor, courseFor } from '../../../course/course';
 import type { WordLanguage } from '../../../profiles/Profile';
 import type { RandomSource } from '../../../random';
@@ -83,6 +83,7 @@ const UNLOCKS: Readonly<Record<EnemyKind, Unlock>> = {
   nest: { key: 'ł', fallback: { key: 'b' } },
   thief: { key: 'r' },
 };
+const FIRST_REGION_ORDER = 0;
 const FIRST_REGION_CAP = 1;
 const LATER_REGION_CAP = 3;
 
@@ -94,7 +95,7 @@ export function unlockedKinds(level: Level, language: WordLanguage): EnemyKind[]
 }
 
 export function boardCap(level: Level): number {
-  return regionIndex(level.regionId) === 0 ? FIRST_REGION_CAP : LATER_REGION_CAP;
+  return regionOrder(level.regionId) === FIRST_REGION_ORDER ? FIRST_REGION_CAP : LATER_REGION_CAP;
 }
 
 export function availableKinds(context: KindsContext): EnemyKind[] {
@@ -137,8 +138,4 @@ function reachableUnlock(unlock: Unlock, language: WordLanguage): Unlock {
 
 function isTaught(key: string, language: WordLanguage): boolean {
   return courseFor(language).levels.some((level) => level.newKeys.includes(key));
-}
-
-function regionIndex(regionId: string): number {
-  return REGIONS.findIndex((region) => region.id === regionId);
 }

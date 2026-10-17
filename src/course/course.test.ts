@@ -173,6 +173,7 @@ describe('courseFor', () => {
 
   it('reads a placement in a region the course does not have as the last region before it', () => {
     const progress = courseProgress({}, 'wyspa');
+    expect(english.placedRegion(progress)?.id).toBe('jaskinia');
     expect(english.levels.every((candidate) => english.isUnlocked(candidate, progress))).toBe(true);
     expect(english.isSkipped(level('jaskinia-24'), progress)).toBe(true);
     expect(english.current(progress)?.id).toBe('jaskinia-1');
