@@ -7,13 +7,11 @@ import { el, fingerColor } from './dom';
 import { handsDiagram } from './HandsDiagram';
 import { levelKindLabel } from './levelKind';
 import { keyStatus } from './mastery';
-import { createOverlay, KEY_READY_MS, onWindowKeyAfter, type Overlay } from './overlay';
+import { CLOSE_KEY, createOverlay, onCardKeys, PRIMARY_KEY, type Overlay } from './overlay';
 import { primaryButton } from './shortcutHint';
 
 const KEY_STAGGER_MS = 90;
 const ALT_LABEL = 'Alt';
-const START_KEY = 'Enter';
-const CLOSE_KEY = 'Escape';
 
 export interface LearnCardActions {
   readonly onStart: () => void;
@@ -41,16 +39,10 @@ export function learnCard(level: Level, keyStats: KeyStats, actions: LearnCardAc
     ),
   );
   const keyActions = new Map([
-    [START_KEY, onStart],
+    [PRIMARY_KEY, onStart],
     [CLOSE_KEY, onClose],
   ]);
-  const stopListening = onWindowKeyAfter(KEY_READY_MS, (event) => {
-    const action = keyActions.get(event.key);
-    if (!action) return;
-    event.preventDefault();
-    action();
-  });
-  return createOverlay(element, stopListening);
+  return createOverlay(element, onCardKeys(keyActions));
 }
 
 function guidance(level: Level): Element[] {
