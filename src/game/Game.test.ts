@@ -7,6 +7,7 @@ import { regionOf } from '../course/catalog';
 import type { Enemy } from './Enemy';
 import { Game, themeFor, type GameEvents } from './Game';
 import type { Mechanic, MechanicContext } from './mechanics/Mechanic';
+import type { RunPlan } from './RunPlan';
 
 interface SpawnRecord {
   readonly index: number | undefined;
@@ -17,6 +18,7 @@ interface SpawnRecord {
 
 const recorder = vi.hoisted(() => ({ spawns: [] as SpawnRecord[] }));
 const screen = vi.hoisted(() => ({ width: 1280, height: 720 }));
+const contexts = vi.hoisted((): MechanicContext[] => []);
 
 vi.mock('./RenderHost', () => ({
   renderHost: {
@@ -49,10 +51,10 @@ vi.mock('three/addons/loaders/GLTFLoader.js', () => ({
 vi.mock('./mechanics', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./mechanics')>();
   return {
-    createMechanics: (context: MechanicContext): Mechanic[] => [
-      ...actual.createMechanics(context),
-      spawnRecorder(),
-    ],
+    createMechanics: (context: MechanicContext): Mechanic[] => {
+      contexts.push(context);
+      return [...actual.createMechanics(context), spawnRecorder()];
+    },
   };
 });
 
@@ -101,12 +103,13 @@ function required<T>(value: T | undefined): T {
   return value;
 }
 
-function createGame(seed: number, events: GameEvents): Game {
+function createGame(seed: number, events: GameEvents, rules: Partial<RunPlan> = {}): Game {
   const keySet = required(keySetById(KEY_SET, LANGUAGE));
   const plan = {
     ...endlessPlan({ keySet, difficulty: required(difficultyById(DIFFICULTY)) }),
     lives: MANY_LIVES,
     seed,
+    ...rules,
   };
   return new Game(
     document.createElement('div'),
@@ -139,6 +142,18 @@ function play(seed: number, keyGapMs = KEY_GAP_MS): SpawnRecord[] {
   return [...recorder.spawns];
 }
 
+function gameContext(): MechanicContext {
+  return required(contexts.at(-1));
+}
+
+function hitEvents() {
+  return {
+    ...typistEvents(() => undefined),
+    onStats: vi.fn<GameEvents['onStats']>(),
+    onFinished: vi.fn<GameEvents['onFinished']>(),
+  };
+}
+
 function scriptSpawns(records: readonly SpawnRecord[]): SpawnRecord[] {
   const firsts = new Map<number, SpawnRecord>();
   for (const record of records) {
@@ -148,6 +163,7 @@ function scriptSpawns(records: readonly SpawnRecord[]): SpawnRecord[] {
 }
 
 beforeEach(() => {
+  contexts.length = 0;
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
   vi.useFakeTimers({
     toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'performance', 'setTimeout'],
@@ -182,6 +198,61 @@ describe('Game ending a run', () => {
     game.endRun();
     vi.advanceTimersByTime(FINISH_DELAY_MS);
     expect(events.onFinished).toHaveBeenCalledOnce();
+    game.destroy();
+  });
+});
+
+describe('Game hits on the hero', () => {
+  it('ends the run as lost when the last life is gone', () => {
+    const events = hitEvents();
+    const game = createGame(SEED, events, { lives: 1 });
+    game.start();
+    gameContext().loseLife();
+    vi.advanceTimersByTime(FINISH_DELAY_MS);
+    expect(events.onStats.mock.lastCall?.[1]).toBe(0);
+    expect(events.onFinished).toHaveBeenCalledOnce();
+    expect(events.onFinished.mock.calls[0][0]).toMatchObject({ won: false });
+    game.destroy();
+  });
+
+  it('keeps the heart of a guarded hit and counts it as a mistake', () => {
+    const events = hitEvents();
+    const game = createGame(SEED, events, { lives: 1 });
+    game.start();
+    const context = gameContext();
+    context.guardNextHit();
+    context.loseLife();
+    vi.advanceTimersByTime(FINISH_DELAY_MS);
+    expect(events.onStats.mock.lastCall?.[1]).toBe(1);
+    expect(context.guards).toBe(0);
+    expect(context.stats.mistakes).toBe(1);
+    expect(events.onFinished).not.toHaveBeenCalled();
+    game.destroy();
+  });
+
+  it('keeps every life when a hit only costs the combo', () => {
+    const events = hitEvents();
+    const game = createGame(SEED, events, { lives: 1, hitCost: 'combo' });
+    game.start();
+    const context = gameContext();
+    context.loseLife();
+    vi.advanceTimersByTime(FINISH_DELAY_MS);
+    expect(events.onStats.mock.lastCall?.[1]).toBe(1);
+    expect(context.stats.mistakes).toBe(0);
+    expect(events.onFinished).not.toHaveBeenCalled();
+    game.destroy();
+  });
+
+  it('ignores hits once the run is over', () => {
+    const events = hitEvents();
+    const game = createGame(SEED, events, { lives: 2 });
+    game.start();
+    const context = gameContext();
+    context.loseLife();
+    game.endRun();
+    context.loseLife();
+    expect(context.restoreLife()).toBe(false);
+    expect(events.onStats.mock.lastCall?.[1]).toBe(1);
     game.destroy();
   });
 });
