@@ -7,7 +7,16 @@ import { plant, shapes, variants } from '../planting';
 import type { Rng } from '../random';
 import { Occupancy, scatter } from '../scatter';
 import type { BiomeContext, Landscape } from '../types';
-import { addParticles, addPebbles, arenaRise, SWAY, tints, weightIf } from './common';
+import {
+  addBoulders,
+  addParticles,
+  addPebbles,
+  arenaRise,
+  SWAY,
+  tints,
+  weightIf,
+  type BoulderOptions,
+} from './common';
 
 const CELL = 1.2;
 const STEP = 0.8;
@@ -19,7 +28,6 @@ const SNOWMAN_SPOT = { x: 12.6, z: -10.4 };
 const SNOWMAN_CLEARANCE = 1.2;
 const POND_CLEARANCE = 0.6;
 const PINES = 85;
-const BOULDERS = 28;
 const SPIRES = 12;
 const SPIRE_SIZE = 2.2;
 const SPIRE_MIN_RADIUS = 19;
@@ -47,6 +55,16 @@ const SNOW_PINE: props.PinePalette = {
   snow: 0xf7fbff,
 };
 const BOULDER: props.RockPalette = { dark: 0x66748a, light: 0xa8b5c7, cap: 0xf7fbff };
+const BOULDERS: BoulderOptions = {
+  palette: BOULDER,
+  capFrom: SNOW_CAP_FROM,
+  variants: 3,
+  count: 28,
+  spacing: 2,
+  scale: [0.9, 2.2],
+  sink: 0.2,
+  accept: (x, z) => weightIf(tallPropAllowed(x, z, 0.8), viewWeight(x, z)),
+};
 const DRIFT: props.RockPalette = { dark: 0xd7e3f4, light: 0xffffff };
 const ICE_ROCK: props.RockPalette = { dark: 0x66748a, light: 0xdfe9f7 };
 const SPIRE = { top: 0xf2f7ff, side: 0x7d8ba2, band: 0x6c7990 };
@@ -105,7 +123,7 @@ function decorate(context: BiomeContext, land: Mountains): void {
   occupancy.reserve(POND.x, POND.z, POND.radius + POND_CLEARANCE);
   occupancy.reserve(SNOWMAN_SPOT.x, SNOWMAN_SPOT.z, SNOWMAN_CLEARANCE);
   addPines(context, land, occupancy);
-  addBoulders(context, occupancy);
+  addBoulders(context, occupancy, BOULDERS);
   addSpires(context, occupancy);
   addPebbles(context, BOULDER, PEBBLES, (x, z) => !inPond(x, z, 0.5));
   addDrifts(context);
@@ -139,25 +157,6 @@ function addPines(context: BiomeContext, land: Mountains, occupancy: Occupancy):
     scale: [0.85, 1.35],
     turn: 'grid',
     snap: true,
-  });
-}
-
-function addBoulders(context: BiomeContext, occupancy: Occupancy): void {
-  const { rng, materials } = context;
-  plant(context, {
-    models: shapes(rng, 3, (r) => props.boulder(r, BOULDER, SNOW_CAP_FROM), materials.surface()),
-    spots: scatter(
-      rng,
-      {
-        count: BOULDERS,
-        region: NEAR_STAGE,
-        spacing: 2,
-        accept: (x, z) => weightIf(tallPropAllowed(x, z, 0.8), viewWeight(x, z)),
-      },
-      occupancy,
-    ),
-    scale: [0.9, 2.2],
-    sink: 0.2,
   });
 }
 

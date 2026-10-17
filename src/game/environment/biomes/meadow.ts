@@ -6,7 +6,16 @@ import { plant, shapes } from '../planting';
 import type { Rng } from '../random';
 import { Occupancy, scatter } from '../scatter';
 import type { BiomeContext, Landscape } from '../types';
-import { addPebbles, arenaRise, distanceToPath, SWAY, weightIf, windingPath } from './common';
+import {
+  addBoulders,
+  addPebbles,
+  arenaRise,
+  distanceToPath,
+  SWAY,
+  weightIf,
+  windingPath,
+  type BoulderOptions,
+} from './common';
 
 const CELL = 1.2;
 const STEP = 0.6;
@@ -16,7 +25,6 @@ const GOLDEN_BASE = 0.12;
 const TREES = 85;
 const BIRCH_SHARE = 0.3;
 const BUSHES = 45;
-const BOULDERS = 16;
 const PEBBLES = 10;
 const GRASS_TUFTS = 1100;
 const FLOWER_COUNT = 340;
@@ -46,6 +54,14 @@ const BIRCH: props.BirchPalette = {
 };
 const BUSH: props.Tones = { top: 0x8bd655, side: 0x52ad42, bottom: 0x347d31 };
 const STONE: props.RockPalette = { dark: 0x7d858f, light: 0xb9c0c8, cap: 0x7cc84f };
+const BOULDERS: Omit<BoulderOptions, 'accept'> = {
+  palette: STONE,
+  variants: 2,
+  count: 16,
+  spacing: 1.3,
+  scale: [0.6, 1.4],
+  sink: 0.1,
+};
 const FLOWERS: Array<[petal: number, core: number]> = [
   [0xff4f6d, 0xffe066],
   [0xffd23f, 0xff8c2a],
@@ -126,7 +142,10 @@ function decorate(context: BiomeContext, land: Meadow): void {
   };
   addTrees(planting);
   addBushes(planting);
-  addBoulders(planting);
+  addBoulders(context, planting.occupancy, {
+    ...BOULDERS,
+    accept: (x, z) => weightIf(tallPropAllowed(x, z) && planting.offPath(x, z, 1)),
+  });
   addPebbles(context, STONE, PEBBLES);
   addGrass(planting);
   addFlowers(planting);
@@ -192,25 +211,6 @@ function addBushes({ context, occupancy, offPath }: Planting): void {
     ),
     scale: [0.7, 1.1],
     turn: 'grid',
-  });
-}
-
-function addBoulders({ context, occupancy, offPath }: Planting): void {
-  const { rng, materials } = context;
-  plant(context, {
-    models: shapes(rng, 2, (r) => props.boulder(r, STONE), materials.surface()),
-    spots: scatter(
-      rng,
-      {
-        count: BOULDERS,
-        region: NEAR_STAGE,
-        spacing: 1.3,
-        accept: (x, z) => weightIf(tallPropAllowed(x, z) && offPath(x, z, 1)),
-      },
-      occupancy,
-    ),
-    scale: [0.6, 1.4],
-    sink: 0.1,
   });
 }
 

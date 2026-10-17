@@ -11,13 +11,24 @@ import { plant, shapes } from '../planting';
 import { scatter } from '../scatter';
 import { smoothstep } from '../noise';
 import type { Rng } from '../random';
-import type { Spot } from '../scatter';
+import type { Occupancy, Spot } from '../scatter';
 import type { BiomeContext } from '../types';
 
 export interface LightPool extends Spot {
   radius: number;
   color: THREE.Color;
   strength: number;
+}
+
+export interface BoulderOptions {
+  palette: props.RockPalette;
+  capFrom?: number;
+  variants: number;
+  count: number;
+  spacing: number;
+  scale: [number, number];
+  sink: number;
+  accept: (x: number, z: number) => number;
 }
 
 const PATH_STEPS = 48;
@@ -57,6 +68,21 @@ export function addPebbles(
     }),
     scale: PEBBLE_SCALE,
     sink: PEBBLE_SINK,
+  });
+}
+
+export function addBoulders(
+  context: BiomeContext,
+  occupancy: Occupancy,
+  options: BoulderOptions,
+): void {
+  const { rng, materials } = context;
+  const { palette, capFrom, variants, count, spacing, accept, scale, sink } = options;
+  plant(context, {
+    models: shapes(rng, variants, (r) => props.boulder(r, palette, capFrom), materials.surface()),
+    spots: scatter(rng, { count, region: NEAR_STAGE, spacing, accept }, occupancy),
+    scale,
+    sink,
   });
 }
 

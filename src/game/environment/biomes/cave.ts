@@ -8,12 +8,14 @@ import type { Rng } from '../random';
 import { Occupancy, scatter, type Spot } from '../scatter';
 import type { BiomeContext, Landscape } from '../types';
 import {
+  addBoulders,
   addPebbles,
   arenaRise,
   lightPools,
   tints,
   weightIf,
   within,
+  type BoulderOptions,
   type LightPool,
 } from './common';
 
@@ -37,7 +39,6 @@ const STALACTITES = 22;
 const STALACTITE_SIZE = 2.2;
 const STALACTITE_MAX_Z = -2;
 const BIG_CRYSTAL_SPREAD = 3;
-const BOULDERS = 18;
 const PEBBLES = 16;
 
 interface BigCrystal extends Spot {
@@ -62,6 +63,15 @@ const GROUND = {
 
 const STONE = { top: 0x8e98cc, side: 0x6a73a8, band: 0x565e92 };
 const DARK_ROCK: props.RockPalette = { dark: 0x2f3452, light: 0x555d85 };
+const BOULDERS: BoulderOptions = {
+  palette: DARK_ROCK,
+  variants: 2,
+  count: 18,
+  spacing: 1,
+  scale: [0.5, 1.2],
+  sink: 0.1,
+  accept: (x, z) => weightIf(tallPropAllowed(x, z)),
+};
 
 interface Cave {
   floor: Noise2D;
@@ -160,7 +170,7 @@ function decorate(context: BiomeContext, land: Cave): void {
   addStalagmites(context, occupancy);
   addColumns(context, occupancy);
   addStalactites(context);
-  addBoulders(context, occupancy);
+  addBoulders(context, occupancy, BOULDERS);
   addPebbles(context, DARK_ROCK, PEBBLES);
 }
 
@@ -221,25 +231,6 @@ function addColumns(context: BiomeContext, occupancy: Occupancy): void {
     scale: [1, 1.3],
     stretch: [0.9, 1],
     turn: 'grid',
-  });
-}
-
-function addBoulders(context: BiomeContext, occupancy: Occupancy): void {
-  const { rng, materials } = context;
-  plant(context, {
-    models: shapes(rng, 2, (r) => props.boulder(r, DARK_ROCK), materials.surface()),
-    spots: scatter(
-      rng,
-      {
-        count: BOULDERS,
-        region: NEAR_STAGE,
-        spacing: 1,
-        accept: (x, z) => weightIf(tallPropAllowed(x, z)),
-      },
-      occupancy,
-    ),
-    scale: [0.5, 1.2],
-    sink: 0.1,
   });
 }
 

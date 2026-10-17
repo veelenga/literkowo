@@ -10,12 +10,14 @@ import type { Rng } from '../random';
 import { Occupancy, scatter, type Spot } from '../scatter';
 import type { BiomeContext, Landscape } from '../types';
 import {
+  addBoulders,
   arenaRise,
   lightPools,
   SWAY,
   tints,
   towardCenter,
   weightIf,
+  type BoulderOptions,
   type LightPool,
 } from './common';
 
@@ -34,7 +36,6 @@ const FERNS = 170;
 const GRASS_TUFTS = 420;
 const LOGS = 6;
 const STUMPS = 9;
-const BOULDERS = 12;
 const MUSHROOMS = 46;
 const SHAFTS = 5;
 const SHAFT_MAX_Z = 2;
@@ -69,6 +70,15 @@ const DARK_PINE: props.PinePalette = {
 const FERN: props.Tones = { top: 0x4fbf7a, side: 0x2a8a5e };
 const WOOD: props.WoodPalette = { bark: 0x6b4a2e, wood: 0xd9a96a, moss: 0x4fb35a };
 const MOSSY_ROCK: props.RockPalette = { dark: 0x56606b, light: 0x8d98a6, cap: 0x4fb35a };
+const BOULDERS: BoulderOptions = {
+  palette: MOSSY_ROCK,
+  variants: 2,
+  count: 12,
+  spacing: 1.2,
+  scale: [0.5, 1.2],
+  sink: 0.1,
+  accept: (x, z) => weightIf(tallPropAllowed(x, z)),
+};
 
 interface Forest {
   hummocks: Noise2D;
@@ -161,7 +171,7 @@ function decorate(context: BiomeContext, land: Forest): void {
   addMushrooms(context, land.mushrooms);
   addUndergrowth(context);
   addDeadwood(context, occupancy);
-  addBoulders(context, occupancy);
+  addBoulders(context, occupancy, BOULDERS);
   if (context.detail.extras) {
     addShafts(context, land.shafts);
     addMist(context);
@@ -273,25 +283,6 @@ function addDeadwood(context: BiomeContext, occupancy: Occupancy): void {
     ),
     scale: [0.8, 1.2],
     turn: 'grid',
-  });
-}
-
-function addBoulders(context: BiomeContext, occupancy: Occupancy): void {
-  const { rng, materials } = context;
-  plant(context, {
-    models: shapes(rng, 2, (r) => props.boulder(r, MOSSY_ROCK), materials.surface()),
-    spots: scatter(
-      rng,
-      {
-        count: BOULDERS,
-        region: NEAR_STAGE,
-        spacing: 1.2,
-        accept: (x, z) => weightIf(tallPropAllowed(x, z)),
-      },
-      occupancy,
-    ),
-    scale: [0.5, 1.2],
-    sink: 0.1,
   });
 }
 
