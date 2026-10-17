@@ -19,7 +19,6 @@ export const SITE_DESCRIPTION =
 export const SITE_LANGUAGE = 'pl';
 export const SITE_LOCALE = 'pl_PL';
 export const ALTERNATE_LOCALES = ['uk_UA', 'en_US'] as const;
-export const INTERFACE_LANGUAGES = ['pl', 'uk'] as const;
 export const MIN_PLAYER_AGE = 9;
 export const AUTHOR = { name: 'Vitalii Elenhaupt', url: 'https://github.com/veelenga' } as const;
 

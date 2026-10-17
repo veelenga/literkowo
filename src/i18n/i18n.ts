@@ -1,11 +1,15 @@
-import { readStorage, writeStorage } from '../storage';
-import { translations, type Translation, type UiLanguage } from './translations';
+import { readChoice, writeStorage } from '../storage';
+import { DEFAULT_UI_LANGUAGE, UI_LANGUAGES, type UiLanguage } from './languages';
+import { translations, type Translation } from './translations';
 
-const STORAGE_KEY = 'literkowo.uiLanguage';
-const DEFAULT_LANGUAGE: UiLanguage = 'pl';
+export const UI_LANGUAGE_KEY = 'literkowo.uiLanguage';
+
+export function readUiLanguage(): UiLanguage {
+  return readChoice(UI_LANGUAGE_KEY, UI_LANGUAGES, DEFAULT_UI_LANGUAGE);
+}
 
 class I18n {
-  private language: UiLanguage = this.load();
+  private language: UiLanguage = readUiLanguage();
 
   get current(): UiLanguage {
     return this.language;
@@ -17,12 +21,8 @@ class I18n {
 
   set(language: UiLanguage): void {
     this.language = language;
-    writeStorage(STORAGE_KEY, language);
+    writeStorage(UI_LANGUAGE_KEY, language);
     document.documentElement.lang = language;
-  }
-
-  private load(): UiLanguage {
-    return readStorage(STORAGE_KEY) === 'uk' ? 'uk' : DEFAULT_LANGUAGE;
   }
 }
 

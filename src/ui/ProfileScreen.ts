@@ -1,5 +1,5 @@
 import { i18n } from '../i18n/i18n';
-import type { UiLanguage } from '../i18n/translations';
+import { UI_LANGUAGE_LABELS, UI_LANGUAGES, type UiLanguage } from '../i18n/languages';
 import {
   AVATARS,
   createProfile,
@@ -156,8 +156,7 @@ export class ProfileScreen {
     return el(
       'div',
       { class: 'language-switch segmented' },
-      option('pl', 'PL'),
-      option('uk', 'UA'),
+      ...UI_LANGUAGES.map((language) => option(language, UI_LANGUAGE_LABELS[language])),
     );
   }
 

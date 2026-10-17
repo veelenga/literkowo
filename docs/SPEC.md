@@ -1047,12 +1047,13 @@ When the screen opens from the map or the profile screen, the row "Kopia postęp
 
 ## Interface languages
 
-Owners: `src/i18n/translations.ts`, `src/i18n/i18n.ts`.
+Owners: `src/i18n/languages.ts`, `src/i18n/translations.ts`, `src/i18n/i18n.ts`.
 
-- Today the interface is in Polish (default) and Ukrainian. The language switch is on the profile screen and on the [Settings](#settings) screen. The choice is saved under `literkowo.uiLanguage`.
+- Today the interface is in Polish (default) and Ukrainian. The language switch is on the profile screen and on the [Settings](#settings) screen. The choice is saved under `literkowo.uiLanguage`. A saved value that is not in the list falls back to Polish.
+- `UI_LANGUAGES` in `src/i18n/languages.ts` is the one list of interface languages, with the short labels of the profile screen switch. Both switches, the saved choice and the structured data of the page are built from it.
 - Interface language and word language are separate settings. The word language is fixed per profile at creation.
 - Region names and story lines carry every interface language next to the data (`src/course/catalog.ts`, `src/story/story.ts`).
-- A new interface language needs a new entry in `src/i18n/translations.ts` and text in the region and story data.
+- A new interface language needs a new entry in `UI_LANGUAGES` and its label, then the type checker points to every text that needs it: `src/i18n/translations.ts`, the feature texts, and the region and story data.
 
 ## Mobile and tablets
 

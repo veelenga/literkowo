@@ -1,4 +1,4 @@
-import type { UiLanguage } from '../i18n/translations';
+import type { UiLanguage } from '../i18n/languages';
 import { WORD_LANGUAGES, type WordLanguage } from '../profiles/Profile';
 
 export type ThemeId = 'meadow' | 'forest' | 'mountains' | 'cave' | 'island';
