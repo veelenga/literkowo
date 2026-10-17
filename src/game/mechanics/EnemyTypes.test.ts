@@ -8,7 +8,7 @@ import {
   sequence,
   specialOf,
 } from '../../testing/enemyTypes';
-import { REGIONS, regionsFor } from '../../course/regions';
+import { REGIONS, regionsFor } from '../../course/catalog';
 import { WORD_LANGUAGES, type WordLanguage } from '../../profiles/Profile';
 import { randomFrom } from '../../random';
 import { requireLevel } from '../../testing/levels';

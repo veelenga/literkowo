@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { levelWords, requireLevel } from '../testing/levels';
 import { difficultyFor, FOCUS_WORD_LENGTHS, PRACTICE_LENGTHS } from './difficulty';
-import { LEVELS, allowedKeysFor } from './regions';
+import { LEVELS } from './catalog';
+import { allowedKeysFor } from './course';
 import { TRANSITION_SCORES, transitionScore } from './typability';
 import { WORD_LISTS } from './wordLists';
 import { levelWordRules, type WordRules } from './wordRules';
@@ -90,7 +91,7 @@ describe('WordSource', () => {
 
   it('only uses keys unlocked so far', () => {
     for (const level of LEVELS.filter((candidate) => !candidate.isBoss)) {
-      const allowed = allowedKeysFor(level);
+      const allowed = allowedKeysFor(level, 'pl');
       const source = levelWords(level, 'pl');
       for (let i = 0; i < SAMPLES; i += 1) {
         for (const char of source.next() + source.stagedWord(i / SAMPLES)) {
@@ -216,7 +217,7 @@ describe('WordSource', () => {
 
   it('still gives a word when every letter is on the board', () => {
     const level = requireLevel('polana-1');
-    const allowed = allowedKeysFor(level);
+    const allowed = allowedKeysFor(level, 'pl');
     const source = levelWords(level, 'pl');
     for (let i = 0; i < SAMPLES; i += 1) {
       for (const char of source.next(new Set(allowed))) expect(allowed).toContain(char);

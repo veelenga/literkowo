@@ -1,5 +1,5 @@
-import { courseFor } from '../../../course/course';
-import { REGIONS, allowedKeysFor, type Level } from '../../../course/regions';
+import { REGIONS, type Level } from '../../../course/catalog';
+import { allowedKeysFor, courseFor } from '../../../course/course';
 import type { WordLanguage } from '../../../profiles/Profile';
 import type { RandomSource } from '../../../random';
 import type { MechanicContext } from '../Mechanic';

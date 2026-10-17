@@ -103,7 +103,3 @@ export function isDifficultyOpen(difficulty: ArenaDifficulty, profile: ArenaProf
     return (best?.medal ?? 0) >= UNLOCK_MEDAL;
   });
 }
-
-export function openDifficulties(profile: ArenaProfile): ArenaDifficulty[] {
-  return DIFFICULTIES.filter((difficulty) => isDifficultyOpen(difficulty, profile));
-}

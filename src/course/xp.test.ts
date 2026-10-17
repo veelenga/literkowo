@@ -5,10 +5,10 @@ import {
   RANKS,
   tagFactor,
   wordXp,
-  xpForLevel,
   xpToAdvance,
   type CompletedWord,
 } from './xp';
+import { xpForLevel } from '../testing/xp';
 
 const HOURS_TO_LEGEND_TARGET = 40;
 const TYPICAL_XP_PER_HOUR = 5_000;
@@ -64,6 +64,12 @@ describe('player levels', () => {
 
   it('caps a single step', () => {
     expect(xpToAdvance(60)).toBe(xpToAdvance(80));
+  });
+
+  it('starts each level exactly at its threshold', () => {
+    for (let level = 1; level <= LEGEND_LEVEL; level += 1) {
+      expect(levelProgress(xpForLevel(level))).toMatchObject({ level, xpInLevel: 0 });
+    }
   });
 
   it('tracks progress inside a level', () => {

@@ -1,5 +1,5 @@
 import { SPAWN_RADIUS } from '../board';
-import { allowedKeysFor } from '../../course/regions';
+import { allowedKeysFor } from '../../course/course';
 import type { RandomSource } from '../../random';
 import type { Enemy } from '../Enemy';
 import type { PhaseKind } from '../RunPlan';

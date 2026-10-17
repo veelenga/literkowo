@@ -1,7 +1,6 @@
-import type { LevelKind } from '../course/catalog';
 import { COINS_PER_WORD } from '../course/coins';
 import { difficultyFor } from '../course/difficulty';
-import type { Level } from '../course/regions';
+import type { Level, LevelKind } from '../course/catalog';
 import { levelWordRules } from '../course/wordRules';
 import type { WordLanguage } from '../profiles/Profile';
 import type { HitCost, PhaseKind, RunPhase, RunPlan } from './RunPlan';

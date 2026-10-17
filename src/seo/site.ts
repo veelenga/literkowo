@@ -11,7 +11,6 @@ export interface LocalizedText {
 }
 
 export const SITE_URL = 'https://veelenga.github.io/literkowo/';
-export const SOURCE_URL = 'https://github.com/veelenga/literkowo';
 export const SITE_NAME = 'Literkowo';
 export const SITE_TITLE = `${SITE_NAME}: gra do nauki pisania na klawiaturze dla dzieci`;
 export const SITE_DESCRIPTION =

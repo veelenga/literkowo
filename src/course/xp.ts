@@ -55,12 +55,6 @@ export function xpToAdvance(level: number): number {
   return Math.min(MAX_STEP_XP, Math.round(FIRST_STEP_XP * growth));
 }
 
-export function xpForLevel(level: number): number {
-  let total = 0;
-  for (let step = FIRST_PLAYER_LEVEL; step < level; step += 1) total += xpToAdvance(step);
-  return total;
-}
-
 export function levelProgress(xp: number): LevelProgress {
   let level = FIRST_PLAYER_LEVEL;
   let remaining = Math.max(0, xp);

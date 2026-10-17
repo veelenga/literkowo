@@ -163,3 +163,7 @@ const COURSES: Record<WordLanguage, Course> = {
 export function courseFor(language: WordLanguage): Course {
   return COURSES[language];
 }
+
+export function allowedKeysFor(level: Level, language: WordLanguage): string {
+  return courseFor(language).allowedKeys(level);
+}

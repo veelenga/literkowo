@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { ThemeId } from '../../../course/regions';
+import type { ThemeId } from '../../../course/catalog';
 import { FEVER_COMBO } from '../../combo';
 
 const STRIKE_ACCENTS: Record<ThemeId, number> = {

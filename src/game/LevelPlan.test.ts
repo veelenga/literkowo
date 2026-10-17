@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { LevelKind } from '../course/catalog';
 import { COINS_PER_WORD } from '../course/coins';
 import { KIND_RULES, MINI_BOSS_HITS } from '../course/difficulty';
-import { LEVELS, REGIONS, type Level } from '../course/regions';
+import { LEVELS, REGIONS, type Level, type LevelKind } from '../course/catalog';
 import { requireLevel } from '../testing/levels';
 import { LEVEL_LIVES, LEVEL_XP_FACTOR, levelPhases, levelPlan } from './LevelPlan';
 import type { Phase, RunPhase, RunPlan } from './RunPlan';

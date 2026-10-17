@@ -1,4 +1,4 @@
-import { REGIONS, regionOf, type Level } from '../../../course/regions';
+import { REGIONS, regionOf, type Level } from '../../../course/catalog';
 import type { MechanicContext } from '../Mechanic';
 
 export const FOREST_REGION_INDEX = 1;

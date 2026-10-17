@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { KEYS_PER_REVIEW, LEVELS, REGIONS, type Level } from './catalog';
+import { KEYS_PER_REVIEW, LEVELS, REGIONS, regionsFor, type Level } from './catalog';
 import { courseFor } from './course';
 
 const POLISH_LEVELS = 99;
@@ -58,6 +58,11 @@ describe('catalog', () => {
       region.levels.forEach((level, index) => expect(level.id).toBe(`${region.id}-${index + 1}`));
     }
     LEVELS.forEach((level, index) => expect(level.order).toBe(index));
+  });
+
+  it('hides the Polish letters region for English profiles', () => {
+    expect(regionsFor('en').map((region) => region.id)).not.toContain('wyspa');
+    expect(regionsFor('pl').map((region) => region.id)).toContain('wyspa');
   });
 
   it('gives each word language its own course length', () => {
