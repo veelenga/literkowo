@@ -17,4 +17,14 @@ describe('RecentWords', () => {
     recent.add('las');
     expect(recent.has('kot')).toBe(false);
   });
+
+  it('reads the words shown elsewhere without counting them as its own', () => {
+    const spawns = new RecentWords();
+    const features = new RecentWords(spawns);
+    spawns.add('kot');
+    expect(features.hasElsewhere('kot')).toBe(true);
+    expect(features.has('kot')).toBe(false);
+    features.add('las');
+    expect(spawns.has('las')).toBe(false);
+  });
 });

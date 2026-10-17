@@ -133,7 +133,12 @@ export class WordSource {
 
   private openWord(words: readonly string[]): string | undefined {
     const open = words.filter((word) => !this.recent.has(word));
-    return open.length >= MIN_REAL_CHOICES ? this.pickWord(open) : undefined;
+    const unseen = open.filter((word) => !this.recent.hasElsewhere(word));
+    return this.choose(unseen) ?? this.choose(open);
+  }
+
+  private choose(words: readonly string[]): string | undefined {
+    return words.length >= MIN_REAL_CHOICES ? this.pickWord(words) : undefined;
   }
 
   private shown(word: string): string {

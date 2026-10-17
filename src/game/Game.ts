@@ -5,6 +5,7 @@ import { keyWeight } from '../course/mastery';
 import type { Level } from '../course/catalog';
 import { allowedKeysFor } from '../course/course';
 import { hatSpec } from '../course/shop';
+import { RecentWords } from '../course/recentWords';
 import { EVEN_WEIGHTS, WordSource, type KeyWeights } from '../course/WordSource';
 import type { Equipped, WordLanguage } from '../profiles/Profile';
 import { seededRandom, systemRandom, type RandomSource } from '../random';
@@ -150,15 +151,16 @@ export class Game {
     const seeded = config.plan.seed !== undefined;
     const weights = seeded ? EVEN_WEIGHTS : this.adaptiveWeights();
     const { language } = config;
+    this.script = new SpawnScript(
+      { language, random: this.random, weights, seeded },
+      this.phase.words,
+    );
     this.words = new WordSource(
       language,
       this.phase.words,
       weights,
       this.random.stream(WORDS_STREAM),
-    );
-    this.script = new SpawnScript(
-      { language, random: this.random, weights, seeded },
-      this.phase.words,
+      new RecentWords(this.script.recent),
     );
     const quality = currentQuality();
     this.world = new World(this.scene, config.theme, quality);

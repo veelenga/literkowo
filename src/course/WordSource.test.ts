@@ -8,7 +8,7 @@ import { WORD_LISTS } from './wordLists';
 import { levelWordRules, type WordRules } from './wordRules';
 import type { WordLanguage } from '../profiles/Profile';
 import { seededRandom } from '../random';
-import { RECENT_WORDS } from './recentWords';
+import { RECENT_WORDS, RecentWords } from './recentWords';
 import {
   BOSS_MIN_LENGTH,
   EVEN_WEIGHTS,
@@ -344,6 +344,39 @@ describe('WordSource', () => {
     const source = new WordSource('pl', ALL_KEYS_RULES);
     const words = Array.from({ length: SAMPLES }, () => source.next());
     expect(recentRepeats(words)).toEqual([]);
+  });
+
+  it('avoids the words the spawns just showed while enough others are open', () => {
+    const spawned = new RecentWords();
+    const spawns = new WordSource('pl', ALL_KEYS_RULES, EVEN_WEIGHTS, seededRandom(SEED), spawned);
+    const features = new WordSource(
+      'pl',
+      { ...ALL_KEYS_RULES, lengths: PRACTICE_LENGTHS },
+      EVEN_WEIGHTS,
+      seededRandom(OTHER_SEED),
+      new RecentWords(spawned),
+    );
+    for (let i = 0; i < SAMPLES; i += 1) {
+      const shown = Array.from({ length: RECENT_WORDS }, () => spawns.next());
+      expect(shown).not.toContain(features.next());
+    }
+  });
+
+  it('still gives real words when only the words the spawns showed are left', () => {
+    const spawned = new RecentWords();
+    const spawns = new WordSource('pl', FEW_WORDS_RULES, EVEN_WEIGHTS, seededRandom(SEED), spawned);
+    const features = new WordSource(
+      'pl',
+      FEW_WORDS_RULES,
+      EVEN_WEIGHTS,
+      seededRandom(OTHER_SEED),
+      new RecentWords(spawned),
+    );
+    const words = Array.from({ length: SAMPLES }, () => {
+      spawns.next();
+      return features.next();
+    });
+    expect(share(words, (word) => isListed(word))).toBeGreaterThan(MIXED_SHARE.min);
   });
 
   it('mixes in generated strings when too few real words fit to avoid repeats', () => {

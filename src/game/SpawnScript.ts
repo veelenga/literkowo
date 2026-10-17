@@ -27,7 +27,7 @@ interface PhaseScript {
 export class SpawnScript {
   private current: PhaseScript;
   private spawns = 0;
-  private readonly recent = new RecentWords();
+  readonly recent = new RecentWords();
 
   constructor(
     private readonly setup: SpawnScriptSetup,
