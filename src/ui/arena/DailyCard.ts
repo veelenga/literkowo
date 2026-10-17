@@ -16,7 +16,7 @@ import { i18n } from '../../i18n/i18n';
 import type { Profile } from '../../profiles/Profile';
 import { el, svg } from '../dom';
 import { xpBar } from '../progression';
-import { primaryHint } from '../shortcutHint';
+import { primaryButton } from '../shortcutHint';
 import { medalName } from './arenaParts';
 import { stampRow } from './stampRow';
 import '../daily.css';
@@ -141,10 +141,5 @@ function playOrWait({ profile, today }: DailyCardView, onPlay: () => void): HTML
   if (triesLeft(profile.arena.daily, today) === 0) {
     return el('p', { class: 'daily-tomorrow', text: i18n.t.features.daily.tomorrow });
   }
-  return el(
-    'button',
-    { class: 'button button-primary button-large arena-play daily-play', onClick: onPlay },
-    i18n.t.play,
-    primaryHint(),
-  );
+  return primaryButton(i18n.t.play, onPlay, 'arena-play daily-play');
 }

@@ -63,8 +63,8 @@ describe('learnCard keys and buttons', () => {
     vi.useRealTimers();
   });
 
-  function press(key: string): void {
-    window.dispatchEvent(new KeyboardEvent('keydown', { key }));
+  function press(key: string, repeat = false): void {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key, repeat }));
   }
 
   function open() {
@@ -86,6 +86,23 @@ describe('learnCard keys and buttons', () => {
     const { onStart, onClose } = open();
     vi.advanceTimersByTime(KEY_READY_MS);
     press('Enter');
+    expect(onStart).toHaveBeenCalledOnce();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('ignores a held Enter that is still repeating once the card is ready', () => {
+    const { onStart } = open();
+    vi.advanceTimersByTime(KEY_READY_MS);
+    press('Enter', true);
+    expect(onStart).not.toHaveBeenCalled();
+  });
+
+  it('starts the level only once when Enter is pressed twice', () => {
+    const { onStart, onClose } = open();
+    vi.advanceTimersByTime(KEY_READY_MS);
+    press('Enter');
+    press('Enter');
+    press('Escape');
     expect(onStart).toHaveBeenCalledOnce();
     expect(onClose).not.toHaveBeenCalled();
   });

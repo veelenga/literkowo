@@ -2,12 +2,9 @@ import type { Region } from '../../course/catalog';
 import { format } from '../../i18n/format';
 import { i18n } from '../../i18n/i18n';
 import { el } from '../dom';
-import { KEY_READY_MS, onWindowKeyAfter } from '../overlay';
-import { primaryHint } from '../shortcutHint';
+import { CLOSE_KEY, onCardKeys, PRIMARY_KEY } from '../overlay';
+import { primaryButton } from '../shortcutHint';
 import '../placement.css';
-
-export const START_KEY = 'Enter';
-export const CLOSE_KEY = 'Escape';
 
 export interface CardActions {
   readonly onStart: () => void;
@@ -34,29 +31,13 @@ export function stageChips(regions: readonly Region[], passed?: number): HTMLEle
 }
 
 export function startButton(onStart: () => void): HTMLElement {
-  return el(
-    'button',
-    { class: 'button button-primary button-large', onClick: onStart },
-    i18n.t.letsGo,
-    primaryHint(),
-  );
-}
-
-export function onCardKeys(keys: ReadonlyMap<string, () => void>): () => void {
-  const stopListening = onWindowKeyAfter(KEY_READY_MS, (event) => {
-    const action = keys.get(event.key);
-    if (!action || event.repeat) return;
-    event.preventDefault();
-    stopListening();
-    action();
-  });
-  return stopListening;
+  return primaryButton(i18n.t.letsGo, onStart);
 }
 
 export function startOrCloseKeys({ onStart, onClose }: CardActions): () => void {
   return onCardKeys(
     new Map([
-      [START_KEY, onStart],
+      [PRIMARY_KEY, onStart],
       [CLOSE_KEY, onClose],
     ]),
   );

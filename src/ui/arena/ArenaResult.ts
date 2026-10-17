@@ -6,14 +6,13 @@ import { i18n } from '../../i18n/i18n';
 import { confetti } from '../confetti';
 import { el, prefersReducedMotion } from '../dom';
 import { statTile, type LevelRewards, type StatTile } from '../LevelResult';
-import { createOverlay, KEY_READY_MS, onWindowKeyAfter, type Overlay } from '../overlay';
+import { createOverlay, onCardKeys, PRIMARY_KEY, type Overlay } from '../overlay';
 import { ResultProgress } from '../ResultProgress';
 import { treasuresNote, type OpenShop } from '../resultTreasures';
-import { primaryHint } from '../shortcutHint';
+import { primaryButton } from '../shortcutHint';
 import { medalBadge, nextMedalHint } from './arenaParts';
 
 const REVEAL_DELAY_MS = 700;
-const PRIMARY_KEY = 'Enter';
 
 export interface ArenaRunSummary {
   readonly result: GameResult;
@@ -98,7 +97,7 @@ export function medalResult(card: MedalCard): Overlay {
   );
   return createOverlay(
     el('div', { class: 'overlay' }, panel),
-    primaryOnKey(card.primary.run),
+    onCardKeys(new Map([[PRIMARY_KEY, card.primary.run]])),
     () => window.clearTimeout(revealTimer),
     () => progress.stop(),
     ...card.tiles.map((tile) => tile.stop),
@@ -128,21 +127,6 @@ function actionsRow({ secondary, note, primary }: MedalCard): HTMLElement {
         })
       : null,
     note ? el('p', { class: 'result-note', text: note }) : null,
-    el(
-      'button',
-      { class: 'button button-primary button-large', onClick: primary.run },
-      primary.label,
-      primaryHint(),
-    ),
+    primaryButton(primary.label, primary.run),
   );
-}
-
-function primaryOnKey(run: () => void): () => void {
-  const stopListening = onWindowKeyAfter(KEY_READY_MS, (event) => {
-    if (event.key !== PRIMARY_KEY || event.repeat) return;
-    event.preventDefault();
-    stopListening();
-    run();
-  });
-  return stopListening;
 }

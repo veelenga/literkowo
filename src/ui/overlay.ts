@@ -41,8 +41,8 @@ export function claimEscapeKey(handler: () => void): Cleanup {
 
 export type ShortcutKeys = Readonly<Partial<Record<string, () => void>>>;
 
-const CLOSE_KEY = 'Escape';
-const ACTIVATE_KEY = 'Enter';
+export const PRIMARY_KEY = 'Enter';
+export const CLOSE_KEY = 'Escape';
 const REPEATABLE_KEYS: ReadonlySet<string> = new Set([
   'ArrowLeft',
   'ArrowRight',
@@ -71,7 +71,7 @@ function isShortcut(scope: HTMLElement, event: KeyboardEvent): boolean {
   if (event.repeat && !REPEATABLE_KEYS.has(event.key)) return false;
   if (event.key === CLOSE_KEY) return true;
   const target = event.target instanceof Element ? event.target : null;
-  const blocker = event.key === ACTIVATE_KEY ? CONTROL_SELECTOR : FIELD_SELECTOR;
+  const blocker = event.key === PRIMARY_KEY ? CONTROL_SELECTOR : FIELD_SELECTOR;
   return !target?.closest(blocker);
 }
 
@@ -88,6 +88,17 @@ export function onWindowKeyAfter(delayMs: number, handler: KeyHandler): Cleanup 
     window.clearTimeout(timer);
     stopListening?.();
   };
+}
+
+export function onCardKeys(keyActions: ReadonlyMap<string, () => void>): Cleanup {
+  const stopListening = onWindowKeyAfter(KEY_READY_MS, (event) => {
+    const action = keyActions.get(event.key);
+    if (!action || event.repeat) return;
+    event.preventDefault();
+    stopListening();
+    action();
+  });
+  return stopListening;
 }
 
 export class OverlaySlot {
