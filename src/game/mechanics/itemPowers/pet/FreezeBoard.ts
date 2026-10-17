@@ -7,7 +7,8 @@ import { CAST_SOUNDS } from '../../powerWords/sounds';
 import { powerCallout } from '../callouts';
 import { Charges } from '../Charges';
 import type { Pet } from '../Pet';
-import { DANGER_DISTANCE, enemiesWithin, isResting, isThreat } from '../targets';
+import { isActiveThreat, nearestOf } from '../targets';
+import type { TroubleWatch } from '../TroubleWatch';
 
 const FREEZES_PER_LEVEL = 1;
 const FROST_COLOR = new THREE.Color(0xc8f1ff);
@@ -19,26 +20,26 @@ export class FreezeBoard implements Partial<Mechanic> {
     private readonly power: PetPower,
     private readonly pet: Pet,
     private readonly context: MechanicContext,
+    private readonly trouble: TroubleWatch,
   ) {}
 
   update(): void {
-    const { playing, phase, enemies } = this.context;
-    if (this.charges.isEmpty || !playing || isResting(phase)) return;
-    const danger = enemiesWithin(enemies, DANGER_DISTANCE).find(isThreat);
-    if (danger && this.charges.use()) this.freeze(danger);
+    if (this.charges.isEmpty || !this.trouble.isOn) return;
+    const target = nearestOf(this.context.enemies.filter(isActiveThreat));
+    if (target && this.charges.use()) this.freeze(target);
   }
 
   onPhaseChange(phase: Phase): void {
     this.charges.refillFor(phase);
   }
 
-  private freeze(danger: Enemy): void {
+  private freeze(target: Enemy): void {
     const { enemies, particles, sfx } = this.context;
     for (const enemy of enemies) {
       enemy.freeze(this.power.strength);
       particles.burst(enemy.burstPosition, FROST_COLOR);
     }
-    this.pet.zapAt(danger.burstPosition);
+    this.pet.zapAt(target.burstPosition);
     CAST_SOUNDS.freeze(sfx);
     this.pet.cheer(powerCallout('freezeBoard'));
   }
