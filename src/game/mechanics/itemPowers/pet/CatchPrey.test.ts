@@ -13,6 +13,8 @@ import { ThiefEnemy } from '../../enemyTypes/ThiefEnemy';
 import { ItemPowers } from '../../ItemPowers';
 import type { Mechanic, MechanicContext } from '../../Mechanic';
 import { Pet, ZAP_DELAY } from '../Pet';
+import { DANGER_DISTANCE, LAST_HEART, MISSES_IN_TROUBLE } from '../trouble';
+import { TroubleWatch } from '../TroubleWatch';
 import { CatchPrey, NOTICE_SECONDS } from './CatchPrey';
 import type { PreyKind } from './preys';
 
@@ -21,9 +23,15 @@ const NEXT_WAVE: Phase = { kind: 'words', count: 10, speed: 1, spawnInterval: 2,
 const STARTING_SCORE = 250;
 const BALLOON_FLIGHT_SECONDS = 15;
 const BOMBER_WORD = 'kasztan';
+const CLOSE = DANGER_DISTANCE - 0.1;
+const IN_TROUBLE: Partial<MechanicContext> = { lives: LAST_HEART };
 
-function huntBoard(kind: EnemyKind, makePowers: (context: MechanicContext) => Partial<Mechanic>) {
-  const board = enemyTypesBoard(LEVEL, () => rollFor(kind, LEVEL));
+function huntBoard(
+  kind: EnemyKind,
+  makePowers: (context: MechanicContext) => Partial<Mechanic>,
+  overrides: Partial<MechanicContext>,
+) {
+  const board = enemyTypesBoard(LEVEL, () => rollFor(kind, LEVEL), overrides);
   const powers = makePowers(board.context);
   let elapsed = 0;
   const run = (seconds: number) => {
@@ -37,29 +45,35 @@ function huntBoard(kind: EnemyKind, makePowers: (context: MechanicContext) => Pa
   return { ...board, powers, run };
 }
 
-function withPet(kind: EnemyKind, pet: PetId) {
-  return huntBoard(kind, (context) => new ItemPowers({ ...context, equipped: { pet } }));
+function withPet(kind: EnemyKind, pet: PetId, overrides: Partial<MechanicContext> = {}) {
+  return huntBoard(kind, (context) => new ItemPowers({ ...context, equipped: { pet } }), overrides);
 }
 
-function withPrey(kind: EnemyKind, prey: PreyKind, strength = 1) {
-  return huntBoard(kind, (context) => {
-    const spec = petSpec('cube-cat');
-    if (!spec) throw new Error('Missing the cube cat');
-    const pet = new Pet(spec, context);
-    const hunt = new CatchPrey(prey, { kind: prey, strength }, pet, context);
-    return {
-      update: (delta: number, elapsed: number) => {
-        pet.update(delta, elapsed);
-        hunt.update(delta);
-      },
-      onPhaseChange: (phase: Phase) => hunt.onPhaseChange(phase),
-    };
-  });
+function withPrey(kind: EnemyKind, prey: PreyKind, overrides: Partial<MechanicContext>) {
+  return huntBoard(
+    kind,
+    (context) => {
+      const spec = petSpec('cube-cat');
+      if (!spec) throw new Error('Missing the cube cat');
+      const pet = new Pet(spec, context);
+      const trouble = new TroubleWatch(context);
+      const hunt = new CatchPrey(prey, { kind: prey, strength: 1 }, pet, context, trouble);
+      return {
+        update: (delta: number, elapsed: number) => {
+          trouble.update(delta);
+          pet.update(delta, elapsed);
+          hunt.update(delta);
+        },
+        onPhaseChange: (phase: Phase) => hunt.onPhaseChange(phase),
+      };
+    },
+    overrides,
+  );
 }
 
 describe('CatchPrey', () => {
-  it('lets the dragon catch a bat once it has seen it', () => {
-    const { spawn, run, enemies, announce, context } = withPet('bat', 'dragon');
+  it('lets the dragon catch a bat once it has seen it, when the hero is in trouble', () => {
+    const { spawn, run, enemies, announce, context } = withPet('bat', 'dragon', IN_TROUBLE);
     const bat = specialOf(spawn(), BatEnemy);
     run(NOTICE_SECONDS / 2);
     expect(enemies).toContain(bat);
@@ -69,15 +83,25 @@ describe('CatchPrey', () => {
     expect(announce).toHaveBeenCalledWith('Nietoperz złapany!', 'callout', '#4ade80');
   });
 
+  it('leaves a bat alone while the hero is safe, and catches it after quick mistakes', () => {
+    const { spawn, run, enemies, powers } = withPet('bat', 'dragon');
+    const bat = specialOf(spawn(), BatEnemy);
+    run(NOTICE_SECONDS * 2);
+    expect(enemies).toContain(bat);
+    for (let miss = 0; miss < MISSES_IN_TROUBLE; miss += 1) powers.onMistake?.();
+    run(ZAP_DELAY * 2);
+    expect(enemies).not.toContain(bat);
+  });
+
   it('catches as many as the strength allows in a level', () => {
-    const { spawn, run, enemies } = withPet('bat', 'dragon');
+    const { spawn, run, enemies } = withPet('bat', 'dragon', IN_TROUBLE);
     const bats = [spawn(), spawn(), spawn()];
     run(NOTICE_SECONDS * 4);
     expect(enemies.filter((enemy) => bats.includes(enemy))).toHaveLength(1);
   });
 
   it('starts again on every new arena wave', () => {
-    const { spawn, run, enemies, powers } = withPrey('ghost', 'catchGhost');
+    const { spawn, run, enemies, powers } = withPrey('ghost', 'catchGhost', IN_TROUBLE);
     spawn();
     run(NOTICE_SECONDS + ZAP_DELAY * 2);
     const second = spawn();
@@ -88,8 +112,18 @@ describe('CatchPrey', () => {
     expect(enemies).not.toContain(second);
   });
 
-  it('lets the ghost pet chase ghosts', () => {
-    const { spawn, run, enemies, announce } = withPet('ghost', 'ghost');
+  it('lets the ghost pet chase a ghost that comes too close', () => {
+    const { spawn, run, enemies } = withPet('ghost', 'ghost');
+    const ghost = specialOf(spawn(), GhostEnemy);
+    run(NOTICE_SECONDS * 2);
+    expect(enemies).toContain(ghost);
+    ghost.object.position.set(0, 0, -CLOSE);
+    run(ZAP_DELAY * 2);
+    expect(enemies).not.toContain(ghost);
+  });
+
+  it('lets the ghost pet chase ghosts when the hero is in trouble', () => {
+    const { spawn, run, enemies, announce } = withPet('ghost', 'ghost', IN_TROUBLE);
     const ghost = specialOf(spawn(), GhostEnemy);
     run(NOTICE_SECONDS + ZAP_DELAY * 2);
     expect(enemies).not.toContain(ghost);
@@ -97,7 +131,7 @@ describe('CatchPrey', () => {
   });
 
   it('leaves the enemy the player is typing', () => {
-    const { spawn, run, enemies } = withPet('ghost', 'ghost');
+    const { spawn, run, enemies } = withPet('ghost', 'ghost', IN_TROUBLE);
     const ghost = spawn();
     ghost.advance();
     run(NOTICE_SECONDS * 2);
@@ -115,8 +149,8 @@ describe('CatchPrey', () => {
     expect(announce).toHaveBeenCalledWith('Balonik złapany!', 'callout', '#ffc61a');
   });
 
-  it('lets the robot put out the fuse of a bomber', () => {
-    const { run, enemies, enemyAt, context, announce } = withPet('ghost', 'robot');
+  it('lets the robot put out the fuse of a bomber when the hero is in trouble', () => {
+    const { run, enemies, enemyAt, context, announce } = withPet('ghost', 'robot', IN_TROUBLE);
     const bomber = new BomberEnemy(BOMBER_WORD, context.createLabel(), 1, 'crystal');
     bomber.object.position.set(0, 0, -SPAWN_RADIUS);
     enemies.push(bomber);

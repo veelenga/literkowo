@@ -6,6 +6,7 @@ import { powerCallout } from '../callouts';
 import { Charges } from '../Charges';
 import type { Pet } from '../Pet';
 import { isOpen } from '../targets';
+import type { TroubleWatch } from '../TroubleWatch';
 import { PREYS, celebrateCatch, type PreyKind } from './preys';
 
 export const NOTICE_SECONDS = 1;
@@ -20,6 +21,7 @@ export class CatchPrey implements Partial<Mechanic> {
     power: PetPower,
     private readonly pet: Pet,
     private readonly context: MechanicContext,
+    private readonly trouble: TroubleWatch,
   ) {
     this.charges = new Charges(power.strength);
   }
@@ -28,7 +30,8 @@ export class CatchPrey implements Partial<Mechanic> {
     this.clock += delta;
     this.context.enemies.forEach((enemy) => this.notice(enemy));
     if (this.charges.isEmpty || this.pet.isBusy || !this.context.playing) return;
-    const enemy = this.context.enemies.find((candidate) => this.isCatchable(candidate));
+    const inTrouble = this.trouble.isOn;
+    const enemy = this.context.enemies.find((candidate) => this.isCatchable(candidate, inTrouble));
     if (!enemy || !this.charges.use()) return;
     this.pet.catch({
       enemy,
@@ -46,8 +49,8 @@ export class CatchPrey implements Partial<Mechanic> {
     if (!this.sightings.has(enemy)) this.sightings.set(enemy, this.clock);
   }
 
-  private isCatchable(enemy: Enemy): boolean {
+  private isCatchable(enemy: Enemy, inTrouble: boolean): boolean {
     const seenFor = this.clock - (this.sightings.get(enemy) ?? this.clock);
-    return seenFor >= NOTICE_SECONDS && isOpen(enemy) && PREYS[this.prey](enemy);
+    return seenFor >= NOTICE_SECONDS && isOpen(enemy) && PREYS[this.prey](enemy, inTrouble);
   }
 }

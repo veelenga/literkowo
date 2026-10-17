@@ -114,7 +114,7 @@ The course stays the only place where new keys are learned.
 
 Coins buy items for the hero, and the hero wears them in levels, on the map and in the menus.
 
-- Pets (Zwierzaki): ten pets, such as a cube cat, a bee, a puppy, a penguin and a dragon. A pet floats next to the hero and helps in levels, for example by catching a bat, chasing a ghost, stopping a thief, freezing the board once or giving a heart back after a long combo.
+- Pets (Zwierzaki): ten pets, such as a cube cat, a bee, a puppy, a penguin and a dragon. A pet floats next to the hero and helps in levels. Most pets wait until the hero is in trouble: an enemy close to the hero, a crowded board, fast enemies, a few quick mistakes or the last heart. Then a pet catches a bat, chases a ghost, freezes the board once or gives a lost heart back. Others stop a thief before it steals or pop a balloon before it floats away.
 - Hats (Czapki): ten hats, such as a cap, headphones, a wizard hat, a helmet and a crown. A hat works all the time, for example with a few more coins or XP, solid ghosts, a guard against the boss or a defused bomber.
 - Characters (Postacie): eighteen blocky characters to play as.
 - Trophies (Trofea): rewards for milestones such as the first boss, whole regions, star streaks, arena waves and daily challenge stamps.

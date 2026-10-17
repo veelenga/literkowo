@@ -272,6 +272,7 @@ export class Game {
       language: this.config.language,
       equipped: this.config.equipped,
       random: this.random,
+      maxLives: this.config.plan.lives,
       get phase() {
         return phases.phase;
       },
@@ -283,6 +284,9 @@ export class Game {
       },
       get guards() {
         return health.guards;
+      },
+      get lives() {
+        return health.lives;
       },
       createLabel: () => this.labels.createLabel(),
       addEnemy: (enemy, radius) => this.addEnemy(enemy, radius),

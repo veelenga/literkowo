@@ -60,8 +60,6 @@ export const SWITCH_ON = 1;
 export const PERCENT = 100;
 
 export const POWER_COMBOS = {
-  zap: 5,
-  restoreHeart: 15,
   stopNear: 10,
 } as const satisfies Partial<Record<PetPowerKind, number>>;
 

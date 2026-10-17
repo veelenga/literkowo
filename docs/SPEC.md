@@ -535,18 +535,18 @@ Economy. With the gradual course a won level pays about 35 coins: about 33 with 
 
 Pets act in the level and hats work all the time, see [Item powers](#item-powers) for each rule. The strength is a count per level, seconds, a share or simply on.
 
-| Pet        | Polish    | Ukrainian  | Unlock                     | Power          | Strength               |
-| ---------- | --------- | ---------- | -------------------------- | -------------- | ---------------------- |
-| `cube-cat` | Kostka    | Кубик      | 160 coins                  | `zap`          | 1 per level            |
-| `piggy`    | Skarbonka | Скарбничка | 250 coins                  | `doubleChest`  | 1 per level            |
-| `bee`      | Bzyczek   | Дзижчик    | 320 coins                  | `popBalloon`   | 3 per level            |
-| `star`     | Gwiazdka  | Зірочка    | rank Uczeń                 | `restoreHeart` | 1 per level            |
-| `puppy`    | Piesek    | Цуценя     | 400 coins                  | `catchThief`   | 2 per level            |
-| `ghost`    | Duszek    | Привидик   | 480 coins                  | `catchGhost`   | 2 per level            |
-| `penguin`  | Pingwinek | Пінгвінчик | 700 coins                  | `freezeBoard`  | 2 seconds, 1 per level |
-| `dragon`   | Smoczek   | Дракончик  | 900 coins                  | `catchBat`     | 2 per level            |
-| `robot`    | Robocik   | Роботик    | rank Strażnik Słów         | `catchBomber`  | 1 per level            |
-| `shadow`   | Cień      | Тінь       | arena: 15 waves in one run | `stopNear`     | 2 seconds              |
+| Pet        | Polish    | Ukrainian  | Unlock                     | Power          | Strength                |
+| ---------- | --------- | ---------- | -------------------------- | -------------- | ----------------------- |
+| `cube-cat` | Kostka    | Кубик      | 160 coins                  | `zap`          | 1 per level             |
+| `piggy`    | Skarbonka | Скарбничка | 250 coins                  | `doubleChest`  | 1 per level             |
+| `bee`      | Bzyczek   | Дзижчик    | 320 coins                  | `popBalloon`   | 3 per level             |
+| `star`     | Gwiazdka  | Зірочка    | rank Uczeń                 | `restoreHeart` | 1 per level             |
+| `puppy`    | Piesek    | Цуценя     | 400 coins                  | `catchThief`   | 2 per level             |
+| `ghost`    | Duszek    | Привидик   | 480 coins                  | `catchGhost`   | 2 per level             |
+| `penguin`  | Pingwinek | Пінгвінчик | 700 coins                  | `freezeBoard`  | 2 seconds, 1 per level  |
+| `dragon`   | Smoczek   | Дракончик  | 900 coins                  | `catchBat`     | 2 per level             |
+| `robot`    | Robocik   | Роботик    | rank Strażnik Słów         | `catchBomber`  | 1 per level             |
+| `shadow`   | Cień      | Тінь       | arena: 15 waves in one run | `stopNear`     | 2 seconds, per combo 10 |
 
 | Hat          | Polish               | Ukrainian         | Unlock                  | Power         | Strength         |
 | ------------ | -------------------- | ----------------- | ----------------------- | ------------- | ---------------- |
@@ -882,7 +882,7 @@ Screens:
 
 ## Item powers
 
-Owners: `src/game/mechanics/ItemPowers.ts`, `src/game/mechanics/itemPowers` (`Pet.ts` for the pet in the scene, one file per power in `pet` and `hat`), `src/course/powers.ts`, card lines and callouts in `src/i18n/features/shop.ts`.
+Owners: `src/game/mechanics/ItemPowers.ts`, `src/game/mechanics/itemPowers` (`Pet.ts` for the pet in the scene, `trouble.ts` and `TroubleWatch.ts` for when pets help, one file per power in `pet` and `hat`), `src/course/powers.ts`, card lines and callouts in `src/i18n/features/shop.ts`.
 
 Every pet and every hat has exactly one power, as a kind and a strength in the catalogue, see [Shop](#shop). Skins have none.
 
@@ -890,7 +890,7 @@ Every pet and every hat has exactly one power, as a kind and a strength in the c
 - A count per level starts again at every arena wave.
 - Limits: XP boosts at most 10% and coin boosts at most 25% (`MAX_BOOST` in `src/course/powers.ts`, also checked by `src/course/shop.test.ts`). No power raises accuracy or stars and no power types for the player. A power that keeps a heart still counts the hit as a mistake and breaks the combo.
 - Each power shows when it works: a callout in the item's colour, and for pets a pounce with a bolt in the pet's colour.
-- The card line uses "Raz" / "Раз", "Dwa razy" / "Двічі" and "Trzy razy" / "Тричі" for the count, for example "Dwa razy na poziom łapie nietoperza" / "Двічі за рівень ловить кажана".
+- The card line uses "Raz" / "Раз", "Dwa razy" / "Двічі" and "Trzy razy" / "Тричі" for the count, for example "Dwa razy na poziom łapie nietoperza, gdy bohater jest w opałach" / "Двічі за рівень ловить кажана, коли герой у скруті". Pets that wait for trouble end their line with "gdy bohater jest w opałach" / "коли герой у скруті".
 
 The pet:
 
@@ -898,18 +898,26 @@ The pet:
 - A catch: the pet pounces, a bolt in the pet's colour flies to the enemy, and the enemy freezes for 0.14 seconds (`ZAP_DELAY`). Then it shatters and scores its normal word points, with no XP and no coins, and the callout shows. Special enemies also play their own pop. If the enemy was typed before the bolt lands, the catch is not used up.
 - The pet never catches the boss or a word the player has started typing.
 
-| Pet power      | Callout (pl / uk)                     | Rule                                                                                                                                                                                               |
-| -------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `zap`          | Pomocnik! / Помічник!                 | With the combo at 5 or more outside the warm up, it catches the enemy nearest to the hero.                                                                                                         |
-| `catchBat`     | Nietoperz złapany! / Кажана спіймано! | Catches a bat 1 second after it shows (`NOTICE_SECONDS`), while it still has its bomb.                                                                                                             |
-| `catchGhost`   | Duch przegoniony! / Привида прогнано! | Catches a ghost 1 second after it shows.                                                                                                                                                           |
-| `catchThief`   | Złodziej złapany! / Злодія спіймано!  | Catches a running thief 1.6 units before it would steal (`THIEF_CATCH_LEAD`), so it steals nothing.                                                                                                |
-| `popBalloon`   | Balonik złapany! / Кульку спіймано!   | Pops a balloon within 1 unit of floating away (`BALLOON_CATCH_MARGIN`). It scores normal word points, not the double points of a typed balloon.                                                    |
-| `catchBomber`  | Lont zgaszony! / Ґніт погашено!       | Catches a bomber 1 second after it shows, with no blast.                                                                                                                                           |
-| `doubleChest`  | Podwójny skarb! / Подвійний скарб!    | A typed treasure chest pays its 15 coins once more.                                                                                                                                                |
-| `restoreHeart` | Nowe serce! / Нове серце!             | At combo 15 or more, when a heart is missing, it gives one back.                                                                                                                                   |
-| `freezeBoard`  | Zamrożone! / Заморожено!              | Once per level, when an enemy that can cost a heart comes within 4 units of the hero (`DANGER_DISTANCE`), every enemy, the boss included, freezes for the strength in seconds. Not in the warm up. |
-| `stopNear`     | Stop! / Стоп!                         | Each time the combo reaches exactly 10, the enemies within 5 units (`NEAR_RADIUS`) that can cost a heart freeze for the strength in seconds.                                                       |
+When pets help:
+
+- Pets help when the hero is in trouble, not in calm moments. The hero is in trouble when any one of these is true: an enemy that can cost a heart comes within 4 units of the hero before the player starts its word (`DANGER_DISTANCE`); such enemies on the board carry 4 or more different words, so twins count once (`CROWDED_BOARD`); one of them moves at least 1.5 times the pace of the first phase of the run (`FAST_PACE`); the player made 2 mistakes within 5 seconds, a lost heart counts as one (`MISSES_IN_TROUBLE`, `MISS_WINDOW_SECONDS`); or only one heart is left after losing one (`LAST_HEART`).
+- Frozen enemies do not count. The hero is never in trouble in the warm up, in a placement stage or outside play.
+- Fast enemies come from a speed surge, a boss that sped up after its hits or in its rage, and late arena waves, from about wave 10. A boss wave of the arena starts slower than wave 1.
+- A rule in `src/game/mechanics/itemPowers/trouble.ts` decides it and `TroubleWatch.ts` feeds it the board, the hearts left, the pace the run started at and the recent mistakes.
+- The counts per level stay, so a pet never carries the run. Careful typing keeps the hero out of trouble and stays the best way to win.
+
+| Pet power      | Callout (pl / uk)                     | Rule                                                                                                                                                                                                                           |
+| -------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `zap`          | Pomocnik! / Помічник!                 | When the hero is in trouble, it catches the enemy that can cost a heart nearest to the hero.                                                                                                                                   |
+| `catchBat`     | Nietoperz złapany! / Кажана спіймано! | When the hero is in trouble, it catches a bat that still has its bomb and has been on the board for 1 second (`NOTICE_SECONDS`).                                                                                               |
+| `catchGhost`   | Duch przegoniony! / Привида прогнано! | When the hero is in trouble, it catches a ghost that has been on the board for 1 second.                                                                                                                                       |
+| `catchThief`   | Złodziej złapany! / Злодія спіймано!  | Catches a running thief 1.6 units before it would steal (`THIEF_CATCH_LEAD`), so it steals nothing.                                                                                                                            |
+| `popBalloon`   | Balonik złapany! / Кульку спіймано!   | Pops a balloon within 1 unit of floating away (`BALLOON_CATCH_MARGIN`). It scores normal word points, not the double points of a typed balloon.                                                                                |
+| `catchBomber`  | Lont zgaszony! / Ґніт погашено!       | When the hero is in trouble, it catches a bomber that has been on the board for 1 second, with no blast.                                                                                                                       |
+| `doubleChest`  | Podwójny skarb! / Подвійний скарб!    | A typed treasure chest pays its 15 coins once more.                                                                                                                                                                            |
+| `restoreHeart` | Nowe serce! / Нове серце!             | When the hero is in trouble and a heart is missing, it gives one back.                                                                                                                                                         |
+| `freezeBoard`  | Zamrożone! / Заморожено!              | Once per level, when the hero is in trouble and an enemy that can cost a heart is on the board, every enemy, the boss included, freezes for the strength in seconds.                                                           |
+| `stopNear`     | Stop! / Стоп!                         | Reaching combo 10 readies one stop, and it stays ready after a mistake. When the hero is in trouble, the enemies within 5 units (`NEAR_RADIUS`) that can cost a heart freeze for the strength in seconds, which uses the stop. |
 
 Enemies that can cost a heart are all but power words, thieves and balloons.
 
@@ -923,7 +931,7 @@ Enemies that can cost a heart are all but power words, thieves and balloons.
 | `defuse`      | Bomba rozbrojona! / Бомбу знешкоджено! | A bomber 0.4 units before it reaches the hero (`DEFUSE_DISTANCE`) fizzles out in smoke: no blast, no knockback and no lost heart, but it counts as a mistake.                                                                                          |
 | `feverSlip`   | Szał trwa! / Шал триває!               | Up to the strength per level, a mistake during the fever keeps the fever. It still counts as a mistake and breaks the combo.                                                                                                                           |
 
-Game hooks used by the powers are listed in `src/game/mechanics/README.md`: `boostRewards`, `restoreLife`, `guardNextHit` with `guards`, and `stats.keepFeverOnSlips`.
+Game hooks used by the powers are listed in `src/game/mechanics/README.md`: `boostRewards`, `restoreLife`, `guardNextHit` with `guards`, `lives` with `maxLives`, the enemy `currentSpeed`, and `stats.keepFeverOnSlips`.
 
 ## Worlds
 

@@ -15,7 +15,9 @@ export type PreyKind = Extract<
 export const BALLOON_CATCH_MARGIN = 1;
 export const THIEF_CATCH_LEAD = 1.6;
 
-export const PREYS: Readonly<Record<PreyKind, (enemy: Enemy) => boolean>> = {
+type PreyRule = (enemy: Enemy, inTrouble: boolean) => boolean;
+
+export const PREYS: Readonly<Record<PreyKind, PreyRule>> = {
   popBalloon: (enemy) =>
     enemy instanceof BalloonEnemy &&
     !enemy.isLeaving &&
@@ -24,9 +26,9 @@ export const PREYS: Readonly<Record<PreyKind, (enemy: Enemy) => boolean>> = {
     enemy instanceof ThiefEnemy &&
     !enemy.hasLoot &&
     enemy.distanceToCenter <= GRAB_DISTANCE + THIEF_CATCH_LEAD,
-  catchGhost: (enemy) => enemy instanceof GhostEnemy,
-  catchBat: (enemy) => enemy instanceof BatEnemy && !enemy.hasDroppedBomb,
-  catchBomber: (enemy) => enemy instanceof BomberEnemy,
+  catchGhost: (enemy, inTrouble) => inTrouble && enemy instanceof GhostEnemy,
+  catchBat: (enemy, inTrouble) => inTrouble && enemy instanceof BatEnemy && !enemy.hasDroppedBomb,
+  catchBomber: (enemy, inTrouble) => inTrouble && enemy instanceof BomberEnemy,
 };
 
 export function celebrateCatch(enemy: Enemy): void {

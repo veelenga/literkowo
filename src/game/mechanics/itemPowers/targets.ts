@@ -1,11 +1,8 @@
-import { REACH_DISTANCE } from '../../board';
 import { Boss } from '../../Boss';
 import type { Enemy } from '../../Enemy';
 import type { Phase } from '../../RunPlan';
 import { SpecialEnemy } from '../enemyTypes/SpecialEnemy';
 import { isPowerEnemy } from '../powerWords/PowerEnemy';
-
-export const DANGER_DISTANCE = REACH_DISTANCE + 2.4;
 
 const RESTING_PHASES: ReadonlySet<Phase['kind']> = new Set(['warmup', 'test']);
 
@@ -30,6 +27,10 @@ export function nearestOpenEnemy(enemies: readonly Enemy[]): Enemy | undefined {
 export function isThreat(enemy: Enemy): boolean {
   if (isPowerEnemy(enemy)) return false;
   return !(enemy instanceof SpecialEnemy && enemy.isHarmless);
+}
+
+export function isActiveThreat(enemy: Enemy): boolean {
+  return isThreat(enemy) && !enemy.isFrozen;
 }
 
 export function enemiesWithin(enemies: readonly Enemy[], distance: number): Enemy[] {
