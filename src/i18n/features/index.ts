@@ -11,6 +11,7 @@ import { mergeEnemies } from './mergeEnemies';
 import { notice } from './notice';
 import { placement } from './placement';
 import { powerWords } from './powerWords';
+import { progressBackup } from './progressBackup';
 import { progression } from './progression';
 import { quality } from './quality';
 import { settings } from './settings';
@@ -42,5 +43,6 @@ export function featureTexts(language: UiLanguage) {
     placement: placement[language],
     settings: settings[language],
     notice: notice[language],
+    progressBackup: progressBackup[language],
   };
 }

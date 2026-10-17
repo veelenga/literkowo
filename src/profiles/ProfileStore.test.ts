@@ -78,4 +78,15 @@ describe('ProfileStore', () => {
     expect(onSave.mock.calls).toEqual([[true], [false]]);
     expect(store.all()).toEqual([{ ...profile, coins: 5 }]);
   });
+
+  it('merges imported profiles and saves them', () => {
+    const store = new ProfileStore();
+    const ola = createProfile('Ola', 'a');
+    const jan = createProfile('Jan', 'b');
+    store.add(ola);
+    store.merge([{ ...ola, coins: 40 }, jan]);
+    const expected = [{ ...ola, coins: 40 }, jan];
+    expect(store.all()).toEqual(expected);
+    expect(new ProfileStore().all()).toEqual(expected);
+  });
 });

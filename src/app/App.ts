@@ -56,6 +56,7 @@ import type { GameRun } from './GameRun';
 import { loadGameModule, prefetchGameModule, type GameModule } from './gameModule';
 import { PageAttention } from './PageAttention';
 import { PlacementFlow } from './PlacementFlow';
+import { progressBackupActions } from './progressBackup';
 import { saveWatch } from './saveWatch';
 
 const COMBO_FOR_FULL_INTENSITY = 20;
@@ -68,6 +69,11 @@ export class App {
       onFirstSaved: () => void requestPersistentStorage(),
       onFirstUnsaved: () => this.notice.show(i18n.t.features.notice.unsaved),
     }),
+  });
+  private readonly backup = progressBackupActions({
+    store: this.store,
+    notify: (text) => this.notice.show(text),
+    onImported: () => this.showProfiles(),
   });
   private readonly screen = el('div', { class: 'app-screen' });
   private readonly overlays: OverlaySlot;
@@ -171,7 +177,9 @@ export class App {
 
   private showSettings(back: () => void, profile?: Profile): void {
     const deletable = profile && { profile, onDelete: () => this.deleteProfile(profile) };
-    this.showMenu(() => new SettingsScreen({ onBack: back, profile: deletable }));
+    this.showMenu(
+      () => new SettingsScreen({ onBack: back, profile: deletable, backup: this.backup }),
+    );
   }
 
   private deleteProfile(profile: Profile): void {

@@ -122,7 +122,7 @@ Some items unlock with a rank or an arena goal instead of coins. No power types 
 
 ## Profiles and privacy
 
-There are no accounts and no server. Profiles, progress, key statistics and items are saved in the browser's local storage on the device, and nothing leaves the browser. The game asks the browser to keep this data for good, and a small notice says so when progress cannot be saved on the device. Each profile picks its typing language, Polish or English.
+There are no accounts and no server. Profiles, progress, key statistics and items are saved in the browser's local storage on the device, and nothing leaves the browser. The game asks the browser to keep this data for good, and a small notice says so when progress cannot be saved on the device. Parents can save the progress of every profile to a file in the settings and load it back on this or another device. Each profile picks its typing language, Polish or English.
 
 ## Phones and tablets
 
@@ -130,7 +130,7 @@ The game fits phones, tablets and desktops. A tablet with a Bluetooth keyboard i
 
 ## Settings
 
-Graphics quality, sound effects and music, the interface language, the keyboard on the screen and reduced motion. Settings belong to the device and are shared by all profiles. Opened from the map, the settings also hold the button that deletes the current profile.
+Graphics quality, sound effects and music, the interface language, the keyboard on the screen and reduced motion. Settings belong to the device and are shared by all profiles. Opened from the map or the profile screen, the settings can save the progress of every profile to a JSON file and load it back. Loading merges by profile, so a profile from the file replaces the same profile on the device. Opened from the map, the settings also hold the button that deletes the current profile.
 
 ## Audio
 
