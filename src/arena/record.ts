@@ -1,4 +1,13 @@
-import { isCount, isNonEmptyString, isRecord, stringsOf } from '../profiles/raw';
+import {
+  entriesOf,
+  isCount,
+  isNonEmptyString,
+  isRecord,
+  isShare,
+  isWholeNumber,
+  stringsOf,
+  wholeOf,
+} from '../profiles/raw';
 import { isMedal, NO_MEDAL, type Medal } from './medals';
 
 export interface Placement {
@@ -124,16 +133,6 @@ export function arenaRecordOf(value: unknown): ArenaRecord {
   return record;
 }
 
-function entriesOf<T>(value: unknown, read: (entry: unknown) => T | undefined): Record<string, T> {
-  if (!isRecord(value)) return {};
-  const entries: Record<string, T> = {};
-  for (const [key, entry] of Object.entries(value)) {
-    const parsed = read(entry);
-    if (parsed !== undefined) entries[key] = parsed;
-  }
-  return entries;
-}
-
 function placementOf(value: unknown): Placement | undefined {
   if (!isRecord(value)) return undefined;
   const { regionId, date } = value;
@@ -146,7 +145,7 @@ function endlessBestOf(value: unknown): EndlessBest | undefined {
   const { wave, score, accuracy, medal, date, runs } = value;
   if (!isWholeNumber(wave) || !isCount(score) || !isShare(accuracy)) return undefined;
   if (!isMedal(medal) || !isNonEmptyString(date)) return undefined;
-  return { wave, score, accuracy, medal, date, runs: wholeNumberOf(runs) ?? 0 };
+  return { wave, score, accuracy, medal, date, runs: wholeOf(runs) };
 }
 
 function dailyRecordOf(value: unknown): DailyRecord | undefined {
@@ -156,12 +155,12 @@ function dailyRecordOf(value: unknown): DailyRecord | undefined {
   const daily: DailyRecord = {
     date,
     keySet,
-    tries: wholeNumberOf(tries) ?? 0,
+    tries: wholeOf(tries),
     stamps: stringsOf(value.stamps),
     chests: stringsOf(value.chests),
-    weekStreak: wholeNumberOf(value.weekStreak) ?? 0,
-    bestWeekStreak: wholeNumberOf(value.bestWeekStreak) ?? 0,
-    totalStamps: wholeNumberOf(value.totalStamps) ?? 0,
+    weekStreak: wholeOf(value.weekStreak),
+    bestWeekStreak: wholeOf(value.bestWeekStreak),
+    totalStamps: wholeOf(value.totalStamps),
   };
   const best = dailyBestOf(value.best);
   if (best) daily.best = best;
@@ -179,16 +178,4 @@ function dailyBestOf(value: unknown): DailyBest | undefined {
 
 function medalOf(value: unknown): Medal | undefined {
   return isMedal(value) ? value : undefined;
-}
-
-function wholeNumberOf(value: unknown): number | undefined {
-  return isWholeNumber(value) ? value : undefined;
-}
-
-function isWholeNumber(value: unknown): value is number {
-  return isCount(value) && Number.isInteger(value);
-}
-
-function isShare(value: unknown): value is number {
-  return isCount(value) && value <= 1;
 }

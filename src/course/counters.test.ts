@@ -29,10 +29,7 @@ describe('countRun', () => {
 describe('countersOf', () => {
   it('starts empty from nothing and keeps only whole counts', () => {
     expect(countersOf(undefined)).toEqual(emptyCounters());
-    expect(countersOf({ wordsTyped: 12.7, coinsEarned: -5, skinsPlayed: ['a', 'a', 1] })).toEqual({
-      ...emptyCounters(),
-      wordsTyped: 12,
-      skinsPlayed: ['a'],
-    });
+    const raw = { wordsTyped: 12, powerWords: 2.5, coinsEarned: -5, skinsPlayed: ['a', 'a', 1] };
+    expect(countersOf(raw)).toEqual({ ...emptyCounters(), wordsTyped: 12, skinsPlayed: ['a'] });
   });
 });
