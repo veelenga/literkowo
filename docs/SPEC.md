@@ -120,6 +120,7 @@ Rules during a level:
 - Easy to type first (`src/course/typability.ts`): every move between two letters gets a score from the finger map in `src/course/fingers.ts`. The hands taking turns score 1, a doubled letter 0.8, two fingers of one hand 0.5 and one finger pressing two different keys 0. A word scores the average of its moves, and when focus keys are given, only the moves into and out of a focus key count. A generated string or combo is the easiest of 4 random draws of the same length, so `fj` and `jf` show often and `fr` or `ju` almost never. A real word is picked with a weight of its weak key weight times `0.25 + score` around the focus keys, so words that are easy around the new key come more often while the new key keeps its bias.
 - Boss words are real words of 4 or more letters when at least 12 fit, otherwise generated strings of 5 to 7 letters. New words and warm-up letters prefer a first letter that no enemy on the board is waiting for. Generated letters and real words lean toward the player's weak keys, see [Key mastery](#key-mastery). Words that features add, such as minions, use the full length limits of the level.
 - The learn phase is calm. Special enemies, mid-wave events, speed surges, bombers, twins, power words and merging run only in the words phase and in boss fights, so learn levels have none of them.
+- Slow motions and screen looks can overlap. The world runs at the slowest slow motion that is still on, and each one ends on its own clock, so a bomber blast never cuts a boss stun short. A screen look such as darkness or the surge glow stays on while any feature still holds it (`src/game/claims`).
 
 Stars, with the current thresholds (`src/course/scoring.ts`). They are judged on the accuracy rounded to a whole percent, the same number the result card and the HUD show, so 92.5% shows as 93% and earns 2 stars:
 
@@ -140,12 +141,12 @@ Owners: `src/game/modifiers.ts`, `src/game/mechanics/Modifiers.ts`.
 
 `withModifiers(plan, modifiers)` marks every phase of a plan with its modifiers (`modifiers` on the phase) and applies the plan side. The `Modifiers` mechanic applies the board side. The daily challenge uses them, and modifiers in free play can reuse them later.
 
-| Modifier    | Effect                                                                                                                                                                                                                           |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fog`       | Every word label shows the typed part and the next letter, the rest is dots, the same labels as the boss fog (`firstLetter`)                                                                                                     |
-| `darkness`  | The boss darkness for the whole run: the keyboard hint on bigger screens fades out and the built-in phone keyboard stays usable without finger colours or the next key glow. The mechanic keeps it on after a boss darkness ends |
-| `oneHeart`  | The plan has at most one heart                                                                                                                                                                                                   |
-| `longWords` | Words and generated words have 5 to 8 letters (`LONG_WORDS`), without staged lengths, and the spawn gap is twice as long (`LONG_WORD_GAP`)                                                                                       |
+| Modifier    | Effect                                                                                                                                                                                                             |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `fog`       | Every word label shows the typed part and the next letter, the rest is dots, the same labels as the boss fog (`firstLetter`)                                                                                       |
+| `darkness`  | The boss darkness for the whole run: the keyboard hint on bigger screens fades out and the built-in phone keyboard stays usable without finger colours or the next key glow. It stays on when a boss darkness ends |
+| `oneHeart`  | The plan has at most one heart                                                                                                                                                                                     |
+| `longWords` | Words and generated words have 5 to 8 letters (`LONG_WORDS`), without staged lengths, and the spawn gap is twice as long (`LONG_WORD_GAP`)                                                                         |
 
 ### Seeded runs
 
@@ -202,7 +203,7 @@ Bombers:
 
 - From Las on, and in every arena run, in the words phase and in boss fights. One comes about every 40 to 50 seconds while enemies are on the board, and at most one is on the board at a time.
 - A bomber is 1.7 times bigger and moves at 0.55 times the phase speed. Its word has 6 to 9 letters: a boss word when one fits, otherwise letters from the allowed keys. A lit fuse sparks on top and ticks faster and faster from 7 units away.
-- Typing its word detonates it: slow motion at 0.3 for 0.6 seconds, a camera shake and a shockwave. Every enemy within 4.5 units shatters and scores its normal word points. The boss never shatters. Other bombers in range go off 0.25 seconds later. When 3 or more enemies go down, a banner shows "Bum! x3" / "Бум! x3".
+- Typing its word detonates it: slow motion at 0.3 for 0.6 seconds, a camera shake and a shockwave. A longer slow motion, such as a boss stun, goes on after it. Every enemy within 4.5 units shatters and scores its normal word points. The boss never shatters. Other bombers in range go off 0.25 seconds later. When 3 or more enemies go down, a banner shows "Bum! x3" / "Бум! x3".
 - A bomber that reaches the player costs a life and knocks every other enemy 4 units back. The helmet hat defuses it just before, see [Item powers](#item-powers).
 
 Twins:

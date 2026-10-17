@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { i18n } from '../../../i18n/i18n';
 import { format } from '../../../i18n/format';
+import { HeldClaim } from '../../claims/HeldClaim';
 import { Boss } from '../../Boss';
 import type { Enemy } from '../../Enemy';
 import type { MechanicContext } from '../Mechanic';
@@ -14,7 +15,6 @@ export const SLOW_MOTION = { scale: 0.3, seconds: 0.6 };
 export const BLAST_SHAKE = { strength: 0.6, seconds: 0.8 };
 export const BANNER_MIN_DOWNED = 3;
 
-const NORMAL_TIME = 1;
 const BANNER_ACCENT = '#ff8a3d';
 const FLAME_COLOR = 0xffd166;
 const FLASH_COLOR = 0xfff4d6;
@@ -27,7 +27,7 @@ export type DetonationContext = Pick<
   | 'stats'
   | 'sfx'
   | 'removeEnemy'
-  | 'setTimeScale'
+  | 'claimTimeScale'
   | 'shakeCamera'
   | 'announce'
 >;
@@ -38,6 +38,7 @@ interface Fuse {
 }
 
 export class Detonations {
+  private readonly slowMotion = new HeldClaim(() => this.context.claimTimeScale(SLOW_MOTION.scale));
   private fuses: Fuse[] = [];
   private downed = 0;
   private slowLeft = 0;
@@ -69,7 +70,7 @@ export class Detonations {
   stop(): void {
     this.fuses = [];
     this.downed = 0;
-    if (this.slowLeft > 0) this.context.setTimeScale(NORMAL_TIME);
+    this.slowMotion.release();
     this.slowLeft = 0;
   }
 
@@ -93,7 +94,7 @@ export class Detonations {
     BURST_COLORS.forEach((color) => context.particles.burst(bomber.burstPosition, color));
     this.waves.play(center);
     context.shakeCamera(BLAST_SHAKE.strength, BLAST_SHAKE.seconds);
-    context.setTimeScale(SLOW_MOTION.scale);
+    this.slowMotion.hold();
     this.slowLeft = SLOW_MOTION.seconds;
     playBlast(context.sfx);
   }
@@ -137,9 +138,9 @@ export class Detonations {
   }
 
   private easeTime(delta: number): void {
-    if (this.slowLeft <= 0) return;
+    if (!this.slowMotion.isHeld) return;
     this.slowLeft -= delta;
-    if (this.slowLeft <= 0) this.context.setTimeScale(NORMAL_TIME);
+    if (this.slowLeft <= 0) this.slowMotion.release();
   }
 }
 

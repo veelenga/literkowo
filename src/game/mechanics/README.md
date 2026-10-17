@@ -6,7 +6,7 @@ A mechanic is one gameplay feature in one module. The game owns the rules (spawn
 
 1. Create `src/game/mechanics/<Name>.ts` with a class that implements `Mechanic` and takes `MechanicContext` (or a `Pick` of it) in the constructor.
 2. Add it to `MECHANICS` in `index.ts`. That is the only shared line you touch here.
-3. Add a test next to it. Use `fakeMechanicContext(overrides)` from `src/testing/mechanicContext.ts`, so no WebGL is needed. Pass `random: randomFrom(() => value)` from `src/random.ts` to choose the rolls.
+3. Add a test next to it. Use `fakeMechanicContext(overrides)` from `src/testing/mechanicContext.ts`, so no WebGL is needed. Pass `random: randomFrom(() => value)` from `src/random.ts` to choose the rolls. Pass `fakeClaims().context` from `src/testing/claims.ts` to check the time scale and the page classes.
 
 ## Hooks
 
@@ -42,7 +42,9 @@ Actions:
 - `addEnemy(enemy, radius?)`: puts an enemy on the board. With `radius` it lands on the spawn arc, without it keeps its position.
 - `removeEnemy(enemy)`: takes an enemy off the board without points. The phase still ends once every spawn happened and the board is empty. Do not remove the boss.
 - `spawnWord(word?)`: spawns a normal enemy on the spawn arc, with the next word from `words` when none is given. That word prefers a first letter no enemy on the board is waiting for. Returns it.
-- `setTimeScale(scale)`: slows or speeds enemy movement and spawn timers. The hero and effects keep real time. One shared value, so set it back to `1`.
+- `claimTimeScale(scale)`: slows or speeds enemy movement and spawn timers until you call the release function it returns. The hero and effects keep real time. Claims of all mechanics overlap: the world runs at the lowest claim that is still held, and at `1` when none is. A blast that ends inside a boss stun hands time back to the stun.
+- `claimPageClass(name)`: puts a class on the page body until you call the release function it returns. The class stays while any mechanic still holds it, so a boss darkness that ends never lifts the darkness of a `darkness` run. Never write `document.body.classList` yourself.
+- Release every claim when your effect ends and in `dispose`. A release works once, so calling it again is safe. `HeldClaim` in `src/game/claims/HeldClaim.ts` keeps at most one claim: `hold()` takes it when it is not held yet and `release()` gives it back.
 - `shakeCamera(strength, seconds)`: `0.18` for `0.25` s is a lost life.
 - `announce(text, style, accent?)`: shows text over the game. `style` is `'callout'`, `'banner'` or `'warning'`, `accent` is any CSS color.
 - `loseLife()`: costs a life like an enemy reaching the hero, unless a shield absorbs it. In a run plan whose `hitCost` is `combo`, such as the placement test, it only breaks the combo.

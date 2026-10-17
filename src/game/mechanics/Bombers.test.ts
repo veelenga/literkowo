@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
+import { fakeClaims } from '../../testing/claims';
 import { fakeBoard } from '../../testing/enemyBoard';
 import { randomFrom } from '../../random';
 import { requireLevel } from '../../testing/levels';
 import { Boss } from '../Boss';
+import { NORMAL_TIME_SCALE } from '../claims/TimeScale';
 import type { Enemy } from '../Enemy';
 import type { Phase } from '../RunPlan';
 import { SessionStats } from '../SessionStats';
@@ -12,6 +14,7 @@ import { BOMBER_SCALE, BOMBER_TAG, BomberEnemy } from './bombers/BomberEnemy';
 import { BOMBER_WORD_LENGTH, bomberWord, fitsBomber } from './bombers/bomberWord';
 import { BLAST_SHAKE, CHAIN_DELAY, SLOW_MOTION } from './bombers/Detonations';
 import { FuseTicker, TICK_START_DISTANCE, tickIntervalAt } from './bombers/FuseTicker';
+import { SLOW_MOTION as STUN_SCALE } from './bossPhases/WeakPoint';
 import type { MechanicContext } from './Mechanic';
 
 const FRAME = 1 / 30;
@@ -24,11 +27,11 @@ const BOMBER_WORD = 'kasztan';
 
 function setup(overrides: Partial<MechanicContext> = {}) {
   const announce = vi.fn<MechanicContext['announce']>();
-  const setTimeScale = vi.fn<MechanicContext['setTimeScale']>();
+  const claims = fakeClaims();
   const shakeCamera = vi.fn<MechanicContext['shakeCamera']>();
   const board = fakeBoard({
+    ...claims.context,
     announce,
-    setTimeScale,
     shakeCamera,
     level: FOREST,
     random: ALWAYS_LOW,
@@ -46,7 +49,8 @@ function setup(overrides: Partial<MechanicContext> = {}) {
     bombers.onWordComplete(bomber);
     board.context.removeEnemy(bomber);
   };
-  return { ...board, announce, setTimeScale, shakeCamera, bombers, bomberAt, complete };
+  const { timeScale } = claims;
+  return { ...board, announce, timeScale, shakeCamera, bombers, bomberAt, complete };
 }
 
 function play(mechanic: { update(delta: number): void }, seconds: number): void {
@@ -106,7 +110,7 @@ describe('Bombers', () => {
   });
 
   it('shatters every enemy within reach of the blast for normal points, never the boss', () => {
-    const { bombers, bomberAt, enemyAt, enemies, context, setTimeScale, shakeCamera, complete } =
+    const { bombers, bomberAt, enemyAt, enemies, context, timeScale, shakeCamera, complete } =
       setup();
     const bomber = bomberAt(8);
     const near = enemyAt(4, 'dom');
@@ -125,10 +129,28 @@ describe('Bombers', () => {
     expect(enemies).toContain(far);
     expect(enemies).toContain(boss);
     expect(context.stats.score).toBe(pointsFor('dom'));
-    expect(setTimeScale).toHaveBeenLastCalledWith(SLOW_MOTION.scale);
+    expect(timeScale.value).toBe(SLOW_MOTION.scale);
     expect(shakeCamera).toHaveBeenCalledWith(BLAST_SHAKE.strength, BLAST_SHAKE.seconds);
     play(bombers, SLOW_MOTION.seconds + FRAME);
-    expect(setTimeScale).toHaveBeenLastCalledWith(1);
+    expect(timeScale.value).toBe(NORMAL_TIME_SCALE);
+  });
+
+  it('hands time back to a longer slow motion it overlaps', () => {
+    const { bombers, bomberAt, context, timeScale, complete } = setup();
+    const releaseStun = context.claimTimeScale(STUN_SCALE);
+    complete(bomberAt(8));
+    expect(timeScale.value).toBe(SLOW_MOTION.scale);
+    play(bombers, SLOW_MOTION.seconds + FRAME);
+    expect(timeScale.value).toBe(STUN_SCALE);
+    releaseStun();
+    expect(timeScale.value).toBe(NORMAL_TIME_SCALE);
+  });
+
+  it('lets time run again when the bombers leave mid blast', () => {
+    const { bombers, bomberAt, timeScale, complete } = setup();
+    complete(bomberAt(8));
+    bombers.dispose();
+    expect(timeScale.value).toBe(NORMAL_TIME_SCALE);
   });
 
   it('spares enemies that finish their word on the same key', () => {
