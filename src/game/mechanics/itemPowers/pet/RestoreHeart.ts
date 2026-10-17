@@ -1,10 +1,11 @@
 import * as THREE from 'three';
-import { POWER_COMBOS, type PetPower } from '../../../../course/powers';
+import type { PetPower } from '../../../../course/powers';
 import type { Phase } from '../../../RunPlan';
 import type { Mechanic, MechanicContext } from '../../Mechanic';
 import { powerCallout } from '../callouts';
 import { Charges } from '../Charges';
 import type { Pet } from '../Pet';
+import type { TroubleWatch } from '../TroubleWatch';
 
 const HEART_COLOR = new THREE.Color(0xff6b8a);
 const HEART_LIFT = 1.2;
@@ -17,12 +18,14 @@ export class RestoreHeart implements Partial<Mechanic> {
     power: PetPower,
     private readonly pet: Pet,
     private readonly context: MechanicContext,
+    private readonly trouble: TroubleWatch,
   ) {
     this.charges = new Charges(power.strength);
   }
 
-  onHit(): void {
-    if (this.charges.isEmpty || this.context.stats.combo < POWER_COMBOS.restoreHeart) return;
+  update(): void {
+    const { lives, maxLives } = this.context;
+    if (this.charges.isEmpty || lives >= maxLives || !this.trouble.isOn) return;
     if (!this.context.restoreLife()) return;
     this.charges.use();
     this.celebrate();

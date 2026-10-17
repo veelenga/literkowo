@@ -1,10 +1,11 @@
-import { POWER_COMBOS, type PetPower } from '../../../../course/powers';
+import type { PetPower } from '../../../../course/powers';
 import type { Phase } from '../../../RunPlan';
 import type { Mechanic, MechanicContext } from '../../Mechanic';
 import { powerCallout } from '../callouts';
 import { Charges } from '../Charges';
 import type { Pet } from '../Pet';
-import { isResting, nearestOpenEnemy } from '../targets';
+import { isActiveThreat, nearestOpenEnemy } from '../targets';
+import type { TroubleWatch } from '../TroubleWatch';
 
 export class ZapNearest implements Partial<Mechanic> {
   private readonly charges: Charges;
@@ -13,13 +14,14 @@ export class ZapNearest implements Partial<Mechanic> {
     power: PetPower,
     private readonly pet: Pet,
     private readonly context: MechanicContext,
+    private readonly trouble: TroubleWatch,
   ) {
     this.charges = new Charges(power.strength);
   }
 
   update(): void {
-    if (!this.isReady()) return;
-    const enemy = nearestOpenEnemy(this.context.enemies);
+    if (this.charges.isEmpty || this.pet.isBusy || !this.trouble.isOn) return;
+    const enemy = nearestOpenEnemy(this.context.enemies.filter(isActiveThreat));
     if (!enemy || !this.charges.use()) return;
     this.pet.catch({
       enemy,
@@ -30,11 +32,5 @@ export class ZapNearest implements Partial<Mechanic> {
 
   onPhaseChange(phase: Phase): void {
     this.charges.refillFor(phase);
-  }
-
-  private isReady(): boolean {
-    const { playing, stats, phase } = this.context;
-    if (this.charges.isEmpty || this.pet.isBusy || !playing || isResting(phase)) return false;
-    return stats.combo >= POWER_COMBOS.zap;
   }
 }

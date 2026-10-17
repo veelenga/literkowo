@@ -81,9 +81,11 @@ describe('shop copy', () => {
 
   it('says what every pet and hat does', () => {
     expect(itemPower(item('pet', 'cube-cat'))).toBe(
-      'Raz na poziom przy kombo 5 łapie najbliższego wroga',
+      'Raz na poziom łapie najbliższego wroga, gdy bohater jest w opałach',
     );
-    expect(itemPower(item('pet', 'dragon'))).toBe('Dwa razy na poziom łapie nietoperza');
+    expect(itemPower(item('pet', 'dragon'))).toBe(
+      'Dwa razy na poziom łapie nietoperza, gdy bohater jest w opałach',
+    );
     expect(itemPower(item('pet', 'bee'))).toBe(
       'Trzy razy na poziom przekłuwa balonik, zanim odleci',
     );

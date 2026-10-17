@@ -6,11 +6,13 @@ import { fakeMechanicContext } from './mechanicContext';
 const ENEMY_SPEED = 1;
 const ENEMY_LOOK: EnemyLook = { shape: 'crystal', colors: [0x00bbf9] };
 const ENEMY_WORD = 'fjf';
+const EXTRA_LETTER = 'j';
 
 export interface FakeBoard {
   readonly enemies: Enemy[];
   readonly context: MechanicContext;
   readonly enemyAt: (distance: number, word?: string) => Enemy;
+  readonly enemiesAt: (distance: number, count: number) => Enemy[];
 }
 
 export function fakeBoard(overrides: Partial<MechanicContext> = {}): FakeBoard {
@@ -35,7 +37,13 @@ export function fakeBoard(overrides: Partial<MechanicContext> = {}): FakeBoard {
     enemies.push(enemy);
     return enemy;
   };
-  return { enemies, context, enemyAt };
+  const enemiesAt = (distance: number, count: number): Enemy[] =>
+    Array.from({ length: count }, (_, index) => enemyAt(distance, distinctWord(index)));
+  return { enemies, context, enemyAt, enemiesAt };
+}
+
+function distinctWord(index: number): string {
+  return ENEMY_WORD + EXTRA_LETTER.repeat(index);
 }
 
 function placeAt(enemy: Enemy, distance: number): void {
