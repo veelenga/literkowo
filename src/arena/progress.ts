@@ -1,6 +1,5 @@
-import { countRun, type Tally } from '../course/counters';
-import type { KeyStats } from '../course/keyStats';
-import { awardTrophies } from '../course/trophies';
+import type { RunCoins } from '../course/coins';
+import { creditRun, type RunTotals } from '../course/progress';
 import type { Profile } from '../profiles/Profile';
 import type { ArenaDifficulty } from './difficulty';
 import { arenaPayout, type ArenaPayout } from './economy';
@@ -17,28 +16,18 @@ import {
   type EndlessRun,
 } from './record';
 
-export interface EndlessAttempt {
+const NOT_A_LEVEL = { perfect: false, wpm: 0 } as const;
+
+export interface EndlessAttempt extends RunTotals, RunCoins {
   readonly keySet: KeySet;
   readonly difficulty: ArenaDifficulty;
   readonly wavesCleared: number;
-  readonly score: number;
   readonly accuracy: number;
-  readonly lettersFreed: number;
-  readonly xp: number;
-  readonly runCoins: number;
-  readonly coinBoost: number;
-  readonly keyStats: KeyStats;
-  readonly tally: Tally;
   readonly date: string;
 }
 
-export interface ArenaRunTotals {
-  readonly score: number;
-  readonly lettersFreed: number;
-  readonly xp: number;
+export interface ArenaRunTotals extends RunTotals {
   readonly coins: number;
-  readonly keyStats: KeyStats;
-  readonly tally: Tally;
   readonly arena: ArenaRecord;
 }
 
@@ -70,22 +59,7 @@ export function recordEndlessRun(profile: Profile, attempt: EndlessAttempt): End
 }
 
 export function withArenaRun(profile: Profile, run: ArenaRunTotals): Profile {
-  return awardTrophies({
-    ...profile,
-    totalScore: profile.totalScore + run.score,
-    lettersFreed: profile.lettersFreed + run.lettersFreed,
-    xp: profile.xp + run.xp,
-    coins: profile.coins + run.coins,
-    keyStats: { ...profile.keyStats, ...run.keyStats },
-    arena: run.arena,
-    counters: countRun(profile.counters, {
-      tally: run.tally,
-      coins: run.coins,
-      avatar: profile.avatar,
-      perfect: false,
-      wpm: 0,
-    }),
-  });
+  return creditRun({ ...profile, arena: run.arena }, run, { ...NOT_A_LEVEL, coins: run.coins });
 }
 
 function endlessRunOf(attempt: EndlessAttempt): EndlessRun {

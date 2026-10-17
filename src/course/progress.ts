@@ -8,18 +8,22 @@ import {
   type StoryScene,
 } from '../story/story';
 import type { Level } from './catalog';
-import { countRun, type Tally } from './counters';
+import { countRun, type CountedRun, type Tally } from './counters';
 import { courseFor } from './course';
 import type { KeyStats } from './keyStats';
 import { awardTrophies } from './trophies';
 
-export interface Attempt extends LevelResult {
-  lettersFreed: number;
-  xp: number;
-  coins: number;
-  keyStats: KeyStats;
-  tally: Tally;
+export interface RunTotals {
+  readonly score: number;
+  readonly lettersFreed: number;
+  readonly xp: number;
+  readonly keyStats: KeyStats;
+  readonly tally: Tally;
 }
+
+export type RunCredit = Pick<CountedRun, 'coins' | 'perfect' | 'wpm'>;
+
+export type Attempt = LevelResult & RunTotals & { readonly coins: number };
 
 const PERFECT_ACCURACY = 1;
 
@@ -37,22 +41,35 @@ export function recordResult(profile: Profile, level: Level, attempt: Attempt): 
     wpm: attempt.wpm,
   };
   const improved = isBetterResult(result, profile.levelResults[level.id]);
+  const levelResults = improved
+    ? { ...profile.levelResults, [level.id]: result }
+    : profile.levelResults;
+  return creditRun({ ...profile, levelResults }, attempt, levelCredit(attempt));
+}
+
+export function creditRun(profile: Profile, totals: RunTotals, credit: RunCredit): Profile {
   return awardTrophies({
     ...profile,
-    totalScore: profile.totalScore + attempt.score,
-    lettersFreed: profile.lettersFreed + attempt.lettersFreed,
-    xp: profile.xp + attempt.xp,
-    coins: profile.coins + attempt.coins,
-    levelResults: improved ? { ...profile.levelResults, [level.id]: result } : profile.levelResults,
-    keyStats: { ...profile.keyStats, ...attempt.keyStats },
+    totalScore: profile.totalScore + totals.score,
+    lettersFreed: profile.lettersFreed + totals.lettersFreed,
+    xp: profile.xp + totals.xp,
+    coins: profile.coins + credit.coins,
+    keyStats: { ...profile.keyStats, ...totals.keyStats },
     counters: countRun(profile.counters, {
-      tally: attempt.tally,
-      coins: attempt.coins,
+      ...credit,
+      tally: totals.tally,
       avatar: profile.avatar,
-      perfect: hasStars(attempt) && attempt.accuracy >= PERFECT_ACCURACY,
-      wpm: hasStars(attempt) ? attempt.wpm : 0,
     }),
   });
+}
+
+function levelCredit(attempt: Attempt): RunCredit {
+  const starred = hasStars(attempt);
+  return {
+    coins: attempt.coins,
+    perfect: starred && attempt.accuracy >= PERFECT_ACCURACY,
+    wpm: starred ? attempt.wpm : 0,
+  };
 }
 
 function hasStars(result: LevelResult): boolean {

@@ -57,6 +57,7 @@ import { loadGameModule, prefetchGameModule, type GameModule } from './gameModul
 import { PageAttention } from './PageAttention';
 import { PlacementFlow } from './PlacementFlow';
 import { progressBackupActions } from './progressBackup';
+import { runCoinsOf, runTotalsOf } from './runTotals';
 import { saveWatch } from './saveWatch';
 
 const COMBO_FOR_FULL_INTENSITY = 20;
@@ -370,12 +371,7 @@ export class App {
 
   private finishLevel(profile: Profile, level: Level, result: GameResult): void {
     const stars = starsFor(result.accuracy, result.won);
-    const coins = levelCoins({
-      runCoins: result.coins,
-      won: result.won,
-      stars,
-      coinBoost: result.coinBoost,
-    });
+    const coins = levelCoins({ ...runCoinsOf(result), won: result.won, stars });
     const updated = this.recordAttempt(profile, level, attemptOf(result, stars, coins));
     const next = openNext(updated, level);
     const leave = (then: (current: Profile) => void) =>
@@ -468,15 +464,11 @@ function musicIntensity(stats: SessionStats): number {
 
 function attemptOf(result: GameResult, stars: number, coins: number): Attempt {
   return {
+    ...runTotalsOf(result),
     stars,
-    score: result.score,
     accuracy: result.accuracy,
     wpm: result.wpm,
-    lettersFreed: result.lettersFreed,
-    xp: result.xp,
     coins,
-    keyStats: result.keys.practised,
-    tally: result.tally,
   };
 }
 

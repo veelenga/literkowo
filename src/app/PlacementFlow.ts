@@ -25,6 +25,7 @@ import { placementResult } from '../ui/placement/PlacementResult';
 import type { ShopExit, ShopTab } from '../ui/ShopScreen';
 import { earnedOf } from './earned';
 import type { GameRun } from './GameRun';
+import { runCoinsOf, runTotalsOf } from './runTotals';
 
 export interface PlacementHost {
   showMap(profile: Profile): void;
@@ -100,14 +101,9 @@ function regionsOf(stages: readonly PlacementStage[]): Region[] {
 
 function attemptOf(outcome: PlacementOutcome, result: GameResult): PlacementAttempt {
   return {
+    ...runTotalsOf(result),
+    ...runCoinsOf(result),
     outcome,
-    keyStats: result.keys.practised,
     date: practiceDay(new Date()),
-    score: result.score,
-    lettersFreed: result.lettersFreed,
-    xp: result.xp,
-    runCoins: result.coins,
-    coinBoost: result.coinBoost,
-    tally: result.tally,
   };
 }

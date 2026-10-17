@@ -4,11 +4,14 @@ export const COINS_PER_WORD = 1;
 const COINS_FOR_FINISHING = 10;
 const COINS_PER_STAR = 5;
 
-export interface LevelCoins {
-  runCoins: number;
-  won: boolean;
-  stars: number;
-  coinBoost: number;
+export interface RunCoins {
+  readonly runCoins: number;
+  readonly coinBoost: number;
+}
+
+export interface LevelCoins extends RunCoins {
+  readonly won: boolean;
+  readonly stars: number;
 }
 
 export function levelCoins({ runCoins, won, stars, coinBoost }: LevelCoins): number {
