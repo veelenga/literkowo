@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
 import { fakeClaims } from '../../testing/claims';
+import { trackDisposal } from '../../testing/disposal';
 import { fakeBoard } from '../../testing/enemyBoard';
+import { groundRingsIn } from '../../testing/groundRings';
 import { randomFrom } from '../../random';
 import { requireLevel } from '../../testing/levels';
 import { Boss } from '../Boss';
@@ -199,6 +201,20 @@ describe('Bombers', () => {
     expect(near.distanceToCenter).toBeCloseTo(3 + BLOWBACK_DISTANCE);
     expect(far.distanceToCenter).toBeCloseTo(5 + BLOWBACK_DISTANCE);
     expect(enemies).toContain(bomber);
+  });
+
+  it('plays a ground ring at each blast and frees the rings when it leaves', () => {
+    const { bombers, bomberAt, context, complete } = setup();
+    const rings = groundRingsIn(context.scene);
+    const bomber = bomberAt(8);
+    complete(bomber);
+    const shown = rings.filter((ring) => ring.visible);
+    expect(shown).toHaveLength(1);
+    expect(shown[0].position.z).toBe(bomber.object.position.z);
+    const counts = trackDisposal(...rings.map((ring) => ring.material));
+    bombers.dispose();
+    expect([...counts.values()]).toEqual(rings.map(() => 1));
+    expect(groundRingsIn(context.scene)).toHaveLength(0);
   });
 
   it('ignores enemies that are not bombers', () => {

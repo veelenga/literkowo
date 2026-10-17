@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { allowedKeysFor } from '../../course/course';
 import type { RandomSource } from '../../random';
 import { SPAWN_RADIUS } from '../board';
+import { GROUND_RING_LIFT, groundRing, PulsePool, type PulseSettings } from '../effects/PulsePool';
 import type { Enemy } from '../Enemy';
 import type { PhaseKind } from '../RunPlan';
 import { hasForestMechanics } from './actionEvents/regions';
@@ -9,10 +10,8 @@ import { BomberEnemy, EMBER_COLOR } from './bombers/BomberEnemy';
 import { bomberWord } from './bombers/bomberWord';
 import { BLAST_RADIUS, Detonations } from './bombers/Detonations';
 import { Knockback } from './bombers/Knockback';
-import { Shockwaves } from './bombers/Shockwaves';
 import { playBlowback, playLit, playTick } from './bombers/sounds';
 import type { Mechanic, MechanicContext } from './Mechanic';
-import type { WaveStyle } from './powerWords/effects/GroundWave';
 
 export const BOMBER_INTERVAL = { min: 40, max: 50 };
 export const BOMBER_SPEED_SHARE = 0.55;
@@ -22,16 +21,17 @@ const BOMBER_PHASES: ReadonlySet<PhaseKind> = new Set(['words', 'boss']);
 const RANDOM_STREAM = 'bombers';
 const BLOWBACK_SHAKE = { strength: 0.45, seconds: 0.6 };
 const WAVE_MARGIN = 1.5;
-const WAVE: WaveStyle = {
-  color: EMBER_COLOR,
+const WAVE: PulseSettings = {
+  poolSize: 3,
   duration: 0.75,
-  endDiameter: (BLAST_RADIUS + WAVE_MARGIN) * 2,
-  opacity: 1,
-  blending: THREE.AdditiveBlending,
+  startScale: 1,
+  endScale: (BLAST_RADIUS + WAVE_MARGIN) * 2,
+  groundLift: GROUND_RING_LIFT,
 };
+const WAVE_COLOR = new THREE.Color(EMBER_COLOR);
 
 export class Bombers implements Mechanic {
-  private readonly waves = new Shockwaves(WAVE);
+  private readonly waves = new PulsePool(WAVE, groundRing);
   private readonly knockback: Knockback;
   private readonly detonations: Detonations;
   private readonly enabled: boolean;
@@ -44,7 +44,7 @@ export class Bombers implements Mechanic {
     this.enabled = hasForestMechanics(context);
     this.allowedKeys = allowedKeysFor(context.level, context.language);
     this.knockback = new Knockback((enemy) => context.enemies.includes(enemy));
-    this.detonations = new Detonations(context, this.waves);
+    this.detonations = new Detonations(context, (center) => this.shockwave(center));
     this.countdown = this.nextInterval();
     context.scene.add(this.waves.group);
   }
@@ -105,10 +105,14 @@ export class Bombers implements Mechanic {
     const { context } = this;
     const others = context.enemies.filter((enemy) => enemy !== bomber);
     this.knockback.push(others, BLOWBACK_DISTANCE);
-    this.waves.play(bomber.object.position);
+    this.shockwave(bomber.object.position);
     context.particles.burst(bomber.burstPosition, bomber.color);
     context.shakeCamera(BLOWBACK_SHAKE.strength, BLOWBACK_SHAKE.seconds);
     playBlowback(context.sfx);
+  }
+
+  private shockwave(center: THREE.Vector3): void {
+    this.waves.play(center, WAVE_COLOR);
   }
 
   private nextInterval(): number {

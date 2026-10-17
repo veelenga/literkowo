@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { disposeObject } from './disposal';
-import { groundPlaneGeometry, shockwaveTexture, softGlowTexture } from './effects/glowAssets';
-import { PulsePool, type PulseSettings, type PulseVisual } from './effects/PulsePool';
+import { softGlowTexture } from './effects/glowAssets';
+import { groundRing, PulsePool, type PulseSettings, type PulseVisual } from './effects/PulsePool';
 import { ShatterField } from './effects/ShatterField';
 
 const FRAGMENTS_PER_BURST = 26;
@@ -13,8 +13,7 @@ const FLASH: PulseSettings = {
   duration: 0.3,
   startScale: 0.6,
   endScale: 3.6,
-  luminance: 2.6,
-  whiteBlend: 0.55,
+  tint: { luminance: 2.6, whiteBlend: 0.55 },
 };
 
 const SHOCKWAVE: PulseSettings = {
@@ -22,8 +21,8 @@ const SHOCKWAVE: PulseSettings = {
   duration: 0.65,
   startScale: 0.4,
   endScale: 6,
-  luminance: 1.3,
-  whiteBlend: 0.2,
+  tint: { luminance: 1.3, whiteBlend: 0.2 },
+  groundLift: SHOCKWAVE_HEIGHT,
 };
 
 function createFlash(): PulseVisual {
@@ -36,22 +35,11 @@ function createFlash(): PulseVisual {
   return { object: new THREE.Sprite(material), material };
 }
 
-function createShockwave(): PulseVisual {
-  const material = new THREE.MeshBasicMaterial({
-    map: shockwaveTexture(),
-    blending: THREE.AdditiveBlending,
-    transparent: true,
-    depthWrite: false,
-  });
-  return { object: new THREE.Mesh(groundPlaneGeometry(), material), material };
-}
-
 export class Particles {
   private readonly root = new THREE.Group();
   private readonly shatter = new ShatterField(FRAGMENTS_PER_BURST * CONCURRENT_BURSTS);
   private readonly flashes = new PulsePool(FLASH, createFlash);
-  private readonly shockwaves = new PulsePool(SHOCKWAVE, createShockwave);
-  private readonly groundPoint = new THREE.Vector3();
+  private readonly shockwaves = new PulsePool(SHOCKWAVE, groundRing);
 
   constructor(scene: THREE.Scene) {
     this.root.add(this.shatter.mesh, this.flashes.group, this.shockwaves.group);
@@ -61,8 +49,7 @@ export class Particles {
   burst(position: THREE.Vector3, color: THREE.Color): void {
     this.shatter.emit(position, color, FRAGMENTS_PER_BURST);
     this.flashes.play(position, color);
-    this.groundPoint.set(position.x, SHOCKWAVE_HEIGHT, position.z);
-    this.shockwaves.play(this.groundPoint, color);
+    this.shockwaves.play(position, color);
   }
 
   update(delta: number): void {

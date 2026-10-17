@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { easeOutCubic } from '../../effects/easing';
 import { withLuminance } from '../../effects/luminance';
 import type { GlowBatch, GlowShape } from './GlowBatch';
 
@@ -91,8 +92,7 @@ export class GlowBursts {
 
   private draw(index: number, burst: Burst, style: GlowStyle): void {
     const progress = burst.age / style.duration;
-    const eased = 1 - (1 - progress) ** 3;
-    const size = THREE.MathUtils.lerp(style.startSize, style.endSize, eased);
+    const size = THREE.MathUtils.lerp(style.startSize, style.endSize, easeOutCubic(progress));
     const alpha = style.opacity * (1 - progress) ** 2;
     this.batch.show(this.first + index, burst.position, size, burst.color, alpha, style.shape);
   }

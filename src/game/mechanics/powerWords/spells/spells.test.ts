@@ -1,12 +1,15 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
+import { trackDisposal } from '../../../../testing/disposal';
 import { fakeBoard } from '../../../../testing/enemyBoard';
+import { groundRingsIn } from '../../../../testing/groundRings';
 import { Boss } from '../../../Boss';
 import type { MechanicContext } from '../../Mechanic';
 import { PowerEnemy } from '../PowerEnemy';
 import { FREEZE_SECONDS, FreezeSpell } from './Freeze';
 import { KNOCKBACK, QUAKE_SHAKE, QuakeSpell } from './Quake';
 import { ShieldSpell } from './Shield';
+import type { Spell } from './Spell';
 import { STRIKE_COUNT, StormSpell } from './Storm';
 
 const FRAME = 1 / 30;
@@ -23,6 +26,19 @@ function play(spell: { update(delta: number): void }, seconds: number): void {
   for (let time = 0; time < seconds; time += FRAME) spell.update(FRAME);
 }
 
+function expectRingFreedOnDispose(create: (context: MechanicContext) => Spell): void {
+  const { context } = withCaster();
+  const spell = create(context);
+  const rings = groundRingsIn(context.scene);
+  expect(rings).toHaveLength(1);
+  spell.cast();
+  expect(rings[0].visible).toBe(true);
+  const counts = trackDisposal(rings[0].material);
+  spell.dispose();
+  expect(counts.get(rings[0].material)).toBe(1);
+  expect(groundRingsIn(context.scene)).toHaveLength(0);
+}
+
 describe('FreezeSpell', () => {
   it('stops every other enemy for three seconds with frost around them', () => {
     const { context, enemyAt, caster } = withCaster();
@@ -37,6 +53,10 @@ describe('FreezeSpell', () => {
     const before = near.distanceToCenter;
     near.update(FREEZE_SECONDS - FRAME, 0, VIEWER);
     expect(near.distanceToCenter).toBe(before);
+  });
+
+  it('sends a ground ring out from the hero and frees it on dispose', () => {
+    expectRingFreedOnDispose((context) => new FreezeSpell(context));
   });
 });
 
@@ -102,6 +122,10 @@ describe('QuakeSpell', () => {
     expect(spell.dustCount).toBeGreaterThan(0);
     play(spell, 2);
     expect(spell.dustCount).toBe(0);
+  });
+
+  it('sends a ground ring out from the hero and frees it on dispose', () => {
+    expectRingFreedOnDispose((context) => new QuakeSpell(context));
   });
 });
 
