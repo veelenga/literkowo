@@ -336,6 +336,18 @@ describe('Swarm', () => {
     expect(swarm.isComplete).toBe(true);
   });
 
+  it('places each letter through its own position properties', () => {
+    const { spawn } = enemyTypesBoard('gory-10', sequence(swarmRoll, 0.5));
+    const swarm = specialOf(spawn(), SwarmEnemy);
+    const glyphs = [...swarm.label.children];
+    expect(glyphs).toHaveLength(swarm.word.length);
+    for (const glyph of glyphs) {
+      if (!(glyph instanceof HTMLElement)) throw new Error('Glyph is not an element');
+      expect(glyph.style.getPropertyValue('--glyph-x')).toMatch(/^-?\d+\.\d{2}em$/);
+      expect(glyph.style.getPropertyValue('--glyph-y')).toMatch(/^-?\d+\.\d{2}em$/);
+    }
+  });
+
   it('moves a bit faster than a walker', () => {
     const { spawn, run, enemyAt } = enemyTypesBoard('gory-10', () => swarmRoll);
     const swarm = spawn();

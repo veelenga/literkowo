@@ -18,7 +18,7 @@ function structuredDataScript(tags: HtmlTagDescriptor[]): string {
 }
 
 describe('head tags', () => {
-  const tags = headTags();
+  const tags = headTags('build');
 
   it('sets the title, the description and the canonical url', () => {
     expect(tags.find((tag) => tag.tag === 'title')?.children).toBe(SITE_TITLE);

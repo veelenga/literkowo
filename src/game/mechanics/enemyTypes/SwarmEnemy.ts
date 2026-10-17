@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { EnemyLook, LabelMode } from '../../Enemy';
 import { bugGeometry, swarmBody } from './bodies';
 import { SpecialEnemy, type SpecialSpec } from './SpecialEnemy';
-import { glyphMarkup, scatterGlyphs, type GlyphSpot } from './swarmGlyphs';
+import { glyphElements, scatterGlyphs, type GlyphSpot } from './swarmGlyphs';
 
 const LOOK: EnemyLook = { shape: 'wisp', colors: [0xffd400, 0xff9f1a, 0xc6ff3d] };
 const LABEL_HEIGHT = 2.2;
@@ -80,7 +80,9 @@ export class SwarmEnemy extends SpecialEnemy {
 
   private renderGlyphs(): void {
     if (this.glyphMode === 'hidden') return;
-    this.label.innerHTML = glyphMarkup(this.word, this.popped, this.spots, this.glyphMode);
+    this.label.replaceChildren(
+      ...glyphElements(this.word, this.popped, this.spots, this.glyphMode),
+    );
   }
 }
 

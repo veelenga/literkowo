@@ -1120,9 +1120,10 @@ Owners: `src/seo/site.ts` (every string, url and image), `src/seo/vitePlugin.ts`
 Owner: `src/seo/contentSecurityPolicy.ts`.
 
 - GitHub Pages cannot send response headers, so the policy is a `<meta http-equiv="Content-Security-Policy">` tag. The Vite plugin puts it first in the head, in the dev server and in the build.
-- The policy is `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'`.
+- The build policy is `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'`.
+- The dev server adds `style-src-elem 'self' 'unsafe-inline'`, because it injects the CSS as `<style>` tags, and `worker-src 'self' blob:`, because its client waits for a restarted server from a blob shared worker. Inline style attributes stay blocked there too, so the dev server shows the same violations as the build.
 - Everything loads from the site itself. Images allow `data:` because the hero, outfit and item portraits are rendered to data URLs. Fonts allow `data:` because the build inlines the smallest font files into the CSS. The character models and their textures are separate files fetched from the site, and the service worker is a script from the site.
-- Styles allow inline style attributes, which the `style` prop of `el` and the swarm label markup set, and the `<style>` tags that the dev server injects.
+- No code writes markup or style attributes as text. Word labels are built from elements with `textContent`. The `style` prop of `el` and the swarm glyph positions go through the element's style declaration, which the policy allows. Only `trustedSvg` in `src/ui/dom.ts` parses markup, and it takes the static map art.
 - A meta tag cannot set `frame-ancestors`, `report-uri` or `sandbox`, so the page cannot forbid framing.
 - A remote origin, a blob URL, a web worker or an inline script needs a change to the policy, otherwise the browser blocks it. The browser smoke test fails on the console error that a blocked request writes.
 

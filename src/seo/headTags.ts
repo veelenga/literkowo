@@ -1,5 +1,5 @@
 import type { HtmlTagDescriptor } from 'vite';
-import { contentSecurityPolicyTag } from './contentSecurityPolicy.ts';
+import { contentSecurityPolicyTag, type HtmlTarget } from './contentSecurityPolicy.ts';
 import { escapeHtml, jsonForScript } from './html.ts';
 import {
   ALTERNATE_LOCALES,
@@ -23,7 +23,7 @@ const IMAGE_TYPE = 'image/jpeg';
 const STRUCTURED_DATA_TYPE = 'application/ld+json';
 const INJECT_TO = 'head';
 
-export function headTags(): HtmlTagDescriptor[] {
+export function headTags(target: HtmlTarget): HtmlTagDescriptor[] {
   const tags: HtmlTagDescriptor[] = [
     { tag: 'title', children: escapeHtml(SITE_TITLE) },
     meta('description', SITE_DESCRIPTION),
@@ -51,7 +51,7 @@ export function headTags(): HtmlTagDescriptor[] {
     },
   ];
   return [
-    contentSecurityPolicyTag(),
+    contentSecurityPolicyTag(target),
     ...tags.map((tag): HtmlTagDescriptor => ({ ...tag, injectTo: INJECT_TO })),
   ];
 }

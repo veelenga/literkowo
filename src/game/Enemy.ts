@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { el } from '../ui/dom';
 import { REACH_DISTANCE, SPAWN_RADIUS } from './board';
 import { disposeObject } from './disposal';
 import { Envelope } from './effects/Envelope';
@@ -49,6 +50,8 @@ const BURST_DROP = 0.8;
 const FROZEN_GLOW = 0.25;
 const FREEZE_RATE = 10;
 const MASK_CHAR = '•';
+const DONE_CLASS = 'done';
+const REST_CLASS = 'rest';
 
 export interface EnemyLook {
   shape: EnemyShape;
@@ -249,7 +252,7 @@ export class Enemy {
     const done = this.word.slice(0, this.typed);
     const rest = this.visibleRest();
     this.label.hidden = this.labelMode === 'hidden';
-    this.label.innerHTML = `<span class="done">${done}</span><span class="rest">${rest}</span>`;
+    this.label.replaceChildren(...typedParts(done, rest));
   }
 
   protected startFlash(color: THREE.Color, duration: number): void {
@@ -375,4 +378,11 @@ export class Enemy {
     this.object.add(this.rig, this.glow.mesh);
     if (this.trail) this.object.add(this.trail.group);
   }
+}
+
+export function typedParts(done: string, rest: string): HTMLSpanElement[] {
+  return [
+    el('span', { class: DONE_CLASS, text: done }),
+    el('span', { class: REST_CLASS, text: rest }),
+  ];
 }
