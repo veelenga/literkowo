@@ -1,13 +1,13 @@
-import { offersPlacement } from '../arena/placementProgress';
 import { i18n } from '../i18n/i18n';
 import type { UiLanguage } from '../i18n/translations';
 import {
   AVATARS,
   createProfile,
+  DEFAULT_WORD_LANGUAGE,
   STARTER_SKINS,
   totalStars,
+  WORD_LANGUAGES,
   type Profile,
-  type WordLanguage,
 } from '../profiles/Profile';
 import type { ProfileStore } from '../profiles/ProfileStore';
 import { dailyMedalDot } from './arena/arenaParts';
@@ -21,8 +21,8 @@ import { livePreview, outfitOf } from './LivePreview';
 import { hasAmbientMotion } from './menuMotion';
 import { onShortcutKeys } from './overlay';
 import { coinPill, levelBadge } from './progression';
+import { choiceChips } from './settingsControls';
 import { settingsGearButton } from './settingsParts';
-import { shopLink } from './shopLink';
 import { primaryHint } from './shortcutHint';
 import './profileScreen.css';
 
@@ -41,7 +41,6 @@ const PLAY_ICON_PATH =
 interface Actions {
   onPlay: (profile: Profile) => void;
   onSettings: () => void;
-  onShop: (profile: Profile) => void;
   onPlacement: (profile: Profile) => void;
 }
 
@@ -168,7 +167,7 @@ export class ProfileScreen {
         'aria-pressed': String(isSelected),
         onClick: () => this.select(profile),
       },
-      heroStage(avatar),
+      heroStage(avatar, wordsTag(profile)),
       el(
         'span',
         { class: 'profile-info' },
@@ -249,53 +248,27 @@ export class ProfileScreen {
       { class: 'panel profile-panel play-panel' },
       el(
         'div',
-        { class: 'play-panel-main' },
+        { class: 'play-panel-text' },
         el('h3', { class: 'panel-title', text: profile.name }),
-        shopLink(() => this.actions.onShop(profile)),
-        el(
-          'button',
-          {
-            class: 'button button-primary button-large play-button',
-            onClick: () => this.actions.onPlay(profile),
-          },
-          playIcon(),
-          t.play,
-          primaryHint(),
-        ),
+        el('p', { class: 'play-panel-words', text: t.wordsIn[profile.wordLanguage] }),
       ),
       el(
-        'div',
-        { class: 'play-panel-settings' },
-        el('span', { class: 'field-label', text: t.wordLanguage }),
-        el(
-          'div',
-          { class: 'segmented word-language' },
-          this.languageChip(profile, 'pl', t.polish),
-          this.languageChip(profile, 'en', t.english),
-        ),
-        this.placementLink(profile),
-        el('button', {
-          class: 'button button-danger',
-          text: t.deleteProfile,
-          onClick: () => this.remove(profile),
-        }),
+        'button',
+        {
+          class: 'button button-primary button-large play-button',
+          onClick: () => this.actions.onPlay(profile),
+        },
+        playIcon(),
+        t.play,
+        primaryHint(),
       ),
     );
-  }
-
-  private placementLink(profile: Profile): HTMLElement | null {
-    if (!offersPlacement(profile)) return null;
-    return el('button', {
-      class: 'button button-ghost placement-link',
-      type: 'button',
-      text: i18n.t.features.placement.title,
-      onClick: () => this.actions.onPlacement(profile),
-    });
   }
 
   private createPanel(): HTMLElement {
     const t = i18n.t;
     let avatar = AVATARS[0];
+    let wordLanguage = DEFAULT_WORD_LANGUAGE;
     const preview = el('span', { class: 'hero-stage create-preview' });
     const input = el('input', {
       class: 'input',
@@ -312,7 +285,7 @@ export class ProfileScreen {
         input.focus();
         return undefined;
       }
-      const profile = createProfile(name, avatar);
+      const profile = createProfile(name, avatar, wordLanguage);
       this.store.add(profile);
       this.select(profile);
       return profile;
@@ -339,6 +312,16 @@ export class ProfileScreen {
           'div',
           { class: 'create-fields' },
           input,
+          el('p', { class: 'field-label', text: t.wordLanguage }),
+          choiceChips({
+            label: t.wordLanguage,
+            choices: WORD_LANGUAGES,
+            current: wordLanguage,
+            names: { pl: t.polish, en: t.english },
+            onPick: (picked) => {
+              wordLanguage = picked;
+            },
+          }),
           el('p', { class: 'field-label', text: t.chooseAvatar }),
           picker,
         ),
@@ -369,26 +352,6 @@ export class ProfileScreen {
     });
     return panel;
   }
-
-  private languageChip(profile: Profile, language: WordLanguage, label: string): HTMLElement {
-    return el('button', {
-      class: profile.wordLanguage === language ? 'chip is-active' : 'chip',
-      text: label,
-      'aria-pressed': String(profile.wordLanguage === language),
-      onClick: () => {
-        profile.wordLanguage = language;
-        this.store.update(profile);
-        this.render();
-      },
-    });
-  }
-
-  private remove(profile: Profile): void {
-    if (!confirm(i18n.t.confirmDelete)) return;
-    this.store.remove(profile.id);
-    this.selected = undefined;
-    this.render();
-  }
 }
 
 function noDock(): void {}
@@ -410,8 +373,12 @@ function staggerStyle(index: number): string {
   return `--delay: ${index * CARD_STAGGER_MS}ms`;
 }
 
-function heroStage(avatar: HTMLElement): HTMLElement {
-  return el('span', { class: 'hero-stage' }, ...stageLights(), avatar);
+function heroStage(avatar: HTMLElement, tag: HTMLElement): HTMLElement {
+  return el('span', { class: 'hero-stage' }, ...stageLights(), avatar, tag);
+}
+
+function wordsTag({ wordLanguage }: Profile): HTMLElement {
+  return el('span', { class: 'words-tag', text: i18n.t.wordsIn[wordLanguage] });
 }
 
 function stageLights(): HTMLElement[] {

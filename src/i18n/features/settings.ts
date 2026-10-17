@@ -16,6 +16,8 @@ interface SettingsTexts {
   music: string;
   language: string;
   languages: Record<UiLanguage, string>;
+  profile: string;
+  profileHint: string;
   keyboard: ChoiceTexts<OnScreenKeyboardChoice>;
   motion: ChoiceTexts<ReducedMotionChoice>;
 }
@@ -30,6 +32,8 @@ const pl: SettingsTexts = {
   music: 'Muzyka',
   language: 'Język gry',
   languages: LANGUAGE_NAMES,
+  profile: 'Profil',
+  profileHint: '{name}. Usunięcie kasuje cały postęp na tym urządzeniu',
   keyboard: {
     title: 'Klawiatura na ekranie',
     hint: 'Na telefonie. Zadziała od następnego poziomu',
@@ -50,6 +54,8 @@ const uk: SettingsTexts = {
   music: 'Музика',
   language: 'Мова гри',
   languages: LANGUAGE_NAMES,
+  profile: 'Профіль',
+  profileHint: '{name}. Видалення стирає весь поступ на цьому пристрої',
   keyboard: {
     title: 'Клавіатура на екрані',
     hint: 'На телефоні. Діятиме з наступного рівня',

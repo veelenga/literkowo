@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { TROPHIES } from '../course/shop';
 import { treasuresNote } from './resultTreasures';
 
-const NOTHING = { trophies: [], newItems: false, arenaOpened: false };
+const NOTHING = { trophies: [], newItems: false };
 
 describe('treasuresNote', () => {
   it('stays hidden when nothing new was earned', () => {
@@ -34,12 +34,5 @@ describe('treasuresNote', () => {
     trophy.click();
     news.click();
     expect(onShop.mock.calls).toEqual([['trophy'], []]);
-  });
-
-  it('announces the arena once it opens, without a shop link', () => {
-    const note = treasuresNote({ ...NOTHING, arenaOpened: true }, vi.fn());
-    const chip = note?.querySelector('.treasure-chip.is-arena');
-    expect(chip?.textContent).toBe('Arena otwarta!');
-    expect(chip?.tagName).toBe('SPAN');
   });
 });

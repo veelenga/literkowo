@@ -28,7 +28,7 @@ const REWARDS = {
   xpBefore: 0,
   xp: 20,
   coins: 5,
-  treasures: { trophies: [], newItems: false, arenaOpened: false },
+  treasures: { trophies: [], newItems: false },
 };
 
 function actions() {

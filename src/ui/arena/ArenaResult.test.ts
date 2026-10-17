@@ -32,7 +32,7 @@ function summary(overrides: Partial<ArenaRunSummary> = {}): ArenaRunSummary {
       xpBefore: 50,
       xp: 62,
       coins: 55,
-      treasures: { trophies: [], newItems: false, arenaOpened: false },
+      treasures: { trophies: [], newItems: false },
     },
     ...overrides,
   };

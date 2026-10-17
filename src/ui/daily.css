@@ -2,8 +2,11 @@
 
 .daily-card {
   --stamp-size: 36px;
-  gap: 10px;
-  padding: 18px 20px 20px;
+  align-items: center;
+}
+
+.daily-card .arena-keys-field {
+  align-self: stretch;
 }
 
 .daily-card .daily-title {
@@ -128,14 +131,9 @@
   color: var(--success);
 }
 
-.daily-play {
-  align-self: stretch;
-  margin-top: auto;
-}
-
 .daily-tomorrow {
   align-self: stretch;
-  margin: auto 0 0;
+  margin: 4px 0 0;
   padding: 12px 14px;
   border-radius: var(--radius-pill);
   border: 2px dashed var(--border-strong);
@@ -177,36 +175,32 @@
 }
 
 @media (--low-screen) {
-  .daily-card {
-    gap: 7px;
-    padding: 14px 16px 16px;
-  }
-
   .daily-card .daily-title {
     font-size: 1.15rem;
   }
 }
 
 @media (--phone) {
-  .daily-art {
-    display: none;
-  }
-
   .daily-card {
     --stamp-size: 32px;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
+      'keys keys'
       'title title'
       'rule rule'
-      'stamps play'
+      'stamps stamps'
       'info info'
       'board board'
-      'family family';
+      'family family'
+      'play play';
     align-items: center;
     gap: 6px 8px;
-    padding: 10px 10px 12px;
     text-align: left;
+  }
+
+  .daily-card .arena-keys-field {
+    grid-area: keys;
   }
 
   .daily-card .daily-title {
@@ -253,14 +247,7 @@
   .daily-play,
   .daily-tomorrow {
     grid-area: play;
-    align-self: end;
     margin: 0;
-  }
-
-  .daily-card .daily-play {
-    min-height: 44px;
-    padding: 0 10px;
-    font-size: 1rem;
   }
 
   .daily-tomorrow {
@@ -276,11 +263,11 @@
   .daily-card {
     grid-template-columns: minmax(0, 1fr) auto auto;
     grid-template-areas:
+      'keys keys keys'
       'title stamps play'
       'rule stamps play'
       'info stamps play';
     gap: 2px 12px;
-    padding: 5px 12px;
   }
 
   .daily-card .daily-tag {

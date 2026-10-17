@@ -86,9 +86,10 @@ function setup(family: Profile[] = []) {
       return profile;
     },
     profiles: () => family,
+    startTest: vi.fn(),
   };
   const flow = new ArenaFlow(host, () => FRIDAY);
-  return { flow, runs, overlays, screens, saved, shops };
+  return { flow, runs, overlays, screens, saved, shops, host };
 }
 
 describe('ArenaFlow', () => {
@@ -194,15 +195,18 @@ describe('ArenaFlow', () => {
     flow.startDaily(lasPlayer(), { keySet: CHOICE.keySet, previous: CHOICE });
     runs[0].onFinished(RESULT);
     overlays[0].element.querySelector<HTMLButtonElement>('.button-ghost')?.click();
-    const active = screens[0].element.querySelectorAll('.chip.is-active');
+    const screen = screens[0].element;
+    expect(screen.querySelector('.arena-panel')?.classList).toContain('daily-card');
+    expect(screen.querySelector('.daily-tries')?.textContent).toBe('Próby: 1 z 3');
+    screen.querySelector<HTMLButtonElement>(".arena-mode-tab[data-mode='endless']")?.click();
+    const active = screen.querySelectorAll('.chip.is-active');
     expect([...active].map((chip) => chip.textContent)).toEqual(['Las', 'Szybko']);
-    expect(screens[0].element.querySelector('.daily-tries')?.textContent).toBe('Próby: 1 z 3');
     overlays[0].dispose();
   });
 
   it('starts the daily from its card with the key set of the chip', () => {
     const { flow, runs, screens } = setup();
-    flow.show(lasPlayer(), CHOICE);
+    flow.show(lasPlayer(), CHOICE, 'daily');
     screens[0].element.querySelector<HTMLButtonElement>('.daily-play')?.click();
     expect(runs[0].level.id).toBe('las-16');
     expect(runs[0].plan.seconds).toBe(180);

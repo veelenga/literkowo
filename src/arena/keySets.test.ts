@@ -1,14 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { LEVELS } from '../course/catalog';
 import { createProfile, type LevelResult, type Profile } from '../profiles/Profile';
-import {
-  arenaGateLevel,
-  defaultKeySet,
-  isArenaOpen,
-  keySetById,
-  keySetsFor,
-  openKeySets,
-} from './keySets';
+import { defaultKeySet, keySetById, keySetsFor, openKeySets } from './keySets';
 
 const STAR: LevelResult = { stars: 1, score: 10, accuracy: 0.9, wpm: 10 };
 
@@ -40,8 +33,9 @@ describe('keySetsFor', () => {
 });
 
 describe('openKeySets', () => {
-  it('opens a region once every key of it was taught', () => {
-    expect(ids(profileUpTo('polana-17'))).toEqual([]);
+  it('always opens the first region, and the others once every key of them was taught', () => {
+    expect(ids(createProfile('A', 'a'))).toEqual(['polana']);
+    expect(ids(profileUpTo('polana-17'))).toEqual(['polana']);
     expect(ids(profileUpTo('polana-18'))).toEqual(['polana']);
     expect(ids(profileUpTo('polana-19'))).toEqual(['polana']);
     expect(ids(profileUpTo('las-15'))).toEqual(['polana', 'las']);
@@ -61,21 +55,7 @@ describe('openKeySets', () => {
 
 describe('defaultKeySet', () => {
   it('picks the highest open key set', () => {
-    expect(defaultKeySet(profileUpTo('las-15'))?.id).toBe('las');
-    expect(defaultKeySet(createProfile('A', 'a'))).toBeUndefined();
-  });
-});
-
-describe('isArenaOpen', () => {
-  it('opens with a star on the Polana boss', () => {
-    expect(arenaGateLevel('pl').id).toBe('polana-19');
-    expect(isArenaOpen(profileUpTo('polana-18'))).toBe(false);
-    expect(isArenaOpen(profileUpTo('polana-19'))).toBe(true);
-  });
-
-  it('opens with a placement', () => {
-    const profile = createProfile('A', 'a');
-    profile.arena.placement = { regionId: 'polana', date: '2026-10-15' };
-    expect(isArenaOpen(profile)).toBe(true);
+    expect(defaultKeySet(profileUpTo('las-15')).id).toBe('las');
+    expect(defaultKeySet(createProfile('A', 'a')).id).toBe('polana');
   });
 });

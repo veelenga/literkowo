@@ -1,9 +1,11 @@
 import { REGIONS, type Region } from '../course/catalog';
+import { boostedCoins } from '../course/coins';
+import type { Tally } from '../course/counters';
 import { courseFor } from '../course/course';
 import type { KeyStats } from '../course/keyStats';
-import { awardTrophies } from '../course/trophies';
 import type { Profile } from '../profiles/Profile';
 import type { PlacementOutcome } from './placement';
+import { withArenaRun } from './progress';
 import type { ArenaRecord } from './record';
 
 export const FINGERS_CARD_ID = 'placement-fingers';
@@ -14,14 +16,31 @@ export interface PlacementAttempt {
   readonly outcome: PlacementOutcome;
   readonly keyStats: KeyStats;
   readonly date: string;
+  readonly score: number;
+  readonly lettersFreed: number;
+  readonly xp: number;
+  readonly runCoins: number;
+  readonly coinBoost: number;
+  readonly tally: Tally;
 }
 
-export function recordPlacement(profile: Profile, attempt: PlacementAttempt): Profile {
-  return awardTrophies({
-    ...profile,
-    keyStats: { ...profile.keyStats, ...attempt.keyStats },
+export interface PlacementRecord {
+  readonly profile: Profile;
+  readonly coins: number;
+}
+
+export function recordPlacement(profile: Profile, attempt: PlacementAttempt): PlacementRecord {
+  const coins = boostedCoins(attempt.runCoins, attempt.coinBoost);
+  const updated = withArenaRun(profile, {
+    score: attempt.score,
+    lettersFreed: attempt.lettersFreed,
+    xp: attempt.xp,
+    coins,
+    keyStats: attempt.keyStats,
+    tally: attempt.tally,
     arena: placedFurther(profile.arena, attempt.outcome.placed, attempt.date),
   });
+  return { profile: updated, coins };
 }
 
 export function placedFurther(
@@ -31,17 +50,6 @@ export function placedFurther(
 ): ArenaRecord {
   if (!region || regionOrder(region.id) <= regionOrder(record.placement?.regionId)) return record;
   return { ...record, placement: { regionId: region.id, date } };
-}
-
-export function offersPlacement(profile: Profile): boolean {
-  const course = courseFor(profile.wordLanguage);
-  const [first] = course.regions;
-  const last = course.regions.at(-1);
-  const starPastFirst = course.levels.some(
-    (level) => level.regionId !== first.id && (profile.levelResults[level.id]?.stars ?? 0) > 0,
-  );
-  const placedAtLast = regionOrder(profile.arena.placement?.regionId) >= regionOrder(last?.id);
-  return !starPastFirst && !placedAtLast;
 }
 
 export function skippedKeys(profile: Profile): string {

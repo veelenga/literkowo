@@ -6,7 +6,7 @@ import { LEVELS } from '../../course/catalog';
 import { createProfile, type Profile } from '../../profiles/Profile';
 import type { ArenaChoice } from '../../arena/endlessPlan';
 import type { KeySet } from '../../arena/keySets';
-import { ArenaScreen } from './ArenaScreen';
+import { ArenaScreen, type ArenaMode } from './ArenaScreen';
 
 vi.mock('../ShopHero', () => ({
   ShopHero: class {
@@ -39,21 +39,26 @@ function withBest(profile: Profile, keySet: string, id: DifficultyId, medal: Med
 
 const screens: ArenaScreen[] = [];
 
-function setup(profile: Profile, previous?: ArenaChoice) {
+function setup(profile: Profile, previous?: ArenaChoice, mode?: ArenaMode) {
   const onPlay = vi.fn<(profile: Profile, choice: ArenaChoice) => void>();
   const onBack = vi.fn<(profile: Profile) => void>();
   const onShop = vi.fn<(profile: Profile, choice: ArenaChoice) => void>();
   const onDaily = vi.fn<(profile: Profile, keySet: KeySet, choice: ArenaChoice) => void>();
-  const screen = new ArenaScreen(profile, { onPlay, onBack, onShop, onDaily }, { previous });
+  const onTest = vi.fn<(profile: Profile, choice: ArenaChoice) => void>();
+  const actions = { onPlay, onBack, onShop, onDaily, onTest };
+  const screen = new ArenaScreen(profile, actions, { previous, mode });
   screens.push(screen);
   const chips = (selector: string) => [
     ...screen.element.querySelectorAll<HTMLButtonElement>(`${selector} .chip`),
   ];
   const keySetChips = () => chips('.arena-chips:not(.arena-difficulties)');
   const difficultyChips = () => chips('.arena-difficulties');
+  const tabs = () => [...screen.element.querySelectorAll<HTMLButtonElement>('.arena-mode-tab')];
+  const tab = (wanted: ArenaMode) => tabs().find((item) => item.dataset.mode === wanted);
+  const panel = () => screen.element.querySelector<HTMLElement>('.arena-panel');
   const play = () => screen.element.querySelector<HTMLButtonElement>('.arena-play')?.click();
   const lastChoice = () => onPlay.mock.lastCall?.[1];
-  return { screen, keySetChips, difficultyChips, play, lastChoice, onBack, onShop, onDaily };
+  return { screen, keySetChips, difficultyChips, tabs, tab, panel, play, lastChoice, ...actions };
 }
 
 function press(key: string): void {
@@ -69,8 +74,23 @@ describe('ArenaScreen', () => {
     screens.splice(0).forEach((screen) => screen.dispose());
   });
 
-  it('offers the Polana keys and the first two levels after the Polana boss', () => {
-    const { keySetChips, difficultyChips, screen } = setup(profileUpTo('polana-19'));
+  it('opens on Bez końca with the three modes as tabs', () => {
+    const { tabs, panel } = setup(createProfile('Ola', 'a'));
+    expect(tabs().map((item) => [item.dataset.mode, item.textContent])).toEqual([
+      ['test', 'Sprawdzian'],
+      ['daily', 'Wyzwanie dnia'],
+      ['endless', 'Bez końca'],
+    ]);
+    expect(tabs().map((item) => item.getAttribute('aria-pressed'))).toEqual([
+      'false',
+      'false',
+      'true',
+    ]);
+    expect(panel()?.dataset.mode).toBe('endless');
+  });
+
+  it('offers the Polana keys and the first two levels to a fresh profile', () => {
+    const { keySetChips, difficultyChips, screen } = setup(createProfile('Ola', 'a'));
     expect(keySetChips().map((chip) => chip.textContent)).toEqual(['Polana']);
     expect(difficultyChips().map((chip) => [chip.textContent, chip.disabled])).toEqual([
       ['Spokojnie', false],
@@ -98,7 +118,7 @@ describe('ArenaScreen', () => {
   it('shows the best wave and medal of the chosen combination', () => {
     const profile = withBest(profileUpTo('las-16'), 'las', 'normal', SILVER);
     const { screen, difficultyChips } = setup(profile);
-    const card = () => screen.element.querySelector("[data-mode='endless']");
+    const card = () => screen.element.querySelector(".arena-panel[data-mode='endless']");
     expect(card()?.querySelector('.arena-best')?.textContent).toBe('Rekord: fala 7');
     expect(card()?.querySelector('.medal.is-silver')).not.toBeNull();
     expect(difficultyChips()[2].disabled).toBe(false);
@@ -160,13 +180,41 @@ describe('ArenaScreen', () => {
     });
   });
 
-  it('puts the daily card first and plays it with the chosen key set', () => {
-    const { screen, keySetChips, onDaily } = setup(profileUpTo('gory-16'));
-    const cards = [...screen.element.querySelectorAll('[data-mode]')];
-    expect(cards.map((card) => card.getAttribute('data-mode'))).toEqual(['daily', 'endless']);
-    keySetChips()[1].click();
-    screen.element.querySelector<HTMLButtonElement>('.daily-play')?.click();
-    expect(onDaily.mock.lastCall?.[1].id).toBe('las');
-    expect(onDaily.mock.lastCall?.[2].keySet.id).toBe('las');
+  describe('modes', () => {
+    it('shows the daily card with the key set chips and plays it with the chosen key set', () => {
+      const { tab, panel, keySetChips, onDaily, onPlay } = setup(profileUpTo('gory-16'));
+      tab('daily')?.click();
+      expect(panel()?.classList).toContain('daily-card');
+      expect(panel()?.querySelector('.arena-difficulties')).toBeNull();
+      keySetChips()[1].click();
+      panel()?.querySelector<HTMLButtonElement>('.arena-play')?.click();
+      expect(onDaily.mock.lastCall?.[1].id).toBe('las');
+      expect(onDaily.mock.lastCall?.[2].keySet.id).toBe('las');
+      expect(onPlay).not.toHaveBeenCalled();
+    });
+
+    it('shows the test with its stages and starts it with Play or Enter', () => {
+      const { tab, panel, onTest, onPlay } = setup(profileUpTo('polana-19'));
+      tab('test')?.click();
+      expect(panel()?.dataset.mode).toBe('test');
+      expect(panel()?.querySelectorAll('.stage-chip')).toHaveLength(5);
+      expect(panel()?.querySelector('.arena-keys')).toBeNull();
+      press('Enter');
+      expect(onTest).toHaveBeenCalledOnce();
+      expect(onPlay).not.toHaveBeenCalled();
+    });
+
+    it('names where a placed child starts and opens on the asked mode', () => {
+      const profile = profileUpTo('polana-19');
+      profile.arena.placement = { regionId: 'las', date: '2026-10-15' };
+      const { panel, tab } = setup(profile, undefined, 'test');
+      expect(tab('test')?.getAttribute('aria-pressed')).toBe('true');
+      expect(panel()?.querySelector('.arena-best')?.textContent).toBe('Zaczynasz tutaj: Góry');
+    });
+
+    it('marks the daily tab with a dot while today waits', () => {
+      const { tab } = setup(profileUpTo('polana-19'));
+      expect(tab('daily')?.querySelector('.daily-dot')).not.toBeNull();
+    });
   });
 });

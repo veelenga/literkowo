@@ -62,13 +62,17 @@ export function avatarImage(avatar: string): string {
   return `${import.meta.env.BASE_URL}characters/character-${avatar}.png`;
 }
 
-export function createProfile(name: string, avatar: string): Profile {
+export function createProfile(
+  name: string,
+  avatar: string,
+  wordLanguage: WordLanguage = DEFAULT_WORD_LANGUAGE,
+): Profile {
   return {
     schemaVersion: PROFILE_SCHEMA_VERSION,
     id: crypto.randomUUID(),
     name,
     avatar,
-    wordLanguage: DEFAULT_WORD_LANGUAGE,
+    wordLanguage,
     totalScore: 0,
     lettersFreed: 0,
     xp: 0,

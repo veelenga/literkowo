@@ -39,6 +39,7 @@ function setup() {
   const host = {
     showMap: vi.fn<PlacementHost['showMap']>(),
     showArena: vi.fn<PlacementHost['showArena']>(),
+    showShop: vi.fn<PlacementHost['showShop']>(),
     startRun: (_: Profile, run: GameRun) => runs.push(run),
     openOverlay: (overlay: Overlay) => overlays.push(overlay),
     dismissThen: (next: () => void) => next,
@@ -83,15 +84,16 @@ describe('PlacementFlow', () => {
     overlays.forEach((overlay) => overlay.dispose());
   });
 
-  it('places the child, saves the keystrokes and shows the fingers card once', () => {
+  it('places the child, pays the run and shows the fingers card once', () => {
     const { flow, host, runs, overlays, saved } = setup();
     flow.start(createProfile('Ola', 'a'));
     runs[0].onFinished(result([PASS, FAIL]));
     const placed = saved[0];
     expect(placed.arena.placement?.regionId).toBe('polana');
     expect(placed.keyStats.f.hits).toBe(9);
-    expect(placed).toMatchObject({ xp: 0, totalScore: 0, lettersFreed: 0, coins: 0 });
-    expect(placed.counters.wordsTyped).toBe(0);
+    expect(placed).toMatchObject({ xp: 40, totalScore: 900, lettersFreed: 80, coins: 0 });
+    expect(placed.counters.wordsTyped).toBe(20);
+    expect(overlays[0].element.querySelector('.result-progress')).not.toBeNull();
     expect(overlays[0].element.querySelector('.result-title')?.textContent).toBe(
       'Zaczynasz tutaj: Las',
     );

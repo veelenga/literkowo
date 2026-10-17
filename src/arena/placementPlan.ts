@@ -7,12 +7,15 @@ import {
   STAGE_WORD_LIMIT,
   type PlacementStage,
 } from './placement';
+import { presetOf } from './difficulty';
+import { arenaCoinsPerWord } from './economy';
 import { TIME_ATTACK_HIT_COST, TIME_ATTACK_LIVES, timeAttackPhase } from './timeAttack';
 
+export const PLACEMENT_PRESET = presetOf('normal');
 export const PLACEMENT_LIVES = TIME_ATTACK_LIVES;
 export const PLACEMENT_HIT_COST: HitCost = TIME_ATTACK_HIT_COST;
-export const PLACEMENT_COINS_PER_WORD = 0;
-export const PLACEMENT_XP_FACTOR = 0;
+export const PLACEMENT_COINS_PER_WORD = arenaCoinsPerWord(PLACEMENT_PRESET);
+export const PLACEMENT_XP_FACTOR = PLACEMENT_PRESET.xpFactor;
 
 export function placementPlan(stages: readonly PlacementStage[]): RunPlan {
   const phases = stages.map((stage) => stagePhase(stage, stages.length));

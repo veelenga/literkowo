@@ -17,7 +17,6 @@ export interface JourneyStop extends JourneyPoint {
 
 export interface BandSpec {
   readonly roles: readonly StopRole[];
-  readonly gate: boolean;
 }
 
 export interface BandLayout {
@@ -40,7 +39,6 @@ export const JOURNEY_SPACING = {
   header: 148,
   row: 112,
   footer: 40,
-  gateFooter: 200,
   heroRoom: 72,
 } as const;
 
@@ -90,11 +88,6 @@ export function journeyLayout(specs: readonly BandSpec[], focus = NO_FOCUS): Jou
   return { height: top, bands, road, roadIndex };
 }
 
-export function gatePoint(band: BandLayout): JourneyPoint {
-  const last = band.road.at(-1) ?? { x: CENTER, y: band.top + JOURNEY_SPACING.header };
-  return { x: CENTER * 2 - last.x, y: last.y + JOURNEY_SPACING.row };
-}
-
 export function journeyPath(points: readonly JourneyPoint[]): string {
   const [first, ...rest] = points;
   if (!first) return '';
@@ -118,10 +111,9 @@ function bandLayout(spec: BandSpec, top: number, entry: Column, focus: number): 
   const roadIndex = slotIndexes(slots, spec.roles.length);
   const stops = spec.roles.map((role, index) => stopOf(role, placements[roadIndex[index]]));
   const last = road.at(-1)?.y ?? top + JOURNEY_SPACING.header;
-  const footer = spec.gate ? JOURNEY_SPACING.gateFooter : JOURNEY_SPACING.footer;
   return {
     top,
-    height: last - top + footer,
+    height: last - top + JOURNEY_SPACING.footer,
     headerSide: entry === FIRST_COLUMN ? 'start' : 'end',
     stops,
     road,

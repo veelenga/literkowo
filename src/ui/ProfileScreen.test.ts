@@ -15,7 +15,6 @@ vi.mock('./menuMotion', () => ({
 
 const ACTIVE_KEY = 'literkowo.activeProfile';
 const NAMES = ['Ola', 'Kuba', 'Zosia'];
-const WON = { stars: 1, score: 10, accuracy: 0.9, wpm: 10 };
 
 function setup(profiles: Profile[] = []) {
   const store = new ProfileStore();
@@ -24,7 +23,6 @@ function setup(profiles: Profile[] = []) {
   const actions = {
     onPlay: vi.fn<(profile: Profile) => void>(),
     onSettings: vi.fn(),
-    onShop: vi.fn<(profile: Profile) => void>(),
     onPlacement: vi.fn<(profile: Profile) => void>(),
   };
   const screen = new ProfileScreen(store, actions);
@@ -91,31 +89,33 @@ describe('ProfileScreen', () => {
     expect(onPlay).toHaveBeenCalledWith(ola);
   });
 
-  it('opens the shop for the selected profile from a quiet link next to Play', () => {
-    const ola = createProfile('Ola', 'a');
-    const { screen, onShop, onPlay } = open([ola]);
-    const link = screen.element.querySelector<HTMLButtonElement>('.play-panel-main .shop-link');
-    expect(link?.textContent).toBe('Sklep');
-    expect(link?.classList).toContain('button-ghost');
-    expect(link?.nextElementSibling?.classList).toContain('play-button');
-    link?.click();
-    expect(onShop).toHaveBeenCalledWith(ola);
-    expect(onPlay).not.toHaveBeenCalled();
+  it('keeps the play panel to the name, the word language and Play', () => {
+    const ola = createProfile('Ola', 'a', 'en');
+    const { screen } = open([ola]);
+    const panel = screen.element.querySelector('.play-panel');
+    expect(panel?.querySelector('.panel-title')?.textContent).toBe('Ola');
+    expect(panel?.querySelector('.play-panel-words')?.textContent).toBe('Słowa po angielsku');
+    expect(panel?.querySelectorAll('.button')).toHaveLength(1);
+    expect(panel?.querySelector('.shop-link, .placement-link, .button-danger')).toBeNull();
   });
 
-  it('offers the placement test from a quiet button until a star past Polana', () => {
-    const ola = createProfile('Ola', 'a');
-    const { screen, onPlacement, onPlay } = open([ola]);
-    const button = screen.element.querySelector<HTMLButtonElement>('.play-panel .placement-link');
-    expect(button?.textContent).toBe('Sprawdzian');
-    expect(button?.classList).toContain('button-ghost');
-    button?.click();
-    expect(onPlacement).toHaveBeenCalledWith(ola);
-    expect(onPlay).not.toHaveBeenCalled();
-    dispose?.();
-    const kuba = { ...createProfile('Kuba', 'b'), levelResults: { 'las-1': WON } };
-    const later = open([kuba]);
-    expect(later.screen.element.querySelector('.placement-link')).toBeNull();
+  it('tags every card with the language of its words', () => {
+    const { screen } = open([createProfile('Ola', 'a'), createProfile('Kuba', 'b', 'en')]);
+    const tags = [...screen.element.querySelectorAll('.profile-card .words-tag')];
+    expect(tags.map((tag) => tag.textContent)).toEqual(['Słowa po polsku', 'Słowa po angielsku']);
+  });
+
+  it('creates a profile with the chosen word language', () => {
+    const { screen, store } = open();
+    screen.element.querySelector<HTMLButtonElement>('.profile-card-new')?.click();
+    const panel = screen.element.querySelector('.create-panel');
+    const chips = [...(panel?.querySelectorAll<HTMLButtonElement>('.settings-chips .chip') ?? [])];
+    expect(chips.map((chip) => chip.textContent)).toEqual(['Polski', 'Angielski']);
+    chips[1].click();
+    const input = panel?.querySelector('input');
+    if (input) input.value = 'Ola';
+    panel?.querySelector<HTMLButtonElement>('.create-actions .button-primary')?.click();
+    expect(store.all()[0]).toMatchObject({ name: 'Ola', wordLanguage: 'en' });
   });
 
   it('creates a profile and starts learning or the placement test', () => {

@@ -1,12 +1,11 @@
 import type { ArenaDifficulty } from '../../arena/difficulty';
 import { dailyDay, hasFinishedToday } from '../../arena/daily';
-import { isArenaOpen, type ArenaProfile } from '../../arena/keySets';
+import type { ArenaProfile } from '../../arena/keySets';
 import { NO_MEDAL, nextMedalGoal, type Medal } from '../../arena/medals';
 import { todayOf } from '../../arena/week';
 import { format } from '../../i18n/format';
 import { i18n } from '../../i18n/i18n';
 import { el, icon, svg } from '../dom';
-import { hintedLockBadge } from '../shopParts';
 import '../arena.css';
 
 type MedalKey = 'none' | 'bronze' | 'silver' | 'gold';
@@ -68,19 +67,18 @@ export function arenaButton(
   today: string = todayOf(),
 ): HTMLElement {
   const copy = i18n.t.features.arena;
-  const open = isArenaOpen(profile);
-  const waiting = open && !hasFinishedToday(profile.arena.daily, today);
+  const waiting = !hasFinishedToday(profile.arena.daily, today);
+  const label = waiting ? `${copy.open}. ${i18n.t.features.daily.waiting}` : copy.open;
   return el(
     'button',
     {
-      class: open ? 'header-button arena-button' : 'header-button arena-button is-locked',
-      title: arenaButtonLabel(open, waiting),
-      'aria-label': arenaButtonLabel(open, waiting),
+      class: 'header-button arena-button',
+      title: label,
+      'aria-label': label,
       onClick: onOpen,
     },
     arenaIcon('header-button-icon'),
     el('span', { class: 'header-button-label', text: copy.open }),
-    open ? null : hintedLockBadge(copy.locked),
     waiting ? el('span', { class: 'header-button-dot daily-dot', 'aria-hidden': 'true' }) : null,
   );
 }
@@ -97,10 +95,4 @@ export function dailyMedalDot(
   dot.title = label;
   dot.setAttribute('aria-label', label);
   return dot;
-}
-
-function arenaButtonLabel(open: boolean, waiting: boolean): string {
-  const copy = i18n.t.features;
-  if (!open) return `${copy.arena.open}. ${copy.arena.locked}`;
-  return waiting ? `${copy.arena.open}. ${copy.daily.waiting}` : copy.arena.open;
 }

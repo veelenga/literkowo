@@ -1,12 +1,10 @@
 import type { ArenaChoice } from '../arena/endlessPlan';
-import { isArenaOpen } from '../arena/keySets';
 import { music } from '../audio/Music';
 import type { MusicMood } from '../audio/music/specs';
 import { sfx } from '../audio/Sfx';
 import { regionOf, type Level } from '../course/catalog';
 import { levelCoins } from '../course/coins';
 import { courseFor } from '../course/course';
-import { hasNewItems } from '../course/inventory';
 import {
   markStorySeen,
   recordResult,
@@ -15,7 +13,6 @@ import {
   type Attempt,
 } from '../course/progress';
 import { starsFor } from '../course/scoring';
-import { freshTrophies } from '../course/trophies';
 import { hasCoarsePointer } from '../game/deviceProbe';
 import type { Game, GameResult } from '../game/Game';
 import { levelPlan } from '../game/LevelPlan';
@@ -53,6 +50,7 @@ import {
   unlockAudioOnFirstInput,
 } from './devShortcut';
 import { ArenaFlow, type DailyStart, type Screen } from './ArenaFlow';
+import { earnedOf } from './earned';
 import type { GameRun } from './GameRun';
 import { loadGameModule, prefetchGameModule, type GameModule } from './gameModule';
 import { PageAttention } from './PageAttention';
@@ -75,10 +73,12 @@ export class App {
     dismissThen: (next) => this.dismissThen(next),
     save: (profile) => this.save(profile),
     profiles: () => this.store.all(),
+    startTest: (profile) => this.placement.start(profile),
   });
   private readonly placement = new PlacementFlow({
     showMap: (profile) => this.showMap(profile),
     showArena: (profile) => this.arena.show(profile),
+    showShop: (profile, exit, tab) => this.showShop(profile, exit, tab),
     startRun: (profile, run) => this.startRun(profile, run),
     openOverlay: (overlay) => this.overlays.open(overlay),
     dismissThen: (next) => this.dismissThen(next),
@@ -137,13 +137,6 @@ export class App {
         this.showMap(profile);
       },
       onSettings: () => this.showSettings(() => this.showProfiles()),
-      onShop: (profile) => {
-        sfx.unlock();
-        this.showShop(profile, {
-          onBack: () => this.showProfiles(),
-          backLabel: i18n.t.features.shop.backToProfiles,
-        });
-      },
       onPlacement: (profile) => {
         sfx.unlock();
         this.placement.offer(profile, () => undefined);
@@ -161,7 +154,7 @@ export class App {
           onSwitchPlayer: () => this.showProfiles(),
           onShop: () => this.showShop(profile, this.backToMap()),
           onArena: () => this.arena.show(profile),
-          onSettings: () => this.showSettings(() => this.showMap(profile)),
+          onSettings: () => this.showSettings(() => this.showMap(profile), profile),
         }),
     );
   }
@@ -175,8 +168,14 @@ export class App {
     this.disposeScreen = () => screen.dispose();
   }
 
-  private showSettings(back: () => void): void {
-    this.showMenu(() => new SettingsScreen({ onBack: back }));
+  private showSettings(back: () => void, profile?: Profile): void {
+    const deletable = profile && { profile, onDelete: () => this.deleteProfile(profile) };
+    this.showMenu(() => new SettingsScreen({ onBack: back, profile: deletable }));
+  }
+
+  private deleteProfile(profile: Profile): void {
+    this.store.remove(profile.id);
+    this.showProfiles();
   }
 
   private showShop(profile: Profile, exit: ShopExit, tab?: ShopTab): void {
@@ -357,26 +356,16 @@ export class App {
       coinBoost: result.coinBoost,
     });
     const updated = this.recordAttempt(profile, level, attemptOf(result, stars, coins));
-    const treasures = {
-      trophies: freshTrophies(profile, updated),
-      newItems: hasNewItems(profile, updated),
-      arenaOpened: !isArenaOpen(profile) && isArenaOpen(updated),
-    };
     const next = openNext(updated, level);
     const leave = (then: (current: Profile) => void) =>
       this.dismissThen(() => this.afterLevel(updated, level, stars, then));
     this.overlays.open(
-      levelResult(
-        result,
-        stars,
-        { xpBefore: profile.xp, xp: result.xp, coins, treasures },
-        {
-          onNext: next ? leave((current) => this.openLevel(current, next)) : undefined,
-          onRetry: this.dismissThen(() => this.openLevel(updated, level)),
-          onMap: leave((current) => this.showMap(current)),
-          onShop: (tab) => leave((current) => this.showShop(current, this.backToMap(), tab))(),
-        },
-      ),
+      levelResult(result, stars, earnedOf(profile, updated, result.xp, coins), {
+        onNext: next ? leave((current) => this.openLevel(current, next)) : undefined,
+        onRetry: this.dismissThen(() => this.openLevel(updated, level)),
+        onMap: leave((current) => this.showMap(current)),
+        onShop: (tab) => leave((current) => this.showShop(current, this.backToMap(), tab))(),
+      }),
     );
   }
 

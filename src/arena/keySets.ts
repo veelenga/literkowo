@@ -24,23 +24,14 @@ export function keySetById(id: string, language: WordLanguage): KeySet | undefin
 
 export function openKeySets(profile: ArenaProfile): KeySet[] {
   const course = courseFor(profile.wordLanguage);
-  return keySetsFor(profile.wordLanguage).filter((keySet) =>
-    course.isUnlocked(keySet.bossLevel, profile),
+  return keySetsFor(profile.wordLanguage).filter(
+    (keySet, index) => index === FIRST_REGION || course.isUnlocked(keySet.bossLevel, profile),
   );
 }
 
-export function defaultKeySet(profile: ArenaProfile): KeySet | undefined {
-  return openKeySets(profile).at(-1);
-}
-
-export function arenaGateLevel(language: WordLanguage): Level {
-  return keySetsFor(language)[FIRST_REGION].bossLevel;
-}
-
-export function isArenaOpen(profile: ArenaProfile): boolean {
-  const gate = arenaGateLevel(profile.wordLanguage);
-  const beaten = (profile.levelResults[gate.id]?.stars ?? 0) > 0;
-  return beaten || profile.arena.placement !== undefined;
+export function defaultKeySet(profile: ArenaProfile): KeySet {
+  const open = openKeySets(profile);
+  return open[open.length - 1];
 }
 
 function keySetOf(course: Course, region: Region): KeySet {

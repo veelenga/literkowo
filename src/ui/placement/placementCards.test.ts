@@ -76,10 +76,11 @@ describe('placementIntro', () => {
 
 describe('placementResult', () => {
   function open(records: PhaseRecord[], startId?: string) {
-    const actions = { onMap: vi.fn(), onArena: startId ? vi.fn() : undefined };
+    const actions = { onMap: vi.fn(), onArena: startId ? vi.fn() : undefined, onShop: vi.fn() };
     const outcome = placementOutcome(STAGES, records);
     const start = REGIONS.find((region) => region.id === startId);
-    overlay = placementResult({ outcome, regions: REGIONS, start }, actions);
+    const earned = { xpBefore: 0, xp: 30, coins: 12, treasures: { trophies: [], newItems: false } };
+    overlay = placementResult({ outcome, regions: REGIONS, start, earned }, actions);
     return { ...actions, element: overlay.element };
   }
 

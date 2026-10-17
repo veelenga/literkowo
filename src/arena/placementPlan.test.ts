@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PhaseRecord } from '../game/PhaseMeter';
+import { presetOf } from './difficulty';
+import { arenaCoinsPerWord } from './economy';
 import { placementStages, STAGE_BOARD_SIZE, STAGE_SECONDS, STAGE_WORD_LIMIT } from './placement';
 import {
   PLACEMENT_COINS_PER_WORD,
@@ -17,7 +19,7 @@ const FAILED: PhaseRecord = { hits: 30, mistakes: 10, reached: 0, typingSeconds:
 describe('placementPlan', () => {
   const plan = placementPlan(STAGES);
 
-  it('costs no hearts and pays no XP and no coins', () => {
+  it('costs no hearts and pays XP and coins at the Normalnie rate', () => {
     expect(plan).toMatchObject({
       lives: PLACEMENT_LIVES,
       xpFactor: PLACEMENT_XP_FACTOR,
@@ -26,7 +28,8 @@ describe('placementPlan', () => {
       allMechanicsUnlocked: false,
     });
     expect(PLACEMENT_HIT_COST).toBe('combo');
-    expect(PLACEMENT_XP_FACTOR).toBe(0);
+    expect(PLACEMENT_XP_FACTOR).toBe(presetOf('normal').xpFactor);
+    expect(PLACEMENT_COINS_PER_WORD).toBe(arenaCoinsPerWord(presetOf('normal')));
   });
 
   it('runs one timed test phase per stage that keeps a few words on the board', () => {

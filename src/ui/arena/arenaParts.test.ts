@@ -34,9 +34,9 @@ describe('arenaButton', () => {
     expect(arenaButton(player(true), vi.fn(), FRIDAY).title).toBe('Arena. Wyzwanie dnia czeka');
   });
 
-  it('hides the dot once today is played or while the arena is closed', () => {
+  it('hides the dot once today is played', () => {
     expect(dotOf(player(true, DAILY))).toBeNull();
-    expect(dotOf(player(false))).toBeNull();
+    expect(dotOf(player(false))).not.toBeNull();
   });
 });
 
