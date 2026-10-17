@@ -1,6 +1,6 @@
 import type { ArenaRecord } from '../arena/record';
 import type { LevelResult, WordLanguage } from '../profiles/Profile';
-import { REGIONS, regionsFor, type Level, type LevelKind, type Region } from './catalog';
+import { regionOrder, regionsFor, type Level, type LevelKind, type Region } from './catalog';
 
 export type LevelResults = Readonly<Partial<Record<string, LevelResult>>>;
 
@@ -27,6 +27,7 @@ export interface Course {
   isUnlocked(level: Level, progress: CourseProgress): boolean;
   isSkipped(level: Level, progress: CourseProgress): boolean;
   current(progress: CourseProgress): Level | undefined;
+  placedRegion(progress: CourseProgress): Region | undefined;
   lockReason(level: Level, progress: CourseProgress): LockReason | undefined;
   allowedKeys(level: Level): string;
 }
@@ -73,6 +74,14 @@ class LanguageCourse implements Course {
     return ahead.find(unwon) ?? open.find(unwon);
   }
 
+  placedRegion(progress: CourseProgress): Region | undefined {
+    const placedId = progress.arena.placement?.regionId;
+    if (placedId === undefined) return undefined;
+    const placed = regionOrder(placedId);
+    if (placed === NOT_FOUND) return undefined;
+    return this.regions.findLast((region) => regionOrder(region.id) <= placed);
+  }
+
   allowedKeys(level: Level): string {
     return this.levels
       .filter((candidate) => candidate.order <= level.order)
@@ -110,14 +119,6 @@ class LanguageCourse implements Course {
     const region = this.placedRegion(progress);
     const last = region?.levels.at(-1);
     return last ? this.positionOf(last) : NOT_FOUND;
-  }
-
-  private placedRegion(progress: CourseProgress): Region | undefined {
-    const placedId = progress.arena.placement?.regionId;
-    const order = REGIONS.findIndex((region) => region.id === placedId);
-    if (order === NOT_FOUND) return undefined;
-    const covered = new Set(REGIONS.slice(0, order + 1).map((region) => region.id));
-    return this.regions.findLast((region) => covered.has(region.id));
   }
 
   private lastOpenPosition(progress: CourseProgress): number {

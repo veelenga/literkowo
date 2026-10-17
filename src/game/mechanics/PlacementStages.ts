@@ -1,4 +1,4 @@
-import { REGIONS } from '../../course/catalog';
+import { regionName } from '../../course/catalog';
 import { format } from '../../i18n/format';
 import { i18n } from '../../i18n/i18n';
 import type { Phase, StageMark } from '../RunPlan';
@@ -22,13 +22,8 @@ export class PlacementStages implements Mechanic {
     this.context.sfx.chimes(midis, spacing, decay);
     const text = format(i18n.t.features.placement.stageBanner, {
       stage: stage.number,
-      region: regionName(stage.regionId),
+      region: regionName(stage.regionId, i18n.current),
     });
     this.context.announce(text, 'banner', STAGE_ACCENT);
   }
-}
-
-function regionName(regionId: string): string {
-  const region = REGIONS.find((candidate) => candidate.id === regionId);
-  return region ? region.name[i18n.current] : regionId;
 }

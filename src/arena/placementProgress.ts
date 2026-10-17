@@ -1,4 +1,4 @@
-import { REGIONS, type Region } from '../course/catalog';
+import { regionOrder, type Region } from '../course/catalog';
 import { boostedCoins, type RunCoins } from '../course/coins';
 import { courseFor } from '../course/course';
 import type { RunTotals } from '../course/progress';
@@ -36,7 +36,7 @@ export function placedFurther(
   region: Region | undefined,
   date: string,
 ): ArenaRecord {
-  if (!region || regionOrder(region.id) <= regionOrder(record.placement?.regionId)) return record;
+  if (!region || regionOrder(region.id) <= placedOrder(record)) return record;
   return { ...record, placement: { regionId: region.id, date } };
 }
 
@@ -49,17 +49,17 @@ export function skippedKeys(profile: Profile): string {
 }
 
 export function startRegion(profile: Profile): Region | undefined {
-  const placed = regionOrder(profile.arena.placement?.regionId);
-  if (placed === NOT_PLACED) return undefined;
-  const { regions } = courseFor(profile.wordLanguage);
-  const last = regions.findLastIndex((region) => regionOrder(region.id) <= placed);
-  return regions[Math.min(last + 1, regions.length - 1)];
+  const course = courseFor(profile.wordLanguage);
+  const placed = course.placedRegion(profile);
+  if (!placed) return undefined;
+  return course.regions.at(course.regions.indexOf(placed) + 1) ?? placed;
 }
 
 export function showsFingersCard(profile: Profile): boolean {
   return !profile.seenStories.includes(FINGERS_CARD_ID) && skippedKeys(profile).length > 0;
 }
 
-function regionOrder(regionId: string | undefined): number {
-  return regionId ? REGIONS.findIndex((region) => region.id === regionId) : NOT_PLACED;
+function placedOrder(record: ArenaRecord): number {
+  const placedId = record.placement?.regionId;
+  return placedId === undefined ? NOT_PLACED : regionOrder(placedId);
 }

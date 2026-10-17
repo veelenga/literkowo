@@ -1,5 +1,5 @@
 import type { ArenaGoal } from '../arena/goals';
-import { REGIONS } from '../course/catalog';
+import { regionName } from '../course/catalog';
 import { POWER_COMBOS, percentOf, type ItemPower, type PowerKind } from '../course/powers';
 import {
   hatSpec,
@@ -63,7 +63,7 @@ export function trophyCopy({ rule }: Trophy): TrophyCopy {
     case 'playerLevel':
       return filled(copy.playerLevel, { level: rule.level });
     case 'region':
-      return filled(copy.region, { region: regionName(rule.regionId) });
+      return filled(copy.region, { region: regionName(rule.regionId, i18n.current) });
     case 'arenaWave':
       return filled(copy.arenaWave, { wave: rule.wave });
     case 'arenaGold':
@@ -128,8 +128,4 @@ function comboFor(kind: PowerKind): number | undefined {
 
 function filled(copy: TrophyCopy, values: Readonly<Record<string, string | number>>): TrophyCopy {
   return { name: format(copy.name, values), hint: format(copy.hint, values) };
-}
-
-function regionName(regionId: string): string {
-  return REGIONS.find((region) => region.id === regionId)?.name[i18n.current] ?? regionId;
 }

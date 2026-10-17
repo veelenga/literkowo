@@ -132,8 +132,20 @@ export function levelById(id: string): Level | undefined {
   return LEVELS.find((level) => level.id === id);
 }
 
+export function regionById(id: string): Region | undefined {
+  return REGIONS.find((region) => region.id === id);
+}
+
+export function regionOrder(id: string): number {
+  return REGIONS.findIndex((region) => region.id === id);
+}
+
+export function regionName(id: string, language: UiLanguage): string {
+  return regionById(id)?.name[language] ?? id;
+}
+
 export function regionOf(level: Level): Region {
-  const region = REGIONS.find((candidate) => candidate.id === level.regionId);
+  const region = regionById(level.regionId);
   if (!region) throw new Error(`Unknown region: ${level.regionId}`);
   return region;
 }

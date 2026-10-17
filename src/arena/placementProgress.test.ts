@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { REGIONS } from '../course/catalog';
 import { EMPTY_TALLY } from '../course/counters';
+import { courseFor } from '../course/course';
 import { EMPTY_KEY_STAT } from '../course/keyStats';
-import { createProfile, type Profile } from '../profiles/Profile';
+import { createProfile, WORD_LANGUAGES, type Profile } from '../profiles/Profile';
 import { openKeySets } from './keySets';
 import { placementOutcome, placementStages, type PlacementOutcome } from './placement';
 import {
@@ -44,6 +46,10 @@ function placed(profile: Profile, passed: number, overrides?: Partial<PlacementA
   return recordPlacement(profile, attempt(passed, overrides)).profile;
 }
 
+function placedIn(profile: Profile, regionId: string): Profile {
+  return { ...profile, arena: { ...profile.arena, placement: { regionId, date: DAY } } };
+}
+
 describe('recordPlacement', () => {
   it('stores the last passed region and opens its key sets', () => {
     const profile = placed(createProfile('A', 'b'), 2);
@@ -84,6 +90,15 @@ describe('startRegion', () => {
     expect(startRegion(placed(createProfile('A', 'b'), 5))?.id).toBe('wyspa');
     const english = { ...placed(createProfile('A', 'b'), 5), wordLanguage: 'en' as const };
     expect(startRegion(english)?.id).toBe('jaskinia');
+  });
+
+  it('starts in the region of the level the course opens after the placement', () => {
+    for (const language of WORD_LANGUAGES) {
+      for (const region of REGIONS) {
+        const profile = placedIn(createProfile('A', 'b', language), region.id);
+        expect(startRegion(profile)?.id).toBe(courseFor(language).current(profile)?.regionId);
+      }
+    }
   });
 });
 
