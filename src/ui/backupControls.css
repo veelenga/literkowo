@@ -1,0 +1,18 @@
+.backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.backup-actions .backup-button {
+  min-height: 42px;
+  padding: 0 14px;
+  border-color: var(--border);
+  font-size: 0.92rem;
+}
+
+@media (pointer: coarse) {
+  .backup-actions .backup-button {
+    min-height: var(--touch-target);
+  }
+}

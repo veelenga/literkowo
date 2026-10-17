@@ -5,6 +5,7 @@ import { format } from '../i18n/format';
 import { i18n } from '../i18n/i18n';
 import type { UiLanguage } from '../i18n/translations';
 import type { Profile } from '../profiles/Profile';
+import { backupControls, type ProgressBackupActions } from './backupControls';
 import { el } from './dom';
 import {
   ON_SCREEN_KEYBOARD_CHOICES,
@@ -27,6 +28,7 @@ export interface ProfileSettings {
 export interface SettingsActions {
   readonly onBack: () => void;
   readonly profile?: ProfileSettings;
+  readonly backup?: ProgressBackupActions;
 }
 
 export class SettingsScreen {
@@ -57,6 +59,7 @@ export class SettingsScreen {
           this.languageRow(),
           keyboardRow(),
           motionRow(),
+          this.backupRow(),
           this.profileRow(),
         ),
       ),
@@ -76,6 +79,10 @@ export class SettingsScreen {
       ),
       el('h1', { class: 'shop-title settings-title', text: copy.title }),
     );
+  }
+
+  private backupRow(): HTMLElement | null {
+    return this.actions.backup ? backupRow(this.actions.backup) : null;
   }
 
   private profileRow(): HTMLElement | null {
@@ -98,6 +105,11 @@ export class SettingsScreen {
       }),
     );
   }
+}
+
+function backupRow(actions: ProgressBackupActions): HTMLElement {
+  const copy = i18n.t.features.progressBackup;
+  return settingRow(copy.title, backupControls(actions), copy.hint);
 }
 
 function profileRow(settings: ProfileSettings): HTMLElement {

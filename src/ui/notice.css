@@ -1,0 +1,14 @@
+.notice {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(16px + var(--safe-bottom));
+  z-index: calc(var(--z-overlay) + 1);
+  display: grid;
+  pointer-events: none;
+}
+
+.notice-pill {
+  pointer-events: auto;
+  text-align: start;
+}
