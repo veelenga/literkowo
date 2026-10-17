@@ -19,7 +19,8 @@ const MODEL_FILES = /\/models\/.+\.(?:glb|png)$/;
 const FILE_REQUEST = /\/[^/?]+\.[a-z0-9]+(?:\?.*)?$/i;
 const MODEL_CACHE = 'literkowo-models';
 const MODEL_CACHE_ENTRIES = 64;
-const CACHEABLE_STATUSES = [0, 200];
+const MODEL_NETWORK_TIMEOUT_SECONDS = 4;
+const CACHEABLE_STATUSES = [200];
 
 export default defineConfig({
   base,
@@ -79,9 +80,10 @@ export default defineConfig({
         runtimeCaching: [
           {
             urlPattern: MODEL_FILES,
-            handler: 'CacheFirst',
+            handler: 'NetworkFirst',
             options: {
               cacheName: MODEL_CACHE,
+              networkTimeoutSeconds: MODEL_NETWORK_TIMEOUT_SECONDS,
               expiration: { maxEntries: MODEL_CACHE_ENTRIES },
               cacheableResponse: { statuses: CACHEABLE_STATUSES },
             },

@@ -1098,7 +1098,7 @@ Performance:
 Install and offline:
 
 - `vite-plugin-pwa` writes the web manifest: name Literkowo, the site description, the categories education, games and kids, a wide screenshot, standalone display, theme colour `#070b1a`, background `#050816`, start URL and scope from the base path.
-- The service worker precaches the build and caches files under `models/` at runtime, cache first. It registers only in production builds (`src/app/serviceWorker.ts`).
+- The service worker precaches the build and caches files under `models/` at runtime, network first. Online it always asks the site, through the browser cache, so a model or texture replaced in place reaches players on the next load. Offline, or when the site does not answer within 4 seconds, it serves the cached copy. Only responses with status 200 are cached, at most 64 files. The cache name stays `literkowo-models`, so installed apps reuse their cache instead of leaving an old one behind. It registers only in production builds (`src/app/serviceWorker.ts`).
 - The precache takes scripts, styles, HTML, SVG, PNG and fonts only. Navigation requests for a path with a file extension skip the app shell fallback (`FILE_REQUEST` in `vite.config.ts`), so `robots.txt`, `sitemap.xml`, `llms.txt` and the JPEG images always come fresh from the network.
 - Icons come from `public/icon.svg` and `public/icon-maskable.svg` through `npm run icons`.
 
