@@ -1,4 +1,4 @@
-import { countOf, isRecord, stringsOf } from '../profiles/raw';
+import { countOf, isRecord, stringsOf, wholeOf } from '../profiles/raw';
 
 export interface Tally {
   readonly words: number;
@@ -73,8 +73,4 @@ export function countersOf(value: unknown): Counters {
 
 function withSkin(skins: readonly string[], avatar: string): string[] {
   return skins.includes(avatar) ? [...skins] : [...skins, avatar];
-}
-
-function wholeOf(value: unknown): number {
-  return Math.floor(countOf(value));
 }

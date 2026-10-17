@@ -24,7 +24,17 @@ import {
 } from './Profile';
 import { seededCounters } from './countersMigration';
 import { gradualCourseResults } from './courseMigration';
-import { countOf, isCount, isNonEmptyString, isRecord, stringsOf, type RawRecord } from './raw';
+import {
+  countOf,
+  entriesOf,
+  isCount,
+  isNonEmptyString,
+  isOneOf,
+  isRecord,
+  stringsOf,
+  wholeOf,
+  type RawRecord,
+} from './raw';
 
 type Migration = (raw: RawRecord) => RawRecord;
 
@@ -98,7 +108,7 @@ export function normalizeProfile(value: unknown): Profile | undefined {
     xp: countOf(raw.xp),
     coins: countOf(raw.coins),
     seenStories: stringsOf(raw.seenStories),
-    levelResults: levelResultsOf(raw.levelResults),
+    levelResults: entriesOf(raw.levelResults, levelResultOf),
     keyStats: keyStatsOf(raw.keyStats),
     inventory,
     equipped: equippedOf(raw.equipped, inventory),
@@ -160,20 +170,6 @@ function knownIdsOf(value: unknown, known: readonly string[]): string[] {
   return [...new Set(stringsOf(value))].filter((id) => known.includes(id));
 }
 
-function isOneOf(value: unknown, options: readonly string[]): value is string {
-  return typeof value === 'string' && options.includes(value);
-}
-
-function levelResultsOf(value: unknown): Record<string, LevelResult> {
-  if (!isRecord(value)) return {};
-  const results: Record<string, LevelResult> = {};
-  for (const [levelId, entry] of Object.entries(value)) {
-    const result = levelResultOf(entry);
-    if (result) results[levelId] = result;
-  }
-  return results;
-}
-
 function levelResultOf(value: unknown): LevelResult | undefined {
   if (!isRecord(value)) return undefined;
   const { stars, score, accuracy, wpm } = value;
@@ -182,13 +178,7 @@ function levelResultOf(value: unknown): LevelResult | undefined {
 }
 
 function keyStatsOf(value: unknown): Record<string, KeyStat> {
-  if (!isRecord(value)) return {};
-  const stats: Record<string, KeyStat> = {};
-  for (const [key, entry] of Object.entries(value)) {
-    const stat = keyStatOf(entry);
-    if (stat && isSingleChar(key)) stats[key] = stat;
-  }
-  return stats;
+  return entriesOf(value, (entry, key) => (isSingleChar(key) ? keyStatOf(entry) : undefined));
 }
 
 function keyStatOf(value: unknown): KeyStat | undefined {
@@ -215,10 +205,6 @@ function practiceDaysOf(value: unknown): string[] {
 
 function wholeUpTo(value: unknown, limit: number): number {
   return Math.min(limit, wholeOf(value));
-}
-
-function wholeOf(value: unknown): number {
-  return Number.isInteger(value) ? countOf(value) : 0;
 }
 
 function isSingleChar(value: string): boolean {
