@@ -16,7 +16,7 @@ import { REDUCED_MOTION_CHOICES, readReducedMotion, saveReducedMotion } from './
 import { claimEscapeKey, createOverlay, type Overlay } from './overlay';
 import { choiceChips, switchToggle } from './settingsControls';
 import './settings.css';
-import { shopIcon } from './shopParts';
+import { screenHeader } from './shopParts';
 
 export interface ProfileSettings {
   readonly profile: Profile;
@@ -66,17 +66,12 @@ export class SettingsScreen {
 
   private header(): HTMLElement {
     const copy = i18n.t.features.settings;
-    return el(
-      'header',
-      { class: 'shop-header settings-header' },
-      el(
-        'button',
-        { class: 'button button-ghost shop-back', type: 'button', onClick: this.actions.onBack },
-        shopIcon('back', 'shop-back-icon'),
-        copy.back,
-      ),
-      el('h1', { class: 'shop-title settings-title', text: copy.title }),
-    );
+    return screenHeader({
+      backLabel: copy.back,
+      onBack: this.actions.onBack,
+      title: copy.title,
+      className: 'settings-header',
+    });
   }
 
   private backupRow(): HTMLElement | null {

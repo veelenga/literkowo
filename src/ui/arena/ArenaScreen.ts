@@ -17,15 +17,14 @@ import { format } from '../../i18n/format';
 import { i18n } from '../../i18n/i18n';
 import type { Profile } from '../../profiles/Profile';
 import { releasePortraits } from '../CharacterPortraits';
-import { el } from '../dom';
+import { el, toggleChip } from '../dom';
 import { keyLabel } from '../levelKind';
 import { onShortcutKeys, stepWithin } from '../overlay';
 import { stageChips } from '../placement/placementParts';
-import { coinPill } from '../progression';
 import { ShopHero } from '../ShopHero';
 import { shopLink } from '../shopLink';
-import { ESCAPE_LABEL, primaryButton, shortcutHint } from '../shortcutHint';
-import { hintedLockBadge, shopIcon } from '../shopParts';
+import { primaryButton } from '../shortcutHint';
+import { headerCoins, hintedLockBadge, screenHeader } from '../shopParts';
 import { arenaIcon, difficultyName, medalBadge, waveLabel } from './arenaParts';
 import { dailyCard, dailyIcon, isDailyPinned } from './DailyCard';
 import { testIcon } from './testIcon';
@@ -105,27 +104,17 @@ export class ArenaScreen {
 
   private header(): HTMLElement {
     const copy = i18n.t.features.arena;
-    return el(
-      'header',
-      { class: 'shop-header' },
-      el(
-        'button',
-        {
-          class: 'button button-ghost shop-back',
-          onClick: () => this.actions.onBack(this.profile),
-        },
-        shopIcon('back', 'shop-back-icon'),
-        copy.back,
-        shortcutHint(ESCAPE_LABEL),
-      ),
-      el('h1', { class: 'logo logo-small shop-title', text: copy.title }),
-      el(
+    return screenHeader({
+      backLabel: copy.back,
+      onBack: () => this.actions.onBack(this.profile),
+      title: copy.title,
+      trailing: el(
         'div',
         { class: 'shop-coins' },
         shopLink(() => this.actions.onShop(this.profile, this.choice), 'is-icon-on-phone'),
-        coinPill(String(this.profile.coins), 'stat-pill shop-coin-pill'),
+        headerCoins(this.profile.coins),
       ),
-    );
+    });
   }
 
   private refresh(entering = false): void {
@@ -217,7 +206,7 @@ export class ArenaScreen {
         'nav',
         { class: 'segmented arena-chips', 'aria-label': i18n.t.features.arena.keySets },
         ...openKeySets(this.profile).map((option) =>
-          chip(option.region.name[i18n.current], option.id === keySet.id, () =>
+          toggleChip(option.region.name[i18n.current], option.id === keySet.id, () =>
             this.choose({ keySet: option }),
           ),
         ),
@@ -257,7 +246,7 @@ export class ArenaScreen {
       );
     }
     const active = difficulty.id === this.choice.difficulty.id;
-    return chip(name, active, () => this.choose({ difficulty }));
+    return toggleChip(name, active, () => this.choose({ difficulty }));
   }
 
   private dailyPanel(): HTMLElement {
@@ -388,15 +377,6 @@ function field(area: string, label: string, ...children: Array<HTMLElement | nul
     el('h2', { class: 'arena-field-label', text: label }),
     ...children,
   );
-}
-
-function chip(label: string, active: boolean, onClick: () => void): HTMLElement {
-  return el('button', {
-    class: active ? 'chip is-active' : 'chip',
-    text: label,
-    'aria-pressed': String(active),
-    onClick,
-  });
 }
 
 function bestText(best: EndlessBest | undefined): string {

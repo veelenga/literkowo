@@ -5,11 +5,13 @@ import { rankStartLevel } from '../course/xp';
 import { i18n } from '../i18n/i18n';
 import type { Profile } from '../profiles/Profile';
 import { el, icon, svg, type Child } from './dom';
-import { coinIcon } from './progression';
+import { coinIcon, coinPill } from './progression';
 import { unlockHint } from './shopCopy';
+import { ESCAPE_LABEL, shortcutHint } from './shortcutHint';
 import './shop.css';
 
 const VIEW_BOX = '0 0 24 24';
+const HEADER_CLASS = 'shop-header';
 
 const SHOP_PATHS = {
   trophy:
@@ -21,12 +23,46 @@ const SHOP_PATHS = {
 
 type ShopIconName = keyof typeof SHOP_PATHS;
 
+export interface ScreenHeaderOptions {
+  readonly backLabel: string;
+  readonly onBack: () => void;
+  readonly title: string;
+  readonly trailing?: HTMLElement;
+  readonly className?: string;
+}
+
 export function shopIcon(name: ShopIconName, className: string): SVGSVGElement {
   return svg(
     'svg',
     { viewBox: VIEW_BOX, class: className, 'aria-hidden': 'true' },
     svg('path', { d: SHOP_PATHS[name], 'fill-rule': 'evenodd' }),
   );
+}
+
+export function screenHeader({
+  backLabel,
+  onBack,
+  title,
+  trailing,
+  className,
+}: ScreenHeaderOptions): HTMLElement {
+  return el(
+    'header',
+    { class: className ? `${HEADER_CLASS} ${className}` : HEADER_CLASS },
+    el(
+      'button',
+      { class: 'button button-ghost shop-back', type: 'button', onClick: onBack },
+      shopIcon('back', 'shop-back-icon'),
+      backLabel,
+      shortcutHint(ESCAPE_LABEL),
+    ),
+    el('h1', { class: 'logo logo-small shop-title', text: title }),
+    trailing,
+  );
+}
+
+export function headerCoins(coins: number): HTMLElement {
+  return coinPill(String(coins), 'stat-pill shop-coin-pill');
 }
 
 export function lockBadge(unlock: Unlock): HTMLElement | null {

@@ -14,7 +14,7 @@ import { dailyMedalDot } from './arena/arenaParts';
 import { avatarPicker } from './AvatarPicker';
 import { characterAvatar } from './CharacterAvatar';
 import { releasePortraits } from './CharacterPortraits';
-import { el, icon, prefersReducedMotion, svg } from './dom';
+import { el, icon, prefersReducedMotion, svg, toggleChip } from './dom';
 import { keepDockBelowRow, type StopDock } from './landing/dockRow';
 import { LandingBackdrop } from './landing/LandingBackdrop';
 import { livePreview, outfitOf } from './LivePreview';
@@ -144,14 +144,9 @@ export class ProfileScreen {
 
   private languageSwitch(): HTMLElement {
     const option = (language: UiLanguage, label: string) =>
-      el('button', {
-        class: i18n.current === language ? 'chip is-active' : 'chip',
-        text: label,
-        'aria-pressed': String(i18n.current === language),
-        onClick: () => {
-          i18n.set(language);
-          this.render();
-        },
+      toggleChip(label, i18n.current === language, () => {
+        i18n.set(language);
+        this.render();
       });
     return el(
       'div',

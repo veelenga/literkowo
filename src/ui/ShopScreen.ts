@@ -24,9 +24,9 @@ import { i18n } from '../i18n/i18n';
 import type { Profile } from '../profiles/Profile';
 import { releasePortraits } from './CharacterPortraits';
 import { confetti } from './confetti';
-import { el, type Child } from './dom';
+import { el, toggleChip, type Child } from './dom';
 import { itemPreview, releaseItemPreviews } from './ItemPreviews';
-import { coinIcon, coinPill } from './progression';
+import { coinIcon } from './progression';
 import { ShopHero } from './ShopHero';
 import { onShortcutKeys } from './overlay';
 import {
@@ -37,8 +37,7 @@ import {
   rankTitle,
   trophyCopy,
 } from './shopCopy';
-import { ESCAPE_LABEL, shortcutHint } from './shortcutHint';
-import { lockBadge, shopIcon } from './shopParts';
+import { headerCoins, lockBadge, screenHeader, shopIcon } from './shopParts';
 
 export type ShopTab = ItemKind | 'trophy';
 
@@ -93,27 +92,17 @@ export class ShopScreen {
 
   private header(): HTMLElement {
     const copy = i18n.t.features.shop;
-    return el(
-      'header',
-      { class: 'shop-header' },
-      el(
-        'button',
-        {
-          class: 'button button-ghost shop-back',
-          onClick: () => this.actions.onBack(this.profile),
-        },
-        shopIcon('back', 'shop-back-icon'),
-        this.actions.backLabel ?? copy.back,
-        shortcutHint(ESCAPE_LABEL),
-      ),
-      el('h1', { class: 'logo logo-small shop-title', text: copy.title }),
-      this.coins,
-    );
+    return screenHeader({
+      backLabel: this.actions.backLabel ?? copy.back,
+      onBack: () => this.actions.onBack(this.profile),
+      title: copy.title,
+      trailing: this.coins,
+    });
   }
 
   private refresh(entering = false): void {
     this.catalogue.classList.toggle(ENTERING_CLASS, entering);
-    this.coins.replaceChildren(coinPill(String(this.profile.coins), 'stat-pill shop-coin-pill'));
+    this.coins.replaceChildren(headerCoins(this.profile.coins));
     this.hero.show(this.profile);
     this.tabBar.replaceChildren(...this.tabs());
     this.list.replaceChildren(this.content());
@@ -121,14 +110,7 @@ export class ShopScreen {
 
   private tabs(): HTMLElement[] {
     const labels = i18n.t.features.shop.tabs;
-    return SHOP_TABS.map((tab) =>
-      el('button', {
-        class: tab === this.tab ? 'chip is-active' : 'chip',
-        text: labels[tab],
-        'aria-pressed': String(tab === this.tab),
-        onClick: () => this.open(tab),
-      }),
-    );
+    return SHOP_TABS.map((tab) => toggleChip(labels[tab], tab === this.tab, () => this.open(tab)));
   }
 
   private open(tab: ShopTab): void {
