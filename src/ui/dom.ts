@@ -45,6 +45,8 @@ export type ElementProps = AttributeProps & EventHandlers;
 type PropValue = ElementProps[keyof ElementProps];
 
 const EVENT_PREFIX = 'on';
+const CHIP_CLASS = 'chip';
+const ACTIVE_CHIP_CLASS = 'chip is-active';
 
 export function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -65,6 +67,15 @@ function applyProp(element: HTMLElement, key: string, value: PropValue): void {
   else if (key === 'text') element.textContent = String(value);
   else if (key === 'style') element.style.cssText = String(value);
   else element.setAttribute(key, value === true ? '' : String(value));
+}
+
+export function toggleChip(label: string, active: boolean, onClick: () => void): HTMLButtonElement {
+  return el('button', {
+    class: active ? ACTIVE_CHIP_CLASS : CHIP_CLASS,
+    text: label,
+    'aria-pressed': String(active),
+    onClick,
+  });
 }
 
 export function svg<K extends keyof SVGElementTagNameMap>(
