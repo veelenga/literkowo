@@ -111,24 +111,6 @@ describe('arenaRecordOf', () => {
         bestWeekStreak: 2,
         totalStamps: 5,
       },
-      tracks: {
-        'las-2': {
-          score: 4120,
-          accuracy: 0.95,
-          medal: SILVER,
-          date: DAY,
-          ghost: {
-            version: 1,
-            seed: 42,
-            avatar: 'c',
-            hat: 'cap',
-            marks: [12, 0, 3, 8, 1, 6],
-            hearts: [140],
-          },
-        },
-      },
-      shadowWins: { 'p1/las-2': DAY },
-      modifierWins: { 'las-4': 5 },
     };
     expect(arenaRecordOf(JSON.parse(JSON.stringify(record)))).toEqual(record);
   });
@@ -144,26 +126,32 @@ describe('arenaRecordOf', () => {
       },
       medalsPaid: { [KEY]: BRONZE, 'las/fast': 'gold' },
       daily: { date: DAY },
-      tracks: {
-        'las-2': {
-          score: 1,
-          accuracy: 1,
-          medal: GOLD,
-          date: DAY,
-          ghost: { version: 1, seed: 1, avatar: 'a', marks: [1, 2], hearts: [] },
-        },
-      },
-      shadowWins: { 'p1/las-2': 3 },
-      modifierWins: { 'las-4': 1.5 },
     });
     expect(parsed).toEqual({
       endless: {
         [KEY]: { wave: 3, score: 10, accuracy: 0.9, medal: BRONZE, date: DAY, runs: 1 },
       },
       medalsPaid: { [KEY]: BRONZE },
-      tracks: {},
-      shadowWins: {},
-      modifierWins: {},
     });
+  });
+
+  it('drops the unused track, shadow and modifier fields of older saves', () => {
+    const best = { wave: 3, score: 10, accuracy: 0.9, medal: BRONZE, date: DAY, runs: 1 };
+    const parsed = arenaRecordOf({
+      endless: { [KEY]: best },
+      medalsPaid: { [KEY]: BRONZE },
+      tracks: {
+        'las-2': {
+          score: 4120,
+          accuracy: 0.95,
+          medal: SILVER,
+          date: DAY,
+          ghost: { version: 1, seed: 42, avatar: 'c', marks: [12, 0, 3], hearts: [140] },
+        },
+      },
+      shadowWins: { 'p1/las-2': DAY },
+      modifierWins: { 'las-4': 5 },
+    });
+    expect(parsed).toEqual({ endless: { [KEY]: best }, medalsPaid: { [KEY]: BRONZE } });
   });
 });

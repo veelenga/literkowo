@@ -712,9 +712,6 @@ interface ArenaRecord {
   endless: Record<string, EndlessBest>; // "<key set>/<difficulty>", for example "las/normal"
   medalsPaid: Record<string, Medal>; // same keys, the highest medal already paid
   daily?: DailyRecord;
-  tracks: Record<string, TrackBest>;
-  shadowWins: Record<string, string>;
-  modifierWins: Record<string, number>;
 }
 
 interface EndlessBest {
@@ -728,8 +725,8 @@ interface EndlessBest {
 ```
 
 - The best run has the most waves cleared, then the most points.
-- `daily` is filled by the [Daily challenge](#daily-challenge). `tracks`, `shadowWins` and `modifierWins` stay empty until the planned modes fill them. Their shapes (`TrackBest` with its `GhostRun`) are read and checked on load already, so those modes need no new schema version.
-- Broken entries are dropped on load.
+- `daily` is filled by the [Daily challenge](#daily-challenge).
+- Broken entries and unknown fields are dropped on load, such as the unused `tracks`, `shadowWins` and `modifierWins` of older saves.
 
 ## Daily challenge
 
