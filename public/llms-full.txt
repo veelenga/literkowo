@@ -122,7 +122,7 @@ Some items unlock with a rank or an arena goal instead of coins. No power types 
 
 ## Profiles and privacy
 
-There are no accounts and no server. Profiles, progress, key statistics and items are saved in the browser's local storage on the device, and nothing leaves the browser. Each profile picks its typing language, Polish or English.
+There are no accounts and no server. Profiles, progress, key statistics and items are saved in the browser's local storage on the device, and nothing leaves the browser. The game asks the browser to keep this data for good, and a small notice says so when progress cannot be saved on the device. Each profile picks its typing language, Polish or English.
 
 ## Phones and tablets
 

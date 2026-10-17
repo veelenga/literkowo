@@ -8,6 +8,7 @@ import { enemyTypes } from './enemyTypes';
 import { fever } from './fever';
 import { mastery } from './mastery';
 import { mergeEnemies } from './mergeEnemies';
+import { notice } from './notice';
 import { placement } from './placement';
 import { powerWords } from './powerWords';
 import { progression } from './progression';
@@ -40,5 +41,6 @@ export function featureTexts(language: UiLanguage) {
     daily: daily[language],
     placement: placement[language],
     settings: settings[language],
+    notice: notice[language],
   };
 }

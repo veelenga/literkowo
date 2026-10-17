@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { MemoryStorage } from '../testing/memoryStorage';
+import { removeStorage } from '../storage';
+import { FailingStorage, MemoryStorage } from '../testing/memoryStorage';
 import { createProfile } from './Profile';
 import { PROFILES_BACKUP_KEY, PROFILES_KEY, ProfileStore } from './ProfileStore';
 
@@ -13,7 +14,10 @@ describe('ProfileStore', () => {
     vi.stubGlobal('localStorage', storage);
   });
 
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    removeStorage(PROFILES_KEY);
+    vi.unstubAllGlobals();
+  });
 
   it('starts empty without stored data', () => {
     expect(new ProfileStore().all()).toEqual([]);
@@ -62,5 +66,16 @@ describe('ProfileStore', () => {
     store.remove(profile.id);
     expect(store.active()).toBeUndefined();
     expect(store.all()).toEqual([]);
+  });
+
+  it('reports whether each save reached the device', () => {
+    const onSave = vi.fn();
+    const store = new ProfileStore({ onSave });
+    const profile = createProfile('Ola', 'a');
+    store.add(profile);
+    vi.stubGlobal('localStorage', new FailingStorage());
+    store.update({ ...profile, coins: 5 });
+    expect(onSave.mock.calls).toEqual([[true], [false]]);
+    expect(store.all()).toEqual([{ ...profile, coins: 5 }]);
   });
 });

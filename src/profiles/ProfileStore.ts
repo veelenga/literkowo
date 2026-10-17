@@ -6,8 +6,14 @@ export const PROFILES_KEY = 'literkowo.profiles';
 export const PROFILES_BACKUP_KEY = 'literkowo.profiles.backup';
 const ACTIVE_KEY = 'literkowo.activeProfile';
 
+export interface ProfileStoreOptions {
+  readonly onSave?: (persisted: boolean) => void;
+}
+
 export class ProfileStore {
   private profiles: Profile[] = this.load();
+
+  constructor(private readonly options: ProfileStoreOptions = {}) {}
 
   all(): Profile[] {
     return [...this.profiles];
@@ -55,6 +61,7 @@ export class ProfileStore {
   }
 
   private persist(): void {
-    writeStorage(PROFILES_KEY, JSON.stringify(this.profiles));
+    const persisted = writeStorage(PROFILES_KEY, JSON.stringify(this.profiles));
+    this.options.onSave?.(persisted);
   }
 }
