@@ -14,7 +14,6 @@ import {
   CAMERA_FOV,
   CAMERA_POSITION,
   CAMERA_TARGET,
-  MAX_ENEMIES,
   NO_INSETS,
   REACH_DISTANCE,
   SPAWN_RADIUS,
@@ -35,17 +34,11 @@ import type { AnnounceStyle, MechanicContext } from './mechanics/Mechanic';
 import { MechanicGroup } from './mechanics/MechanicGroup';
 import { Particles } from './Particles';
 import { PhaseMeter, type PhaseRecord } from './PhaseMeter';
+import { PhaseRunner, type Progress } from './PhaseRunner';
 import { Player } from './Player';
 import { currentQuality } from './quality';
 import { renderHost, type Viewport } from './RenderHost';
-import {
-  tempoAt,
-  type Phase,
-  type PhaseKind,
-  type RunPhase,
-  type RunPlan,
-  type StageMark,
-} from './RunPlan';
+import type { RunPhase, RunPlan } from './RunPlan';
 import type { RewardBoost } from '../course/powers';
 import { RunRewards, type Rewards } from './RunRewards';
 import { RunTally } from './RunTally';
@@ -57,6 +50,7 @@ import type { Theme } from './themes';
 import { World } from './World';
 
 export { themeFor } from './themes';
+export type { Progress };
 
 const CAMERA_NEAR = 0.1;
 const CAMERA_FAR = 120;
@@ -65,13 +59,10 @@ const CAMERA_INTRO_DURATION = 1.8;
 const CAMERA_SWAY = 0.35;
 const CAMERA_SWAY_SPEED = 0.25;
 const MAX_FRAME_DELTA = 0.1;
-const FIRST_PHASE = 0;
 const SHAKE_DURATION = 0.25;
 const SHAKE_AMPLITUDE = 0.18;
 const SHIELD_IMPACT = 0.5;
 const FINISH_DELAY_MS = 1100;
-const NO_CALM = 0;
-const PROGRESS_STEPS_PER_SECOND = 10;
 const WORDS_STREAM = 'words';
 const PLACEMENT_STREAM = 'placement';
 
@@ -101,20 +92,6 @@ export interface GameResult {
   seconds: number;
 }
 
-export interface Progress {
-  kind: PhaseKind;
-  done: number;
-  total: number;
-  timed: boolean;
-  wave?: number;
-  stage?: StageMark;
-}
-
-interface ProgressClock {
-  readonly limit: number;
-  readonly spent: number;
-}
-
 export interface GameEvents {
   onStats(stats: SessionStats, lives: number): void;
   onRewards(rewards: Rewards): void;
@@ -137,11 +114,12 @@ export class Game {
   private readonly placement: RandomSource;
   private readonly words: WordSource;
   private readonly script: SpawnScript;
+  private readonly phases: PhaseRunner;
+  private readonly health: HeroHealth;
   private readonly stats = new SessionStats();
   private readonly rewards: RunRewards;
   private readonly tally = new RunTally();
   private readonly meter = new PhaseMeter();
-  private readonly records: PhaseRecord[] = [];
   private readonly keys: KeyTracker;
   private readonly labels: LabelLayer;
   private readonly enemies: Enemy[] = [];
@@ -154,19 +132,10 @@ export class Game {
     enemy.setTargeted(isCandidate),
   );
   private insets: StageInsets = NO_INSETS;
-  private plannedPhase: RunPhase;
-  private phase: RunPhase;
-  private phaseIndex = FIRST_PHASE;
-  private spawned = 0;
   private scriptSpawn: number | undefined;
-  private phaseSeconds = 0;
-  private runSeconds = 0;
-  private calm: number;
   private boss: Boss | undefined;
-  private readonly health: HeroHealth;
   private lettersFreed = 0;
   private elapsed = 0;
-  private sinceSpawn = Number.POSITIVE_INFINITY;
   private paused = false;
   private suspended = false;
   private finished = false;
@@ -187,9 +156,7 @@ export class Game {
       allowedKeysFor(config.level, config.language),
       practiceDay(new Date()),
     );
-    this.plannedPhase = firstPhase(config.plan);
-    this.phase = this.plannedPhase;
-    this.calm = this.phase.calmSeconds ?? NO_CALM;
+    this.phases = new PhaseRunner(config.plan);
     this.health = new HeroHealth(config.plan);
     this.rewards = new RunRewards(config.plan);
     const seeded = config.plan.seed !== undefined;
@@ -291,14 +258,17 @@ export class Game {
     return this.elapsed < CAMERA_INTRO_DURATION;
   }
 
+  private get phase(): RunPhase {
+    return this.phases.phase;
+  }
+
   private get isPlaying(): boolean {
     return !this.inIntro && !this.finished;
   }
 
   private createMechanicContext(): MechanicContext {
-    const phase = (): Phase => this.phase;
+    const { phases, health } = this;
     const playing = (): boolean => this.isPlaying;
-    const health = this.health;
     return {
       enemies: this.enemies,
       player: this.player,
@@ -314,7 +284,7 @@ export class Game {
       equipped: this.config.equipped,
       random: this.random,
       get phase() {
-        return phase();
+        return phases.phase;
       },
       get playing() {
         return playing();
@@ -431,16 +401,15 @@ export class Game {
   }
 
   private spawnIfDue(delta: number): void {
-    if (this.restsInCalm(delta)) return;
-    if (this.phase.kind === 'boss') return this.spawnBossOnce();
-    this.sinceSpawn += delta;
-    if (!this.isSpawnDue()) return;
-    this.sinceSpawn = 0;
-    const word = this.script.word(this.phase, this.spawned, this.liveStarts());
+    const cue = this.phases.spawnCue(delta, this.enemies.length);
+    if (cue === 'boss') return this.spawnBossOnce();
+    if (cue === 'word') this.phases.spawnNext((order) => this.spawnFromScript(order));
+  }
+
+  private spawnFromScript(order: number): void {
+    const word = this.script.word(this.phase, order, this.liveStarts());
     const angle = this.script.angle();
-    this.spawned += 1;
     this.spawnScripted(() => this.spawnGroups.spawn(() => this.spawnWord(word, angle)));
-    this.retime();
   }
 
   private spawnScripted(spawn: () => void): void {
@@ -449,58 +418,17 @@ export class Game {
     this.scriptSpawn = undefined;
   }
 
-  private retime(): void {
-    this.phase = { ...this.plannedPhase, ...tempoAt(this.plannedPhase, this.spawned) };
-  }
-
   private countPhaseTime(delta: number): void {
-    const limit = this.phase.seconds;
-    if (limit === undefined) return;
-    const step = progressStep(this.phaseSeconds);
-    this.phaseSeconds += delta;
-    if (this.phaseSeconds >= limit) return this.advancePhase();
-    if (!this.isTimedRun && progressStep(this.phaseSeconds) !== step) this.reportProgress();
+    const tick = this.phases.countPhaseTime(delta);
+    if (tick === 'expired') return this.advancePhase();
+    if (tick === 'progressed') this.reportProgress();
   }
 
   private countRunTime(delta: number): void {
     if (this.finished) return;
-    const step = progressStep(this.runSeconds);
-    this.runSeconds += delta;
-    const limit = this.config.plan.seconds;
-    if (limit === undefined) return;
-    if (this.runSeconds >= limit) return this.finish(true);
-    if (progressStep(this.runSeconds) !== step) this.reportProgress();
-  }
-
-  private get isTimedRun(): boolean {
-    return this.config.plan.seconds !== undefined;
-  }
-
-  private progressClock(): ProgressClock | undefined {
-    const runLimit = this.config.plan.seconds;
-    if (runLimit !== undefined) return { limit: runLimit, spent: this.runSeconds };
-    const phaseLimit = this.phase.seconds;
-    if (phaseLimit === undefined) return undefined;
-    return { limit: phaseLimit, spent: this.phaseSeconds };
-  }
-
-  private restsInCalm(delta: number): boolean {
-    if (this.calm <= 0) return false;
-    this.calm -= delta;
-    return true;
-  }
-
-  private isSpawnDue(): boolean {
-    return (
-      this.spawned < this.phase.count &&
-      this.sinceSpawn >= this.phase.spawnInterval &&
-      this.enemies.length < Math.min(MAX_ENEMIES, this.phase.boardSize ?? MAX_ENEMIES)
-    );
-  }
-
-  private refillBoard(): void {
-    if (this.phase.boardSize === undefined) return;
-    this.sinceSpawn = Math.max(this.sinceSpawn, this.phase.spawnInterval);
+    const tick = this.phases.countRunTime(delta);
+    if (tick === 'expired') return this.finish(true);
+    if (tick === 'progressed') this.reportProgress();
   }
 
   private nextWord(): string {
@@ -620,49 +548,23 @@ export class Game {
 
   private clearEnemy(enemy: Enemy): void {
     if (!this.remove(enemy)) return;
-    this.refillBoard();
+    this.phases.refillBoard();
     this.reportProgress();
-    if (this.isPhaseCleared()) this.advancePhase();
-  }
-
-  private isPhaseCleared(): boolean {
-    if (this.phase.kind === 'boss' || this.phase.seconds !== undefined) return false;
-    return this.spawned >= this.phase.count && this.enemies.length === 0;
+    if (this.phases.isCleared(this.enemies.length)) this.advancePhase();
   }
 
   private advancePhase(): void {
-    this.records.push(this.meter.close());
-    this.phaseIndex += 1;
-    this.spawned = 0;
-    this.phaseSeconds = 0;
-    this.sinceSpawn = Number.POSITIVE_INFINITY;
-    const next = this.planGoesOn() ? this.config.plan.phaseAt(this.phaseIndex) : undefined;
+    const next = this.phases.advance(this.meter.close());
     if (!next) return this.finish(true);
-    this.plannedPhase = next;
-    this.retime();
-    this.calm = next.calmSeconds ?? NO_CALM;
     this.words.use(next.words);
-    this.script.startPhase(this.phaseIndex, next.words);
+    this.script.startPhase(this.phases.phaseIndex, next.words);
     this.reportProgress();
     this.mechanics.onPhaseChange(next);
   }
 
-  private planGoesOn(): boolean {
-    return this.config.plan.continuesAfter?.(this.records) ?? true;
-  }
-
   private reportProgress(): void {
-    const { kind, wave, stage } = this.phase;
-    const clock = this.progressClock();
-    if (clock) {
-      const done = Math.min(clock.limit, progressStep(clock.spent) / PROGRESS_STEPS_PER_SECOND);
-      return this.events.onProgress({ kind, done, total: clock.limit, timed: true, wave, stage });
-    }
-    const total = this.phase.count;
-    const done = this.boss
-      ? total - Math.round(this.boss.health * total)
-      : THREE.MathUtils.clamp(this.spawned - this.spawnGroups.pending, 0, total);
-    this.events.onProgress({ kind, done, total, timed: false, wave, stage });
+    const board = { pendingSpawns: this.spawnGroups.pending, bossHealth: this.boss?.health };
+    this.events.onProgress(this.phases.progress(board));
   }
 
   private finish(won: boolean): void {
@@ -691,10 +593,8 @@ export class Game {
       coins: this.rewards.coins,
       coinBoost: this.rewards.coinBoost,
       keys: this.keys.report(),
-      phasesCleared: this.phaseIndex,
-      phases: [...this.records],
       tally: this.tally.snapshot(),
-      seconds: this.runSeconds,
+      ...this.phases.summary(),
     });
   }
 
@@ -787,18 +687,8 @@ export class Game {
   }
 }
 
-function firstPhase(plan: RunPlan): RunPhase {
-  const phase = plan.phaseAt(FIRST_PHASE);
-  if (!phase) throw new Error('A run plan needs at least one phase');
-  return phase;
-}
-
 function runRandom(seed: number | undefined): RandomSource {
   return seed === undefined ? systemRandom() : seededRandom(seed);
-}
-
-function progressStep(seconds: number): number {
-  return Math.floor(seconds * PROGRESS_STEPS_PER_SECOND);
 }
 
 function placeOnSpawnArc(enemy: Enemy, radius: number, angle: number): void {
