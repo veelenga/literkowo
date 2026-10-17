@@ -91,7 +91,7 @@ Every completed word gives XP, and XP never goes down, also not in a lost level.
 
 ## Arena
 
-The arena is open from the first day and holds three modes: Sprawdzian (the placement test, which a child can retake any time), Wyzwanie dnia (the daily challenge) and Bez końca (endless), which sends waves of words until the last heart is gone. All three pay XP and coins.
+The arena is open from the first day and holds three modes: Sprawdzian (the placement test, which a child can retake any time), Wyzwanie dnia (the daily challenge) and Bez końca (endless), which sends waves of words until the last heart is gone or until the child ends the run from the pause card, keeping the waves cleared so far. All three pay XP and coins.
 
 - Key sets: the keys of the first region, and of every region the child has finished, so the arena never asks for keys the course has not taught.
 - Four difficulties: Spokojnie (calm), Normalnie (normal), Szybko (fast) and Szaleństwo (frenzy). Faster ones bring more special enemies and more events, and Szaleństwo leaves a single heart. The two fastest add a region boss every fifth wave.
