@@ -1,6 +1,6 @@
 import type * as THREE from 'three';
 import type { Sfx } from '../../audio/Sfx';
-import type { Level } from '../../course/regions';
+import type { Level } from '../../course/catalog';
 import type { WordSource } from '../../course/WordSource';
 import type { Equipped, WordLanguage } from '../../profiles/Profile';
 import type { RandomSource } from '../../random';

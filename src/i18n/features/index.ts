@@ -1,4 +1,4 @@
-import type { UiLanguage } from '../translations';
+import type { UiLanguage } from '../languages';
 import { bombers, speedSurge, twins } from './actionEvents';
 import { arena } from './arena';
 import { bossPhases } from './bossPhases';

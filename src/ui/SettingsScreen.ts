@@ -3,7 +3,7 @@ import { sfx } from '../audio/Sfx';
 import { QUALITY_CHOICES, readQualityChoice, saveQualityChoice } from '../game/quality';
 import { format } from '../i18n/format';
 import { i18n } from '../i18n/i18n';
-import type { UiLanguage } from '../i18n/translations';
+import { UI_LANGUAGES } from '../i18n/languages';
 import type { Profile } from '../profiles/Profile';
 import { backupControls, type ProgressBackupActions } from './backupControls';
 import { el } from './dom';
@@ -17,8 +17,6 @@ import { claimEscapeKey, createOverlay, type Overlay } from './overlay';
 import { choiceChips, switchToggle } from './settingsControls';
 import './settings.css';
 import { shopIcon } from './shopParts';
-
-const UI_LANGUAGES: readonly UiLanguage[] = ['pl', 'uk'];
 
 export interface ProfileSettings {
   readonly profile: Profile;

@@ -1,4 +1,4 @@
-import type { ThemeId } from '../../course/regions';
+import type { ThemeId } from '../../course/catalog';
 import { BUTTERWORTH_Q_DB } from '../synthesis';
 import { hashSeed } from '../../random';
 import type { Arrangement, LayerSpec, MotifSpec, MusicMood, ThemeSpec } from './specs';

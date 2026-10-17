@@ -114,7 +114,7 @@ interface Planting {
   context: BiomeContext;
   land: Meadow;
   occupancy: Occupancy;
-  offPath(x: number, z: number, margin: number): boolean;
+  readonly offPath: (x: number, z: number, margin: number) => boolean;
 }
 
 function decorate(context: BiomeContext, land: Meadow): void {

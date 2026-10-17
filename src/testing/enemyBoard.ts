@@ -10,7 +10,7 @@ const ENEMY_WORD = 'fjf';
 export interface FakeBoard {
   readonly enemies: Enemy[];
   readonly context: MechanicContext;
-  enemyAt(distance: number, word?: string): Enemy;
+  readonly enemyAt: (distance: number, word?: string) => Enemy;
 }
 
 export function fakeBoard(overrides: Partial<MechanicContext> = {}): FakeBoard {

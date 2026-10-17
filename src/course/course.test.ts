@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { courseProgress } from '../testing/courseProgress';
 import { requireLevel as level } from '../testing/levels';
-import { courseFor, OPEN_AHEAD, type LevelResults } from './course';
+import { allowedKeysFor, courseFor, OPEN_AHEAD, type LevelResults } from './course';
 
 const WON = { stars: 1, score: 10, accuracy: 0.9, wpm: 10 };
 const POLANA_WITHOUT_REVIEW = Array.from({ length: 17 }, (_, index) => `polana-${index + 1}`);
@@ -64,6 +64,12 @@ describe('courseFor', () => {
     expect(polish.allowedKeys(level('polana-8'))).toBe('fjdk');
     expect(english.allowedKeys(level('wyspa-1'))).not.toContain('ą');
     expect(polish.allowedKeys(level('wyspa-1'))).toContain('ą');
+  });
+
+  it('reads allowed keys from the course of the word language', () => {
+    expect(allowedKeysFor(level('polana-4'), 'pl')).toBe('fjd');
+    expect(allowedKeysFor(level('wyspa-1'), 'en')).not.toContain('ą');
+    expect(allowedKeysFor(level('wyspa-1'), 'pl')).toContain('ą');
   });
 
   it('opens only the first level before any star', () => {

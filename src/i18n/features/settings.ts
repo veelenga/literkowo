@@ -1,6 +1,6 @@
 import type { OnScreenKeyboardChoice } from '../../ui/formFactor';
 import type { ReducedMotionChoice } from '../../ui/motionPreference';
-import type { UiLanguage } from '../translations';
+import type { UiLanguage } from '../languages';
 
 interface ChoiceTexts<T extends string> {
   title: string;

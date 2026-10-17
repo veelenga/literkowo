@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { isMesh, isTexture } from './threeGuards';
 
 export const CHARACTER_HEIGHT = 1.9;
 export const IDLE_CLIP = 'idle';
@@ -55,7 +56,7 @@ function localBounds(node: THREE.Object3D): THREE.Box3 {
 
 export function prepareMeshes(model: THREE.Object3D): void {
   model.traverse((child) => {
-    if (!(child instanceof THREE.Mesh)) return;
+    if (!isMesh(child)) return;
     child.castShadow = true;
     child.receiveShadow = true;
     child.material = Array.isArray(child.material)
@@ -65,7 +66,7 @@ export function prepareMeshes(model: THREE.Object3D): void {
 }
 
 function litMaterial(source: THREE.Material): THREE.MeshStandardMaterial {
-  const map = 'map' in source && source.map instanceof THREE.Texture ? source.map : null;
+  const map = 'map' in source && isTexture(source.map) ? source.map : null;
   if (map) keepPixelsCrisp(map);
   const material = new THREE.MeshStandardMaterial({ map, roughness: LIT_ROUGHNESS, metalness: 0 });
   source.dispose();

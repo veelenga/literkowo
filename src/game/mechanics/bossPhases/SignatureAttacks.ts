@@ -1,4 +1,4 @@
-import type { ThemeId } from '../../../course/regions';
+import type { ThemeId } from '../../../course/catalog';
 import { i18n } from '../../../i18n/i18n';
 import type { Enemy } from '../../Enemy';
 import type { MechanicContext } from '../Mechanic';

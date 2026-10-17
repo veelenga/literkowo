@@ -1,6 +1,6 @@
+import { UI_LANGUAGES } from '../i18n/languages.ts';
 import {
   AUTHOR,
-  INTERFACE_LANGUAGES,
   MIN_PLAYER_AGE,
   SCREENSHOT,
   SEARCH_PHRASES,
@@ -64,7 +64,7 @@ export function structuredData(): GameData {
     name: SITE_NAME,
     url: SITE_URL,
     description: SITE_DESCRIPTION,
-    inLanguage: INTERFACE_LANGUAGES,
+    inLanguage: UI_LANGUAGES,
     applicationCategory: APPLICATION_CATEGORY,
     genre: GENRES,
     gamePlatform: PLATFORM,

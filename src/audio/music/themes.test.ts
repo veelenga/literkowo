@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { REGIONS, type ThemeId } from '../../course/regions';
+import { REGIONS, type ThemeId } from '../../course/catalog';
 import { MAX_ECHO_FEEDBACK, assertReverbSettings } from './effects';
 import { Harmony } from './harmony';
 import { STEPS_PER_BAR } from './layers/Layer';

@@ -12,7 +12,7 @@ import {
   type Outcome,
 } from './inventory';
 import { findItem, type ItemKind, type ShopItem } from './shop';
-import { xpForLevel } from './xp';
+import { xpForLevel } from '../testing/xp';
 
 const APPRENTICE_LEVEL = 5;
 const LEGEND_LEVEL = 50;

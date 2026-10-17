@@ -1,6 +1,5 @@
 import { featureTexts } from './features';
-
-export type UiLanguage = 'pl' | 'uk';
+import type { UiLanguage } from './languages';
 
 const pl = {
   appName: 'Literkowo',

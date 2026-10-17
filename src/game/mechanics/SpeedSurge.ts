@@ -1,5 +1,5 @@
 import '../../ui/actionEvents.css';
-import { REGIONS, type Level } from '../../course/regions';
+import { REGIONS, type Level } from '../../course/catalog';
 import { i18n } from '../../i18n/i18n';
 import { HeldClaim } from '../claims/HeldClaim';
 import { Boss } from '../Boss';

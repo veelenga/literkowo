@@ -63,6 +63,10 @@ const MIGRATIONS: Partial<Record<number, Migration>> = {
     levelResults: gradualCourseResults(raw.levelResults),
   }),
   [GRADUAL_COURSE_SCHEMA_VERSION]: (raw) => ({ ...raw, arena: emptyArenaRecord() }),
+  [ARENA_SCHEMA_VERSION]: (raw) => ({
+    ...raw,
+    counters: seededCounters(raw, avatarOf(raw.avatar)),
+  }),
 };
 
 export function serializeProfiles(profiles: readonly Profile[]): string {
@@ -101,8 +105,7 @@ export function normalizeProfile(value: unknown): Profile | undefined {
     arena: arenaRecordOf(raw.arena),
     counters: countersOf(raw.counters),
   };
-  if (!predatesCounters(value)) return profile;
-  return awardTrophies({ ...profile, counters: seededCounters(profile) });
+  return isOutdated(value) ? awardTrophies(profile) : profile;
 }
 
 function parseJson(json: string): unknown {
@@ -121,8 +124,8 @@ function migrate(raw: RawRecord): RawRecord {
   return migrated;
 }
 
-function predatesCounters(raw: RawRecord): boolean {
-  return schemaVersionOf(raw) <= ARENA_SCHEMA_VERSION;
+function isOutdated(raw: RawRecord): boolean {
+  return schemaVersionOf(raw) < PROFILE_SCHEMA_VERSION;
 }
 
 function schemaVersionOf({ schemaVersion }: RawRecord): number {

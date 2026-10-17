@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { isCachedAsset } from '../../assetCache';
+import { isMesh } from '../../threeGuards';
 
 interface Faded {
   readonly material: THREE.Material;
@@ -11,7 +12,7 @@ export class FadingMaterials {
 
   constructor(root: THREE.Object3D) {
     root.traverse((object) => {
-      if (object instanceof THREE.Mesh && object.material instanceof THREE.Material) {
+      if (isMesh(object) && object.material instanceof THREE.Material) {
         object.material = this.own(object.material);
       }
     });

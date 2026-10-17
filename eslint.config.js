@@ -2,7 +2,6 @@ import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
-const UNTYPED_LINT_SOURCES = ['src/game/**', 'src/audio/**'];
 const ROOT_CONFIG_FILES = ['*.js', '*.config.ts', 'scripts/**'];
 const NODE_SCRIPTS = ['scripts/**'];
 
@@ -19,7 +18,7 @@ export default tseslint.config(
     },
   },
   {
-    files: [...UNTYPED_LINT_SOURCES, ...ROOT_CONFIG_FILES],
+    files: ROOT_CONFIG_FILES,
     extends: [tseslint.configs.disableTypeChecked],
   },
   {

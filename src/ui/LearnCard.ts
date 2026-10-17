@@ -1,6 +1,6 @@
 import { fingerFor, needsRightAlt } from '../course/fingers';
 import type { KeyStat, KeyStats } from '../course/keyStats';
-import type { Level } from '../course/regions';
+import type { Level } from '../course/catalog';
 import { i18n } from '../i18n/i18n';
 import { closeButton } from './closeButton';
 import { el, fingerColor } from './dom';

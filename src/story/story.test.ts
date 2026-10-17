@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { REGIONS } from '../course/regions';
+import { REGIONS } from '../course/catalog';
 import { afterStoryId, bossStoryId, FINALE_STORY_ID, INTRO_STORY_ID, storyScene } from './story';
 
 describe('story', () => {

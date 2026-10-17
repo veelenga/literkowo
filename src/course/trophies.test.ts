@@ -9,7 +9,7 @@ import { RECENT_WINDOW, type KeyStat } from './keyStats';
 import { MASTERED_DAYS, regionKeys } from './mastery';
 import { awardTrophies, earnedTrophies, freshTrophies, trophyProgress } from './trophies';
 import { TROPHIES, type TrophyRule } from './shop';
-import { xpForLevel } from './xp';
+import { xpForLevel } from '../testing/xp';
 
 const ONE_STAR: LevelResult = { stars: 1, score: 100, accuracy: 0.9, wpm: 10 };
 const THREE_STARS: LevelResult = { stars: 3, score: 300, accuracy: 0.98, wpm: 15 };

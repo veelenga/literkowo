@@ -1,4 +1,4 @@
-import type { ThemeId } from '../course/regions';
+import type { ThemeId } from '../course/catalog';
 import type { AmbientSpec } from './AmbientParticles';
 import { cave } from './environment/biomes/cave';
 import { forest } from './environment/biomes/forest';

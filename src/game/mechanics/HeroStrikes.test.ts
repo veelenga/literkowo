@@ -5,6 +5,7 @@ import { fakeBoard } from '../../testing/enemyBoard';
 import { isCachedAsset, type DisposableAsset } from '../assetCache';
 import { FEVER_COMBO } from '../combo';
 import { HeroStrikes } from './HeroStrikes';
+import { isMesh } from '../threeGuards';
 import { MAX_LETTER_BOLTS } from './heroStrikes/LetterBolts';
 import type { MechanicContext } from './Mechanic';
 
@@ -34,8 +35,8 @@ function setup() {
 function ownedResources(root: THREE.Object3D): DisposableAsset[] {
   const resources: DisposableAsset[] = [];
   root.traverse((object) => {
-    if (!(object instanceof THREE.Mesh)) return;
-    resources.push(object.geometry, object.material);
+    if (!isMesh(object)) return;
+    resources.push(object.geometry, ...[object.material].flat());
   });
   return resources.filter((resource) => !isCachedAsset(resource));
 }

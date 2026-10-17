@@ -220,8 +220,9 @@ Owners: `src/profiles/Profile.ts`, `src/profiles/profileSchema.ts`, `src/profile
 - Several profiles per device, stored as a JSON array in localStorage under `literkowo.profiles`.
 - The game can be open in several tabs or windows at once, such as the installed app and a browser tab. Every save reads the stored list first and changes only its own profile, so a tab never wipes or reverts the other profiles. When two tabs save the same profile, the last save wins.
 - A tab listens for changes that other tabs save. The profile screen refreshes its cards at once, but keeps a name that is being typed in the new profile panel. The map, the arena and the shop load the newest saved copy of the profile when they open. A running level is never interrupted.
-- Schema version is 8 (`PROFILE_SCHEMA_VERSION`). Older profiles are migrated on load: version 1 moves the best score into the total score, version 2 seeds XP with `round(totalScore / 10)`, version 3 starts with empty key statistics, version 4 gets the starter inventory and nothing equipped, version 5 moves level results onto the course with one key per level (`src/profiles/courseMigration.ts`), version 6 gets an empty arena record, version 7 gets counters seeded from what it already has (`src/profiles/countersMigration.ts`). Every profile from version 7 or older also gets every trophy it already earned. A shape change bumps the version and adds a migration.
-- Seeded counters: bosses beaten from boss levels with a star, coins earned from the coins plus the price of every owned item, perfect levels and the best speed from level results with stars, and the current skin as played. Words, power words and special enemies start at 0, since older profiles did not count them.
+- Schema version is 8 (`PROFILE_SCHEMA_VERSION`). Older profiles are migrated on load: version 1 moves the best score into the total score, version 2 seeds XP with `round(totalScore / 10)`, version 3 starts with empty key statistics, version 4 gets the starter inventory and nothing equipped, version 5 moves level results onto the course with one key per level (`src/profiles/courseMigration.ts`), version 6 gets an empty arena record, version 7 gets counters seeded from what it already has (`src/profiles/countersMigration.ts`). Every migrated profile also gets every trophy it already earned. A shape change bumps the version and adds a migration.
+- Each migration is one step in the `MIGRATIONS` table of `src/profiles/profileSchema.ts`. A step reads the raw stored data of its version and keeps the course and shop data it needs frozen inside the step, so a later change to levels or prices never changes how an old profile migrates.
+- Seeded counters: bosses beaten from boss levels with a star, coins earned from the coins plus the version 8 price of every owned item, perfect levels and the best speed from level results with stars, and the current skin as played. Words, power words and special enemies start at 0, since older profiles did not count them.
 - Version 5 and older had one level per two or three keys. Each old result moves to the new level that completes the same keys: the practice level of the last key of the old level, or the boss for an old boss. When the old result has at least one star, the new levels between the previous target and this one get the same result, so a finished region stays finished and the next open level is the first one the child has not played. A result without stars only moves to its target. XP, coins, scores, stories, key statistics, items and trophies stay as they are.
 
 | Old level    | New target    | Also marked done               |
@@ -1047,12 +1048,13 @@ When the screen opens from the map or the profile screen, the row "Kopia postęp
 
 ## Interface languages
 
-Owners: `src/i18n/translations.ts`, `src/i18n/i18n.ts`.
+Owners: `src/i18n/languages.ts`, `src/i18n/translations.ts`, `src/i18n/i18n.ts`.
 
-- Today the interface is in Polish (default) and Ukrainian. The language switch is on the profile screen and on the [Settings](#settings) screen. The choice is saved under `literkowo.uiLanguage`.
+- Today the interface is in Polish (default) and Ukrainian. The language switch is on the profile screen and on the [Settings](#settings) screen. The choice is saved under `literkowo.uiLanguage`. A saved value that is not in the list falls back to Polish.
+- `UI_LANGUAGES` in `src/i18n/languages.ts` is the one list of interface languages, with the short labels of the profile screen switch. Both switches, the saved choice and the structured data of the page are built from it.
 - Interface language and word language are separate settings. The word language is fixed per profile at creation.
 - Region names and story lines carry every interface language next to the data (`src/course/catalog.ts`, `src/story/story.ts`).
-- A new interface language needs a new entry in `src/i18n/translations.ts` and text in the region and story data.
+- A new interface language needs a new entry in `UI_LANGUAGES` and its label, then the type checker points to every text that needs it: `src/i18n/translations.ts`, the feature texts, and the region and story data.
 
 ## Mobile and tablets
 

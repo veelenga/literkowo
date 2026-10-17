@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allowedKeysFor } from '../../../course/regions';
+import { allowedKeysFor } from '../../../course/course';
 import { requireLevel } from '../../../testing/levels';
 import { choosePower, choosePowerWord, isSpelledWith } from './choice';
 import { POWER_SPECS, POWERS, powersFor } from './powers';

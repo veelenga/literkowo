@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ThemeId } from '../../course/regions';
+import type { ThemeId } from '../../course/catalog';
 import { SHORT_LENGTH } from '../../course/WordSource';
 import { fakeClaims } from '../../testing/claims';
 import { levelWords, requireLevel } from '../../testing/levels';

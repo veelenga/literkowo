@@ -3,7 +3,7 @@ import { createProfile, type Profile } from '../profiles/Profile';
 import { GOLD } from '../arena/medals';
 import { emptyArenaRecord } from '../arena/record';
 import { PETS, TROPHIES } from '../course/shop';
-import { xpForLevel } from '../course/xp';
+import { xpForLevel } from '../testing/xp';
 import { ShopScreen } from './ShopScreen';
 
 vi.mock('./ItemPreviews', () => ({

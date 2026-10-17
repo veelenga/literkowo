@@ -49,7 +49,13 @@ class RecordingMechanic implements Required<Mechanic> {
   }
 }
 
-const ENEMY: Enemy = Object.create(Enemy.prototype);
+const ENEMY = bareEnemy();
+
+function bareEnemy(): Enemy {
+  const enemy: unknown = Object.create(Enemy.prototype);
+  if (!(enemy instanceof Enemy)) throw new Error('Expected an Enemy instance');
+  return enemy;
+}
 
 describe('MechanicGroup', () => {
   it('forwards every hook to each mechanic in registration order', () => {

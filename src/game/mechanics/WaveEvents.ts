@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { allowedKeysFor } from '../../course/regions';
+import { allowedKeysFor } from '../../course/course';
 import { i18n } from '../../i18n/i18n';
 import type { RandomSource } from '../../random';
 import { MAX_ENEMIES } from '../board';

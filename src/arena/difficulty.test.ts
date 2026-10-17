@@ -5,7 +5,6 @@ import {
   difficultyAtLevel,
   difficultyById,
   isDifficultyOpen,
-  openDifficulties,
   unlockingDifficulty,
   type DifficultyId,
 } from './difficulty';
@@ -25,7 +24,9 @@ function withMedal(profile: Profile, keySet: string, id: DifficultyId, medal: Me
 }
 
 function openIds(profile: Profile): DifficultyId[] {
-  return openDifficulties(profile).map((difficulty) => difficulty.id);
+  return DIFFICULTIES.filter((difficulty) => isDifficultyOpen(difficulty, profile)).map(
+    (difficulty) => difficulty.id,
+  );
 }
 
 describe('DIFFICULTIES', () => {

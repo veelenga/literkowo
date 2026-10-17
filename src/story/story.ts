@@ -1,4 +1,4 @@
-import type { UiLanguage } from '../i18n/translations';
+import type { UiLanguage } from '../i18n/languages';
 
 export type Speaker = 'owl' | 'fox' | 'shadow';
 

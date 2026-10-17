@@ -1,4 +1,4 @@
-import type { ThemeId } from '../course/regions';
+import type { ThemeId } from '../course/catalog';
 import { StoredToggle } from './StoredToggle';
 import { onAudioUnlocked, peekAudioOutput, setAudioPaused, type AudioOutput } from './audioContext';
 import { MusicBus } from './music/MusicBus';
