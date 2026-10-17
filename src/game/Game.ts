@@ -11,21 +11,17 @@ import { seededRandom, systemRandom, type RandomSource } from '../random';
 import { xpPop } from '../ui/progression';
 import {
   BOSS_SPAWN_RADIUS,
-  CAMERA_FOV,
-  CAMERA_POSITION,
-  CAMERA_TARGET,
-  MAX_ENEMIES,
   NO_INSETS,
   REACH_DISTANCE,
   SPAWN_RADIUS,
-  frameBoard,
   type StageInsets,
 } from './board';
 import { BOSS_SCALE, Boss, MINI_BOSS_SCALE } from './Boss';
-import { CameraShake } from './CameraShake';
+import { CAMERA_INTRO_SECONDS, CameraRig } from './CameraRig';
 import { PageClasses } from './claims/PageClasses';
 import { TimeScale } from './claims/TimeScale';
 import { Enemy, type EnemyLook } from './Enemy';
+import { HeroHealth, type HitOutcome } from './HeroHealth';
 import type { Tally } from '../course/counters';
 import { KeyTracker, type KeyReport } from './KeyTracker';
 import { LabelLayer } from './LabelLayer';
@@ -34,17 +30,11 @@ import type { AnnounceStyle, MechanicContext } from './mechanics/Mechanic';
 import { MechanicGroup } from './mechanics/MechanicGroup';
 import { Particles } from './Particles';
 import { PhaseMeter, type PhaseRecord } from './PhaseMeter';
+import { PhaseRunner, type Progress } from './PhaseRunner';
 import { Player } from './Player';
 import { currentQuality } from './quality';
-import { renderHost, type Viewport } from './RenderHost';
-import {
-  tempoAt,
-  type Phase,
-  type PhaseKind,
-  type RunPhase,
-  type RunPlan,
-  type StageMark,
-} from './RunPlan';
+import { renderHost } from './RenderHost';
+import type { RunPhase, RunPlan } from './RunPlan';
 import type { RewardBoost } from '../course/powers';
 import { RunRewards, type Rewards } from './RunRewards';
 import { RunTally } from './RunTally';
@@ -56,21 +46,13 @@ import type { Theme } from './themes';
 import { World } from './World';
 
 export { themeFor } from './themes';
+export type { Progress };
 
-const CAMERA_NEAR = 0.1;
-const CAMERA_FAR = 120;
-const CAMERA_INTRO_SCALE = 2.2;
-const CAMERA_INTRO_DURATION = 1.8;
-const CAMERA_SWAY = 0.35;
-const CAMERA_SWAY_SPEED = 0.25;
 const MAX_FRAME_DELTA = 0.1;
-const FIRST_PHASE = 0;
 const SHAKE_DURATION = 0.25;
 const SHAKE_AMPLITUDE = 0.18;
 const SHIELD_IMPACT = 0.5;
 const FINISH_DELAY_MS = 1100;
-const NO_CALM = 0;
-const PROGRESS_STEPS_PER_SECOND = 10;
 const WORDS_STREAM = 'words';
 const PLACEMENT_STREAM = 'placement';
 
@@ -100,20 +82,6 @@ export interface GameResult {
   seconds: number;
 }
 
-export interface Progress {
-  kind: PhaseKind;
-  done: number;
-  total: number;
-  timed: boolean;
-  wave?: number;
-  stage?: StageMark;
-}
-
-interface ProgressClock {
-  readonly limit: number;
-  readonly spent: number;
-}
-
 export interface GameEvents {
   onStats(stats: SessionStats, lives: number): void;
   onRewards(rewards: Rewards): void;
@@ -126,8 +94,7 @@ export interface GameEvents {
 
 export class Game {
   private readonly scene = new THREE.Scene();
-  private readonly camera = new THREE.PerspectiveCamera(CAMERA_FOV, 1, CAMERA_NEAR, CAMERA_FAR);
-  private readonly cameraTarget = new THREE.Vector3().copy(CAMERA_TARGET);
+  private readonly rig = new CameraRig();
   private readonly timer = new THREE.Timer();
   private readonly player: Player;
   private readonly particles = new Particles(this.scene);
@@ -136,11 +103,12 @@ export class Game {
   private readonly placement: RandomSource;
   private readonly words: WordSource;
   private readonly script: SpawnScript;
+  private readonly phases: PhaseRunner;
+  private readonly health: HeroHealth;
   private readonly stats = new SessionStats();
   private readonly rewards: RunRewards;
   private readonly tally = new RunTally();
   private readonly meter = new PhaseMeter();
-  private readonly records: PhaseRecord[] = [];
   private readonly keys: KeyTracker;
   private readonly labels: LabelLayer;
   private readonly enemies: Enemy[] = [];
@@ -148,26 +116,14 @@ export class Game {
   private readonly timeScale = new TimeScale();
   private readonly pageClasses = new PageClasses(document.body.classList);
   private readonly spawnGroups = new SpawnGroups<Enemy>();
-  private readonly shake = new CameraShake();
   private readonly targeting = new Targeting<Enemy>((enemy, isCandidate) =>
     enemy.setTargeted(isCandidate),
   );
   private insets: StageInsets = NO_INSETS;
-  private plannedPhase: RunPhase;
-  private phase: RunPhase;
-  private phaseIndex = FIRST_PHASE;
-  private spawned = 0;
   private scriptSpawn: number | undefined;
-  private phaseSeconds = 0;
-  private runSeconds = 0;
-  private calm: number;
   private boss: Boss | undefined;
-  private lives: number;
-  private shields = 0;
-  private guards = 0;
   private lettersFreed = 0;
   private elapsed = 0;
-  private sinceSpawn = Number.POSITIVE_INFINITY;
   private paused = false;
   private suspended = false;
   private finished = false;
@@ -188,10 +144,8 @@ export class Game {
       allowedKeysFor(config.level, config.language),
       practiceDay(new Date()),
     );
-    this.plannedPhase = firstPhase(config.plan);
-    this.phase = this.plannedPhase;
-    this.calm = this.phase.calmSeconds ?? NO_CALM;
-    this.lives = config.plan.lives;
+    this.phases = new PhaseRunner(config.plan);
+    this.health = new HeroHealth(config.plan);
     this.rewards = new RunRewards(config.plan);
     const seeded = config.plan.seed !== undefined;
     const weights = seeded ? EVEN_WEIGHTS : this.adaptiveWeights();
@@ -209,9 +163,8 @@ export class Game {
     const quality = currentQuality();
     this.world = new World(this.scene, config.theme, quality);
     this.scene.add(this.player.object);
-    this.placeCameraForIntro();
-    renderHost.attach(container, this.scene, this.camera, quality, (viewport) =>
-      this.fitCamera(viewport),
+    renderHost.attach(container, this.scene, this.rig.camera, quality, (viewport) =>
+      this.rig.fit(viewport, this.insets),
     );
     this.labels = new LabelLayer(container);
     this.mechanics.register(createMechanics(this.createMechanicContext()));
@@ -220,7 +173,7 @@ export class Game {
   start(): void {
     this.running = true;
     window.addEventListener('keydown', this.onKeyDown);
-    this.events.onStats(this.stats, this.lives);
+    this.reportStats();
     this.reportProgress();
     this.mechanics.onPhaseChange(this.phase);
     this.timer.reset();
@@ -248,7 +201,7 @@ export class Game {
 
   setInsets(insets: StageInsets): void {
     this.insets = insets;
-    this.fitCamera(renderHost.viewport);
+    this.rig.fit(renderHost.viewport, insets);
   }
 
   togglePause(): void {
@@ -289,7 +242,11 @@ export class Game {
   }
 
   private get inIntro(): boolean {
-    return this.elapsed < CAMERA_INTRO_DURATION;
+    return this.elapsed < CAMERA_INTRO_SECONDS;
+  }
+
+  private get phase(): RunPhase {
+    return this.phases.phase;
   }
 
   private get isPlaying(): boolean {
@@ -297,10 +254,8 @@ export class Game {
   }
 
   private createMechanicContext(): MechanicContext {
-    const phase = (): Phase => this.phase;
+    const { phases, health } = this;
     const playing = (): boolean => this.isPlaying;
-    const shields = (): number => this.shields;
-    const guards = (): number => this.guards;
     return {
       enemies: this.enemies,
       player: this.player,
@@ -316,16 +271,16 @@ export class Game {
       equipped: this.config.equipped,
       random: this.random,
       get phase() {
-        return phase();
+        return phases.phase;
       },
       get playing() {
         return playing();
       },
       get shields() {
-        return shields();
+        return health.shields;
       },
       get guards() {
-        return guards();
+        return health.guards;
       },
       createLabel: () => this.labels.createLabel(),
       addEnemy: (enemy, radius) => this.addEnemy(enemy, radius),
@@ -333,11 +288,11 @@ export class Game {
       spawnWord: (word) => this.spawnWord(word),
       claimTimeScale: (scale) => this.timeScale.claim(scale),
       claimPageClass: (name) => this.pageClasses.claim(name),
-      shakeCamera: (strength, seconds) => this.shake.start(strength, seconds),
+      shakeCamera: (strength, seconds) => this.rig.shake(strength, seconds),
       announce: (text, style, accent) => this.events.onAnnounce(text, style, accent),
       loseLife: () => this.hitHero(),
-      absorbNextHit: () => this.addShield(),
-      guardNextHit: () => this.addGuard(),
+      absorbNextHit: () => this.health.addShield(),
+      guardNextHit: () => this.health.addGuard(),
       restoreLife: () => this.restoreLife(),
       addCoins: (amount) => this.addCoins(amount),
       boostRewards: (boost) => this.boostRewards(boost),
@@ -346,11 +301,6 @@ export class Game {
 
   private adaptiveWeights(): KeyWeights {
     return { weightOf: (key) => keyWeight(key, this.keys.statOf(key)) };
-  }
-
-  private placeCameraForIntro(): void {
-    this.camera.position.copy(CAMERA_POSITION).multiplyScalar(CAMERA_INTRO_SCALE);
-    this.camera.lookAt(this.cameraTarget);
   }
 
   private releaseEnemies(): void {
@@ -381,7 +331,7 @@ export class Game {
     this.timer.update();
     const delta = Math.min(this.timer.getDelta(), MAX_FRAME_DELTA);
     this.tick(delta);
-    this.labels.position(this.enemies, this.camera, renderHost.viewport, this.insets);
+    this.labels.position(this.enemies, this.rig.camera, renderHost.viewport, this.insets);
     renderHost.render();
     if (this.isPlaying) renderHost.recordFrame(delta);
   };
@@ -392,7 +342,7 @@ export class Game {
     this.player.update(delta, this.elapsed);
     this.particles.update(delta);
     this.mechanics.update(delta, this.elapsed);
-    this.updateCamera(delta);
+    this.rig.update(this.elapsed, delta);
     if (this.finished) return;
     const worldDelta = delta * this.timeScale.value;
     if (!this.inIntro) this.spawnIfDue(worldDelta);
@@ -409,40 +359,21 @@ export class Game {
     for (const enemy of [...this.enemies]) {
       if (this.finished) return;
       if (!this.enemies.includes(enemy)) continue;
-      enemy.update(delta, this.elapsed, this.camera.position);
+      enemy.update(delta, this.elapsed, this.rig.camera.position);
       if (enemy.distanceToCenter < REACH_DISTANCE) this.enemyReached(enemy);
     }
   }
 
-  private updateCamera(delta: number): void {
-    const introProgress = Math.min(1, this.elapsed / CAMERA_INTRO_DURATION);
-    const eased = 1 - Math.pow(1 - introProgress, 3);
-    const scale = CAMERA_INTRO_SCALE - (CAMERA_INTRO_SCALE - 1) * eased;
-    const sway = Math.sin(this.elapsed * CAMERA_SWAY_SPEED) * CAMERA_SWAY;
-    this.camera.position.copy(CAMERA_POSITION).multiplyScalar(scale);
-    this.camera.position.x += sway;
-    this.shake.apply(this.camera.position, delta);
-    this.camera.lookAt(this.cameraTarget);
-  }
-
-  private fitCamera({ width, height }: Viewport): void {
-    if (width <= 0 || height <= 0) return;
-    const framing = frameBoard({ width, height, ...this.insets });
-    this.camera.fov = framing.fov;
-    this.camera.setViewOffset(width, framing.fullHeight, 0, framing.offsetY, width, height);
-  }
-
   private spawnIfDue(delta: number): void {
-    if (this.restsInCalm(delta)) return;
-    if (this.phase.kind === 'boss') return this.spawnBossOnce();
-    this.sinceSpawn += delta;
-    if (!this.isSpawnDue()) return;
-    this.sinceSpawn = 0;
-    const word = this.script.word(this.phase, this.spawned, this.liveStarts());
+    const cue = this.phases.spawnCue(delta, this.enemies.length);
+    if (cue === 'boss') return this.spawnBossOnce();
+    if (cue === 'word') this.phases.spawnNext((order) => this.spawnFromScript(order));
+  }
+
+  private spawnFromScript(order: number): void {
+    const word = this.script.word(this.phase, order, this.liveStarts());
     const angle = this.script.angle();
-    this.spawned += 1;
     this.spawnScripted(() => this.spawnGroups.spawn(() => this.spawnWord(word, angle)));
-    this.retime();
   }
 
   private spawnScripted(spawn: () => void): void {
@@ -451,58 +382,17 @@ export class Game {
     this.scriptSpawn = undefined;
   }
 
-  private retime(): void {
-    this.phase = { ...this.plannedPhase, ...tempoAt(this.plannedPhase, this.spawned) };
-  }
-
   private countPhaseTime(delta: number): void {
-    const limit = this.phase.seconds;
-    if (limit === undefined) return;
-    const step = progressStep(this.phaseSeconds);
-    this.phaseSeconds += delta;
-    if (this.phaseSeconds >= limit) return this.advancePhase();
-    if (!this.isTimedRun && progressStep(this.phaseSeconds) !== step) this.reportProgress();
+    const tick = this.phases.countPhaseTime(delta);
+    if (tick === 'expired') return this.advancePhase();
+    if (tick === 'progressed') this.reportProgress();
   }
 
   private countRunTime(delta: number): void {
     if (this.finished) return;
-    const step = progressStep(this.runSeconds);
-    this.runSeconds += delta;
-    const limit = this.config.plan.seconds;
-    if (limit === undefined) return;
-    if (this.runSeconds >= limit) return this.finish(true);
-    if (progressStep(this.runSeconds) !== step) this.reportProgress();
-  }
-
-  private get isTimedRun(): boolean {
-    return this.config.plan.seconds !== undefined;
-  }
-
-  private progressClock(): ProgressClock | undefined {
-    const runLimit = this.config.plan.seconds;
-    if (runLimit !== undefined) return { limit: runLimit, spent: this.runSeconds };
-    const phaseLimit = this.phase.seconds;
-    if (phaseLimit === undefined) return undefined;
-    return { limit: phaseLimit, spent: this.phaseSeconds };
-  }
-
-  private restsInCalm(delta: number): boolean {
-    if (this.calm <= 0) return false;
-    this.calm -= delta;
-    return true;
-  }
-
-  private isSpawnDue(): boolean {
-    return (
-      this.spawned < this.phase.count &&
-      this.sinceSpawn >= this.phase.spawnInterval &&
-      this.enemies.length < Math.min(MAX_ENEMIES, this.phase.boardSize ?? MAX_ENEMIES)
-    );
-  }
-
-  private refillBoard(): void {
-    if (this.phase.boardSize === undefined) return;
-    this.sinceSpawn = Math.max(this.sinceSpawn, this.phase.spawnInterval);
+    const tick = this.phases.countRunTime(delta);
+    if (tick === 'expired') return this.finish(true);
+    if (tick === 'progressed') this.reportProgress();
   }
 
   private nextWord(): string {
@@ -559,16 +449,26 @@ export class Game {
   }
 
   private hitHero(): void {
-    if (this.config.plan.hitCost === 'combo') return this.breakComboOnHit();
-    this.loseLife();
+    if (this.finished) return;
+    this.hitReactions[this.health.hit()]();
+  }
+
+  private readonly hitReactions: Readonly<Record<HitOutcome, () => void>> = {
+    comboBroken: () => this.breakComboOnHit(),
+    guarded: () => this.guardHit(),
+    shielded: () => sfx.impact(SHIELD_IMPACT),
+    lifeLost: () => this.loseLife(),
+  };
+
+  private hurtHero(): void {
+    this.rig.shake(SHAKE_AMPLITUDE, SHAKE_DURATION);
+    this.player.hurt();
   }
 
   private breakComboOnHit(): void {
-    if (this.finished) return;
-    this.shake.start(SHAKE_AMPLITUDE, SHAKE_DURATION);
-    this.player.hurt();
+    this.hurtHero();
     this.stats.breakCombo();
-    this.events.onStats(this.stats, this.lives);
+    this.reportStats();
   }
 
   private resetBoss(boss: Boss): void {
@@ -577,45 +477,27 @@ export class Game {
   }
 
   private loseLife(): void {
-    if (this.finished || this.guardHit() || this.absorbHit()) return;
-    this.lives -= 1;
-    this.shake.start(SHAKE_AMPLITUDE, SHAKE_DURATION);
-    this.player.hurt();
+    this.hurtHero();
     this.recordMistake();
     sfx.lifeLost();
-    this.events.onStats(this.stats, this.lives);
-    if (this.lives <= 0) this.finish(false);
+    this.reportStats();
+    if (this.health.isLost) this.finish(false);
   }
 
-  private addShield(): void {
-    this.shields += 1;
-  }
-
-  private absorbHit(): boolean {
-    if (this.shields <= 0) return false;
-    this.shields -= 1;
-    sfx.impact(SHIELD_IMPACT);
-    return true;
-  }
-
-  private addGuard(): void {
-    this.guards += 1;
-  }
-
-  private guardHit(): boolean {
-    if (this.guards <= 0) return false;
-    this.guards -= 1;
+  private guardHit(): void {
     sfx.impact(SHIELD_IMPACT);
     this.recordMistake();
-    this.events.onStats(this.stats, this.lives);
-    return true;
+    this.reportStats();
   }
 
   private restoreLife(): boolean {
-    if (this.finished || this.lives >= this.config.plan.lives) return false;
-    this.lives += 1;
-    this.events.onStats(this.stats, this.lives);
+    if (this.finished || !this.health.restoreLife()) return false;
+    this.reportStats();
     return true;
+  }
+
+  private reportStats(): void {
+    this.events.onStats(this.stats, this.health.lives);
   }
 
   private addCoins(amount: number): void {
@@ -630,49 +512,23 @@ export class Game {
 
   private clearEnemy(enemy: Enemy): void {
     if (!this.remove(enemy)) return;
-    this.refillBoard();
+    this.phases.refillBoard();
     this.reportProgress();
-    if (this.isPhaseCleared()) this.advancePhase();
-  }
-
-  private isPhaseCleared(): boolean {
-    if (this.phase.kind === 'boss' || this.phase.seconds !== undefined) return false;
-    return this.spawned >= this.phase.count && this.enemies.length === 0;
+    if (this.phases.isCleared(this.enemies.length)) this.advancePhase();
   }
 
   private advancePhase(): void {
-    this.records.push(this.meter.close());
-    this.phaseIndex += 1;
-    this.spawned = 0;
-    this.phaseSeconds = 0;
-    this.sinceSpawn = Number.POSITIVE_INFINITY;
-    const next = this.planGoesOn() ? this.config.plan.phaseAt(this.phaseIndex) : undefined;
+    const next = this.phases.advance(this.meter.close());
     if (!next) return this.finish(true);
-    this.plannedPhase = next;
-    this.retime();
-    this.calm = next.calmSeconds ?? NO_CALM;
     this.words.use(next.words);
-    this.script.startPhase(this.phaseIndex, next.words);
+    this.script.startPhase(this.phases.phaseIndex, next.words);
     this.reportProgress();
     this.mechanics.onPhaseChange(next);
   }
 
-  private planGoesOn(): boolean {
-    return this.config.plan.continuesAfter?.(this.records) ?? true;
-  }
-
   private reportProgress(): void {
-    const { kind, wave, stage } = this.phase;
-    const clock = this.progressClock();
-    if (clock) {
-      const done = Math.min(clock.limit, progressStep(clock.spent) / PROGRESS_STEPS_PER_SECOND);
-      return this.events.onProgress({ kind, done, total: clock.limit, timed: true, wave, stage });
-    }
-    const total = this.phase.count;
-    const done = this.boss
-      ? total - Math.round(this.boss.health * total)
-      : THREE.MathUtils.clamp(this.spawned - this.spawnGroups.pending, 0, total);
-    this.events.onProgress({ kind, done, total, timed: false, wave, stage });
+    const board = { pendingSpawns: this.spawnGroups.pending, bossHealth: this.boss?.health };
+    this.events.onProgress(this.phases.progress(board));
   }
 
   private finish(won: boolean): void {
@@ -701,10 +557,8 @@ export class Game {
       coins: this.rewards.coins,
       coinBoost: this.rewards.coinBoost,
       keys: this.keys.report(),
-      phasesCleared: this.phaseIndex,
-      phases: [...this.records],
       tally: this.tally.snapshot(),
-      seconds: this.runSeconds,
+      ...this.phases.summary(),
     });
   }
 
@@ -728,7 +582,7 @@ export class Game {
     sfx.hit(this.stats.combo);
     this.mechanics.onHit();
     if (keystroke.kind === 'complete') keystroke.items.forEach((enemy) => this.completeWord(enemy));
-    this.events.onStats(this.stats, this.lives);
+    this.reportStats();
   }
 
   private mistake(char: string): void {
@@ -737,7 +591,7 @@ export class Game {
     this.recordMistake();
     this.targeting.candidates.forEach((enemy) => enemy.flashMistake());
     sfx.mistake();
-    this.events.onStats(this.stats, this.lives);
+    this.reportStats();
   }
 
   private completeWord(enemy: Enemy): void {
@@ -797,18 +651,8 @@ export class Game {
   }
 }
 
-function firstPhase(plan: RunPlan): RunPhase {
-  const phase = plan.phaseAt(FIRST_PHASE);
-  if (!phase) throw new Error('A run plan needs at least one phase');
-  return phase;
-}
-
 function runRandom(seed: number | undefined): RandomSource {
   return seed === undefined ? systemRandom() : seededRandom(seed);
-}
-
-function progressStep(seconds: number): number {
-  return Math.floor(seconds * PROGRESS_STEPS_PER_SECOND);
 }
 
 function placeOnSpawnArc(enemy: Enemy, radius: number, angle: number): void {
