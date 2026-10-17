@@ -4,9 +4,9 @@ import { pauseOverlay } from './PauseOverlay';
 
 const overlays: Overlay[] = [];
 
-function open() {
-  const actions = { onResume: vi.fn(), onSettings: vi.fn() };
-  const overlay = pauseOverlay(actions.onResume, {}, actions.onSettings);
+function open(onEnd?: () => void) {
+  const actions = { onResume: vi.fn(), onSettings: vi.fn(), onEnd };
+  const overlay = pauseOverlay(actions, {});
   overlays.push(overlay);
   return { ...actions, overlay, element: overlay.element };
 }
@@ -42,6 +42,16 @@ describe('pauseOverlay', () => {
     expect(onSettings).toHaveBeenCalledOnce();
     expect(onResume).not.toHaveBeenCalled();
     expect(element.querySelector('.quality-picker')).toBeNull();
+  });
+
+  it('ends the run only when the run can be ended', () => {
+    const onEnd = vi.fn();
+    const { element } = open(onEnd);
+    const end = element.querySelector<HTMLButtonElement>('.pause-end');
+    expect(end?.textContent).toBe('Zakończ');
+    end?.click();
+    expect(onEnd).toHaveBeenCalledOnce();
+    expect(open().element.querySelector('.pause-end')).toBeNull();
   });
 
   it('shows the accuracy of each key', () => {

@@ -7,11 +7,14 @@ import { createOverlay, onShortcutKeys, type Overlay } from './overlay';
 import { settingsTextButton } from './settingsParts';
 import { ESCAPE_LABEL, primaryHint } from './shortcutHint';
 
-export function pauseOverlay(
-  onResume: () => void,
-  keyStats: KeyStats,
-  onSettings: () => void,
-): Overlay {
+export interface PauseActions {
+  readonly onResume: () => void;
+  readonly onSettings: () => void;
+  readonly onEnd?: () => void;
+}
+
+export function pauseOverlay(actions: PauseActions, keyStats: KeyStats): Overlay {
+  const { onResume, onSettings, onEnd } = actions;
   const t = i18n.t;
   const escapeKey = el('kbd', { class: 'kbd', text: ESCAPE_LABEL });
   const resume = el(
@@ -30,10 +33,24 @@ export function pauseOverlay(
         el('span', { class: 'pause-badge' }, icon('pause', 'pause-icon')),
         el('h2', { class: 'pause-title', text: t.paused }),
         el('p', { class: 'pause-hint' }, ...formatParts(t.resumeHint, { key: escapeKey })),
-        el('div', { class: 'actions' }, resume, settingsTextButton(onSettings)),
+        el(
+          'div',
+          { class: 'actions' },
+          resume,
+          settingsTextButton(onSettings),
+          onEnd ? endRunButton(onEnd) : undefined,
+        ),
         keyHeatmap(keyStats),
       ),
     ),
     onShortcutKeys(resume, { Enter: onResume }),
+  );
+}
+
+function endRunButton(onEnd: () => void): HTMLElement {
+  return el(
+    'button',
+    { class: 'button button-ghost pause-end', type: 'button', onClick: onEnd },
+    i18n.t.features.arena.endRun,
   );
 }

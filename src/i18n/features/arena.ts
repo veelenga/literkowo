@@ -32,6 +32,7 @@ const pl = {
   goodRun: 'Dobra robota!',
   waves: 'Fale',
   again: 'Jeszcze raz',
+  endRun: 'Zakończ',
 };
 
 const uk: typeof pl = {
@@ -68,6 +69,7 @@ const uk: typeof pl = {
   goodRun: 'Гарна робота!',
   waves: 'Хвилі',
   again: 'Ще раз',
+  endRun: 'Завершити',
 };
 
 export const arena = { pl, uk };

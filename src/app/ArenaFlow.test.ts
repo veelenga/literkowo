@@ -109,6 +109,7 @@ describe('ArenaFlow', () => {
     expect(run.plan.lives).toBe(CHOICE.difficulty.lives);
     expect(run.plan.allMechanicsUnlocked).toBe(true);
     expect(run.rotateHint).toBe(false);
+    expect(run.canEnd).toBe(true);
   });
 
   it('saves the run and shows the result, then plays again with the same choice', () => {
@@ -170,6 +171,7 @@ describe('ArenaFlow', () => {
       seconds: 180,
       seed: dailySeed('2026-10-16', 'las'),
     });
+    expect(run.canEnd).toBe(false);
   });
 
   it('records a finished try, shows the daily result and plays again', () => {
