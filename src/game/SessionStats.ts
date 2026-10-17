@@ -1,7 +1,6 @@
+import { keystrokeAccuracy, PERFECT_ACCURACY, wordsPerMinute } from '../course/scoring';
 import { FEVER_COMBO, FEVER_MULTIPLIER } from './combo';
 
-const SECONDS_PER_MINUTE = 60;
-const CHARS_PER_WORD = 5;
 const BASE_POINTS_PER_CHAR = 10;
 const COMBO_STEP = 5;
 const MAX_MULTIPLIER = 5;
@@ -17,8 +16,7 @@ export class SessionStats {
   private feverSlips = 0;
 
   get accuracy(): number {
-    const total = this.hits + this.mistakes;
-    return total === 0 ? 1 : this.hits / total;
+    return keystrokeAccuracy(this.hits, this.mistakes) ?? PERFECT_ACCURACY;
   }
 
   get multiplier(): number {
@@ -26,8 +24,7 @@ export class SessionStats {
   }
 
   get wpm(): number {
-    const minutes = this.activeSeconds / SECONDS_PER_MINUTE;
-    return minutes <= 0 ? 0 : Math.round(this.hits / CHARS_PER_WORD / minutes);
+    return wordsPerMinute(this.hits, this.activeSeconds);
   }
 
   addActiveTime(seconds: number): void {

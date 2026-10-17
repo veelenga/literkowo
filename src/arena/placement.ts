@@ -2,7 +2,7 @@ import type { Region } from '../course/catalog';
 import { levelTempo, type LetterRange, type Tempo } from '../course/difficulty';
 import { needsRightAlt } from '../course/fingers';
 import { RIGHT_ALT_TARGET_INTERVAL_MS, regionKeys, TARGET_INTERVAL_MS } from '../course/mastery';
-import { accuracyPercent } from '../course/scoring';
+import { accuracyPercent, keystrokeAccuracy, wordsPerMinute } from '../course/scoring';
 import { WORD_LISTS } from '../course/wordLists';
 import type { WordRules } from '../course/wordRules';
 import type { PhaseRecord } from '../game/PhaseMeter';
@@ -19,9 +19,7 @@ export const STAGE_LENGTHS: LetterRange = { min: 3, max: 5 };
 export const WIDE_STAGE_LENGTHS: LetterRange = { min: 2, max: 6 };
 
 const MS_PER_SECOND = 1000;
-const SECONDS_PER_MINUTE = 60;
-const CHARS_PER_WORD = 5;
-const NO_SPEED = 0;
+const NO_ACCURACY = 0;
 
 export interface PlacementStage {
   readonly number: number;
@@ -126,15 +124,14 @@ function isPassed(stage: PlacementStage | undefined, record: PhaseRecord): boole
 
 function accuracyOf(records: readonly PhaseRecord[]): number {
   const hits = sumOf(records, (record) => record.hits);
-  const keystrokes = hits + sumOf(records, (record) => record.mistakes);
-  return keystrokes === 0 ? 0 : hits / keystrokes;
+  const mistakes = sumOf(records, (record) => record.mistakes);
+  return keystrokeAccuracy(hits, mistakes) ?? NO_ACCURACY;
 }
 
 function wpmOf(records: readonly PhaseRecord[]): number {
+  const hits = sumOf(records, (record) => record.hits);
   const seconds = sumOf(records, (record) => record.typingSeconds);
-  if (seconds <= 0) return NO_SPEED;
-  const words = sumOf(records, (record) => record.hits) / CHARS_PER_WORD;
-  return Math.round(words / (seconds / SECONDS_PER_MINUTE));
+  return wordsPerMinute(hits, seconds);
 }
 
 function sumOf(records: readonly PhaseRecord[], value: (record: PhaseRecord) => number): number {
