@@ -1,4 +1,4 @@
-import { el } from '../dom';
+import { el, svg } from '../dom';
 import { letterField, type LetterParticle } from './letterField';
 
 const PARTICLE_COUNT = 22;
@@ -8,6 +8,7 @@ const TILE_OFFSETS = [-1, 0, 1, 2, 3];
 const HALF = 0.5;
 const POINTER_X = '--pointer-x';
 const POINTER_Y = '--pointer-y';
+const STRETCH = 'none';
 const FINE_POINTER_QUERY = '(hover: hover) and (pointer: fine)';
 
 type Point = readonly [x: number, y: number];
@@ -95,10 +96,12 @@ function hillLayer(points: readonly Point[], depth: number): HTMLElement {
   const tiled = TILE_OFFSETS.flatMap((tile) =>
     period.map(([x, y]): Point => [x + tile * HILL_WIDTH, y]),
   );
-  return el('div', {
-    class: `backdrop-hills hills-${depth}`,
-    html: `<svg viewBox="0 0 ${HILL_WIDTH * 2} ${HILL_HEIGHT}" preserveAspectRatio="none"><path d="${smoothRidge(tiled)}"/></svg>`,
-  });
+  const hills = svg(
+    'svg',
+    { viewBox: `0 0 ${HILL_WIDTH * 2} ${HILL_HEIGHT}`, preserveAspectRatio: STRETCH },
+    svg('path', { d: smoothRidge(tiled) }),
+  );
+  return el('div', { class: `backdrop-hills hills-${depth}` }, hills);
 }
 
 function smoothRidge(points: readonly Point[]): string {

@@ -1,3 +1,4 @@
+import { el } from '../../../ui/dom';
 import type { LabelMode } from '../../Enemy';
 
 export interface GlyphSpot {
@@ -14,6 +15,8 @@ const ANGLE_JITTER = 0.35;
 const FULL_TURN = Math.PI * 2;
 const MASK_CHAR = '•';
 const UNIT = 'em';
+const GLYPH_X = '--glyph-x';
+const GLYPH_Y = '--glyph-y';
 
 export function scatterGlyphs(count: number, random: () => number = Math.random): GlyphSpot[] {
   const angles = Array.from(
@@ -26,20 +29,20 @@ export function scatterGlyphs(count: number, random: () => number = Math.random)
   }));
 }
 
-export function glyphMarkup(
+export function glyphElements(
   word: string,
   popped: number,
   spots: readonly GlyphSpot[],
   mode: LabelMode,
-): string {
-  return [...word]
-    .map((char, index) => {
-      const shown = mode === 'firstLetter' && index > popped ? MASK_CHAR : char;
-      const spot = spots[index];
-      const style = `--glyph-x: ${spot.x.toFixed(2)}${UNIT}; --glyph-y: ${spot.y.toFixed(2)}${UNIT}`;
-      return `<span class="${glyphClasses(index, popped)}" style="${style}">${shown}</span>`;
-    })
-    .join('');
+): HTMLSpanElement[] {
+  return [...word].map((char, index) => {
+    const shown = mode === 'firstLetter' && index > popped ? MASK_CHAR : char;
+    const glyph = el('span', { class: glyphClasses(index, popped), text: shown });
+    const spot = spots[index];
+    glyph.style.setProperty(GLYPH_X, `${spot.x.toFixed(2)}${UNIT}`);
+    glyph.style.setProperty(GLYPH_Y, `${spot.y.toFixed(2)}${UNIT}`);
+    return glyph;
+  });
 }
 
 function glyphClasses(index: number, popped: number): string {

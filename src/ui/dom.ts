@@ -20,7 +20,6 @@ type EventHandlers = {
 type AttributeProps = {
   class?: string;
   text?: string;
-  html?: string;
   title?: string;
   type?: string;
   placeholder?: string;
@@ -64,7 +63,7 @@ function applyProp(element: HTMLElement, key: string, value: PropValue): void {
     element.addEventListener(key.slice(EVENT_PREFIX.length).toLowerCase(), { handleEvent: value });
   } else if (key === 'class') element.className = String(value);
   else if (key === 'text') element.textContent = String(value);
-  else if (key === 'html') element.innerHTML = String(value);
+  else if (key === 'style') element.style.cssText = String(value);
   else element.setAttribute(key, value === true ? '' : String(value));
 }
 
@@ -76,6 +75,15 @@ export function svg<K extends keyof SVGElementTagNameMap>(
   const element = document.createElementNS(SVG_NS, tag);
   for (const [key, value] of Object.entries(attributes)) element.setAttribute(key, String(value));
   element.append(...children);
+  return element;
+}
+
+export function trustedSvg(
+  attributes: Record<string, string | number>,
+  staticMarkup: string,
+): SVGSVGElement {
+  const element = svg('svg', attributes);
+  element.innerHTML = staticMarkup;
   return element;
 }
 
