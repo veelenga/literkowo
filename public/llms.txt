@@ -14,7 +14,7 @@ In Polish: "Literkowo: gra do nauki pisania na klawiaturze dla dzieci". In Ukrai
 
 **Arena.** Open from the first day, with three modes: the placement test (Sprawdzian), the daily challenge and endless waves (Bez końca). Endless waves on the keys of the first region or of any region the child has finished, four difficulties (Spokojnie, Normalnie, Szybko, Szaleństwo), bronze, silver and gold medals for waves cleared and accuracy, and a boss every fifth wave on the two fastest difficulties. A daily challenge (Wyzwanie dnia) brings a new rule every weekday, such as fog, darkness, long words, one heart or three bosses, with three tries a day, stamps on a week card, weekly chests and a family chest for all the profiles on the device. Missing a day never takes anything away.
 
-**Shop.** Coins from levels and the arena buy pets, hats and characters for the hero. Every pet and hat has one small power, such as catching a bat or giving a heart back. No power types for the player or raises accuracy. Trophies mark milestones.
+**Shop.** Coins from levels and the arena buy pets, hats and characters for the hero. Every pet and hat has one small power. Most pets help only when the hero is in trouble, for example by catching a bat or giving a lost heart back. No power types for the player or raises accuracy. Trophies mark milestones.
 
 **Languages.** Interface in Polish (default) and Ukrainian. Typing words in Polish or English, chosen per profile.
 
