@@ -17,6 +17,7 @@ import type { Overlay } from '../ui/overlay';
 import type { ShopExit, ShopTab } from '../ui/ShopScreen';
 import { earnedOf } from './earned';
 import type { GameRun } from './GameRun';
+import { runCoinsOf, runTotalsOf } from './runTotals';
 
 export interface Screen {
   readonly element: HTMLElement;
@@ -162,33 +163,23 @@ function summaryOf(
 
 function endlessAttemptOf(choice: ArenaChoice, result: GameResult): EndlessAttempt {
   return {
+    ...runTotalsOf(result),
+    ...runCoinsOf(result),
     ...choice,
     wavesCleared: result.phasesCleared,
-    score: result.score,
     accuracy: result.accuracy,
-    lettersFreed: result.lettersFreed,
-    xp: result.xp,
-    runCoins: result.coins,
-    coinBoost: result.coinBoost,
-    keyStats: result.keys.practised,
-    tally: result.tally,
     date: practiceDay(new Date()),
   };
 }
 
 function dailyAttemptOf(choice: DailyChoice, result: GameResult): DailyAttempt {
   return {
+    ...runTotalsOf(result),
+    ...runCoinsOf(result),
     choice,
     completed: result.won,
     seconds: result.seconds,
-    score: result.score,
     accuracy: result.accuracy,
     wpm: result.wpm,
-    lettersFreed: result.lettersFreed,
-    xp: result.xp,
-    runCoins: result.coins,
-    coinBoost: result.coinBoost,
-    keyStats: result.keys.practised,
-    tally: result.tally,
   };
 }

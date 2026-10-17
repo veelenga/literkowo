@@ -1,8 +1,7 @@
 import { REGIONS, type Region } from '../course/catalog';
-import { boostedCoins } from '../course/coins';
-import type { Tally } from '../course/counters';
+import { boostedCoins, type RunCoins } from '../course/coins';
 import { courseFor } from '../course/course';
-import type { KeyStats } from '../course/keyStats';
+import type { RunTotals } from '../course/progress';
 import type { Profile } from '../profiles/Profile';
 import type { PlacementOutcome } from './placement';
 import { withArenaRun } from './progress';
@@ -12,16 +11,9 @@ export const FINGERS_CARD_ID = 'placement-fingers';
 
 const NOT_PLACED = -1;
 
-export interface PlacementAttempt {
+export interface PlacementAttempt extends RunTotals, RunCoins {
   readonly outcome: PlacementOutcome;
-  readonly keyStats: KeyStats;
   readonly date: string;
-  readonly score: number;
-  readonly lettersFreed: number;
-  readonly xp: number;
-  readonly runCoins: number;
-  readonly coinBoost: number;
-  readonly tally: Tally;
 }
 
 export interface PlacementRecord {
@@ -32,12 +24,8 @@ export interface PlacementRecord {
 export function recordPlacement(profile: Profile, attempt: PlacementAttempt): PlacementRecord {
   const coins = boostedCoins(attempt.runCoins, attempt.coinBoost);
   const updated = withArenaRun(profile, {
-    score: attempt.score,
-    lettersFreed: attempt.lettersFreed,
-    xp: attempt.xp,
+    ...attempt,
     coins,
-    keyStats: attempt.keyStats,
-    tally: attempt.tally,
     arena: placedFurther(profile.arena, attempt.outcome.placed, attempt.date),
   });
   return { profile: updated, coins };

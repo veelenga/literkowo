@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { EMPTY_TALLY } from '../course/counters';
-import { createProfile } from '../profiles/Profile';
+import { EMPTY_KEY_STAT, recordHit } from '../course/keyStats';
+import { recordResult } from '../course/progress';
+import { createProfile, type Profile } from '../profiles/Profile';
+import { requireLevel } from '../testing/levels';
 import { difficultyById, type ArenaDifficulty } from './difficulty';
 import { NEW_BEST_WAVE_COINS } from './economy';
 import { keySetById, type KeySet } from './keySets';
 import { BRONZE, NO_MEDAL, SILVER } from './medals';
-import { recordEndlessRun, type EndlessAttempt } from './progress';
+import { recordEndlessRun, withArenaRun, type EndlessAttempt } from './progress';
 import { arenaKey } from './record';
 
 const DAY = '2026-10-15';
@@ -94,3 +97,27 @@ describe('recordEndlessRun', () => {
     expect(outcome.payout.total).toBe(30);
   });
 });
+
+describe('withArenaRun', () => {
+  it('credits the same totals and counters as a course level without stars', () => {
+    const profile = { ...createProfile('A', 'b'), xp: 10, coins: 5, totalScore: 100 };
+    const totals = {
+      score: 900,
+      lettersFreed: 120,
+      xp: 45,
+      coins: 18,
+      keyStats: { j: recordHit(EMPTY_KEY_STAT) },
+      tally: { words: 30, powerWords: 2, specialEnemies: 4, bossesBeaten: 1 },
+    };
+    const arena = withArenaRun(profile, { ...totals, arena: profile.arena });
+    const level = { ...totals, stars: 0, accuracy: 1, wpm: 40 };
+    const course = recordResult(profile, requireLevel('polana-2'), level);
+    expect(creditedOf(arena)).toEqual(creditedOf(course));
+    expect(creditedOf(arena)).toMatchObject({ xp: 55, coins: 23, totalScore: 1000 });
+  });
+});
+
+function creditedOf(profile: Profile) {
+  const { totalScore, lettersFreed, xp, coins, keyStats, counters } = profile;
+  return { totalScore, lettersFreed, xp, coins, keyStats, counters };
+}

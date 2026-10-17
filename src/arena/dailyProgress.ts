@@ -1,5 +1,5 @@
-import type { Tally } from '../course/counters';
-import type { KeyStats } from '../course/keyStats';
+import type { RunCoins } from '../course/coins';
+import type { RunTotals } from '../course/progress';
 import { awardTrophies } from '../course/trophies';
 import type { Profile } from '../profiles/Profile';
 import {
@@ -17,19 +17,12 @@ import { NO_MEDAL, type Medal } from './medals';
 import { withArenaRun } from './progress';
 import type { DailyBest, DailyRecord } from './record';
 
-export interface DailyAttempt {
+export interface DailyAttempt extends RunTotals, RunCoins {
   readonly choice: DailyChoice;
   readonly completed: boolean;
   readonly seconds: number;
-  readonly score: number;
   readonly accuracy: number;
   readonly wpm: number;
-  readonly lettersFreed: number;
-  readonly xp: number;
-  readonly runCoins: number;
-  readonly coinBoost: number;
-  readonly keyStats: KeyStats;
-  readonly tally: Tally;
 }
 
 export interface DailyOutcome {
