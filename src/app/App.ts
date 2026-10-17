@@ -1,4 +1,3 @@
-import type { ArenaChoice } from '../arena/endlessPlan';
 import { music } from '../audio/Music';
 import type { MusicMood } from '../audio/music/specs';
 import { sfx } from '../audio/Sfx';
@@ -49,7 +48,7 @@ import {
   devProfile,
   unlockAudioOnFirstInput,
 } from './devShortcut';
-import { ArenaFlow, type DailyStart, type Screen } from './ArenaFlow';
+import { ArenaFlow, type Screen } from './ArenaFlow';
 import { earnedOf } from './earned';
 import type { GameRun } from './GameRun';
 import { loadGameModule, prefetchGameModule, type GameModule } from './gameModule';
@@ -97,36 +96,28 @@ export class App {
   start(): void {
     document.documentElement.lang = i18n.current;
     this.root.replaceChildren(this.screen);
-    if (import.meta.env.DEV) {
-      const level = devLevelFromUrl();
-      if (level) return this.startDevLevel(level);
-      const arena = devArenaFromUrl();
-      if (arena) return this.startDevArena(arena);
-      const daily = devDailyFromUrl();
-      if (daily) return this.startDevDaily(daily);
-      if (devPlacementFromUrl()) return this.startDevPlacement();
-    }
+    if (import.meta.env.DEV && this.startDevShortcut()) return;
     this.showProfiles();
   }
 
-  private startDevLevel(level: Level): void {
+  private startDevShortcut(): boolean {
+    const profile = devProfile(this.store.active());
+    const start = this.devStart(profile);
+    if (!start) return false;
     unlockAudioOnFirstInput();
-    this.startLevel(devProfile(this.store.active()), level);
+    start();
+    return true;
   }
 
-  private startDevArena(choice: ArenaChoice): void {
-    unlockAudioOnFirstInput();
-    this.arena.start(devProfile(this.store.active()), choice);
-  }
-
-  private startDevDaily(start: DailyStart): void {
-    unlockAudioOnFirstInput();
-    this.arena.startDaily(devProfile(this.store.active()), start);
-  }
-
-  private startDevPlacement(): void {
-    unlockAudioOnFirstInput();
-    this.placement.start(devProfile(this.store.active()));
+  private devStart(profile: Profile): (() => void) | undefined {
+    const level = devLevelFromUrl();
+    if (level) return () => this.startLevel(profile, level);
+    const arena = devArenaFromUrl(profile.wordLanguage);
+    if (arena) return () => this.arena.start(profile, arena);
+    const daily = devDailyFromUrl(profile.wordLanguage);
+    if (daily) return () => this.arena.startDaily(profile, daily);
+    if (devPlacementFromUrl()) return () => this.placement.start(profile);
+    return undefined;
   }
 
   private showProfiles(): void {
