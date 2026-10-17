@@ -4,7 +4,7 @@ import { DAILY_FORMATS, formatOnWeekday } from '../arena/formats';
 import { keySetById } from '../arena/keySets';
 import { sfx } from '../audio/Sfx';
 import { levelById, type Level } from '../course/catalog';
-import { AVATARS, createProfile, DEFAULT_WORD_LANGUAGE, type Profile } from '../profiles/Profile';
+import { AVATARS, createProfile, type Profile, type WordLanguage } from '../profiles/Profile';
 import type { DailyStart } from './ArenaFlow';
 
 const LEVEL_PARAM = 'level';
@@ -22,19 +22,19 @@ export function devLevelFromUrl(): Level | undefined {
   return id ? levelById(id) : undefined;
 }
 
-export function devArenaFromUrl(): ArenaChoice | undefined {
+export function devArenaFromUrl(language: WordLanguage): ArenaChoice | undefined {
   const match = new URLSearchParams(location.search).get(ARENA_PARAM)?.match(ARENA_PATTERN);
   if (!match) return undefined;
   const [, keySetId, level] = match;
-  const keySet = keySetById(keySetId, DEFAULT_WORD_LANGUAGE);
+  const keySet = keySetById(keySetId, language);
   const difficulty = difficultyAtLevel(Number(level));
   return keySet && difficulty ? { keySet, difficulty } : undefined;
 }
 
-export function devDailyFromUrl(): DailyStart | undefined {
+export function devDailyFromUrl(language: WordLanguage): DailyStart | undefined {
   const params = new URLSearchParams(location.search);
   const id = params.get(DAILY_PARAM);
-  const keySet = id ? keySetById(id, DEFAULT_WORD_LANGUAGE) : undefined;
+  const keySet = id ? keySetById(id, language) : undefined;
   if (!keySet) return undefined;
   const weekday = params.get(WEEKDAY_PARAM);
   if (!weekday || !WEEKDAY_PATTERN.test(weekday)) return { keySet };
@@ -47,8 +47,8 @@ export function devPlacementFromUrl(): boolean {
 }
 
 export function devProfile(active?: Profile): Profile {
-  const profile = createProfile(DEV_PROFILE_NAME, active?.avatar ?? AVATARS[0]);
-  if (!active) return profile;
+  if (!active) return createProfile(DEV_PROFILE_NAME, AVATARS[0]);
+  const profile = createProfile(DEV_PROFILE_NAME, active.avatar, active.wordLanguage);
   return { ...profile, inventory: active.inventory, equipped: active.equipped };
 }
 

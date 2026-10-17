@@ -1111,10 +1111,10 @@ Owners: `src/seo/site.ts` (every string, url and image), `src/seo/vitePlugin.ts`
 Owners: `src/app/devShortcut.ts`, `src/app/App.ts`.
 
 - In development only, `?level=<id>` starts a level directly, for example `http://localhost:5173/?level=jaskinia-24` for the cave boss. Every level id is in the table under [Regions and levels](#regions-and-levels).
-- It uses a temporary profile named Test with Polish words. It takes the character, the inventory and the equipped pet and hat of the active profile, or the first character without items when there is none. Story and learn cards are skipped. Results are not saved.
-- In development only, `?arena=<key set>-<difficulty>` starts an endless arena run directly, for example `http://localhost:5173/?arena=las-2` for Las on Normalnie. The key set is a region id and the difficulty is the preset level from 1 to 4, see [Arena](#arena). It uses the same temporary profile, so the arena does not need to be open and results are not saved.
+- It uses a temporary profile named Test. It takes the word language, the character, the inventory and the equipped pet and hat of the active profile, or the first character with Polish words and without items when there is none. Story and learn cards are skipped. Results are not saved.
+- In development only, `?arena=<key set>-<difficulty>` starts an endless arena run directly, for example `http://localhost:5173/?arena=las-2` for Las on Normalnie. The key set is a region id and the difficulty is the preset level from 1 to 4, see [Arena](#arena). It uses the same temporary profile, so the arena does not need to be open and results are not saved. A key set that the word language of the active profile does not have, such as Wyspa Ogonków with English words, opens the profile screen.
 - In development only, `?daily=<key set>` starts today's [Daily challenge](#daily-challenge) directly, for example `http://localhost:5173/?daily=las`, and `&weekday=<0..6>` forces the format of a weekday, 0 for Monday, for example `?daily=las&weekday=1` for Dwie minuty. It uses the same temporary profile, so results are not saved.
-- In development only, `?placement=1` starts the [Placement test](#placement-test) directly with the same temporary profile and Polish words, without the intro card. Results are not saved.
+- In development only, `?placement=1` starts the [Placement test](#placement-test) directly with the same temporary profile, without the intro card. Results are not saved.
 - An unknown id, arena value or daily key set opens the profile screen. Production builds ignore the parameters.
 
 ## Planned
