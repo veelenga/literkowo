@@ -176,6 +176,10 @@ export class Enemy {
     return Math.hypot(this.object.position.x, this.object.position.z);
   }
 
+  get currentSpeed(): number {
+    return this.isFrozen ? 0 : this.speed * this.speedScale;
+  }
+
   get labelHeight(): number {
     return HOVER_HEIGHT + LABEL_GAP;
   }
@@ -262,10 +266,6 @@ export class Enemy {
 
   protected refreshOutward(): void {
     this.outward.set(this.object.position.x, 0, this.object.position.z).normalize();
-  }
-
-  private get currentSpeed(): number {
-    return this.isFrozen ? 0 : this.speed * this.speedScale;
   }
 
   private get threat(): number {
