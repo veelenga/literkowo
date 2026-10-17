@@ -18,7 +18,7 @@ function structuredDataScript(tags: HtmlTagDescriptor[]): string {
 }
 
 describe('head tags', () => {
-  const tags = headTags();
+  const tags = headTags('build');
 
   it('sets the title, the description and the canonical url', () => {
     expect(tags.find((tag) => tag.tag === 'title')?.children).toBe(SITE_TITLE);
@@ -44,8 +44,9 @@ describe('head tags', () => {
     expect(urls.every((url) => ABSOLUTE_URL.test(url))).toBe(true);
   });
 
-  it('puts every tag in the head', () => {
-    expect(tags.every((tag) => tag.injectTo === 'head')).toBe(true);
+  it('puts every tag in the head with the content security policy first', () => {
+    expect(tags[0]?.attrs?.['http-equiv']).toBe('Content-Security-Policy');
+    expect(tags.every((tag) => tag.injectTo?.startsWith('head'))).toBe(true);
   });
 
   it('embeds structured data that parses back and cannot close the script', () => {

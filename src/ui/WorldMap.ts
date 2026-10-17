@@ -3,7 +3,7 @@ import { courseFor, type Course } from '../course/course';
 import { MAX_STARS } from '../course/scoring';
 import { i18n } from '../i18n/i18n';
 import type { Profile } from '../profiles/Profile';
-import { el, icon, prefersReducedMotion, svg } from './dom';
+import { el, icon, prefersReducedMotion, svg, trustedSvg } from './dom';
 import {
   journeyLayout,
   journeyPath,
@@ -346,9 +346,15 @@ function kindBadge(kind: LevelKind): HTMLElement | null {
 function artLayer(layer: ArtLayer): HTMLElement {
   const height = layer.anchor === 'top' ? CEILING_HEIGHT : ART_HEIGHT;
   const align = layer.anchor === 'top' ? 'xMidYMin' : 'xMidYMax';
-  return el('div', {
-    class: `art-layer art-layer-${layer.name} is-${layer.anchor}`,
-    style: `--art-width: ${ART_WIDTH}; --art-height: ${height}`,
-    html: `<svg viewBox="0 0 ${ART_WIDTH} ${height}" preserveAspectRatio="${align} slice">${layer.markup}</svg>`,
-  });
+  return el(
+    'div',
+    {
+      class: `art-layer art-layer-${layer.name} is-${layer.anchor}`,
+      style: `--art-width: ${ART_WIDTH}; --art-height: ${height}`,
+    },
+    trustedSvg(
+      { viewBox: `0 0 ${ART_WIDTH} ${height}`, preserveAspectRatio: `${align} slice` },
+      layer.markup,
+    ),
+  );
 }

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import type { EnemyBody, EnemyLook, LabelMode } from '../../Enemy';
+import { el } from '../../../ui/dom';
+import { typedParts, type EnemyBody, type EnemyLook, type LabelMode } from '../../Enemy';
 import { blockAssembly, chunkyBlock, type Block } from '../../effects/chunkyGeometry';
 import type { BobMotion } from '../../effects/enemyStyles';
 import type { FaceSpec } from '../../effects/GlowingFace';
@@ -16,6 +17,8 @@ const SHIELD = { distance: 0.5, metalness: 0.6, roughness: 0.35, emissive: 0x2a4
 const HOVER = 0.6;
 const LABEL_GAP = 1.4;
 const MASK_CHAR = '•';
+const KEY_CLASS = 'shield-key';
+const MASK_CLASS = 'shield-mask';
 const BOB: BobMotion = { speed: 3, height: 0.05, ripple: 0.3 };
 
 const KNIGHT: readonly Block[] = [
@@ -148,8 +151,9 @@ export class ShieldEnemy extends SpecialEnemy {
     const typed = this.key.slice(0, this.keyTyped);
     const rest = this.key.slice(this.keyTyped);
     const mask = MASK_CHAR.repeat(this.hiddenWord.length);
-    this.label.innerHTML =
-      `<span class="shield-key"><span class="done">${typed}</span><span class="rest">${rest}</span></span>` +
-      `<span class="shield-mask">${mask}</span>`;
+    this.label.replaceChildren(
+      el('span', { class: KEY_CLASS }, ...typedParts(typed, rest)),
+      el('span', { class: MASK_CLASS, text: mask }),
+    );
   }
 }

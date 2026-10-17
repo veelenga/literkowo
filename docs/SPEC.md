@@ -1102,7 +1102,7 @@ Performance:
 Install and offline:
 
 - `vite-plugin-pwa` writes the web manifest: name Literkowo, the site description, the categories education, games and kids, a wide screenshot, standalone display, theme colour `#070b1a`, background `#050816`, start URL and scope from the base path.
-- The service worker precaches the build and caches files under `models/` at runtime, cache first. It registers only in production builds (`src/app/serviceWorker.ts`).
+- The service worker precaches the build and caches files under `models/` at runtime, network first. Online it always asks the site, through the browser cache, so a model or texture replaced in place reaches players on the next load. Offline, or when the site does not answer within 4 seconds, it serves the cached copy. Only responses with status 200 are cached, at most 64 files. The cache name stays `literkowo-models`, so installed apps reuse their cache instead of leaving an old one behind. It registers only in production builds (`src/app/serviceWorker.ts`).
 - The precache takes scripts, styles, HTML, SVG, PNG and fonts only. Navigation requests for a path with a file extension skip the app shell fallback (`FILE_REQUEST` in `vite.config.ts`), so `robots.txt`, `sitemap.xml`, `llms.txt` and the JPEG images always come fresh from the network.
 - Icons come from `public/icon.svg` and `public/icon-maskable.svg` through `npm run icons`.
 
@@ -1118,6 +1118,18 @@ Owners: `src/seo/site.ts` (every string, url and image), `src/seo/vitePlugin.ts`
 - Crawlers read `robots.txt` only at the root of a host. On GitHub Pages that is the `veelenga.github.io` user site, so its `robots.txt` needs the sitemap line and the content signals as well. The file here takes over on a custom domain.
 - `llms.txt` follows llmstxt.org, and `llms-full.txt` adds a short description of every feature. Both are written by hand, so a pull request that adds or changes a feature updates them too.
 - `npm run og` renders the share images, `public/screenshot.jpg` and the README image from a live island arena run with a hero in the wizard hat and the dragon pet. The image alt texts in `src/seo/site.ts` describe that scene.
+
+## Content security policy
+
+Owner: `src/seo/contentSecurityPolicy.ts`.
+
+- GitHub Pages cannot send response headers, so the policy is a `<meta http-equiv="Content-Security-Policy">` tag. The Vite plugin puts it first in the head, in the dev server and in the build.
+- The build policy is `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'`.
+- The dev server adds `style-src-elem 'self' 'unsafe-inline'`, because it injects the CSS as `<style>` tags, and `worker-src 'self' blob:`, because its client waits for a restarted server from a blob shared worker. Inline style attributes stay blocked there too, so the dev server shows the same violations as the build.
+- Everything loads from the site itself. Images allow `data:` because the hero, outfit and item portraits are rendered to data URLs. Fonts allow `data:` because the build inlines the smallest font files into the CSS. The character models and their textures are separate files fetched from the site, and the service worker is a script from the site.
+- No code writes markup or style attributes as text. Word labels are built from elements with `textContent`. The `style` prop of `el` and the swarm glyph positions go through the element's style declaration, which the policy allows. Only `trustedSvg` in `src/ui/dom.ts` parses markup, and it takes the static map art.
+- A meta tag cannot set `frame-ancestors`, `report-uri` or `sandbox`, so the page cannot forbid framing.
+- A remote origin, a blob URL, a web worker or an inline script needs a change to the policy, otherwise the browser blocks it. The browser smoke test fails on the console error that a blocked request writes.
 
 ## Dev shortcut
 
