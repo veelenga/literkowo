@@ -5,6 +5,7 @@ import { readQualityChoice } from '../game/quality';
 import { i18n } from '../i18n/i18n';
 import { createProfile, type Profile } from '../profiles/Profile';
 import { removeStorage } from '../storage';
+import type { ProgressBackupActions } from './backupControls';
 import { ON_SCREEN_KEYBOARD_KEY, readOnScreenKeyboard } from './formFactor';
 import { readReducedMotion, REDUCED_MOTION_KEY } from './motionPreference';
 import { onWindowKey } from './overlay';
@@ -12,10 +13,14 @@ import { SettingsScreen, settingsOverlay } from './SettingsScreen';
 
 const QUALITY_KEY = 'literkowo.quality';
 
-function setup(profile?: Profile) {
+function setup(profile?: Profile, backup?: ProgressBackupActions) {
   const onBack = vi.fn();
   const onDelete = vi.fn();
-  const screen = new SettingsScreen({ onBack, profile: profile && { profile, onDelete } });
+  const screen = new SettingsScreen({
+    onBack,
+    profile: profile && { profile, onDelete },
+    backup,
+  });
   const rows = () => [...screen.element.querySelectorAll<HTMLElement>('.settings-row')];
   const row = (title: string) => {
     const found = rows().find(
@@ -64,8 +69,8 @@ describe('SettingsScreen', () => {
     vi.unstubAllGlobals();
   });
 
-  function open(profile?: Profile) {
-    const parts = setup(profile);
+  function open(profile?: Profile, backup?: ProgressBackupActions) {
+    const parts = setup(profile, backup);
     dispose = () => parts.screen.dispose();
     return parts;
   }
@@ -156,6 +161,45 @@ describe('SettingsScreen', () => {
     vi.stubGlobal('confirm', () => true);
     button?.click();
     expect(onDelete).toHaveBeenCalledOnce();
+  });
+
+  it('offers a quiet progress backup before the profile row', () => {
+    const backup = { onExport: vi.fn(), onImport: vi.fn() };
+    const { row, rows } = open(createProfile('Ola', 'a'), backup);
+    const labels = rows().map((item) => item.querySelector('.settings-label')?.textContent);
+    expect(labels.slice(-2)).toEqual(['Kopia postępu', 'Profil']);
+    expect(row('Kopia postępu').querySelector('.settings-hint')?.textContent).toBe(
+      'Postęp wszystkich profili w jednym pliku. Profile z pliku zastąpią te same profile tutaj',
+    );
+    const buttons = [...row('Kopia postępu').querySelectorAll<HTMLButtonElement>('button')];
+    expect(buttons.map((button) => button.textContent)).toEqual([
+      'Zapisz do pliku',
+      'Wczytaj z pliku',
+    ]);
+    expect(buttons.every((button) => button.classList.contains('button-ghost'))).toBe(true);
+    buttons[0]?.click();
+    expect(backup.onExport).toHaveBeenCalledOnce();
+  });
+
+  it('imports the JSON file picked from the import button', () => {
+    const backup = { onExport: vi.fn(), onImport: vi.fn() };
+    const { row } = open(undefined, backup);
+    const picker = row('Kopia postępu').querySelector<HTMLInputElement>('input[type="file"]');
+    if (!picker) throw new Error('Missing file picker');
+    expect(picker.hidden).toBe(true);
+    expect(picker.accept).toBe('.json,application/json');
+    const pick = vi.spyOn(picker, 'click').mockReturnValue();
+    row('Kopia postępu').querySelector<HTMLButtonElement>('.backup-import')?.click();
+    expect(pick).toHaveBeenCalledOnce();
+    const file = new File(['[]'], 'literkowo-2026-10-17.json', { type: 'application/json' });
+    Object.defineProperty(picker, 'files', { value: [file], configurable: true });
+    picker.dispatchEvent(new Event('change'));
+    expect(backup.onImport).toHaveBeenCalledWith(file);
+  });
+
+  it('has no progress backup when opened from the pause card', () => {
+    const { screen } = open();
+    expect(screen.element.querySelector('.backup-actions')).toBeNull();
   });
 
   it('has no profile row when opened without a profile', () => {

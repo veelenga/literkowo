@@ -65,6 +65,10 @@ const MIGRATIONS: Partial<Record<number, Migration>> = {
   [GRADUAL_COURSE_SCHEMA_VERSION]: (raw) => ({ ...raw, arena: emptyArenaRecord() }),
 };
 
+export function serializeProfiles(profiles: readonly Profile[]): string {
+  return JSON.stringify(profiles);
+}
+
 export function parseProfiles(json: string): ParsedProfiles {
   const entries = parseJson(json);
   if (!Array.isArray(entries)) return { profiles: [], intact: false };

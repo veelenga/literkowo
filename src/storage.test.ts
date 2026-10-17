@@ -19,7 +19,7 @@ describe('storage', () => {
     });
 
     it('writes through to local storage', () => {
-      writeStorage(KEY, 'value');
+      expect(writeStorage(KEY, 'value')).toBe(true);
       expect(storage.getItem(KEY)).toBe('value');
       expect(readStorage(KEY)).toBe('value');
     });
@@ -42,14 +42,14 @@ describe('storage', () => {
 
   it('keeps values in memory when writing fails', () => {
     vi.stubGlobal('localStorage', new FailingStorage());
-    expect(() => writeStorage(KEY, 'value')).not.toThrow();
+    expect(writeStorage(KEY, 'value')).toBe(false);
     expect(readStorage(KEY)).toBe('value');
   });
 
   it('survives storage that cannot be accessed', () => {
     vi.stubGlobal('localStorage', undefined);
     expect(readStorage(KEY)).toBeNull();
-    writeStorage(KEY, 'value');
+    expect(writeStorage(KEY, 'value')).toBe(false);
     expect(readStorage(KEY)).toBe('value');
   });
 });

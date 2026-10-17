@@ -1,13 +1,20 @@
 import { readStorage, removeStorage, writeStorage } from '../storage';
 import type { Profile } from './Profile';
-import { parseProfiles } from './profileSchema';
+import { parseProfiles, serializeProfiles } from './profileSchema';
+import { mergeProfiles } from './progressFile';
 
 export const PROFILES_KEY = 'literkowo.profiles';
 export const PROFILES_BACKUP_KEY = 'literkowo.profiles.backup';
 const ACTIVE_KEY = 'literkowo.activeProfile';
 
+export interface ProfileStoreOptions {
+  readonly onSave?: (persisted: boolean) => void;
+}
+
 export class ProfileStore {
   private profiles: Profile[] = this.load();
+
+  constructor(private readonly options: ProfileStoreOptions = {}) {}
 
   all(): Profile[] {
     return [...this.profiles];
@@ -35,6 +42,11 @@ export class ProfileStore {
     this.persist();
   }
 
+  merge(imported: readonly Profile[]): void {
+    this.profiles = mergeProfiles(this.profiles, imported);
+    this.persist();
+  }
+
   remove(id: string): void {
     if (!this.has(id)) return;
     this.profiles = this.profiles.filter((profile) => profile.id !== id);
@@ -55,6 +67,7 @@ export class ProfileStore {
   }
 
   private persist(): void {
-    writeStorage(PROFILES_KEY, JSON.stringify(this.profiles));
+    const persisted = writeStorage(PROFILES_KEY, serializeProfiles(this.profiles));
+    this.options.onSave?.(persisted);
   }
 }

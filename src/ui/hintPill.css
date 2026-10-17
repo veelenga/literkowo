@@ -1,0 +1,42 @@
+.hint-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: max-content;
+  max-width: calc(100% - 24px);
+  margin-inline: auto;
+  min-height: 36px;
+  padding: 6px 8px 6px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: rgba(10, 15, 40, 0.82);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 800;
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(4px);
+  animation: slide-down var(--duration-slow) var(--ease-out) backwards;
+}
+
+.hint-pill-close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.hint-pill.is-leaving {
+  animation: hint-pill-leave var(--duration-slow) ease-in forwards;
+}
+
+@keyframes hint-pill-leave {
+  to {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+}

@@ -4,9 +4,11 @@ export function readStorage(key: string): string | null {
   return fallback.get(key) ?? readPersistent(key);
 }
 
-export function writeStorage(key: string, value: string): void {
-  if (attempt(() => localStorage.setItem(key, value))) fallback.delete(key);
+export function writeStorage(key: string, value: string): boolean {
+  const persisted = attempt(() => localStorage.setItem(key, value));
+  if (persisted) fallback.delete(key);
   else fallback.set(key, value);
+  return persisted;
 }
 
 export function readChoice<T extends string>(key: string, choices: readonly T[], fallback: T): T {

@@ -253,7 +253,9 @@ Owners: `src/profiles/Profile.ts`, `src/profiles/profileSchema.ts`, `src/profile
 - Word language is set per profile. Today the choices are Polish (default) and English (`WORD_LANGUAGES` in `src/profiles/Profile.ts`).
 - Avatars are character skins: 18 Kenney Blocky Characters with ids `a` to `r`. Portraits are in `public/characters`, 3D models in `public/models/characters` (`src/game/Player.ts`). The skins `a` to `f` are free. The new profile picker shows the other 12 with a lock badge: the price in coins, or the level where the rank opens them. Locked skins cannot be picked there, they come from the shop.
 - Other keys: `literkowo.activeProfile`, `literkowo.uiLanguage`, `literkowo.sound`, `literkowo.music`, `literkowo.quality`, `literkowo.onScreenKeyboard`, `literkowo.reducedMotion`, `literkowo.reloadedAfterPreloadError`, `literkowo.rotateHintSeen`. The settings among them belong to the device, not to a profile, see [Settings](#settings).
-- When localStorage is blocked, storage falls back to memory for the session (`src/storage.ts`).
+- When a write cannot reach localStorage, because storage is blocked or full, the value stays in memory for the session and `writeStorage` reports it (`src/storage.ts`). The first profile save of a session that stays in memory shows a small notice at the bottom of the screen: "Postęp nie zapisze się na tym urządzeniu. Zapisz go do pliku w ustawieniach" / "Поступ не збережеться на цьому пристрої. Збережи його у файл у налаштуваннях". It does not block the game, fades out after 8 seconds or on a tap, and comes at most once per session (`src/app/saveWatch.ts`, `src/ui/Notice.ts`, copy in `src/i18n/features/notice.ts`). The notice and the rotate hint share one pill (`src/ui/hintPill.ts`).
+- Progress can be saved to a file and loaded back from one in the [Settings](#settings).
+- After the first profile save of a session that reaches localStorage, the game asks the browser to keep its storage with `navigator.storage.persist()`, unless it is kept already (`src/persistentStorage.ts`). The game never waits for the answer, and a refusal or a browser without the API changes nothing.
 
 ## Scoring
 
@@ -1004,7 +1006,7 @@ Owners: `src/audio/Sfx.ts`, `src/audio/Music.ts`, `src/audio/music/themes.ts`.
 
 ## Settings
 
-Owners: `src/ui/SettingsScreen.ts`, `src/ui/settingsControls.ts`, `src/ui/settingsParts.ts`, `src/ui/settings.css`, copy in `src/i18n/features/settings.ts`.
+Owners: `src/ui/SettingsScreen.ts`, `src/ui/settingsControls.ts`, `src/ui/settingsParts.ts`, `src/ui/settings.css`, copy in `src/i18n/features/settings.ts`. Progress backup: `src/ui/backupControls.ts`, `src/app/progressBackup.ts`, `src/profiles/progressFile.ts`, copy in `src/i18n/features/progressBackup.ts`.
 
 The settings screen "Ustawienia" / "Налаштування" opens from three places:
 
@@ -1017,6 +1019,12 @@ It reuses the shop header: the back button "Wróć" / "Назад" and the title
 Each setting is a row with a label, an optional hint, and segmented chips or a switch. Settings belong to the device and are shared by all profiles.
 
 When the screen opens from the map it ends with the row "Profil" / "Профіль": the hint names the profile, "Ola. Usunięcie kasuje cały postęp na tym urządzeniu" / "Ola. Видалення стирає весь поступ на цьому пристрої", and the quiet red button "Usuń profil" / "Видалити профіль" asks "Na pewno usunąć ten profil?" / "Точно видалити цей профіль?" and then removes the profile and returns to the profile screen. The row is absent when the settings open from the profile screen or the pause card.
+
+When the screen opens from the map or the profile screen, the row "Kopia postępu" / "Копія поступу" comes right before the profile row, with the hint "Postęp wszystkich profili w jednym pliku. Profile z pliku zastąpią te same profile tutaj" / "Поступ усіх профілів в одному файлі. Профілі з файлу замінять такі самі профілі тут" and two quiet buttons. The row is absent on the pause card.
+
+- "Zapisz do pliku" / "Зберегти у файл" downloads every profile as `literkowo-<day>.json`, for example `literkowo-2026-10-17.json` with the local day. The file holds the same JSON array as `literkowo.profiles`, taken from the profiles in memory, so it also works when localStorage is blocked.
+- "Wczytaj z pliku" / "Завантажити з файлу" opens the file picker for JSON. The file goes through the same parsing as stored profiles (`parseProfiles`), so a file from an older version is migrated. A file larger than 5 MB, one that is not a list, an empty list, or a list with an entry that cannot be read is rejected: nothing changes and the notice says "Tego pliku nie da się wczytać" / "Цей файл не вдається завантажити".
+- A good file is merged by profile id. A profile from the file replaces the one with the same id and keeps its place, new profiles come after the ones already on the device, and no profile is removed. The result is saved, the app returns to the profile screen and the notice says "Postęp wczytany" / "Поступ завантажено". The notice is the same pill as the one for progress that cannot be saved, see [Profiles](#profiles).
 
 | Setting                                          | Choices                      | Storage key                  | Applies             |
 | ------------------------------------------------ | ---------------------------- | ---------------------------- | ------------------- |
