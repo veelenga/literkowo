@@ -6,7 +6,6 @@ import { Boss } from '../../Boss';
 import type { Enemy } from '../../Enemy';
 import type { MechanicContext } from '../Mechanic';
 import { BomberEnemy, EMBER_COLOR } from './BomberEnemy';
-import type { Shockwaves } from './Shockwaves';
 import { playBlast } from './sounds';
 
 export const BLAST_RADIUS = 4.5;
@@ -45,7 +44,7 @@ export class Detonations {
 
   constructor(
     private readonly context: DetonationContext,
-    private readonly waves: Shockwaves,
+    private readonly shockwave: (center: THREE.Vector3) => void,
   ) {}
 
   get pendingCount(): number {
@@ -92,7 +91,7 @@ export class Detonations {
   private showBlast(bomber: BomberEnemy, center: THREE.Vector3): void {
     const { context } = this;
     BURST_COLORS.forEach((color) => context.particles.burst(bomber.burstPosition, color));
-    this.waves.play(center);
+    this.shockwave(center);
     context.shakeCamera(BLAST_SHAKE.strength, BLAST_SHAKE.seconds);
     this.slowMotion.hold();
     this.slowLeft = SLOW_MOTION.seconds;

@@ -38,8 +38,7 @@ const DUST: PulseSettings = {
   duration: 0.5,
   startScale: 0.5,
   endScale: 2.2,
-  luminance: 0.9,
-  whiteBlend: 0.4,
+  tint: { luminance: 0.9, whiteBlend: 0.4 },
 };
 
 const SPARK: PulseSettings = {
@@ -47,8 +46,7 @@ const SPARK: PulseSettings = {
   duration: 0.35,
   startScale: 0.3,
   endScale: 1.7,
-  luminance: 2.2,
-  whiteBlend: 0.35,
+  tint: { luminance: 2.2, whiteBlend: 0.35 },
 };
 
 function puffVisual(blending: THREE.Blending): () => PulseVisual {

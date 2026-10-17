@@ -1,13 +1,22 @@
 import * as THREE from 'three';
+import { disposeObject } from '../disposal';
+import { easeOutCubic } from './easing';
+import { groundPlaneGeometry, shockwaveTexture } from './glowAssets';
 import { withLuminance } from './luminance';
+
+export interface PulseTint {
+  luminance: number;
+  whiteBlend: number;
+}
 
 export interface PulseSettings {
   poolSize: number;
   duration: number;
   startScale: number;
   endScale: number;
-  luminance: number;
-  whiteBlend: number;
+  opacity?: number;
+  tint?: PulseTint;
+  groundLift?: number;
 }
 
 export interface PulseVisual {
@@ -19,7 +28,20 @@ interface Pulse extends PulseVisual {
   age: number;
 }
 
+export const GROUND_RING_LIFT = 0.07;
+
 const WHITE = new THREE.Color(0xffffff);
+const FULL_OPACITY = 1;
+
+export function groundRing(): PulseVisual {
+  const material = new THREE.MeshBasicMaterial({
+    map: shockwaveTexture(),
+    blending: THREE.AdditiveBlending,
+    transparent: true,
+    depthWrite: false,
+  });
+  return { object: new THREE.Mesh(groundPlaneGeometry(), material), material };
+}
 
 export class PulsePool {
   readonly group = new THREE.Group();
@@ -42,10 +64,9 @@ export class PulsePool {
     const pulse = this.pulses[this.cursor];
     this.cursor = (this.cursor + 1) % this.pulses.length;
     pulse.age = 0;
-    pulse.object.position.copy(position);
+    this.place(pulse.object, position);
     pulse.object.visible = true;
-    const tint = pulse.material.color.copy(color).lerp(WHITE, this.settings.whiteBlend);
-    withLuminance(tint, this.settings.luminance);
+    this.paint(pulse.material.color.copy(color));
     this.shape(pulse, 0);
   }
 
@@ -59,10 +80,27 @@ export class PulsePool {
     }
   }
 
+  dispose(): void {
+    this.group.removeFromParent();
+    disposeObject(this.group);
+  }
+
+  private place(object: THREE.Object3D, position: THREE.Vector3): void {
+    object.position.copy(position);
+    const { groundLift } = this.settings;
+    if (groundLift !== undefined) object.position.y = groundLift;
+  }
+
+  private paint(color: THREE.Color): void {
+    const { tint } = this.settings;
+    if (!tint) return;
+    withLuminance(color.lerp(WHITE, tint.whiteBlend), tint.luminance);
+  }
+
   private shape(pulse: Pulse, progress: number): void {
-    const eased = 1 - (1 - progress) ** 3;
-    const { startScale, endScale } = this.settings;
-    pulse.object.scale.setScalar(THREE.MathUtils.lerp(startScale, endScale, eased));
-    pulse.material.opacity = (1 - progress) ** 2;
+    const { startScale, endScale, opacity = FULL_OPACITY } = this.settings;
+    const scale = THREE.MathUtils.lerp(startScale, endScale, easeOutCubic(progress));
+    pulse.object.scale.setScalar(scale);
+    pulse.material.opacity = (1 - progress) ** 2 * opacity;
   }
 }

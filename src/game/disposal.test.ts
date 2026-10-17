@@ -1,18 +1,8 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
+import { trackDisposal } from '../testing/disposal';
 import { createAssetCache, isCachedAsset } from './assetCache';
 import { disposeObject } from './disposal';
-
-function trackDisposal(
-  ...assets: THREE.EventDispatcher<{ dispose: object }>[]
-): Map<object, number> {
-  const counts = new Map<object, number>();
-  for (const asset of assets) {
-    counts.set(asset, 0);
-    asset.addEventListener('dispose', () => counts.set(asset, (counts.get(asset) ?? 0) + 1));
-  }
-  return counts;
-}
 
 describe('createAssetCache', () => {
   it('creates each asset once and marks it as cached', () => {

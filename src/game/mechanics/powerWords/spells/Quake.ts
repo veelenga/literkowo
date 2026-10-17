@@ -1,7 +1,12 @@
 import * as THREE from 'three';
 import { SPAWN_RADIUS } from '../../../board';
 import type { Enemy } from '../../../Enemy';
-import { GroundWave, type WaveStyle } from '../effects/GroundWave';
+import {
+  GROUND_RING_LIFT,
+  groundRing,
+  PulsePool,
+  type PulseSettings,
+} from '../../../effects/PulsePool';
 import { Motes, type MoteStyle } from '../effects/Motes';
 import { SceneSpell, type SpellContext } from './Spell';
 
@@ -24,23 +29,24 @@ const DUST_RADIUS = 1.3;
 const DUST_HEIGHT = 0.15;
 const DUST_SPEED = { min: 5, max: 9 };
 const DUST_RISE = { min: 1, max: 3 };
-const WAVE: WaveStyle = {
-  color: DUST_COLOR,
+const WAVE: PulseSettings = {
+  poolSize: 1,
   duration: 1.4,
-  endDiameter: 22,
-  opacity: 1,
-  blending: THREE.AdditiveBlending,
+  startScale: 1,
+  endScale: 22,
+  groundLift: GROUND_RING_LIFT,
 };
+const WAVE_COLOR = new THREE.Color(DUST_COLOR);
 const FULL_TURN = Math.PI * 2;
 
 export class QuakeSpell extends SceneSpell {
   private readonly pushes = new Map<Enemy, number>();
   private readonly dust = new Motes(DUST_COUNT, DUST);
-  private readonly wave = new GroundWave(WAVE);
+  private readonly wave = new PulsePool(WAVE, groundRing);
 
   constructor(context: SpellContext) {
     super(context);
-    this.root.add(this.dust.points, this.wave.mesh);
+    this.root.add(this.dust.points, this.wave.group);
   }
 
   get dustCount(): number {
@@ -52,7 +58,7 @@ export class QuakeSpell extends SceneSpell {
       this.pushes.set(enemy, (this.pushes.get(enemy) ?? 0) + KNOCKBACK);
     }
     this.context.shakeCamera(QUAKE_SHAKE.strength, QUAKE_SHAKE.seconds);
-    this.wave.play(this.heroPosition);
+    this.wave.play(this.heroPosition, WAVE_COLOR);
     this.raiseDust();
   }
 
