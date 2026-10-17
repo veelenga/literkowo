@@ -1,16 +1,11 @@
 import type { PlacementOutcome } from '../../arena/placement';
-import { sfx } from '../../audio/Sfx';
 import type { Region } from '../../course/catalog';
 import { accuracyPercent } from '../../course/scoring';
 import { format } from '../../i18n/format';
 import { i18n } from '../../i18n/i18n';
-import { confetti } from '../confetti';
-import { el, prefersReducedMotion } from '../dom';
-import { statTile, type LevelRewards } from '../LevelResult';
-import { CLOSE_KEY, createOverlay, onCardKeys, PRIMARY_KEY, type Overlay } from '../overlay';
-import { ResultProgress } from '../ResultProgress';
-import { treasuresNote, type OpenShop } from '../resultTreasures';
-import { primaryButton } from '../shortcutHint';
+import type { Overlay } from '../overlay';
+import { resultOverlay, statTile, type ResultActions, type ResultRewards } from '../ResultOverlay';
+import type { OpenShop } from '../resultTreasures';
 import { stageChips } from './placementParts';
 
 const REVEAL_DELAY_MS = 600;
@@ -19,7 +14,7 @@ export interface PlacementSummary {
   readonly outcome: PlacementOutcome;
   readonly regions: readonly Region[];
   readonly start: Region | undefined;
-  readonly earned: LevelRewards;
+  readonly earned: ResultRewards;
 }
 
 export interface PlacementResultActions {
@@ -35,42 +30,22 @@ export function placementResult(
   const t = i18n.t;
   const copy = t.features.placement;
   const { outcome, regions, start, earned } = summary;
-  const tiles = [
-    statTile(t.accuracy, accuracyPercent(outcome.accuracy), '%'),
-    statTile(t.speed, outcome.wpm, t.wpm),
-  ];
-  const progress = new ResultProgress(earned);
-  const panel = el(
-    'div',
-    { class: `panel panel-center result-panel placement-result ${start ? 'is-won' : 'is-calm'}` },
-    el('h2', { class: 'result-title', text: headline(start) }),
-    stageChips(regions, outcome.passed),
-    el('p', { class: 'result-hint', text: start ? copy.skippedHint : copy.beginnerHint }),
-    el('div', { class: 'result-stats' }, ...tiles.map((tile) => tile.element)),
-    progress.element,
-    treasuresNote(earned.treasures, actions.onShop),
-    actionsRow(actions),
-  );
-  const revealTimer = window.setTimeout(
-    () => {
-      tiles.forEach((tile) => tile.reveal());
-      progress.reveal();
-      if (start) celebrate(panel);
-    },
-    prefersReducedMotion() ? 0 : REVEAL_DELAY_MS,
-  );
-  return createOverlay(
-    el('div', { class: 'overlay' }, panel),
-    onCardKeys(
-      new Map([
-        [PRIMARY_KEY, actions.onMap],
-        [CLOSE_KEY, actions.onMap],
-      ]),
-    ),
-    () => window.clearTimeout(revealTimer),
-    () => progress.stop(),
-    ...tiles.map((tile) => tile.stop),
-  );
+  return resultOverlay({
+    variant: 'placement-result',
+    mood: start ? 'won' : 'calm',
+    title: headline(start),
+    badge: stageChips(regions, outcome.passed),
+    hint: start ? copy.skippedHint : copy.beginnerHint,
+    tiles: [
+      statTile(t.accuracy, accuracyPercent(outcome.accuracy), '%'),
+      statTile(t.speed, outcome.wpm, t.wpm),
+    ],
+    earned,
+    revealDelayMs: REVEAL_DELAY_MS,
+    celebrate: start !== undefined,
+    actions: resultActions(actions),
+    onShop: actions.onShop,
+  });
 }
 
 function headline(start: Region | undefined): string {
@@ -79,23 +54,8 @@ function headline(start: Region | undefined): string {
   return format(copy.startsHere, { region: start.name[i18n.current] });
 }
 
-function celebrate(panel: HTMLElement): void {
-  panel.append(confetti());
-  sfx.sparkle();
-}
-
-function actionsRow({ onMap, onArena }: PlacementResultActions): HTMLElement {
-  const arena = onArena
-    ? el('button', {
-        class: 'button button-ghost',
-        text: i18n.t.features.arena.title,
-        onClick: onArena,
-      })
-    : null;
-  return el(
-    'div',
-    { class: 'actions result-actions' },
-    arena,
-    primaryButton(i18n.t.features.placement.toMap, onMap),
-  );
+function resultActions({ onMap, onArena }: PlacementResultActions): ResultActions {
+  const map = { label: i18n.t.features.placement.toMap, run: onMap };
+  const arena = onArena ? [{ label: i18n.t.features.arena.title, run: onArena }] : [];
+  return { buttons: [...arena, map], primary: map, onClose: onMap };
 }
