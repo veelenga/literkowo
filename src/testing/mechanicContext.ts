@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Sfx } from '../audio/Sfx';
+import { LEVEL_LIVES } from '../game/LevelPlan';
 import type { Phase } from '../game/RunPlan';
 import type { MechanicContext } from '../game/mechanics/Mechanic';
 import { SessionStats } from '../game/SessionStats';
@@ -29,6 +30,8 @@ export function fakeMechanicContext(overrides: Partial<MechanicContext> = {}): M
     playing: true,
     shields: 0,
     guards: 0,
+    lives: LEVEL_LIVES,
+    maxLives: LEVEL_LIVES,
     theme: themeFor('meadow'),
     sfx: new Sfx(),
     words: levelWords(requireLevel(FAKE_LEVEL), 'pl'),

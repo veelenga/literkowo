@@ -36,6 +36,8 @@ export interface MechanicContext {
   readonly playing: boolean;
   readonly shields: number;
   readonly guards: number;
+  readonly lives: number;
+  readonly maxLives: number;
   readonly theme: Theme;
   readonly sfx: Sfx;
   readonly words: WordSource;

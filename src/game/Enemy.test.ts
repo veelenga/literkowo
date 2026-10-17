@@ -4,6 +4,8 @@ import { fakeBoard } from '../testing/enemyBoard';
 
 const DISTANCE = 6;
 const MARKUP_WORD = '<i>a</i>';
+const SURGE_SCALE = 1.8;
+const FREEZE_SECONDS = 1;
 
 describe('Enemy', () => {
   it('shows the word as untyped again after resetTyped', () => {
@@ -24,5 +26,15 @@ describe('Enemy', () => {
     enemy.advance();
     expect(enemy.label.querySelector('i')).toBeNull();
     expect(enemy.label.textContent).toBe(MARKUP_WORD);
+  });
+
+  it('reports its speed with the speed scale, and none while frozen', () => {
+    const enemy = fakeBoard().enemyAt(DISTANCE);
+    const base = enemy.currentSpeed;
+    expect(base).toBeGreaterThan(0);
+    enemy.setSpeedScale(SURGE_SCALE);
+    expect(enemy.currentSpeed).toBeCloseTo(base * SURGE_SCALE);
+    enemy.freeze(FREEZE_SECONDS);
+    expect(enemy.currentSpeed).toBe(0);
   });
 });
