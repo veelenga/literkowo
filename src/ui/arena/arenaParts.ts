@@ -10,6 +10,8 @@ import '../arena.css';
 
 type MedalKey = 'none' | 'bronze' | 'silver' | 'gold';
 
+const LARGE_MEDAL_CLASS = 'medal medal-large';
+
 const MEDAL_KEYS: Readonly<Record<Medal, MedalKey>> = {
   0: 'none',
   1: 'bronze',
@@ -39,6 +41,10 @@ export function medalBadge(medal: Medal, className = 'medal'): HTMLElement {
     { class: `${className} is-${MEDAL_KEYS[medal]}`, title: name, 'aria-label': name },
     icon('star', 'medal-star'),
   );
+}
+
+export function largeMedalBadge(medal: Medal): HTMLElement {
+  return medalBadge(medal, LARGE_MEDAL_CLASS);
 }
 
 export function nextMedalHint(medal: Medal): string {

@@ -7,19 +7,24 @@ import { format } from '../../i18n/format';
 import { i18n } from '../../i18n/i18n';
 import { clockText } from '../clock';
 import { el } from '../dom';
-import { statTile, type LevelRewards, type StatTile } from '../LevelResult';
 import type { Overlay } from '../overlay';
 import { coinPill } from '../progression';
+import {
+  resultOverlay,
+  statTile,
+  type ResultActions,
+  type ResultPart,
+  type ResultRewards,
+} from '../ResultOverlay';
 import type { OpenShop } from '../resultTreasures';
-import { medalName } from './arenaParts';
-import { medalResult } from './ArenaResult';
+import { largeMedalBadge, medalName } from './arenaParts';
 import { minutesText } from './DailyCard';
 
 export interface DailyRunSummary {
   readonly result: GameResult;
   readonly format: DailyFormat;
   readonly outcome: Pick<DailyOutcome, 'medal' | 'improved' | 'triesLeft' | 'payout'>;
-  readonly earned: LevelRewards;
+  readonly earned: ResultRewards;
 }
 
 interface DailyResultActions {
@@ -40,23 +45,27 @@ const PLUS = '+';
 
 export function dailyResult(summary: DailyRunSummary, actions: DailyResultActions): Overlay {
   const { outcome, earned } = summary;
-  const arena = { label: i18n.t.features.arena.title, run: actions.onArena };
-  const canRetry = outcome.triesLeft > 0;
-  return medalResult({
+  const won = outcome.medal > NO_MEDAL;
+  return resultOverlay({
     variant: 'arena-result daily-result',
+    mood: won ? 'won' : 'lost',
     title: titleOf(summary),
-    medal: outcome.medal,
+    badge: largeMedalBadge(outcome.medal),
     hint: nextDailyHint(summary.format, outcome.medal),
     tiles: tilesOf(summary),
     earned,
-    won: outcome.medal > NO_MEDAL,
-    celebrate: outcome.improved && outcome.medal > NO_MEDAL,
+    celebrate: outcome.improved && won,
     details: coinLines(outcome.payout),
-    secondary: canRetry ? arena : undefined,
-    note: canRetry ? undefined : i18n.t.features.daily.tomorrow,
-    primary: canRetry ? { label: i18n.t.features.arena.again, run: actions.onRetry } : arena,
+    actions: resultActions(outcome.triesLeft > 0, actions),
     onShop: actions.onShop,
   });
+}
+
+function resultActions(canRetry: boolean, actions: DailyResultActions): ResultActions {
+  const arena = { label: i18n.t.features.arena.title, run: actions.onArena };
+  if (!canRetry) return { buttons: [arena], primary: arena, note: i18n.t.features.daily.tomorrow };
+  const again = { label: i18n.t.features.arena.again, run: actions.onRetry };
+  return { buttons: [arena, again], primary: again };
 }
 
 export function nextDailyHint(daily: DailyFormat, medal: Medal): string {
@@ -77,7 +86,7 @@ function titleOf({ outcome }: DailyRunSummary): string {
   return outcome.improved ? i18n.t.features.daily.bestToday : i18n.t.features.arena.goodRun;
 }
 
-function tilesOf({ result, format: daily }: DailyRunSummary): StatTile[] {
+function tilesOf({ result, format: daily }: DailyRunSummary): ResultPart[] {
   const t = i18n.t;
   const copy = t.features.daily;
   const timing =
