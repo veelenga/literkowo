@@ -3,6 +3,7 @@ import type { GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { describe, expect, it, vi } from 'vitest';
 import { hatSpec } from '../course/shop';
 import { Player } from './Player';
+import { isMesh } from './threeGuards';
 
 type LoadCallback = (gltf: Pick<GLTF, 'scene' | 'animations'>) => void;
 
@@ -72,7 +73,7 @@ describe('Player', () => {
     player.setHat(hatSpec('cap'));
     const counter = disposalCounter();
     head.children[0].traverse((child) => {
-      if (child instanceof THREE.Mesh) counter.track(child.geometry);
+      if (isMesh(child)) counter.track(child.geometry);
     });
 
     player.setHat(hatSpec('halo'));
@@ -88,7 +89,7 @@ describe('Player', () => {
     const player = new Player('a');
     const counter = disposalCounter();
     player.object.traverse((child) => {
-      if (!(child instanceof THREE.Mesh)) return;
+      if (!isMesh(child)) return;
       const { geometry, material } = child;
       counter.track(geometry);
       if (!(

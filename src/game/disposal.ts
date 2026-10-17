@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { isCachedAsset, type DisposableAsset } from './assetCache';
+import { isTexture } from './threeGuards';
 
 type Renderable = THREE.Mesh | THREE.Points | THREE.Line;
 
@@ -24,7 +25,7 @@ function texturesOf(material: THREE.Material): THREE.Texture[] {
   if (material instanceof THREE.ShaderMaterial) {
     for (const uniform of Object.values(material.uniforms)) values.push(uniform.value);
   }
-  return values.filter((value) => value instanceof THREE.Texture);
+  return values.filter(isTexture);
 }
 
 class OwnedResources {
