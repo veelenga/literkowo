@@ -9,7 +9,17 @@ import { Occupancy, scatter, type Spot } from '../scatter';
 import { TERRAIN_EXTENT } from '../Terrain';
 import type { BiomeContext, Landscape } from '../types';
 import { Water } from '../Water';
-import { addParticles, arenaRise, SWAY, tints, towardCenter, weightIf, within } from './common';
+import {
+  addBoulders,
+  addParticles,
+  arenaRise,
+  SWAY,
+  tints,
+  towardCenter,
+  weightIf,
+  within,
+  type BoulderOptions,
+} from './common';
 
 const CELL = 1.2;
 const STEP = 0.4;
@@ -26,7 +36,6 @@ const TORCH_ANGLES = [-2.6, -1.95, -1.15, -0.45];
 const PALM_SPREAD = 0.45;
 const PALMS = 30;
 const BUSHES = 14;
-const SHORE_ROCKS = 14;
 const SHORE_ROCK_REACH = [-0.8, 3.5] as const;
 const GRASS_TUFTS = 160;
 const SHELL_COUNT = 30;
@@ -61,6 +70,14 @@ const PALM: props.PalmPalette = {
   coconut: 0x6b4423,
 };
 const SHORE_ROCK: props.RockPalette = { dark: 0x8a7a6a, light: 0xcbb89e };
+const SHORE_ROCKS: Omit<BoulderOptions, 'accept'> = {
+  palette: SHORE_ROCK,
+  variants: 3,
+  count: 14,
+  spacing: 1.2,
+  scale: [0.5, 1.3],
+  sink: 0.25,
+};
 const TROPICAL: props.Tones = { top: 0x7fe06a, side: 0x3fae55, bottom: 0x2a7a40 };
 const SHELLS = [0xff9aa2, 0xffd6a5, 0xfdffb6, 0xcaffbf, 0xa0c4ff, 0xffc6ff];
 const STARFISH = [0xff7b5c, 0xffa94d, 0xff5d8f];
@@ -143,7 +160,7 @@ function decorate(context: BiomeContext, land: Island): void {
   addTorches(context, occupancy);
   addPalms(context, occupancy);
   addBushes(context, occupancy);
-  addShoreRocks(context, land, occupancy);
+  addBoulders(context, occupancy, { ...SHORE_ROCKS, accept: nearShore(land) });
   addBeachGrass(context);
   addTrinkets(context);
   addWater(context);
@@ -198,26 +215,11 @@ function addBushes(context: BiomeContext, occupancy: Occupancy): void {
   });
 }
 
-function addShoreRocks(context: BiomeContext, land: Island, occupancy: Occupancy): void {
-  const { rng, materials } = context;
-  plant(context, {
-    models: shapes(rng, 3, (r) => props.boulder(r, SHORE_ROCK), materials.surface()),
-    spots: scatter(
-      rng,
-      {
-        count: SHORE_ROCKS,
-        region: NEAR_STAGE,
-        spacing: 1.2,
-        accept: (x, z) => {
-          const offshore = distance(x, z) - land.shoreAt(x, z);
-          return weightIf(offshore > SHORE_ROCK_REACH[0] && offshore < SHORE_ROCK_REACH[1]);
-        },
-      },
-      occupancy,
-    ),
-    scale: [0.5, 1.3],
-    sink: 0.25,
-  });
+function nearShore(land: Island): (x: number, z: number) => number {
+  return (x, z) => {
+    const offshore = distance(x, z) - land.shoreAt(x, z);
+    return weightIf(offshore > SHORE_ROCK_REACH[0] && offshore < SHORE_ROCK_REACH[1]);
+  };
 }
 
 function addBeachGrass(context: BiomeContext): void {
